@@ -1,0 +1,290 @@
+== ================ Setting delays ================ ==
+W  4000  C	Set LCT_L1A_DLY   
+W  4004  1	Set TMB_PUSH_DLY
+W  4008  0	Set PUSH_DLY   
+W  400C  1	Set ALCT_PUSH_DLY
+
+R  4400  00	Read LCT_L1A_DLY   
+R  4404  00	Read TMB_PUSH_DLY  
+R  4408  00	Read PUSH_DLY	  
+R  440C  00	Read ALCT_PUSH_DLY 
+   	 	
+== ================ Writing FIFOs ================ ==
+R  1C   0       Read state of FIFOs
+W  20	1	Select FIFO 1 *LSB bunch crossing&quot;
+R  2C   0       Read current write address
+R  3C   0       Read current read address
+W  8 	3f	Write FIFO
+W  8 	40	Write FIFO
+W  8 	41	Write FIFO
+W  8 	42	Write FIFO
+W  8 	b0	Write FIFO
+W  8 	b1	Write FIFO
+W  8 	103f	Write FIFO
+W  8 	1040	Write FIFO
+W  8 	1041	Write FIFO
+W  8 	1042	Write FIFO
+W  8 	10b0	Write FIFO
+W  8 	10b1	Write FIFO
+W  8 	503f	Write FIFO
+W  8 	5040	Write FIFO
+W  8 	5041	Write FIFO
+W  8 	5042	Write FIFO
+W  8 	50b0	Write FIFO
+W  8 	50b1	Write FIFO
+W  8 	513f	Write FIFO
+W  8 	5140	Write FIFO
+W  8 	5141	Write FIFO
+W  8 	5142	Write FIFO
+W  8 	51b0	Write FIFO
+W  8 	51b1	Write FIFO
+R  1C   0       Read state of FIFOs
+R  2C   0       Read current write address
+R  3C   0       Read current read address
+
+W  20	2	Select FIFO 2 *MSB bunch crossing&quot;
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+
+W  20	4	Select FIFO 3 *Triggers&quot;  
+W  8   	f	Write FIFO			    
+W  8   	11	Write FIFO			    
+W  8   	e1	Write FIFO			    
+W  8   	0	Write FIFO			    
+W  8   	400	Write FIFO			    
+W  8   	0	Write FIFO
+W  8   	0	Write FIFO			    
+W  8   	0	Write FIFO			    
+W  8   	11	Write FIFO			    
+W  8   	0	Write FIFO			    
+W  8   	400	Write FIFO			    
+W  8   	0	Write FIFO
+W  8   	f	Write FIFO			    
+W  8   	11	Write FIFO			    
+W  8   	e1	Write FIFO			    
+W  8   	0	Write FIFO			    
+W  8   	700	Write FIFO			    
+W  8   	0	Write FIFO
+W  8   	f	Write FIFO			    
+W  8   	11	Write FIFO			    
+W  8   	e1	Write FIFO			    
+W  8   	0	Write FIFO			    
+W  8   	700	Write FIFO			    
+W  8   	0	Write FIFO
+
+== ================= Start run ================= ==
+W  20	18	Select FIFO 4 *DDU data&quot; and start run
+
+== =============== Status after run =============== ==
+W  3000 29	Set flf_ctrl *Time stamp MSB*
+R  3008 0	Read flf_data
+W  3000 28	Set flf_ctrl *Time stamp LSB*
+R  3008 0	Read flf_data
+R  1C   0       Read state of FIFOs
+W  20	14	Select FIFO 3 *Time stamp&quot; and keep runnting
+R  2C   0       Read current write address
+R  3C   0       Read current read address
+W  20	18	Select FIFO 4 *DDU data&quot; and start run
+W  3000 21	Set flf_ctrl *L1A_MATCH_CNT(1)*
+R  3008 0	Read flf_data
+W  3000 22	Set flf_ctrl *L1A_MATCH_CNT(2)*
+R  3008 0	Read flf_data
+W  3000 23	Set flf_ctrl *L1A_MATCH_CNT(3)*
+R  3008 0	Read flf_data
+W  3000 24	Set flf_ctrl *L1A_MATCH_CNT(4)*
+R  3008 0	Read flf_data
+W  3000 25	Set flf_ctrl *L1A_MATCH_CNT(5)*
+R  3008 0	Read flf_data
+W  3000 26	Set flf_ctrl *L1A_MATCH_CNT(6)*
+R  3008 0	Read flf_data
+W  3000 27	Set flf_ctrl *L1A_MATCH_CNT(7)*
+R  3008 0	Read flf_data
+W  3000 31	Set flf_ctrl *LCT_L1A_GAP(1)*
+R  3008 0	Read flf_data
+W  3000 32	Set flf_ctrl *LCT_L1A_GAP(2)*
+R  3008 0	Read flf_data
+W  3000 33	Set flf_ctrl *LCT_L1A_GAP(3)*
+R  3008 0	Read flf_data
+W  3000 34	Set flf_ctrl *LCT_L1A_GAP(4)*
+R  3008 0	Read flf_data
+W  3000 35	Set flf_ctrl *LCT_L1A_GAP(5)*
+R  3008 0	Read flf_data
+W  3000 36	Set flf_ctrl *LCT_L1A_GAP(6)*
+R  3008 0	Read flf_data
+W  3000 37	Set flf_ctrl *LCT_L1A_GAP(7)*
+R  3008 0	Read flf_data
+W  3000 41	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(1)*
+R  3008 0	Read flf_data
+W  3000 42	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(2)*
+R  3008 0	Read flf_data
+W  3000 43	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(3)*
+R  3008 0	Read flf_data
+W  3000 44	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(4)*
+R  3008 0	Read flf_data
+W  3000 45	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(5)*
+R  3008 0	Read flf_data
+W  3000 46	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(6)*
+R  3008 0	Read flf_data
+W  3000 47	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(7)*
+R  3008 0	Read flf_data
+W  3000 48	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(8)*
+R  3008 0	Read flf_data
+W  3000 49	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(9)*
+R  3008 0	Read flf_data
+R  28   0	Read LCT_CNT_OUT(0)
+W  3000 38	Set flf_ctrl *CAFIFO_L1A_MATCH_OUT*
+R  3008 0	Read flf_data
+W  3000 39	Set flf_ctrl *CAFIFO_L1A_DAV*
+R  3008 0	Read flf_data
+W  3000 3A	Set flf_ctrl *CAFIFO_L1A_CNT MSB*
+R  3008 0	Read flf_data
+W  3000 3B	Set flf_ctrl *CAFIFO_L1A_CNT LSB*
+R  3008 0	Read flf_data
+W  3000 3C	Set flf_ctrl *CAFIFO_BX_CNT*
+R  3008 0	Read flf_data
+W  3000 3D	Set flf_ctrl *CAFIFO_RD_ADDR &amp; CAFIFO_WR_ADDR*
+R  3008 0	Read flf_data
+W  3000 3E	Set flf_ctrl *CAFIFO_L1A_MATCH_IN*
+R  3008 0	Read flf_data
+W  3000 3F	Set flf_ctrl *RAW_L1A_CNT*
+R  3008 0	Read flf_data
+W  3000 4A	Set flf_ctrl *OE_CNT(1) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 4B	Set flf_ctrl *CONTROL_DAV_CNT*
+R  3008 0	Read flf_data
+W  3000 4C	Set flf_ctrl *DDUFIFO_DAV_CNT*
+R  3008 0	Read flf_data
+W  3000 51	Set flf_ctrl *RE_CNT(1) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 52	Set flf_ctrl *RE_CNT(2) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 53	Set flf_ctrl *RE_CNT(3) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 54	Set flf_ctrl *RE_CNT(4) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 55	Set flf_ctrl *RE_CNT(5) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 56	Set flf_ctrl *RE_CNT(6) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 57	Set flf_ctrl *RE_CNT(7) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 58	Set flf_ctrl *RE_CNT(8) from CONTROL*
+R  3008 0	Read flf_data
+W  3000 59	Set flf_ctrl *RE_CNT(9) from CONTROL*
+R  3008 0	Read flf_data
+
+== ================ Reading FIFOs ================ ==
+R  2C   0       Read current write address
+R  3C   0       Read current read address
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  2C   0       Read current write address
+R  3C   0       Read current read address
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  2C   0       Read current write address
+R  3C   0       Read current read address
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  C 	0	Read FIFO
+R  1C   0       Read state of FIFOs
+R  2C   0       Read current write address
+R  3C   0       Read current read address
+
+
+0  0  0	 	End of file
