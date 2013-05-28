@@ -1,3 +1,14 @@
+-- ODMB_VME: Handles the VME protocol and selects VME device
+
+-- Device 0 => TESTCNTL
+-- Device 1 => CFEBJTAG
+-- Device 2 => MBCJTAG
+-- Device 3 => VMEMON
+-- Device 4 => VMECONFREGS
+-- Device 5 => TESTFIFOS
+-- Device 8 => LVDBMON
+-- Device 9 => FIFOMON
+
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
@@ -42,7 +53,8 @@ entity ODMB_VME is
 
 -- Reset
 
-    rst : in std_logic;                 -- iglobalrst
+    rst       : in  std_logic;          -- iglobalrst
+    led_pulse : out std_logic;
 
 -- JTAG Signals To/From DCFEBs
 
@@ -118,6 +130,7 @@ entity ODMB_VME is
     tfifo_mode  : out std_logic;
 
 -- From VMEMON
+    FW_RESET   : out std_logic;
     RESYNC   : out std_logic;
     REPROG_B : out std_logic;
     TEST_INJ : out std_logic;
@@ -163,6 +176,17 @@ end ODMB_VME;
 
 
 architecture ODMB_VME_architecture of ODMB_VME is
+
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
 
   signal ext_vme_ga : std_logic_vector(5 downto 0);
 
@@ -210,6 +234,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
+      FW_RESET : out std_logic;
       RESYNC   : out std_logic;
       REPROG_B : out std_logic;
       TEST_INJ : out std_logic;
@@ -477,49 +502,19 @@ architecture ODMB_VME_architecture of ODMB_VME is
   end component;
 
 
--- Device 0 => VMESTAT
-
--- Device 1 => CFEBJTAG
-
--- Device 2 => MBCJTAG
-
--- Device 3 => CPROMJTAG (REMOVED)                      VMEMON
-
--- Device 4 => VPROMJTAG (REMOVED)
-
--- Device 5 => SERDAC
-
--- Device 6 => PORTCNTL
-
--- Device 7 => SERADC
-
--- Device 8 => LVDBMON
-
--- Device 9 => FLASHCNTRL
-
--- Device A => CFEBADM (NEW)
-
--- Device B => CFEBTKN (NEW)
-
--- Device C => CFEBI2C (NEW)
-
 begin
 
-  vme_doe_b <= doe_b;
-
-  vme_doe <= not doe_b;
-
-  vme_tovme_b <= tovme_b;
-
-  vme_tovme <= not tovme_b;
-
+  vme_doe_b       <= doe_b;
+  vme_doe         <= not doe_b;
+  vme_tovme_b     <= tovme_b;
+  vme_tovme       <= not tovme_b;
   vme_sysfail_out <= '0';
-
-  vme_berr_out <= '0';
-
+  vme_berr_out    <= '0';
   vme_sysfail_out <= '0';
+  ext_vme_ga      <= vme_gap & vme_ga;
 
-  ext_vme_ga <= vme_gap & vme_ga;
+  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 500000, strobe);
+
 
   COMMAND_PM : COMMAND_MODULE
     
@@ -727,6 +722,7 @@ begin
 
       DTACK => vme_dtack_b,
 
+      FW_RESET => fw_reset,
       RESYNC   => resync,
       REPROG_B => reprog_b,
       TEST_INJ => test_inj,

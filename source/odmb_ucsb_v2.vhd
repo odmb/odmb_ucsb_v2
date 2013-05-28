@@ -24,7 +24,7 @@ use UNIMACRO.vcomponents.all;
 library work;
 use work.hdlmacro.all;
 
-entity ODMB_V6_V2 is
+entity odmb_ucsb_v2 is
   generic (
     IS_SIMULATION : integer range 0 to 1 := 0;  -- Set to 1 by test bench in simulation 
     NFEB          : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
@@ -76,7 +76,7 @@ entity ODMB_V6_V2 is
       dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
       dcfeb_done      : in  std_logic_vector(NFEB downto 1);
 
--- From/To ODMB_V6_V2 JTAG port (through IC34)
+-- From/To odmb_ucsb_v2 JTAG port (through IC34)
 
       v6_tck : out std_logic;
       v6_tms : out std_logic;
@@ -196,9 +196,9 @@ entity ODMB_V6_V2 is
       done_in : in std_logic
 
       );
-end ODMB_V6_V2;
+end odmb_ucsb_v2;
 
-architecture bdf_type of ODMB_V6_V2 is
+architecture bdf_type of odmb_ucsb_v2 is
 
   component alct_tmb_data_gen is
     port(
@@ -635,6 +635,7 @@ architecture bdf_type of ODMB_V6_V2 is
 -- Reset
 
       rst : in std_logic;               -- iglobalrst
+      led_pulse : out std_logic;
 
 -- JTAG signals To/From DCFEBs
 
@@ -711,6 +712,7 @@ architecture bdf_type of ODMB_V6_V2 is
       tfifo_mode  : out std_logic;
 
       -- From VMEMON
+      FW_RESET   : out std_logic;
       RESYNC   : out std_logic;
       REPROG_B : out std_logic;
       TEST_INJ : out std_logic;
@@ -772,6 +774,7 @@ architecture bdf_type of ODMB_V6_V2 is
   signal LOGICH   : std_logic                     := '1';
   signal LOGIC36L : std_logic_vector(35 downto 0) := (others => '0');
   signal LOGIC36H : std_logic_vector(35 downto 0) := (others => '1');
+  signal FW_RESET   : std_logic                     := '0';
 
 -- Test Signals From/To J3
 
@@ -1063,6 +1066,7 @@ architecture bdf_type of ODMB_V6_V2 is
   signal int_lvmb_sclk, int_lvmb_sdin, int_lvmb_sdout : std_logic;
 
   signal leds_in : std_logic_vector(11 downto 0);
+  signal led_pulse : std_logic := '1';
 
 -- JTAG signals between ODMB_VME and ODMB_CTRL
 
@@ -1412,7 +1416,7 @@ begin
   end process Select_TestPoints;
 
 -- Power ON reset [The FD is to avoid an event on an array]
-  FD_RESET : FD port map(int_reset, clk2p5, odmb_ctrl_reg(8));  
+  FD_RESET : FD port map(int_reset, clk2p5, fw_reset);  
   por_reg <= x"0FFFFFFF" when (pll1_locked='0' or (int_reset='0' and odmb_ctrl_reg(8)='1')) else
              por_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
              por_reg;
@@ -1762,6 +1766,7 @@ begin
 -- Reset
 
       rst => reset,
+    led_pulse => led_pulse,
 
 -- JTAG signals To/From DCFEBs
 
@@ -1852,6 +1857,7 @@ begin
       tfifo_mode  => tfifo_mode,
 
 -- From VMEMON    
+      FW_RESET => fw_reset,
       resync   => resync,
       reprog_b => odmb_hardrst_b,
       test_inj => test_inj,
@@ -3055,9 +3061,8 @@ begin
         ledg(5) <= not pll1_locked;
         ledg(6) <= not rx_dcfeb_sel;
 
-        ledr(4 downto 1) <= not int_l1a_cnt(3 downto 0);
-        ledr(5)          <= not opt_dcfeb_sel;
-        ledr(6)          <= not pb(1);
+        ledr(5 downto 1) <= not int_l1a_cnt(4 downto 0);
+        ledr(6)          <= pb(1) and not led_pulse;
 
         if (reset = '0' and reset_q = '1') then
           led_next_state <= LED_COUNTING;

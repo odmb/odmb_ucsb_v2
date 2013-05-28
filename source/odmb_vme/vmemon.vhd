@@ -22,6 +22,7 @@ entity VMEMON is
 
     DTACK : out std_logic;
 
+    FW_RESET : out std_logic;
     RESYNC   : out std_logic;
     REPROG_B : out std_logic;
     TEST_INJ : out std_logic;
@@ -64,9 +65,9 @@ architecture VMEMON_Arch of VMEMON is
   signal W_TP_SEL, D_W_TP_SEL, Q_W_TP_SEL : std_logic                     := '0';
   signal R_TP_SEL, D_R_TP_SEL, Q_R_TP_SEL : std_logic                     := '0';
 
-  signal DCFEB_RST                                          : std_logic_vector(15 downto 0) := (others => '0');
-  signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST : std_logic                     := '0';
-  signal REPROG, DO_RESYNC                                  : std_logic                     := '0';
+  signal ODMB_RST, DCFEB_RST                                          : std_logic_vector(15 downto 0) := (others => '0');
+  signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST, RESET_RST : std_logic                     := '0';
+  signal REPROG, DO_RESYNC                                             : std_logic                     := '0';
 
 begin
 
@@ -79,9 +80,9 @@ begin
   CMDHIGH        <= '1' when (COMMAND(9 downto 4) = "000000" and DEVICE = '1') else '0';
   W_ODMB_CTRL    <= '1' when (COMMAND(3 downto 0) = "0000" and CMDHIGH = '1')  else '0';
   R_ODMB_CTRL    <= '1' when (COMMAND(3 downto 0) = "0001" and CMDHIGH = '1')  else '0';
-  READ_ODMB_DATA <= '1' when (COMMAND(3 downto 0) = "0010" and CMDHIGH = '1')  else '0';
-  W_DCFEB_CTRL   <= '1' when (COMMAND(3 downto 0) = "0100" and CMDHIGH = '1')  else '0';
-  R_DCFEB_CTRL   <= '1' when (COMMAND(3 downto 0) = "0101" and CMDHIGH = '1')  else '0';
+  READ_ODMB_DATA <= '1' when (COMMAND(3 downto 0) = "0010" and CMDHIGH = '1') else '0';
+  W_DCFEB_CTRL   <= '1' when (COMMAND(3 downto 0) = "0100" and CMDHIGH = '1') else '0';
+  R_DCFEB_CTRL   <= '1' when (COMMAND(3 downto 0) = "0101" and CMDHIGH = '1') else '0';
 
 
 -- Write TP_SEL
@@ -104,9 +105,11 @@ begin
 
   GEN_ODMB_CTRL : for K in 0 to 15 generate
   begin
-    ODMB_CTRL_K : FDCE port map (ODMB_CTRL_INNER(K), STROBE, W_ODMB_CTRL, RST, INDATA(K));
+    ODMB_RST(K) <= RESET_RST when K = 8 else
+                   RST;
+    ODMB_CTRL_K : FDCE port map (ODMB_CTRL_INNER(K), STROBE, W_ODMB_CTRL, ODMB_RST(K), INDATA(K));
   end generate GEN_ODMB_CTRL;
-
+  PULSE_RESET : PULSE_EDGE port map(fw_reset, reset_rst, slowclk, rst, 2, odmb_ctrl_inner(8));
   ODMB_CTRL <= ODMB_CTRL_INNER;
 
 

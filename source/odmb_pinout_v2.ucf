@@ -157,30 +157,30 @@ NET  "lvmb_pon[7]"  		LOC = "C22"  	| IOSTANDARD = LVCMOS25; # ok (out)  #STAT0
 NET  "lvmb_sclk"  		LOC = "E28"  	| IOSTANDARD = LVCMOS25;  # ok (out) #STAT0
 NET  "lvmb_sdin"  		LOC = "E29"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
 NET  "lvmb_sdout"  		LOC = "A25"  	| IOSTANDARD = LVCMOS25;  # ok  #STAT0
-NET  "orx_n[10]"  		LOC = "K6"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[10]"  		LOC = "K5"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[11]"  		LOC = "L4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[11]"  		LOC = "L3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[12]"  		LOC = "J4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[12]"  		LOC = "J3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[1]"  		LOC = "W4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[1]"  		LOC = "W3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[2]"  		LOC = "R4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[2]"  		LOC = "R3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[3]"  		LOC = "N4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[3]"  		LOC = "N3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[4]"  		LOC = "U4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[4]"  		LOC = "U3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[5]"  		LOC = "AA4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[5]"  		LOC = "AA3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[6]"  		LOC = "B6"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[6]"  		LOC = "B5"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[7]"  		LOC = "G4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[7]"  		LOC = "G3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[8]"  		LOC = "E4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[8]"  		LOC = "E3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_n[9]"  		LOC = "D6"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
-NET  "orx_p[9]"  		LOC = "D5"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[3]"  		LOC = "K6"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[3]"  		LOC = "K5"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[2]"  		LOC = "L4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[2]"  		LOC = "L3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[1]"  		LOC = "J4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[1]"  		LOC = "J3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[12]"  		LOC = "W4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[12]"  		LOC = "W3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[11]"  		LOC = "R4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[11]"  		LOC = "R3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[10]"  		LOC = "N4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[10]"  		LOC = "N3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[9]"  		LOC = "U4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[9]"  		LOC = "U3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[8]"  		LOC = "AA4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[8]"  		LOC = "AA3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[7]"  		LOC = "B6"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[7]"  		LOC = "B5"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[6]"  		LOC = "G4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[6]"  		LOC = "G3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[5]"  		LOC = "E4"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[5]"  		LOC = "E3"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_n[4]"  		LOC = "D6"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
+NET  "orx_p[4]"  		LOC = "D5"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE;	# ok #STAT0
 NET  "orx_en_sd"  		LOC = "D14"  	| IOSTANDARD = LVCMOS25;  # ok (out) #STAT0
 NET  "orx_rx_en"  		LOC = "C14"  	| IOSTANDARD = LVCMOS25;  # ok (out) #STAT0
 NET  "orx_sd"  			LOC = "C13"  	| IOSTANDARD = LVCMOS25;  # ok #STAT0

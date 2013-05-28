@@ -33,17 +33,17 @@ use STD.TEXTIO.all;
 --use STD.TEXTIO.ALL;
 
 
-entity ODMB_V6_V2_TB is
+entity ODMB_UCSB_V2_TB is
   generic (
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );  
   port
     (error : out std_logic);
 
-end ODMB_V6_V2_TB;
+end ODMB_UCSB_V2_TB;
 
 
-architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
+architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- Beginning of the Test Bench Section
 
@@ -185,7 +185,7 @@ architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
 
 -- End of the Test Bench Section
 
-  component odmb_v6_v2 is
+  component odmb_ucsb_v2 is
     generic (
       IS_SIMULATION : integer range 0 to 1 := 1;  -- Set to 1 by test bench in simulation 
       NFEB          : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
@@ -229,7 +229,7 @@ architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
         dcfeb_tdo       : in  std_logic_vector(NFEB downto 1);
         dcfeb_bco       : out std_logic;
         dcfeb_resync    : out std_logic;
-        dcfeb_reprog_b  : out std_logic;
+        odmb_hardrst_b  : out std_logic;  -- Generater REPROG_B
         dcfeb_reprgen_b : out std_logic;
         dcfeb_injpls    : out std_logic;
         dcfeb_extpls    : out std_logic;
@@ -237,7 +237,7 @@ architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
         dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
         dcfeb_done      : in  std_logic_vector(NFEB downto 1);
 
--- From/To ODMB_V6_V2 JTAG port (through IC34)
+-- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
         v6_tck : out std_logic;
         v6_tms : out std_logic;
@@ -265,8 +265,6 @@ architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
 
         ccb_hardrst : in std_logic;
         ccb_softrst : in std_logic;
-
-        odmb_hardrst_b : out std_logic;
 
 -- From J6/J7 (J3/J4) to FIFOs
 
@@ -758,7 +756,7 @@ architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
   signal dcfeb_tdo       : std_logic_vector(NFEB downto 1) := "0000000";  -- in
   signal dcfeb_bco       : std_logic;
   signal dcfeb_resync    : std_logic;
-  signal dcfeb_reprog_b  : std_logic;
+  signal odmb_hardrst_b  : std_logic;
   signal dcfeb_reprgen_b : std_logic;
   signal dcfeb_injpls    : std_logic;
   signal dcfeb_extpls    : std_logic;
@@ -766,7 +764,7 @@ architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
   signal dcfeb_l1a_match : std_logic_vector(NFEB downto 1);
   signal dcfeb_done      : std_logic_vector(NFEB downto 1) := "0000000";  -- in
 
--- From/To ODMB_V6_V2 JTAG port (through IC34)
+-- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
   signal v6_tck : std_logic;
   signal v6_tms : std_logic;
@@ -792,8 +790,6 @@ architecture ODMB_V6_V2_TB_arch of ODMB_V6_V2_TB is
   signal ccb_clken   : std_logic                    := '0';         -- in
   signal ccb_hardrst : std_logic                    := '0';         -- in
   signal ccb_softrst : std_logic                    := '0';         -- in
-
-  signal odmb_hardrst_b : std_logic;    -- out
 
 -- From J6/J7 (J3/J4) to FIFOs
 
@@ -1087,7 +1083,7 @@ begin
 
 -- End of the Test Bench Section
 
-  PMAP_odmb_v6_v2 : odmb_v6_v2
+  PMAP_odmb_ucsb_v2 : odmb_ucsb_v2
     generic map(
       IS_SIMULATION => 1,
       NFEB          => 7)
@@ -1129,7 +1125,7 @@ begin
       dcfeb_tdo       => dcfeb_tdo,
       dcfeb_bco       => dcfeb_bco,
       dcfeb_resync    => dcfeb_resync,
-      dcfeb_reprog_b  => dcfeb_reprog_b,
+      odmb_hardrst_b  => odmb_hardrst_b,  -- Generater REPROG_B
       dcfeb_reprgen_b => dcfeb_reprgen_b,
       dcfeb_injpls    => dcfeb_injpls,
       dcfeb_extpls    => dcfeb_extpls,
@@ -1137,7 +1133,7 @@ begin
       dcfeb_l1a_match => dcfeb_l1a_match,
       dcfeb_done      => dcfeb_done,
 
--- From/To ODMB_V6_V2 JTAG port (through IC34)
+-- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
       v6_tck => v6_tck,
       v6_tms => v6_tms,
@@ -1164,8 +1160,6 @@ begin
       ccb_clken   => ccb_clken,         -- in
       ccb_hardrst => ccb_hardrst,       -- in           
       ccb_softrst => ccb_softrst,       -- in
-
-      odmb_hardrst_b => odmb_hardrst_b,
 
 -- From J6/J7 (J3/J4) to FIFOs
 
@@ -1261,4 +1255,4 @@ begin
       ccb_evcntres => ccb_evcntres
       );
 
-end ODMB_V6_V2_TB_arch;
+end ODMB_UCSB_V2_TB_arch;

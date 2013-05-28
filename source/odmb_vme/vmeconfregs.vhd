@@ -91,6 +91,10 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal W_CRATEID, D_W_CRATEID, Q_W_CRATEID : std_logic                     := '0';
   signal R_CRATEID, D_R_CRATEID, Q_R_CRATEID : std_logic                     := '0';
 
+  signal OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
+  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0000";
+  signal R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
+
 begin  --Architecture
 
 -- Decode instruction
@@ -115,6 +119,7 @@ begin  --Architecture
   R_CALLCT_DLY <= '1' when (CMDDEV = x"1418") else '0';
   R_KILL       <= '1' when (CMDDEV = x"141C") else '0';
   R_CRATEID    <= '1' when (CMDDEV = x"1420") else '0';
+  R_FW_VERSION <= '1' when (CMDDEV = x"1424") else '0';
 
 -- Write LCT_L1A_DLY
   GEN_LCT_L1A_DLY : for I in 5 downto 0 generate
@@ -269,6 +274,13 @@ begin  --Architecture
   FD_R_CRATEID : FD port map(Q_R_CRATEID, SLOWCLK, D_R_CRATEID);
   DTACK_INNER <= '0' when (Q_R_CRATEID = '1')                else 'Z';
 
+-- Read FW_VERSION
+  OUT_FW_VERSION <= FW_VERSION when (STROBE = '1' and R_FW_VERSION = '1') else (others => 'Z');
+
+  D_R_FW_VERSION <= '1' when (STROBE = '1' and R_FW_VERSION = '1') else '0';
+  FD_R_FW_VERSION : FD port map(Q_R_FW_VERSION, SLOWCLK, D_R_FW_VERSION);
+  DTACK_INNER    <= '0' when (Q_R_FW_VERSION = '1')                else 'Z';
+
 -- General assignments
   OUTDATA <= OUT_LCT_L1A when R_LCT_L1A = '1' else
              OUT_TMB_PUSH   when R_TMB_PUSH = '1'   else
@@ -278,6 +290,7 @@ begin  --Architecture
              OUT_EXT_DLY    when R_EXT_DLY = '1'    else
              OUT_CALLCT_DLY when R_CALLCT_DLY = '1' else
              OUT_KILL       when R_KILL = '1'       else
+             OUT_FW_VERSION when R_FW_VERSION = '1' else
              OUT_CRATEID    when R_CRATEID = '1'    else
              (others => 'Z');
   DTACK <= DTACK_INNER;
