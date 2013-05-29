@@ -96,8 +96,8 @@ entity ODMB_CTRL is
     cafifo_wr_addr : out std_logic_vector(3 downto 0);
     cafifo_rd_addr : out std_logic_vector(3 downto 0);
 
-    ext_dcfeb_l1a_cnt1 : out std_logic_vector(23 downto 0);
-    dcfeb_l1a_dav1  : out std_logic;    
+    ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
+    dcfeb_l1a_dav7  : out std_logic;    
     
 
 -- To DDUFIFO
@@ -505,8 +505,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       cafifo_l1a_dav   : out std_logic_vector(NFEB+2 downto 1);
       cafifo_bx_cnt    : out std_logic_vector(11 downto 0);
 
-     ext_dcfeb_l1a_cnt1 : out std_logic_vector(23 downto 0);
-     dcfeb_l1a_dav1  : out std_logic;    
+     ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
+     dcfeb_l1a_dav7  : out std_logic;    
 
      cafifo_wr_addr : out std_logic_vector(3 downto 0);
       cafifo_rd_addr : out std_logic_vector(3 downto 0)
@@ -1005,7 +1005,7 @@ begin
       resync => resync,
 
       BC0   => bc0,
-      BXRST => reset,                   -- SHOULD BE bxrst,
+      BXRST => ccb_bxrst,     -- SHOULD BE bxrst,
 
 --       l1a => dcfeb_l1a,
       l1a          => cafifo_push,
@@ -1042,8 +1042,8 @@ begin
       cafifo_l1a_dav   => cafifo_l1a_dav_out,
       cafifo_bx_cnt    => cafifo_bx_cnt_out,
 
-    ext_dcfeb_l1a_cnt1 => ext_dcfeb_l1a_cnt1,
-    dcfeb_l1a_dav1  => dcfeb_l1a_dav1,    
+    ext_dcfeb_l1a_cnt7 => ext_dcfeb_l1a_cnt7,
+    dcfeb_l1a_dav7  => dcfeb_l1a_dav7,    
 
     cafifo_wr_addr => cafifo_wr_addr,
       cafifo_rd_addr => cafifo_rd_addr

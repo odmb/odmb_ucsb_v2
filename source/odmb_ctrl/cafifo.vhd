@@ -57,8 +57,8 @@ entity cafifo is
     cafifo_l1a_dav   : out std_logic_vector(NFEB+2 downto 1);
     cafifo_bx_cnt    : out std_logic_vector(11 downto 0);
 
-    ext_dcfeb_l1a_cnt1 : out std_logic_vector(23 downto 0);
-    dcfeb_l1a_dav1  : out std_logic;    
+    ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
+    dcfeb_l1a_dav7  : out std_logic;    
     
     cafifo_wr_addr : out std_logic_vector(3 downto 0);
     cafifo_rd_addr : out std_logic_vector(3 downto 0)
@@ -186,8 +186,8 @@ begin
   end process;
 
   
-  ext_dcfeb_l1a_cnt1 <= ext_dcfeb_l1a_cnt(1);
-  dcfeb_l1a_dav1 <= dcfeb_l1a_dav(1);
+  ext_dcfeb_l1a_cnt7 <= ext_dcfeb_l1a_cnt(7);
+  dcfeb_l1a_dav7 <= dcfeb_l1a_dav(7);
   
   wren <= l1a;
   rden <= pop;
@@ -376,7 +376,7 @@ begin
 
   end process;
 
-  cafifo_l1a_cnt <= l1a_cnt(rd_addr_out);
+  cafifo_l1a_cnt <= l1a_cnt_out-1;
 
   bx_cnt_fifo : process (l1a_cnt_wren, wr_addr_out, rst, clk, bx_cnt_out)
 

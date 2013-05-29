@@ -1,4 +1,5 @@
 == ================ Setting delays ================ ==
+W  3000  200	Set odmb_ctrl(9) high [testctrl selected]
 W  4000  C	Set LCT_L1A_DLY   
 W  4004  1	Set TMB_PUSH_DLY
 W  4008  0	Set PUSH_DLY   
@@ -98,101 +99,101 @@ W  8   	0	Write FIFO
 W  20	18	Select FIFO 4 *DDU data&quot; and start run
 
 == =============== Status after run =============== ==
-W  3000 29	Set flf_ctrl *Time stamp MSB*
+W  3000 229	Set odmb_ctrl *Time stamp MSB*
 R  3008 0	Read flf_data
-W  3000 28	Set flf_ctrl *Time stamp LSB*
+W  3000 228	Set odmb_ctrl *Time stamp LSB*
 R  3008 0	Read flf_data
 R  1C   0       Read state of FIFOs
 W  20	14	Select FIFO 3 *Time stamp&quot; and keep runnting
 R  2C   0       Read current write address
 R  3C   0       Read current read address
 W  20	18	Select FIFO 4 *DDU data&quot; and start run
-W  3000 21	Set flf_ctrl *L1A_MATCH_CNT(1)*
+W  3000 221	Set odmb_ctrl *L1A_MATCH_CNT(1)*
 R  3008 0	Read flf_data
-W  3000 22	Set flf_ctrl *L1A_MATCH_CNT(2)*
+W  3000 222	Set odmb_ctrl *L1A_MATCH_CNT(2)*
 R  3008 0	Read flf_data
-W  3000 23	Set flf_ctrl *L1A_MATCH_CNT(3)*
+W  3000 223	Set odmb_ctrl *L1A_MATCH_CNT(3)*
 R  3008 0	Read flf_data
-W  3000 24	Set flf_ctrl *L1A_MATCH_CNT(4)*
+W  3000 224	Set odmb_ctrl *L1A_MATCH_CNT(4)*
 R  3008 0	Read flf_data
-W  3000 25	Set flf_ctrl *L1A_MATCH_CNT(5)*
+W  3000 225	Set odmb_ctrl *L1A_MATCH_CNT(5)*
 R  3008 0	Read flf_data
-W  3000 26	Set flf_ctrl *L1A_MATCH_CNT(6)*
+W  3000 226	Set odmb_ctrl *L1A_MATCH_CNT(6)*
 R  3008 0	Read flf_data
-W  3000 27	Set flf_ctrl *L1A_MATCH_CNT(7)*
+W  3000 227	Set odmb_ctrl *L1A_MATCH_CNT(7)*
 R  3008 0	Read flf_data
-W  3000 31	Set flf_ctrl *LCT_L1A_GAP(1)*
+W  3000 231	Set odmb_ctrl *LCT_L1A_GAP(1)*
 R  3008 0	Read flf_data
-W  3000 32	Set flf_ctrl *LCT_L1A_GAP(2)*
+W  3000 232	Set odmb_ctrl *LCT_L1A_GAP(2)*
 R  3008 0	Read flf_data
-W  3000 33	Set flf_ctrl *LCT_L1A_GAP(3)*
+W  3000 233	Set odmb_ctrl *LCT_L1A_GAP(3)*
 R  3008 0	Read flf_data
-W  3000 34	Set flf_ctrl *LCT_L1A_GAP(4)*
+W  3000 234	Set odmb_ctrl *LCT_L1A_GAP(4)*
 R  3008 0	Read flf_data
-W  3000 35	Set flf_ctrl *LCT_L1A_GAP(5)*
+W  3000 235	Set odmb_ctrl *LCT_L1A_GAP(5)*
 R  3008 0	Read flf_data
-W  3000 36	Set flf_ctrl *LCT_L1A_GAP(6)*
+W  3000 236	Set odmb_ctrl *LCT_L1A_GAP(6)*
 R  3008 0	Read flf_data
-W  3000 37	Set flf_ctrl *LCT_L1A_GAP(7)*
+W  3000 237	Set odmb_ctrl *LCT_L1A_GAP(7)*
 R  3008 0	Read flf_data
-W  3000 41	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(1)*
+W  3000 241	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(1)*
 R  3008 0	Read flf_data
-W  3000 42	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(2)*
+W  3000 242	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(2)*
 R  3008 0	Read flf_data
-W  3000 43	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(3)*
+W  3000 243	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(3)*
 R  3008 0	Read flf_data
-W  3000 44	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(4)*
+W  3000 244	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(4)*
 R  3008 0	Read flf_data
-W  3000 45	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(5)*
+W  3000 245	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(5)*
 R  3008 0	Read flf_data
-W  3000 46	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(6)*
+W  3000 246	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(6)*
 R  3008 0	Read flf_data
-W  3000 47	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(7)*
+W  3000 247	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(7)*
 R  3008 0	Read flf_data
-W  3000 48	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(8)*
+W  3000 248	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(8)*
 R  3008 0	Read flf_data
-W  3000 49	Set flf_ctrl *INTO_CAFIFO_DAV_CNT(9)*
+W  3000 249	Set odmb_ctrl *INTO_CAFIFO_DAV_CNT(9)*
 R  3008 0	Read flf_data
 R  28   0	Read LCT_CNT_OUT(0)
-W  3000 38	Set flf_ctrl *CAFIFO_L1A_MATCH_OUT*
+W  3000 238	Set odmb_ctrl *CAFIFO_L1A_MATCH_OUT*
 R  3008 0	Read flf_data
-W  3000 39	Set flf_ctrl *CAFIFO_L1A_DAV*
+W  3000 239	Set odmb_ctrl *CAFIFO_L1A_DAV*
 R  3008 0	Read flf_data
-W  3000 3A	Set flf_ctrl *CAFIFO_L1A_CNT MSB*
+W  3000 23A	Set odmb_ctrl *CAFIFO_L1A_CNT MSB*
 R  3008 0	Read flf_data
-W  3000 3B	Set flf_ctrl *CAFIFO_L1A_CNT LSB*
+W  3000 23B	Set odmb_ctrl *CAFIFO_L1A_CNT LSB*
 R  3008 0	Read flf_data
-W  3000 3C	Set flf_ctrl *CAFIFO_BX_CNT*
+W  3000 23C	Set odmb_ctrl *CAFIFO_BX_CNT*
 R  3008 0	Read flf_data
-W  3000 3D	Set flf_ctrl *CAFIFO_RD_ADDR &amp; CAFIFO_WR_ADDR*
+W  3000 23D	Set odmb_ctrl *CAFIFO_RD_ADDR &amp; CAFIFO_WR_ADDR*
 R  3008 0	Read flf_data
-W  3000 3E	Set flf_ctrl *CAFIFO_L1A_MATCH_IN*
+W  3000 23E	Set odmb_ctrl *CAFIFO_L1A_MATCH_IN*
 R  3008 0	Read flf_data
-W  3000 3F	Set flf_ctrl *RAW_L1A_CNT*
+W  3000 23F	Set odmb_ctrl *RAW_L1A_CNT*
 R  3008 0	Read flf_data
-W  3000 4A	Set flf_ctrl *OE_CNT(1) from CONTROL*
+W  3000 24A	Set odmb_ctrl *OE_CNT(1) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 4B	Set flf_ctrl *CONTROL_DAV_CNT*
+W  3000 24B	Set odmb_ctrl *CONTROL_DAV_CNT*
 R  3008 0	Read flf_data
-W  3000 4C	Set flf_ctrl *DDUFIFO_DAV_CNT*
+W  3000 24C	Set odmb_ctrl *DDUFIFO_DAV_CNT*
 R  3008 0	Read flf_data
-W  3000 51	Set flf_ctrl *RE_CNT(1) from CONTROL*
+W  3000 251	Set odmb_ctrl *RE_CNT(1) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 52	Set flf_ctrl *RE_CNT(2) from CONTROL*
+W  3000 252	Set odmb_ctrl *RE_CNT(2) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 53	Set flf_ctrl *RE_CNT(3) from CONTROL*
+W  3000 253	Set odmb_ctrl *RE_CNT(3) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 54	Set flf_ctrl *RE_CNT(4) from CONTROL*
+W  3000 254	Set odmb_ctrl *RE_CNT(4) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 55	Set flf_ctrl *RE_CNT(5) from CONTROL*
+W  3000 255	Set odmb_ctrl *RE_CNT(5) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 56	Set flf_ctrl *RE_CNT(6) from CONTROL*
+W  3000 256	Set odmb_ctrl *RE_CNT(6) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 57	Set flf_ctrl *RE_CNT(7) from CONTROL*
+W  3000 257	Set odmb_ctrl *RE_CNT(7) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 58	Set flf_ctrl *RE_CNT(8) from CONTROL*
+W  3000 258	Set odmb_ctrl *RE_CNT(8) from CONTROL*
 R  3008 0	Read flf_data
-W  3000 59	Set flf_ctrl *RE_CNT(9) from CONTROL*
+W  3000 259	Set odmb_ctrl *RE_CNT(9) from CONTROL*
 R  3008 0	Read flf_data
 
 == ================ Reading FIFOs ================ ==

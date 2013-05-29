@@ -513,7 +513,7 @@ begin
   vme_sysfail_out <= '0';
   ext_vme_ga      <= vme_gap & vme_ga;
 
-  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 500000, strobe);
+  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
 
 
   COMMAND_PM : COMMAND_MODULE

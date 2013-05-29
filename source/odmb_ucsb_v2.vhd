@@ -519,8 +519,8 @@ architecture bdf_type of odmb_ucsb_v2 is
       cafifo_l1a_dav       : out std_logic_vector(NFEB+2 downto 1);
       cafifo_bx_cnt        : out std_logic_vector(11 downto 0);
 
-      ext_dcfeb_l1a_cnt1 : out std_logic_vector(23 downto 0);
-      dcfeb_l1a_dav1     : out std_logic;
+      ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
+      dcfeb_l1a_dav7     : out std_logic;
 
       cafifo_wr_addr : out std_logic_vector(3 downto 0);
       cafifo_rd_addr : out std_logic_vector(3 downto 0);
@@ -754,21 +754,6 @@ architecture bdf_type of odmb_ucsb_v2 is
 
   end component;
 
-  component DMB_fifo is
-    port (
-      rst        : in  std_logic;
-      wr_clk     : in  std_logic;
-      rd_clk     : in  std_logic;
-      din        : in  std_logic_vector(17 downto 0);
-      wr_en      : in  std_logic;
-      rd_en      : in  std_logic;
-      dout       : out std_logic_vector(17 downto 0);
-      full       : out std_logic;
-      empty      : out std_logic;
-      prog_full  : out std_logic;
-      prog_empty : out std_logic);
-  end component;
-
 -- Global signals
   signal LOGICL   : std_logic                     := '0';
   signal LOGICH   : std_logic                     := '1';
@@ -917,8 +902,8 @@ architecture bdf_type of odmb_ucsb_v2 is
   type   dav_state_array_type is array (NFEB+2 downto 1) of dav_state_type;
   signal dav_next_state, dav_current_state  : dav_state_array_type;
 
-  signal ext_dcfeb_l1a_cnt1 : std_logic_vector(23 downto 0);
-  signal dcfeb_l1a_dav1     : std_logic;
+  signal ext_dcfeb_l1a_cnt7 : std_logic_vector(23 downto 0);
+  signal dcfeb_l1a_dav7     : std_logic;
 
   type   gap_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
   signal lct_l1a_gap                       : gap_cnt_type;
@@ -987,7 +972,7 @@ architecture bdf_type of odmb_ucsb_v2 is
 
   signal   rx_dcfeb_sel, opt_dcfeb_sel : std_logic;
   type     dcfeb_addr_type is array (1 to NFEB) of std_logic_vector(3 downto 0);
-  constant dcfeb_addr                  : dcfeb_addr_type := ("1000", "1001", "1010", "1011", "1100", "1101", "1110");
+  constant dcfeb_addr                  : dcfeb_addr_type := ("0001", "0010", "0011", "0100", "0101", "0110", "0111");
 
   signal rx_alct_sel, rx_tmb_sel : std_logic;
 
@@ -1257,7 +1242,7 @@ architecture bdf_type of odmb_ucsb_v2 is
 
   signal gtx_data_valid : std_logic;
 
-  signal tc_run_hardcode : std_logic := '1';
+  signal testctrl_sel : std_logic := '0';
 
   signal eof : std_logic;
 --  signal v6_tck : std_logic := '0';
@@ -1291,9 +1276,9 @@ begin
     case tp_sel_reg is
       when x"0000" =>
         tph(27) <= gtx0_data_valid;
-        tph(28) <= cafifo_l1a_dav(1);
-        tph(41) <= int_l1a_match(1);
-        tph(42) <= dcfeb_data_valid(1);
+        tph(28) <= cafifo_l1a_dav(7);
+        tph(41) <= int_l1a_match(7);
+        tph(42) <= dcfeb_data_valid(7);
 
       when x"0001" =>
         tph(27) <= int_l1a_match(1);
@@ -1338,10 +1323,22 @@ begin
         tph(42) <= dcfeb_data_valid(7);
 
       when x"0008" =>
-        tph(27) <= ext_dcfeb_l1a_cnt1(0);
-        tph(28) <= dcfeb_l1a_dav1;
-        tph(41) <= dcfeb_data(1)(0);
-        tph(42) <= dcfeb_data_valid(1);
+        tph(27) <= int_tmb_dav;
+        tph(28) <= cafifo_l1a_dav(8);
+        tph(41) <= tmb_data(0);
+        tph(42) <= tmb_data_valid;
+
+      when x"0009" =>
+        tph(27) <= int_alct_dav;
+        tph(28) <= cafifo_l1a_dav(9);
+        tph(41) <= alct_data(0);
+        tph(42) <= alct_data_valid;
+
+      when x"000A" =>
+        tph(27) <= ext_dcfeb_l1a_cnt7(0);
+        tph(28) <= dcfeb_l1a_dav7;
+        tph(41) <= dcfeb_data(7)(0);
+        tph(42) <= dcfeb_data_valid(7);
 
       when others =>
         tph(27) <= gtx0_data_valid;
@@ -1897,18 +1894,17 @@ begin
       RD_EN_TFF    => RD_EN_TFF
       );
 
-  -- raw signals are come unsynced from outside
-  -- temporarily replacing tc_run with tc_run_hardcode
-  raw_l1a                <= tc_l1a                when (tc_run_hardcode = '1') else ccb_l1acc;
-  raw_lct(NFEB downto 1) <= tc_lct(NFEB downto 1) when (tc_run_hardcode = '1') else rawlct(NFEB-1 downto 0);
-  raw_lct(0)             <= tc_lct(0)             when (tc_run_hardcode = '1') else or_reduce(rawlct(NFEB-1 downto 0));
-  int_alct_dav           <= tc_alct_dav           when (tc_run_hardcode = '1') else alctdav;  -- lctdav2
-  int_tmb_dav            <= tc_tmb_dav            when (tc_run_hardcode = '1') else tmbdav;  -- lctdav1
-  --int_lct(NFEB downto 1) <= tc_lct(NFEB downto 1) when (tc_run = '1') else raw_lct(NFEB downto 1);
-  --int_lct(0)             <= tc_lct(0)             when (tc_run = '1') else or_reduce(raw_lct(NFEB downto 1));
+  -- Raw signals come unsynced from outside
+  testctrl_sel <= odmb_ctrl_reg(9);
+  raw_l1a                <= tc_l1a                when (testctrl_sel = '1') else not ccb_l1acc;
+  raw_lct(NFEB downto 1) <= tc_lct(NFEB downto 1) when (testctrl_sel = '1') else rawlct(NFEB-1 downto 0);
+  raw_lct(0)             <= tc_lct(0)             when (testctrl_sel = '1') else or_reduce(rawlct(NFEB-1 downto 0));
+  --int_alct_dav           <= tc_alct_dav           when (testctrl_sel = '1') else alctdav;  -- lctdav2
+  --int_tmb_dav            <= tc_tmb_dav            when (testctrl_sel = '1') else tmbdav;  -- lctdav1
+  int_alct_dav           <= tc_alct_dav;  -- lctdav2
+  int_tmb_dav            <= tc_tmb_dav;  -- lctdav1
   tc_run_out             <= tc_run;
 
--- ODMB_CTRL FPGA
   --dcfeb_injpls <= not dcfeb_injpls_b; -- Needed while p and n on the PPIB are reversed
   dcfeb_injpls <= dcfeb_injpls_b when IS_SIMULATION = 1 else not dcfeb_injpls_b;
 
@@ -2001,8 +1997,8 @@ begin
       cafifo_bx_cnt        => cafifo_bx_cnt,
       cafifo_wr_addr       => cafifo_wr_addr,
       cafifo_rd_addr       => cafifo_rd_addr,
-      ext_dcfeb_l1a_cnt1   => ext_dcfeb_l1a_cnt1,
-      dcfeb_l1a_dav1       => dcfeb_l1a_dav1,
+      ext_dcfeb_l1a_cnt7   => ext_dcfeb_l1a_cnt7,
+      dcfeb_l1a_dav7       => dcfeb_l1a_dav7,
 
 -- To DDUFIFO
       gl_pc_tx_ack => gl_pc_tx_ack,
@@ -2258,18 +2254,24 @@ begin
   rx_alct_data_valid <= alct(17);
   rx_alct_data       <= alct(15 downto 0);
 
+  --alct_data_valid <= '0' when kill(9) = '1' else
+  --                   rx_alct_data_valid when (rx_alct_sel = '1') else
+  --                   gen_alct_data_valid;
+  --alct_fifo_in <= rx_alct_data when (rx_alct_sel = '1') else gen_alct_data;
   alct_data_valid <= '0' when kill(9) = '1' else
-                     rx_alct_data_valid when (rx_alct_sel = '1') else
                      gen_alct_data_valid;
-  alct_fifo_in <= rx_alct_data when (rx_alct_sel = '1') else gen_alct_data;
+  alct_fifo_in <= gen_alct_data;
 
   rx_tmb_data_valid <= tmb(17);
   rx_tmb_data       <= tmb(15 downto 0);
 
+  --tmb_data_valid <= '0' when kill(8) = '1' else
+  --                  rx_tmb_data_valid when (rx_tmb_sel = '1') else
+  --                  gen_tmb_data_valid;
+  --tmb_fifo_in <= rx_tmb_data when (rx_tmb_sel = '1') else gen_tmb_data;  
   tmb_data_valid <= '0' when kill(8) = '1' else
-                    rx_tmb_data_valid when (rx_tmb_sel = '1') else
                     gen_tmb_data_valid;
-  tmb_fifo_in <= rx_tmb_data when (rx_tmb_sel = '1') else gen_tmb_data;
+  tmb_fifo_in <= gen_tmb_data;
 
   ALCT_EOFGEN_PM : EOFGEN
     port map (
@@ -2783,7 +2785,7 @@ begin
       DMBVME_CLK_S2          => clk2p5,
       DAQ_RX_125REFCLK       => clk40,
       DAQ_RX_160REFCLK_115_0 => clk160,
-      --DAQ_RX_160REFCLK_115_0 => gl0_clk,
+      --DAQ_RX_160REFCLK_115_0 => gl0_clk,  -- For the DDU TX simulation
 
       --ORX_01_N => rx_dcfeb_data_n(1),  -- Only for simulation
       --ORX_01_P => rx_dcfeb_data_p(1),  -- Only for simulation
@@ -2845,8 +2847,8 @@ begin
       FF_STATUS        => ff_status
       );
 
-  rx_alct_sel   <= '0';
-  rx_tmb_sel    <= '0';
+  rx_alct_sel   <= odmb_ctrl_reg(7);
+  rx_tmb_sel    <= odmb_ctrl_reg(7);
   rx_dcfeb_sel  <= odmb_ctrl_reg(7);
   opt_dcfeb_sel <= '0';
 
@@ -3050,18 +3052,18 @@ begin
   end process;
 
   led_fsm_logic : process (led_current_state, reset, led_cnt, clk1, gl0_clk_slow,
-                           clk160_slow, pb, int_l1a_cnt)
+                           clk160_slow, pb, cafifo_l1a_cnt)
   begin
     case led_current_state is
       when LED_IDLE =>
         ledg(1) <= clk160_slow;
         ledg(2) <= gl0_clk_slow;
         ledg(3) <= clk1;
-        ledg(4) <= not qpll_locked;
-        ledg(5) <= not pll1_locked;
+        ledg(4) <= not pll1_locked;
+        ledg(5) <= testctrl_sel;
         ledg(6) <= not rx_dcfeb_sel;
 
-        ledr(5 downto 1) <= not int_l1a_cnt(4 downto 0);
+        ledr(5 downto 1) <= not cafifo_l1a_cnt(4 downto 0);
         ledr(6)          <= pb(1) and not led_pulse;
 
         if (reset = '0' and reset_q = '1') then

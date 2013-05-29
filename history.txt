@@ -8,3 +8,7 @@
 
 V00-00: 28 May 2013, Manuel
 --------------------------------
+Functionalities implemented and tested:
+- Real DCFEB data sent to PC (tested) and DDU (being tested).
+- Control of DCFEBs via JTAG.
+- Control of the LVMB.
