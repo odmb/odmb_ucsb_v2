@@ -6,6 +6,10 @@
 =                                                                    =
 ======================================================================
 
+V00-01: 30 May 2013, Manuel
+--------------------------------
+Made the multiplexers to be defaulted to real data, DCFEBs, and LVMB.
+
 V00-00: 28 May 2013, Manuel
 --------------------------------
 Functionalities implemented and tested:
