@@ -373,12 +373,10 @@ NET: "gl1_tx_p" LOC = "AP1" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT1
 #NET: "sm_agnd" LOC = "U17" | IOSTANDARD = LVCMOS25; #STAT1
 #NET: "sm_avdd" LOC = "T18" | IOSTANDARD = LVCMOS25; #STAT1
 #NET: "tck" LOC = "AE8" | IOSTANDARD = LVCMOS25; #STAT1
-#NET: "tdi" LOC = "M15" | IOSTANDARD = LVCMOS25; #STAT1 dcfeb_tdi to be connected to a test point
 #NET: "tdi" LOC = "AD8" | IOSTANDARD = LVCMOS25; #STAT1 
 #NET: "tdo" LOC = "AC8" | IOSTANDARD = LVCMOS25; #STAT1 
 NET: "v6_tdo" LOC = "P34" | IOSTANDARD = LVCMOS25; #STAT1 
-#NET: "tms" LOC = "M13" | IOSTANDARD = LVCMOS25; #STAT1
-#NET: "tms" LOC = "AF8" | IOSTANDARD = LVCMOS25; #STAT1 dcfeb_tms to be connected to a test point
+#NET: "tms" LOC = "AF8" | IOSTANDARD = LVCMOS25; #STAT1
 #NET: "vfs" LOC = "Y8" | IOSTANDARD = LVCMOS25; #STAT1
 NET: "qpll_clk160mhz_n" LOC = "P5" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
 NET: "qpll_clk160mhz_p" LOC = "P6" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
@@ -414,8 +412,12 @@ NET: "odmb_hardrst_b" LOC = "AE17" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "p5v_sm_p" LOC = "A13" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
 #NET: "reprgen_b" LOC = "AJ19" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "dcfeb_resync" LOC = "AJ17" | IOSTANDARD = LVCMOS25; #STAT2
+
+#NET: "dcfeb_tdi" LOC = "M15" | IOSTANDARD = LVCMOS25; #STAT1 dcfeb_tdi to be connected to a test point
+#NET: "dcfeb_tms" LOC = "M13" | IOSTANDARD = LVCMOS25; #STAT1 dcfeb_tms to be connected to a test point
 NET: "dcfeb_tdi" LOC = "AK11" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "dcfeb_tms" LOC = "AJ10" | IOSTANDARD = LVCMOS25; #STAT2
+
 NET: "dcfeb_tck[1]" LOC = "AL15" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "dcfeb_tck[2]" LOC = "AK17" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "dcfeb_tck[3]" LOC = "AJ15" | IOSTANDARD = LVCMOS25; #STAT2
