@@ -92,7 +92,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal R_CRATEID, D_R_CRATEID, Q_R_CRATEID : std_logic                     := '0';
 
   signal OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
-  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0000";
+  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0001";
   signal R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
 
 begin  --Architecture
