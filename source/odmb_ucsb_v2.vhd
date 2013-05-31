@@ -962,19 +962,17 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal gen_dcfeb_data                     : dcfeb_data_type;
   signal rx_dcfeb_data                      : dcfeb_data_type;
   signal dcfeb_data                         : dcfeb_data_type;
-  signal orx_dcfeb_data_n, orx_dcfeb_data_p : std_logic_vector(12 downto 1);
   signal orx_buf_n, orx_buf_p               : std_logic_vector(12 downto 1);
-  signal gen_dcfeb_data_p, rx_dcfeb_data_p  : std_logic_vector(NFEB downto 1);
-  signal gen_dcfeb_data_n, rx_dcfeb_data_n  : std_logic_vector(NFEB downto 1);
+  signal gen_dcfeb_data_p, gen_dcfeb_data_n : std_logic_vector(NFEB downto 1);
   signal gen_dcfeb_data_valid               : std_logic_vector(NFEB downto 1);
   signal rx_dcfeb_data_valid                : std_logic_vector(NFEB downto 1);
   signal dcfeb_data_valid                   : std_logic_vector(NFEB downto 1);
 
-  signal   rx_dcfeb_sel, opt_dcfeb_sel : std_logic;
+  signal   gen_dcfeb_sel : std_logic := '0';
   type     dcfeb_addr_type is array (1 to NFEB) of std_logic_vector(3 downto 0);
   constant dcfeb_addr                  : dcfeb_addr_type := ("0001", "0010", "0011", "0100", "0101", "0110", "0111");
 
-  signal rx_alct_sel, rx_tmb_sel : std_logic;
+  signal gen_alct_sel, gen_tmb_sel : std_logic;
 
   signal dcfeb0_data_p, dcfeb0_data_n                                                           : std_logic;
   signal dcfeb0_daq_tdis, dcfeb0_rate_1_25, dcfeb0_rate_3_2, dcfeb0_tx_ack, dcfeb0_daq_data_clk : std_logic;
@@ -1197,7 +1195,7 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal alct_fifo_full, tmb_fifo_full     : std_logic;
 
   signal dcfeb_daq_tdis                 : std_logic_vector(NFEB downto 1);
-  signal dcfeb_tx_ack, daq_dcfeb_tx_ack : std_logic_vector(NFEB downto 1);
+  signal dcfeb_tx_ack, daq_dcfeb_tx_ack : std_logic_vector(NFEB downto 1) := (others => '1');
   signal dcfeb_daq_data_clk             : std_logic_vector(NFEB downto 1);
 
   signal raw_l1a, tc_l1a           : std_logic;
@@ -1906,7 +1904,8 @@ begin
   tc_run_out             <= tc_run;
 
   --dcfeb_injpls <= not dcfeb_injpls_b; -- Needed while p and n on the PPIB are reversed
-  dcfeb_injpls <= dcfeb_injpls_b when IS_SIMULATION = 1 else not dcfeb_injpls_b;
+  --dcfeb_injpls <= dcfeb_injpls_b when IS_SIMULATION = 1 else not dcfeb_injpls_b;
+  dcfeb_injpls <= dcfeb_injpls_b; -- For B904, where INJPLS_N/_P were fixed
 
   MBC : ODMB_CTRL
     port map (
@@ -2255,9 +2254,9 @@ begin
   rx_alct_data       <= alct(15 downto 0);
 
   --alct_data_valid <= '0' when kill(9) = '1' else
-  --                   rx_alct_data_valid when (rx_alct_sel = '1') else
+  --                   rx_alct_data_valid when (gen_alct_sel = '0') else
   --                   gen_alct_data_valid;
-  --alct_fifo_in <= rx_alct_data when (rx_alct_sel = '1') else gen_alct_data;
+  --alct_fifo_in <= rx_alct_data when (gen_alct_sel = '0') else gen_alct_data;
   alct_data_valid <= '0' when kill(9) = '1' else
                      gen_alct_data_valid;
   alct_fifo_in <= gen_alct_data;
@@ -2266,9 +2265,9 @@ begin
   rx_tmb_data       <= tmb(15 downto 0);
 
   --tmb_data_valid <= '0' when kill(8) = '1' else
-  --                  rx_tmb_data_valid when (rx_tmb_sel = '1') else
+  --                  rx_tmb_data_valid when (gen_tmb_sel = '0') else
   --                  gen_tmb_data_valid;
-  --tmb_fifo_in <= rx_tmb_data when (rx_tmb_sel = '1') else gen_tmb_data;  
+  --tmb_fifo_in <= rx_tmb_data when (gen_tmb_sel = '0') else gen_tmb_data;  
   tmb_data_valid <= '0' when kill(8) = '1' else
                     gen_tmb_data_valid;
   tmb_fifo_in <= gen_tmb_data;
@@ -2525,7 +2524,7 @@ begin
 
   LVMB_ADC_SDO_MUX_PM : LVMB_ADC_SDO_MUX
     port map (
-      int_lvmb_adc_en  => odmb_ctrl_reg(7),
+      int_lvmb_adc_en  => odmb_ctrl_reg(10),
       int_lvmb_adc_sdo => int_lvmb_adc_sdout,
       lvmb_adc_sdo     => lvmb_sdout,
       adc_ce           => int_lvmb_csb,
@@ -2730,36 +2729,6 @@ begin
       TX_ACK               => gl_pc_tx_ack,
       DAQ_DATA_CLK         => gl_pc_daq_data_clk);
 
-  -- TX to test DCFEB receivers in simulation. *IT DOES NOT ROUTE*
-  --DCFEB_TEST_TX_PM : daq_optical_out
-  --    generic map(
-  --      USE_CHIPSCOPE => 0,
-  --      SIM_SPEEDUP   => IS_SIMULATION
-  --      )
-  --    port map(
-  --      DAQ_TX_VIO_CNTRL     => LOGIC36L,
-  --      DAQ_TX_LA_CNTRL      => LOGIC36L,
-  --      RST                  => reset,
-  --      DAQ_RX_N             => LOGICL,
-  --      DAQ_RX_P             => LOGICH,
-  --      DAQ_TDIS             => gl_pc_daq_tdis,
-  --      DAQ_TX_N             => gl1_tx_n,
-  --      DAQ_TX_P             => gl1_tx_p,
-  --      DAQ_TX_125REFCLK     => gl1_clk,  -- daq_tx_125refclk,
-  --      DAQ_TX_125REFCLK_DV2 => gl1_clk_2_buf,  -- daq_tx_125refclk_dv2,
-  --      DAQ_TX_160REFCLK     => clk160,
-  --      L1A_MATCH            => LOGICL,
-  --      TXD                  => gtx0_data,
-  --      TXD_VLD              => gtx0_data_valid,
-  --      JDAQ_RATE            => LOGICH,  -- '0' selects clock: 125 MHz (1.25 Gb), '1' selects 160 MHz (3.2 Gb)
-  --      RATE_1_25            => open,
-  --      RATE_3_2             => open,
-  --      TX_ACK               => gl_pc_tx_ack,
-  --      DAQ_DATA_CLK         => gl_pc_daq_data_clk);
-
-  orx_dcfeb_data_n <= orx_buf_n;
-  orx_dcfeb_data_p <= orx_buf_p;
-
   DMB_RX_PM : dmb_receiver
     generic map (
       USE_2p56GbE => 1,
@@ -2786,21 +2755,6 @@ begin
       DAQ_RX_125REFCLK       => clk40,
       DAQ_RX_160REFCLK_115_0 => clk160,
       --DAQ_RX_160REFCLK_115_0 => gl0_clk,  -- For the DDU TX simulation
-
-      --ORX_01_N => rx_dcfeb_data_n(1),  -- Only for simulation
-      --ORX_01_P => rx_dcfeb_data_p(1),  -- Only for simulation
-      --ORX_02_N => rx_dcfeb_data_n(2),  -- Only for simulation
-      --ORX_02_P => rx_dcfeb_data_p(2),  -- Only for simulation
-      --ORX_03_N => rx_dcfeb_data_n(3),  -- Only for simulation
-      --ORX_03_P => rx_dcfeb_data_p(3),  -- Only for simulation
-      --ORX_04_N => rx_dcfeb_data_n(4),  -- Only for simulation
-      --ORX_04_P => rx_dcfeb_data_p(4),  -- Only for simulation
-      --ORX_05_N => rx_dcfeb_data_n(5),  -- Only for simulation
-      --ORX_05_P => rx_dcfeb_data_p(5),  -- Only for simulation
-      --ORX_06_N => rx_dcfeb_data_n(6),  -- Only for simulation
-      --ORX_06_P => rx_dcfeb_data_p(6),  -- Only for simulation
-      --ORX_07_N => rx_dcfeb_data_n(7),  -- Only for simulation
-      --ORX_07_P => rx_dcfeb_data_p(7),  -- Only for simulation
 
       ORX_01_N => orx_buf_n(1),
       ORX_01_P => orx_buf_p(1),
@@ -2847,10 +2801,9 @@ begin
       FF_STATUS        => ff_status
       );
 
-  rx_alct_sel   <= odmb_ctrl_reg(7);
-  rx_tmb_sel    <= odmb_ctrl_reg(7);
-  rx_dcfeb_sel  <= odmb_ctrl_reg(7);
-  opt_dcfeb_sel <= '0';
+  gen_alct_sel   <= odmb_ctrl_reg(7);
+  gen_tmb_sel    <= odmb_ctrl_reg(7);
+  gen_dcfeb_sel  <= odmb_ctrl_reg(7);
 
   dcfeb_tms       <= int_tms;
   dcfeb_tdi       <= int_tdi;
@@ -2862,12 +2815,9 @@ begin
   begin
 
     dcfeb_data_valid(I) <= '0' when kill(I) = '1' else
-                           rx_dcfeb_data_valid(I) when (rx_dcfeb_sel = '1') else
+                           rx_dcfeb_data_valid(I) when (gen_dcfeb_sel = '0') else
                            gen_dcfeb_data_valid(I);
-    dcfeb_data(I) <= rx_dcfeb_data(I) when (rx_dcfeb_sel = '1') else gen_dcfeb_data(I);
-
-    rx_dcfeb_data_p(I) <= orx_dcfeb_data_p(I) when (opt_dcfeb_sel = '1') else gen_dcfeb_data_p(I);
-    rx_dcfeb_data_n(I) <= orx_dcfeb_data_n(I) when (opt_dcfeb_sel = '1') else gen_dcfeb_data_n(I);
+    dcfeb_data(I) <= rx_dcfeb_data(I) when (gen_dcfeb_sel = '0') else gen_dcfeb_data(I);
 
     dcfeb_fifo_in(I) <= fifo_in when ((fifo_rm_en(I) = '0') and (fifo_rw_en(I) = '0')) else
                         fifo_out when ((fifo_rm_en(I) = '0') and (fifo_rw_en(I) = '1')) else
@@ -2882,7 +2832,7 @@ begin
         rst           => reset,
         l1a           => int_l1a,
         l1a_match     => int_l1a_match(I),
-        tx_ack        => dcfeb_tx_ack(I),  -- 1 if rx_dcfeb_sel = 0!!!
+        tx_ack        => dcfeb_tx_ack(I),  -- 1 if gen_dcfeb_sel = 1!!!
         dcfeb_dv      => gen_dcfeb_data_valid(I),
         dcfeb_data    => gen_dcfeb_data(I),
         adc_mask      => dcfeb_adc_mask(I),
@@ -2898,10 +2848,10 @@ begin
     dcfeb_tck(I) <= int_tck(I);
 
     dcfeb_l1a_match(I) <= int_l1a_match(I);
-    dcfeb_tx_ack(I)    <= '1' when rx_dcfeb_sel = '0' else daq_dcfeb_tx_ack(I);
+    dcfeb_tx_ack(I)    <= '1' when gen_dcfeb_sel = '1' else daq_dcfeb_tx_ack(I);
 
-    int_tdo(I)         <= dcfeb_tdo(I) when (rx_dcfeb_sel = '1') else gen_tdo(I);
-    int_rtn_shft_en(I) <= '1'          when (rx_dcfeb_sel = '1') else gen_rtn_shft_en(I);
+    int_tdo(I)         <= dcfeb_tdo(I) when (gen_dcfeb_sel = '0') else gen_tdo(I);
+    int_rtn_shft_en(I) <= '1'          when (gen_dcfeb_sel = '0') else gen_rtn_shft_en(I);
 
     --DCFEB_TX_PM : daq_optical_out
     --  generic map(
@@ -3061,7 +3011,7 @@ begin
         ledg(3) <= clk1;
         ledg(4) <= not pll1_locked;
         ledg(5) <= testctrl_sel;
-        ledg(6) <= not rx_dcfeb_sel;
+        ledg(6) <= gen_dcfeb_sel;
 
         ledr(5 downto 1) <= not cafifo_l1a_cnt(4 downto 0);
         ledr(6)          <= pb(1) and not led_pulse;
