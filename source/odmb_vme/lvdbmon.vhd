@@ -79,7 +79,7 @@ begin  --Architecture
   FDCE(INDATA(0),STROBE,SELADC,RST,SELADC_vector(1));
   FDCE(INDATA(1),STROBE,SELADC,RST,SELADC_vector(2));
   FDCE(INDATA(2),STROBE,SELADC,RST,SELADC_vector(3));
-  OUTDATA(2 downto 0) <= SELADC_vector(3 downto 1) when (STROBE='1' and READADC='1') else "ZZZ";
+  OUTDATA <= "0000000000000" & SELADC_vector(3 downto 1) when (STROBE='1' and READADC='1') else (others => 'Z');
   D_OUTDATA <= '1' when (STROBE='1' and READADC='1') else '0';
   FD(D_OUTDATA,SLOWCLK,Q_OUTDATA);
   DTACK_INNER <= '0' when (Q_OUTDATA='1') else 'Z';
@@ -99,9 +99,9 @@ begin  --Architecture
   FDCE(INDATA(6),STROBE,WRITEPOWER,RST,LVTURNON_INNER(7));
   FDCE(INDATA(7),STROBE,WRITEPOWER,RST,LVTURNON_INNER(8));
 
-  OUTDATA(7 downto 0) <= LVTURNON_INNER(8 downto 1) when (STROBE='1' and READPOWER='1') else
-                         R_LVTURNON(8 downto 1) when (STROBE='1' and READPOWERSTATUS='1') else
-                         "ZZZZZZZZ";
+  OUTDATA <= x"00" & LVTURNON_INNER(8 downto 1) when (STROBE='1' and READPOWER='1') else
+                          x"00" & R_LVTURNON(8 downto 1) when (STROBE='1' and READPOWERSTATUS='1') else
+                         (others => 'Z');
   D_OUTDATA_2 <= '1' when (STROBE='1' and READPOWER='1') else
                  '1' when (STROBE='1' and READPOWERSTATUS='1') else
                  '0';
