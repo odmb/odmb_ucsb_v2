@@ -764,7 +764,6 @@ architecture bdf_type of odmb_ucsb_v2 is
 -- Test Signals From/To J3
 
   signal d_in, d_out, d_oe          : std_logic_vector(63 downto 0);
-  signal dcfeb_injpls_b             : std_logic := '1';
   signal resync, test_inj, test_pls : std_logic := '0';
 
 -- VME Signals
@@ -1538,7 +1537,7 @@ begin
   begin
     if qpll_clk40MHz'event and qpll_clk40MHz = '1' then
       if counter_clk = 2500000 then
-        counter_clk <= 0;
+        counter_clk <= 1;
         if clk8 = '1' then
           clk8 <= '0';
         else
@@ -1560,7 +1559,7 @@ begin
   begin
     if gl0_clk_buf'event and gl0_clk_buf = '1' then
       if counter_clk_gl0 = 20000000 then
-        counter_clk_gl0 <= 0;
+        counter_clk_gl0 <= 1;
         if gl0_clk_slow = '1' then
           gl0_clk_slow <= '0';
         else
@@ -1576,7 +1575,7 @@ begin
   begin
     if clk160'event and clk160 = '1' then
       if counter_clk160 = 20000000 then
-        counter_clk160 <= 0;
+        counter_clk160 <= 1;
         if clk160_slow = '1' then
           clk160_slow <= '0';
         else
@@ -1903,10 +1902,6 @@ begin
   int_tmb_dav            <= tc_tmb_dav;  -- lctdav1
   tc_run_out             <= tc_run;
 
-  --dcfeb_injpls <= not dcfeb_injpls_b; -- Needed while p and n on the PPIB are reversed
-  --dcfeb_injpls <= dcfeb_injpls_b when IS_SIMULATION = 1 else not dcfeb_injpls_b;
-  dcfeb_injpls <= dcfeb_injpls_b; -- For B904, where INJPLS_N/_P were fixed
-
   MBC : ODMB_CTRL
     port map (
 
@@ -2031,7 +2026,7 @@ begin
 
       dcfeb_l1a_match => int_l1a_match,   -- lctf(5 DOWNTO 1) - to DCFEBs
       dcfeb_l1a       => int_l1a,         -- febrst - to DCFEBs
-      dcfeb_injpulse  => dcfeb_injpls_b,  -- inject - to DCFEBs
+      dcfeb_injpulse  => dcfeb_injpls,  -- inject - to DCFEBs
       dcfeb_extpulse  => dcfeb_extpls,    -- extpls - to DCFEBs
 
 -- From/To LVMB
