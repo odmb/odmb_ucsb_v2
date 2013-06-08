@@ -81,7 +81,11 @@ entity odmb_ucsb_v2 is
       v6_tck : out std_logic;
       v6_tms : out std_logic;
       v6_tdi : out std_logic;
-      v6_tdo : in  std_logic;
+      v6_jtag_sel : out std_logic;
+      
+      odmb_tms : in  std_logic;
+      odmb_tdi : in  std_logic;
+      odmb_tdo : in  std_logic;
 
 -- From/To J6 (J3) connector to ODMB_CTRL
 
@@ -773,6 +777,7 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal vme_tovme_b  : std_logic;
   signal vme_doe      : std_logic;
 
+  signal v6_jtag_sel_inner : std_logic := '0';
 
   signal vme_test_mode : std_logic;
   signal test_vme_oe_b : std_logic;
@@ -1255,6 +1260,8 @@ begin
   v6_tck         <= '0';
   v6_tms         <= '0';
   v6_tdi         <= '0';
+  v6_jtag_sel_inner <= '0';
+  v6_jtag_sel <= v6_jtag_sel_inner;
 
   tpl(15 downto 6) <= (others => '0');
   tpl(16)          <= int_l1a_match(1);
@@ -1337,11 +1344,17 @@ begin
         tph(41) <= dcfeb_data(7)(0);
         tph(42) <= dcfeb_data_valid(7);
 
+      when x"0010" =>
+        tph(27) <= odmb_tms;
+        tph(28) <= odmb_tdi;
+        tph(41) <= odmb_tdo;
+        tph(42) <= dcfeb_data_valid(7);
+
       when others =>
         tph(27) <= gtx0_data_valid;
         tph(28) <= cafifo_l1a_dav(1);
         tph(41) <= int_l1a_match(1);
-        tph(42) <= dcfeb_data_valid(1);
+        tph(42) <= v6_jtag_sel_inner;
     end case;
   end process;
 
@@ -2842,7 +2855,7 @@ begin
 
     dcfeb_tck(I) <= int_tck(I);
 
-    dcfeb_l1a_match(I) <= int_l1a_match(I);
+    dcfeb_l1a_match(I) <= int_l1a_match(I) or not pb(1);
     dcfeb_tx_ack(I)    <= '1' when gen_dcfeb_sel = '1' else daq_dcfeb_tx_ack(I);
 
     int_tdo(I)         <= dcfeb_tdo(I) when (gen_dcfeb_sel = '0') else gen_tdo(I);
