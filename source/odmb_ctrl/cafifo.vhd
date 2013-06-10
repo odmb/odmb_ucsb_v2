@@ -568,10 +568,18 @@ begin
       addr_wr_data := 0;
     elsif (rising_edge(clk)) then
       if (wr_addr_en = '1') then
-        addr_wr_data := addr_wr_data + 1;
+        if (addr_wr_data = FIFO_SIZE-1) then
+          addr_wr_data := 0;
+        else
+          addr_wr_data := addr_wr_data + 1;
+        end if;
       end if;
       if (rd_addr_en = '1') then
-        addr_rd_data := addr_rd_data + 1;
+        if (addr_rd_data = FIFO_SIZE-1) then
+          addr_rd_data := 0;
+        else
+          addr_rd_data := addr_rd_data + 1;
+        end if;
       end if;
     end if;
 
