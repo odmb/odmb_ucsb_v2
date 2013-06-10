@@ -898,9 +898,13 @@ architecture bdf_type of odmb_ucsb_v2 is
 
   signal int_injpls, int_extpls, int_l1a    : std_logic;  -- To be sent out to pins in V2
   signal int_l1a_match                      : std_logic_vector (NFEB downto 1);  -- To be sent out to pins in V2
-  type   l1a_match_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
-  signal l1a_match_cnt, into_cafifo_dav_cnt : l1a_match_cnt_type;
-  signal data_fifo_re_cnt, data_fifo_oe_cnt : l1a_match_cnt_type;
+  
+  type   l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
+  signal l1a_match_cnt : l1a_match_cnt_type;
+  
+  type   dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
+  signal into_cafifo_dav_cnt : dav_cnt_type;
+  signal data_fifo_re_cnt, data_fifo_oe_cnt : dav_cnt_type;
   signal dav_cnt_en, into_cafifo_dav        : std_logic_vector(NFEB+2 downto 1);
   type   dav_state_type is (DAV_IDLE, DAV_HIGH);
   type   dav_state_array_type is array (NFEB+2 downto 1) of dav_state_type;
@@ -2540,14 +2544,14 @@ begin
 
 
 
-  l1a_cnt : process (clk40, cafifo_l1a_match_in, reset)
+  l1a_cnt : process (clk40, int_l1a_match, reset)
     variable l1a_match_cnt_data : l1a_match_cnt_type;
   begin
-    for index in 1 to NFEB+2 loop
+    for index in 1 to NFEB loop
       if (reset = '1') then
         l1a_match_cnt_data(index) := (others => '0');
       elsif (rising_edge(clk40)) then
-        if (cafifo_l1a_match_in(index) = '1') then
+        if (int_l1a_match(index) = '1') then
           l1a_match_cnt_data(index) := l1a_match_cnt_data(index) + 1;
         end if;
       end if;
@@ -2563,7 +2567,7 @@ begin
 
   -- mfs: couldn't we do it like l1a_cnt, without an fsm?
   into_cafifo_dav_cnt_pro : process (clk40, reset, dav_cnt_en)
-    variable dav_cnt_data : l1a_match_cnt_type;
+    variable dav_cnt_data : dav_cnt_type;
   begin
     for index in 1 to NFEB+2 loop
       if (reset = '1') then
@@ -2648,7 +2652,7 @@ begin
     end loop;
   end process;
 
-  gap_fsm_logic : process (gap_current_state, raw_lct, int_l1a)
+  gap_fsm_logic : process (gap_current_state, raw_lct, raw_l1a)
   begin
     
     for dcfeb_index in 1 to NFEB loop
@@ -2668,7 +2672,7 @@ begin
           end if;
           
         when GAP_COUNTING =>
-          if (int_l1a = '1') then
+          if (raw_l1a = '1') then
             gap_next_state(dcfeb_index) <= GAP_IDLE;
             gap_cnt_rst(dcfeb_index)    <= '0';
             gap_cnt_en(dcfeb_index)     <= '0';
@@ -2822,7 +2826,7 @@ begin
   GEN_DCFEB : for I in NFEB downto 1 generate
   begin
 
-    dcfeb_data_valid(I) <= '0' when kill(I) = '1' else
+    dcfeb_data_valid(I) <= '0' when kill(I) = '0' else
                            rx_dcfeb_data_valid(I) when (gen_dcfeb_sel = '0') else
                            gen_dcfeb_data_valid(I);
     dcfeb_data(I) <= rx_dcfeb_data(I) when (gen_dcfeb_sel = '0') else gen_dcfeb_data(I);
