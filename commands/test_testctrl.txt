@@ -1,12 +1,13 @@
 == ================ Global reset ================ ==
-W  3000  100	ODMB_CTRL(8) high [Global reset], ODMB_CTRL(7) low [Dummy DCFEBs]  
-W  3000  0	ODMB_CTRL(8) low [Global reset off]
-W  3000  0	ODMB_CTRL(8) low [Global reset off]
-W  3000  0	ODMB_CTRL(8) low [Global reset off]
-W  3000  0	ODMB_CTRL(8) low [Global reset off]
-W  3000  0	ODMB_CTRL(8) low [Global reset off]
-W  3000  0	ODMB_CTRL(8) low [Global reset off]
-W  3000  0	ODMB_CTRL(8) low [Global reset has finished]
+W  3000  380	ODMB_CTRL(8) high [Global reset], ODMB_CTRL(7) high [Dummy DCFEBs]  
+W  3000  280	ODMB_CTRL(8) low [Global reset off]
+W  3000  280	ODMB_CTRL(8) low [Global reset off]
+W  3000  280	ODMB_CTRL(8) low [Global reset off]
+W  3000  280	ODMB_CTRL(8) low [Global reset off]
+W  3000  280	ODMB_CTRL(8) low [Global reset off]
+W  3000  280	ODMB_CTRL(8) low [Global reset off]
+W  3000  280	ODMB_CTRL(8) low [Global reset has finished]
+W  3010  2	DCFEB_CTRL(1) high [Resync]
 
 == ================ Setting delays ================ ==
 W  4000  C	Set LCT_L1A_DLY   
@@ -105,88 +106,89 @@ W  8   	0	Write FIFO
 == =========== Start run & Check status ============= ==
 W  20	18	Select FIFO 4 [DDU data] and start run
 
-W  3000 29	Set ODMB_CTRL *Time stamp MSB*
+W  3000 2A9	Set ODMB_CTRL [Time stamp MSB]
 R  3008 0	Read flf_data
-W  3000 28	Set ODMB_CTRL *Time stamp LSB*
+W  3000 2A8	Set ODMB_CTRL [Time stamp LSB]
 R  3008 0	Read flf_data
 R  1C   0       Read state of FIFOs
 W  20	14	Select FIFO 3 [Triggers] and keep running
 R  2C   0       Read current write address
 R  3C   0       Read current read address
-W  20	18	Select FIFO 4 *DDU data&quot; and start run
-W  3000 21	Set ODMB_CTRL *L1A_MATCH_CNT(1)*
+
+W  3000 2A1	Set ODMB_CTRL *L1A_MATCH_CNT(1)*
 R  3008 0	Read flf_data
-W  3000 22	Set ODMB_CTRL *L1A_MATCH_CNT(2)*
+W  3000 2A2	Set ODMB_CTRL *L1A_MATCH_CNT(2)*
 R  3008 0	Read flf_data
-W  3000 23	Set ODMB_CTRL *L1A_MATCH_CNT(3)*
+W  3000 2A3	Set ODMB_CTRL *L1A_MATCH_CNT(3)*
 R  3008 0	Read flf_data
-W  3000 24	Set ODMB_CTRL *L1A_MATCH_CNT(4)*
+W  3000 2A4	Set ODMB_CTRL *L1A_MATCH_CNT(4)*
 R  3008 0	Read flf_data
-W  3000 25	Set ODMB_CTRL *L1A_MATCH_CNT(5)*
+W  3000 2A5	Set ODMB_CTRL *L1A_MATCH_CNT(5)*
 R  3008 0	Read flf_data
-W  3000 26	Set ODMB_CTRL *L1A_MATCH_CNT(6)*
+W  3000 2A6	Set ODMB_CTRL *L1A_MATCH_CNT(6)*
 R  3008 0	Read flf_data
-W  3000 27	Set ODMB_CTRL *L1A_MATCH_CNT(7)*
+W  3000 2A7	Set ODMB_CTRL *L1A_MATCH_CNT(7)*
 R  3008 0	Read flf_data
-W  3000 31	Set ODMB_CTRL *LCT_L1A_GAP(1)*
+W  3000 2B1	Set ODMB_CTRL *LCT_L1A_GAP(1)*
 R  3008 0	Read flf_data
-W  3000 32	Set ODMB_CTRL *LCT_L1A_GAP(2)*
+W  3000 2B2	Set ODMB_CTRL *LCT_L1A_GAP(2)*
 R  3008 0	Read flf_data
-W  3000 33	Set ODMB_CTRL *LCT_L1A_GAP(3)*
+W  3000 2B3	Set ODMB_CTRL *LCT_L1A_GAP(3)*
 R  3008 0	Read flf_data
-W  3000 34	Set ODMB_CTRL *LCT_L1A_GAP(4)*
+W  3000 2B4	Set ODMB_CTRL *LCT_L1A_GAP(4)*
 R  3008 0	Read flf_data
-W  3000 35	Set ODMB_CTRL *LCT_L1A_GAP(5)*
+W  3000 2B5	Set ODMB_CTRL *LCT_L1A_GAP(5)*
 R  3008 0	Read flf_data
-W  3000 36	Set ODMB_CTRL *LCT_L1A_GAP(6)*
+W  3000 2B6	Set ODMB_CTRL *LCT_L1A_GAP(6)*
 R  3008 0	Read flf_data
-W  3000 37	Set ODMB_CTRL *LCT_L1A_GAP(7)*
+W  3000 2B7	Set ODMB_CTRL *LCT_L1A_GAP(7)*
 R  3008 0	Read flf_data
-W  3000 41	Set ODMB_CTRL *Packet 1 [DCFEB] received*
+W  3000 2C1	Set ODMB_CTRL *Packet 1 [DCFEB] received*
 R  3008 0	Read flf_data
-W  3000 42	Set ODMB_CTRL *Packet 2 [DCFEB] received*
+W  3000 2C2	Set ODMB_CTRL *Packet 2 [DCFEB] received*
 R  3008 0	Read flf_data
-W  3000 43	Set ODMB_CTRL *Packet 3 [DCFEB] received*
+W  3000 2C3	Set ODMB_CTRL *Packet 3 [DCFEB] received*
 R  3008 0	Read flf_data
-W  3000 44	Set ODMB_CTRL *Packet 4 [DCFEB] received*
+W  3000 2C4	Set ODMB_CTRL *Packet 4 [DCFEB] received*
 R  3008 0	Read flf_data
-W  3000 45	Set ODMB_CTRL *Packet 5 [DCFEB] received*
+W  3000 2C5	Set ODMB_CTRL *Packet 5 [DCFEB] received*
 R  3008 0	Read flf_data
-W  3000 46	Set ODMB_CTRL *Packet 6 [DCFEB] received*
+W  3000 2C6	Set ODMB_CTRL *Packet 6 [DCFEB] received*
 R  3008 0	Read flf_data
-W  3000 47	Set ODMB_CTRL *Packet 7 [DCFEB] received*
+W  3000 2C7	Set ODMB_CTRL *Packet 7 [DCFEB] received*
 R  3008 0	Read flf_data
-W  3000 48	Set ODMB_CTRL *Packet 8 [TMB] received*
+W  3000 2C8	Set ODMB_CTRL *Packet 8 [TMB] received*
 R  3008 0	Read flf_data
-W  3000 49	Set ODMB_CTRL *Packet 9 [ALCT] received*
+W  3000 2C9	Set ODMB_CTRL *Packet 9 [ALCT] received*
 R  3008 0	Read flf_data
 R  28   0	Read Number of BX with triggers
-W  3000 3D	Set ODMB_CTRL *CAFIFO_RD_ADDR & CAFIFO_WR_ADDR*
+W  3000 2BD	Set ODMB_CTRL *CAFIFO_RD_ADDR & CAFIFO_WR_ADDR*
 R  3008 0	Read flf_data
-W  3000 3F	Set ODMB_CTRL *L1A_CNT*
+W  3000 2BF	Set ODMB_CTRL *L1A_CNT*
 R  3008 0	Read flf_data
-W  3000 4B	Set ODMB_CTRL *Number of edges in packets*
+W  3000 2CB	Set ODMB_CTRL *Number of edges in packets*
 R  3008 0	Read flf_data
-W  3000 51	Set ODMB_CTRL *PACKET 1 [DCFEB] sent out to DDU*
+W  3000 2D1	Set ODMB_CTRL *PACKET 1 [DCFEB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 52	Set ODMB_CTRL *PACKET 2 [DCFEB] sent out to DDU*
+W  3000 2D2	Set ODMB_CTRL *PACKET 2 [DCFEB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 53	Set ODMB_CTRL *PACKET 3 [DCFEB] sent out to DDU*
+W  3000 2D3	Set ODMB_CTRL *PACKET 3 [DCFEB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 54	Set ODMB_CTRL *PACKET 4 [DCFEB] sent out to DDU*
+W  3000 2D4	Set ODMB_CTRL *PACKET 4 [DCFEB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 55	Set ODMB_CTRL *PACKET 5 [DCFEB] sent out to DDU*
+W  3000 2D5	Set ODMB_CTRL *PACKET 5 [DCFEB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 56	Set ODMB_CTRL *PACKET 6 [DCFEB] sent out to DDU*
+W  3000 2D6	Set ODMB_CTRL *PACKET 6 [DCFEB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 57	Set ODMB_CTRL *PACKET 7 [DCFEB] sent out to DDU*
+W  3000 2D7	Set ODMB_CTRL *PACKET 7 [DCFEB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 58	Set ODMB_CTRL *PACKET 8 [TMB] sent out to DDU*
+W  3000 2D8	Set ODMB_CTRL *PACKET 8 [TMB] sent out to DDU*
 R  3008 0	Read flf_data
-W  3000 59	Set ODMB_CTRL *PACKET 9 [ALCT] sent out to DDU*
+W  3000 2D9	Set ODMB_CTRL *PACKET 9 [ALCT] sent out to DDU*
 R  3008 0	Read flf_data
 
 == ================ Reading FIFOs ================ ==
+W  20	18	Select FIFO 4 [DDU data] and start run
 R  2C   0       Read current write address
 R  3C   0       Read current read address
 R  C 	0	Read FIFO [Start of header]
