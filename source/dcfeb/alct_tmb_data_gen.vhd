@@ -151,7 +151,7 @@ begin
         
       when TX_HEADER1 =>
         
-        alct_data       <= "1100" & l1a_cnt_out(23 downto 12);
+        alct_data       <= "1101" & l1a_cnt_out(23 downto 12);
         alct_dv         <= '1';
         alct_dw_cnt_en  <= '0';
         alct_dw_cnt_rst <= '0';
@@ -159,7 +159,7 @@ begin
         
       when TX_HEADER2 =>
         
-        alct_data       <= "1100" & l1a_cnt_out(11 downto 0);
+        alct_data       <= "1101" & l1a_cnt_out(11 downto 0);
         alct_dv         <= '1';
         alct_dw_cnt_en  <= '0';
         alct_dw_cnt_rst <= '0';
@@ -167,7 +167,7 @@ begin
         
       when TX_DATA =>
 
-        alct_data <= "1100" & alct_dw_cnt_out;
+        alct_data <= "1101" & alct_dw_cnt_out;
         alct_dv   <= '1';
         if (alct_dw_cnt_out = dw_n) then
           alct_dw_cnt_en  <= '0';
