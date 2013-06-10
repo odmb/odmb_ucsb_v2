@@ -46,6 +46,10 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : unsigned(12 downto 0);
 
+  signal OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
+  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0002";
+  signal R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
+
   signal OUT_LCT_L1A                         : std_logic_vector(15 downto 0) := (others => '0');
   signal LCT_L1A_DLY_INNER                   : std_logic_vector(5 downto 0);
   signal W_LCT_L1A, D_W_LCT_L1A, Q_W_LCT_L1A : std_logic                     := '0';
@@ -90,10 +94,6 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal CRATEID_INNER                       : std_logic_vector(6 downto 0);
   signal W_CRATEID, D_W_CRATEID, Q_W_CRATEID : std_logic                     := '0';
   signal R_CRATEID, D_R_CRATEID, Q_R_CRATEID : std_logic                     := '0';
-
-  signal OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
-  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0001";
-  signal R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
 
 begin  --Architecture
 
