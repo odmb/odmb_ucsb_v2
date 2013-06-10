@@ -186,6 +186,7 @@ architecture CONTROL_arch of CONTROL is
   signal GEMPTY_TMP : std_logic;
   signal DATAIN_LAST_TMP : std_logic;
 
+
 begin
   
 --  DAV <= 'L';
@@ -194,9 +195,8 @@ begin
   GEMPTY_TMP <= and_reduce(cafifo_l1a_dav(9 downto 8)) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '1') else
                 cafifo_l1a_dav(9) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '0') else
                 cafifo_l1a_dav(8) when (cafifo_l1a_match(9) = '0' and cafifo_l1a_match(8) = '1') else
-                or_reduce(cafifo_l1a_dav(NFEB downto 1));
---  GEMPTY_TMP <= or_reduce(cafifo_l1a_dav);
-  --GEMPTY_TMP <= cafifo_l1a_dav)(8) or cafifo_l1a_dav(9);
+                --or_reduce(cafifo_l1a_dav(NFEB downto 1));
+                or_reduce(not ffor_b(NFEB downto 1));  -- Ignores the L1A_CNT sent by the DCFEBs
   
   DATAIN_LAST_TMP <= '1' when (DATAIN(11 downto 0) = "000000001000") else '0';
   
