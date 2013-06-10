@@ -72,21 +72,6 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   end component;
 
-  component dcfeb_data_gen is
-    port(
-
-      clk        : in  std_logic;
-      rst        : in  std_logic;
-      l1a        : in  std_logic;
-      l1a_match  : in  std_logic;
-      dcfeb_addr : in  std_logic_vector(3 downto 0);
-      dcfeb_dv   : out std_logic;
-      dcfeb_data : out std_logic_vector(15 downto 0)
-
-      );
-
-  end component;
-
   component test_controller is
 
     port(
@@ -242,7 +227,11 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         v6_tck : out std_logic;
         v6_tms : out std_logic;
         v6_tdi : out std_logic;
-        v6_tdo : in  std_logic;
+      v6_jtag_sel : out std_logic;
+      
+      odmb_tms : in  std_logic;
+      odmb_tdi : in  std_logic;
+      odmb_tdo : in  std_logic;
 
 -- From/To J6 (J3) connector to ODMB_CTRL
 
@@ -648,14 +637,10 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 -- signals from file_handler_event
 
   signal l1a      : std_logic;
+  signal l1a_b      : std_logic := '1';
   signal alct_dav : std_logic;
   signal tmb_dav  : std_logic;
   signal lct      : std_logic_vector(NFEB downto 0);
-
--- signals from dcfeb_data_gen
-
-  signal dcfeb_dv   : std_logic;
-  signal dcfeb_data : std_logic_vector(15 downto 0);
 
 -- signals to/from test_controller (from/to slv_mgt module)
 
@@ -769,27 +754,31 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal v6_tck : std_logic;
   signal v6_tms : std_logic;
   signal v6_tdi : std_logic;
-  signal v6_tdo : std_logic := '0';     -- in
+  signal v6_jtag_sel : std_logic;
+  
+  signal odmb_tms : std_logic := '0';
+  signal odmb_tdi : std_logic := '0';
+  signal odmb_tdo : std_logic := '0';
 
--- From/To J6 (J3) connector to ODMB_CTRL
+-- From/To J6 (J3) connector to ODMB_CTRL (All signals active low)
 
   signal ccb_cmd     : std_logic_vector(5 downto 0) := "000000";    -- in
   signal ccb_cmd_s   : std_logic                    := '1';         -- in
   signal ccb_data    : std_logic_vector(7 downto 0) := "00000000";  -- in
   signal ccb_data_s  : std_logic                    := '1';         -- in
-  signal ccb_cal     : std_logic_vector(2 downto 0) := "000";       -- in
+  signal ccb_cal     : std_logic_vector(2 downto 0) := (others => '1');       -- in
   signal ccb_crsv    : std_logic_vector(4 downto 0) := "00000";     -- in
   signal ccb_drsv    : std_logic_vector(1 downto 0) := "00";        -- in
   signal ccb_rsvo    : std_logic_vector(4 downto 0) := "00000";     -- in
   signal ccb_rsvi    : std_logic_vector(2 downto 0);                -- out
-  signal ccb_bx0     : std_logic                    := '0';         -- in
-  signal ccb_bxrst   : std_logic                    := '0';         -- in
-  signal ccb_l1arst  : std_logic                    := '0';         -- in
-  signal ccb_l1acc   : std_logic                    := '0';         -- in
+  signal ccb_bx0     : std_logic                    := '1';         -- in
+  signal ccb_bxrst   : std_logic                    := '1';         -- in
+  signal ccb_l1arst  : std_logic                    := '1';         -- in
+  signal ccb_l1acc   : std_logic                    := '1';         -- in
   signal ccb_l1rls   : std_logic;                                   -- out
-  signal ccb_clken   : std_logic                    := '0';         -- in
-  signal ccb_hardrst : std_logic                    := '0';         -- in
-  signal ccb_softrst : std_logic                    := '0';         -- in
+  signal ccb_clken   : std_logic                    := '1';         -- in
+  signal ccb_hardrst : std_logic                    := '1';         -- in
+  signal ccb_softrst : std_logic                    := '1';         -- in
 
 -- From J6/J7 (J3/J4) to FIFOs
 
@@ -947,20 +936,8 @@ begin
       lct      => lct
       );
 
---PMAP_dcfeb_data_gen : dcfeb_data_gen
---
---   port map(
---  
---       clk => clk,
---   rst => rst,
---   l1a => l1a,
---   l1a_match => l1a,
---   dcfeb_addr => "1111",
---   dcfeb_dv => dcfeb_dv,
---   dcfeb_data => dcfeb_data
---      
---      );
---
+  l1a_b <= not l1a;
+
   PMAP_file_handler : file_handler
 
     port map(
@@ -1138,7 +1115,11 @@ begin
       v6_tck => v6_tck,
       v6_tms => v6_tms,
       v6_tdi => v6_tdi,
-      v6_tdo => v6_tdo,
+      v6_jtag_sel => v6_jtag_sel,
+
+      odmb_tms => odmb_tms,
+      odmb_tdi => odmb_tdi,
+      odmb_tdo => odmb_tdo,
 
 -- From/To J6 (J3) connector to ODMB_CTRL
 
@@ -1155,7 +1136,7 @@ begin
       ccb_bxrst   => ccb_bxrst,         -- in
       ccb_l1arst  => ccb_l1arst,        -- in
 --              ccb_l1acc => ccb_l1acc, -- in
-      ccb_l1acc   => l1a,               -- from file_handler_event
+      ccb_l1acc   => l1a_b,               -- from file_handler_event
       ccb_l1rls   => ccb_l1rls,         -- out
       ccb_clken   => ccb_clken,         -- in
       ccb_hardrst => ccb_hardrst,       -- in           
