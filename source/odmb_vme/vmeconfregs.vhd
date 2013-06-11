@@ -243,7 +243,7 @@ begin  --Architecture
 -- Write KILL
   GEN_KILL : for I in NFEB+2 downto 1 generate
   begin
-    FD_W_KILL : FDCE port map(KILL_INNER(I), STROBE, W_KILL, RST, INDATA(I-1));
+    FD_W_KILL : FDPE port map(KILL_INNER(I), STROBE, W_KILL, INDATA(I-1), RST);
   end generate GEN_KILL;
   KILL        <= KILL_INNER;
   D_W_KILL    <= '1' when (STROBE = '1' and W_KILL = '1') else '0';

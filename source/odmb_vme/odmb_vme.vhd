@@ -130,16 +130,18 @@ entity ODMB_VME is
     tfifo_mode  : out std_logic;
 
 -- From VMEMON
-    FW_RESET   : out std_logic;
+    FW_RESET : out std_logic;
     RESYNC   : out std_logic;
     REPROG_B : out std_logic;
     TEST_INJ : out std_logic;
     TEST_PLS : out std_logic;
+    TEST_LCT : out std_logic;
 
-    tp_sel     : out std_logic_vector(15 downto 0);
-    odmb_ctrl  : out std_logic_vector(15 downto 0);
-    dcfeb_ctrl : out std_logic_vector(15 downto 0);
-    odmb_data  : in  std_logic_vector(15 downto 0);
+    tp_sel        : out std_logic_vector(15 downto 0);
+    odmb_ctrl     : out std_logic_vector(15 downto 0);
+    dcfeb_ctrl    : out std_logic_vector(15 downto 0);
+    ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
+    odmb_data     : in  std_logic_vector(15 downto 0);
 
     -- TESTCTRL
     tc_l1a         : out std_logic;
@@ -166,8 +168,9 @@ entity ODMB_VME is
     -- TESTFIFOS
     TFF_DATA_OUT : in  std_logic_vector(15 downto 0);
     TFF_WRD_CNT  : in  std_logic_vector(11 downto 0);
-    TFF_SEL      : out std_logic_vector(8 downto 1);
-    RD_EN_TFF    : out std_logic_vector(8 downto 1)
+    TFF_RST      : out std_logic_vector(NFEB downto 1);
+    TFF_SEL      : out std_logic_vector(NFEB downto 1);
+    RD_EN_TFF    : out std_logic_vector(NFEB downto 1)
 
 
     );
@@ -223,6 +226,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
     port (
 
       SLOWCLK : in std_logic;
+      CLK40   : in std_logic;
       RST     : in std_logic;
 
       DEVICE  : in std_logic;
@@ -239,11 +243,13 @@ architecture ODMB_VME_architecture of ODMB_VME is
       REPROG_B : out std_logic;
       TEST_INJ : out std_logic;
       TEST_PLS : out std_logic;
+      TEST_LCT : out std_logic;
 
-      TP_SEL     : out std_logic_vector(15 downto 0);
-      ODMB_CTRL  : out std_logic_vector(15 downto 0);
-      DCFEB_CTRL : out std_logic_vector(15 downto 0);
-      ODMB_DATA  : in  std_logic_vector(15 downto 0)
+      TP_SEL        : out std_logic_vector(15 downto 0);
+      ODMB_CTRL     : out std_logic_vector(15 downto 0);
+      DCFEB_CTRL    : out std_logic_vector(15 downto 0);
+      ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
+      ODMB_DATA     : in  std_logic_vector(15 downto 0)
 
       );
   end component;
@@ -279,6 +285,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
   end component;
 
   component TESTFIFOS is
+    generic (
+      NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
+      );    
     port (
 
       SLOWCLK : in std_logic;
@@ -296,8 +305,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
       TFF_DATA_OUT : in std_logic_vector(15 downto 0);
       TFF_WRD_CNT  : in std_logic_vector(11 downto 0);
 
-      TFF_SEL   : out std_logic_vector(8 downto 1);
-      RD_EN_TFF : out std_logic_vector(8 downto 1)
+      TFF_RST   : out std_logic_vector(NFEB downto 1);
+      TFF_SEL   : out std_logic_vector(NFEB downto 1);
+      RD_EN_TFF : out std_logic_vector(NFEB downto 1)
       );
   end component;
 
@@ -711,6 +721,7 @@ begin
     port map (
 
       SLOWCLK => clk_s2,
+      CLK40   => clk,
       RST     => rst,
 
       DEVICE  => device(3),
@@ -727,11 +738,13 @@ begin
       REPROG_B => reprog_b,
       TEST_INJ => test_inj,
       TEST_PLS => test_pls,
+      TEST_LCT => test_lct,
 
-      TP_SEL     => tp_sel,
-      ODMB_CTRL  => odmb_ctrl,
-      DCFEB_CTRL => dcfeb_ctrl,
-      ODMB_DATA  => odmb_data
+      TP_SEL        => tp_sel,
+      ODMB_CTRL     => odmb_ctrl,
+      DCFEB_CTRL    => dcfeb_ctrl,
+      ODMB_DATA_SEL => odmb_data_sel,
+      ODMB_DATA     => odmb_data
 
       );
 
@@ -780,6 +793,7 @@ begin
 
       TFF_DATA_OUT => TFF_DATA_OUT,
       TFF_WRD_CNT  => TFF_WRD_CNT,
+      TFF_RST      => TFF_RST,
       TFF_SEL      => TFF_SEL,
       RD_EN_TFF    => RD_EN_TFF
 

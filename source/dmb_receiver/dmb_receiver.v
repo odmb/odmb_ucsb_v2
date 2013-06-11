@@ -13,9 +13,7 @@ module dmb_receiver #(
    (
     // Chip Scope Pro Logic Analyzer control -- bgb
 
-    inout [35:0]      CSP_GTX_MAC_LA_CTRL,
     inout [35:0]      CSP_PKT_FRM_LA_CTRL,
-    inout [35:0]      CSP_FIFO_LA_CTRL,
 
     input 	      RST,
     // External signals
@@ -43,6 +41,7 @@ module dmb_receiver #(
     input 	      ORX_11_P,
     input 	      ORX_12_N,
     input 	      ORX_12_P,
+    input [7:1]       KILL,
     output [15:0]     DCFEB1_DATA,
     output [15:0]     DCFEB2_DATA,
     output [15:0]     DCFEB3_DATA,
@@ -53,9 +52,10 @@ module dmb_receiver #(
     output [7:1]      DCFEB_DATA_VALID,
     // Internal signals
     input 	      FIFO_VME_MODE,
-    input [8:1]       FIFO_SEL,
-    input [8:1]       RD_EN_FF,
-    input [8:1]       WR_EN_FF,
+    input [7:1]       FIFO_RST,
+    input [7:1]       FIFO_SEL,
+    input [7:1]       RD_EN_FF,
+    input [7:1]       WR_EN_FF,
     input [15:0]      FF_DATA_IN,
     output reg [15:0] FF_DATA_OUT,
     output reg [11:0] FF_WRD_CNT,
@@ -119,115 +119,10 @@ module dmb_receiver #(
    wire [10:0] 	      rc_ff[7:1], wc_ff[7:1];
    wire [7:1] 	      rderr_ff,rderrb_ff;
    wire [7:1] 	      wrerr_ff,wrerrb_ff;
+   wire [7:1] 	      fifo_reset;
    
    wire 	      clk_ds_i;
    
-   //-----------------------------------------------------------------------------
-   // Logic Analyzer
-   //-----------------------------------------------------------------------------
-
-   wire [71:0] 	      csp_gtx_mac_la_data;
-   wire [7:0] 	      csp_gtx_mac_la_trig;
-   wire [15:0] 	      csp_gtx_mac_la_trig1;
-
-   //	csp_gtx_mac_la csp_gtx_mac_la_i (
-   //		 .CONTROL(CSP_GTX_MAC_LA_CTRL),
-   //		 .CLK(clk_ds_i),
-   //		 .DATA(csp_gtx_mac_la_data), // IN BUS [71:0]
-   //		 .TRIG0(csp_gtx_mac_la_trig), // IN BUS [7:0]
-   //		 .TRIG1(csp_gtx_mac_la_trig1) // IN BUS [7:0]
-   //	);
-   
-   // LA Trigger [7:0]
-   assign csp_gtx_mac_la_trig[0]      = reset_i;
-   assign csp_gtx_mac_la_trig[1]      = pma_reset_i;
-   assign csp_gtx_mac_la_trig[2]      = wrt_en_ff[1];
-   assign csp_gtx_mac_la_trig[3]      = crc_chk_vld_ff[1];
-   assign csp_gtx_mac_la_trig[4]      = rxnotintable_r_f[1][0];
-   assign csp_gtx_mac_la_trig[5]      = RST;
-   assign csp_gtx_mac_la_trig[6]      = plllock_i_f[1];
-   assign csp_gtx_mac_la_trig[7]      = rxcharisk_r_f[1][0];
-
-   // LA Trigger1 [15:0]
-   assign csp_gtx_mac_la_trig1        = mgt_rx_data_r_f[1];
-
-   // LA Data [71:0]
-   assign csp_gtx_mac_la_data[15:0]    = mgt_rx_data_r_f[1];
-   assign csp_gtx_mac_la_data[31:16]   = din_ff[1];
-   assign csp_gtx_mac_la_data[35:32]   = reset_r;
-   assign csp_gtx_mac_la_data[39:36]   = pma_reset_r;
-   assign csp_gtx_mac_la_data[42:40]   = 2'b00;
-   assign csp_gtx_mac_la_data[44:43]   = rxcharisk_r_f[1];
-   assign csp_gtx_mac_la_data[46:45]   = rxdisperr_r_f[1];
-   assign csp_gtx_mac_la_data[48:47]   = rxnotintable_r_f[1];
-   
-   assign csp_gtx_mac_la_data[49]      = wrt_en_ff[1];
-   assign csp_gtx_mac_la_data[50]      = 1'b0;
-   assign csp_gtx_mac_la_data[51]      = rx_good_crc_ff[1];
-   assign csp_gtx_mac_la_data[52]      = crc_chk_vld_ff[1];
-   assign csp_gtx_mac_la_data[53]      = reset_i;
-   assign csp_gtx_mac_la_data[54]      = plllock_i_f[1];
-   assign csp_gtx_mac_la_data[55]      = rxresetdone_f[1];
-   assign csp_gtx_mac_la_data[56]      = pma_reset_i;
-   assign csp_gtx_mac_la_data[57]      = 1'b0;
-   assign csp_gtx_mac_la_data[58]      = 1'b0;
-   assign csp_gtx_mac_la_data[59]      = 1'b0;
-   assign csp_gtx_mac_la_data[60]      = 1'b0;
-   assign csp_gtx_mac_la_data[63:61]      = 3'b000;
-   assign csp_gtx_mac_la_data[64]      = 1'b0;
-   assign csp_gtx_mac_la_data[65]      = 1'b0;
-   assign csp_gtx_mac_la_data[66]      = 1'b0;
-   assign csp_gtx_mac_la_data[67]      = 1'b0;
-   assign csp_gtx_mac_la_data[68]      = 1'b0;
-   assign csp_gtx_mac_la_data[69]      = 1'b0;
-   assign csp_gtx_mac_la_data[70]      = 1'b0;
-   assign csp_gtx_mac_la_data[71]      = RST;
-
-   // bgb 
-   // bgb  Added Chip Scope Pro Logic analyzer for FF_EMU connection signals
-   // bgb
-   
-   wire [127:0]       fifo_la_data;
-   wire [7:0] 	      fifo_la_trig;
-
-   //	csp_fifo_la csp_fifo_la_i(
-   //		.CONTROL(CSP_FIFO_LA_CTRL),
-   //		.CLK(fifo_wr_ck),
-   //		.DATA(fifo_la_data),
-   //		.TRIG0(fifo_la_trig)
-   //	);
-   
-   // trigger assignments (8 bits)
-   assign fifo_la_trig[0] =  wrt_en_ff[1];
-   assign fifo_la_trig[1] =  wrt_en_ff[2];
-   assign fifo_la_trig[2] =  wrt_en_ff[3];
-   assign fifo_la_trig[3] =  wrt_en_ff[4];
-   assign fifo_la_trig[4] =  wrt_en_ff[5];
-   assign fifo_la_trig[5] =  wrt_en_ff[6];
-   assign fifo_la_trig[6] =  RD_EN_FF[1];
-   assign fifo_la_trig[7] =  RST;
-   
-   // data assignments (128 bits)
-   assign fifo_la_data[15:0]	=  din_ff[1];
-   assign fifo_la_data[31:16] =  FF_STATUS;
-   assign fifo_la_data[43:32] =  FF_WRD_CNT;
-   assign fifo_la_data[49:44] =  wrt_en_ff[6:1];
-   assign fifo_la_data[65:50] =  din_ff[2];
-   assign fifo_la_data[81:66] =  din_ff[3];
-   assign fifo_la_data[97:82] =  din_ff[4];
-   assign fifo_la_data[105:98] =  FIFO_SEL;
-   assign fifo_la_data[121:106] =  FF_DATA_OUT;
-   assign fifo_la_data[122] =  wrerr_ff[1];
-   assign fifo_la_data[123] =  FIFO_VME_MODE;
-   assign fifo_la_data[124] =  RST;
-   assign fifo_la_data[125] =  DMBVME_CLK_S2;
-   assign fifo_la_data[126] =  RD_EN_FF[1];
-   assign fifo_la_data[127] =  rderr_ff[1];
-   
-   // bgb 
-   // bgb End of Logic Analyzer instantiation
-   // bgb 
-
 
    //-----------------------------------------------------------------------------
    // Main body of code
@@ -422,6 +317,7 @@ module dmb_receiver #(
               .GTX1_RXDATA_OUT                (mgt_rx_data_i_f[1]),
               .GTX1_RXRECCLK_OUT              (rxrecclk_f[1]),
               .GTX1_RXUSRCLK2_IN              (usr_clk_wordwise),
+              //.GTX1_RXUSRCLK2_IN              (DMBVME_CLK_S2),
               //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
               .GTX1_RXN_IN                    (ORX_01_N),
               .GTX1_RXP_IN                    (ORX_01_P),
@@ -1375,6 +1271,8 @@ module dmb_receiver #(
        /////////////////////////////////////////////////////////////////
        
 
+
+
    /////////////
        //         //
        // FIFO 1  //
@@ -1402,7 +1300,7 @@ module dmb_receiver #(
 		 .DI(din_ff[1][15:0]),                   // Input data, width defined by DATA_WIDTH parameter
 		 .RDCLK(DMBVME_CLK_S2),             // 1-bit input read clock
 		 .RDEN(RD_EN_FF[1]),               // 1-bit input read enable
-		 .RST(RST),                 // 1-bit input reset
+		 .RST(fifo_reset[1]),                 // 1-bit input reset
 		 .WRCLK(fifo_wr_ck),             // 1-bit input write clock
 		 .WREN(wrt_en_ff[1])                // 1-bit input write enable
 		 );
@@ -1435,7 +1333,7 @@ module dmb_receiver #(
 		 .DI(din_ff[2][15:0]),                   // Input data, width defined by DATA_WIDTH parameter
 		 .RDCLK(DMBVME_CLK_S2),             // 1-bit input read clock
 		 .RDEN(RD_EN_FF[2]),               // 1-bit input read enable
-		 .RST(RST),                 // 1-bit input reset
+		 .RST(fifo_reset[2]),                 // 1-bit input reset
 		 .WRCLK(fifo_wr_ck),             // 1-bit input write clock
 		 .WREN(wrt_en_ff[2])                // 1-bit input write enable
 		 );
@@ -1467,7 +1365,7 @@ module dmb_receiver #(
 		 .DI(din_ff[3][15:0]),                   // Input data, width defined by DATA_WIDTH parameter
 		 .RDCLK(DMBVME_CLK_S2),             // 1-bit input read clock
 		 .RDEN(RD_EN_FF[3]),               // 1-bit input read enable
-		 .RST(RST),                 // 1-bit input reset
+		 .RST(fifo_reset[3]),                 // 1-bit input reset
 		 .WRCLK(fifo_wr_ck),             // 1-bit input write clock
 		 .WREN(wrt_en_ff[3])                // 1-bit input write enable
 		 );
@@ -1499,7 +1397,7 @@ module dmb_receiver #(
 		 .DI(din_ff[4][15:0]),                   // Input data, width defined by DATA_WIDTH parameter
 		 .RDCLK(DMBVME_CLK_S2),             // 1-bit input read clock
 		 .RDEN(RD_EN_FF[4]),               // 1-bit input read enable
-		 .RST(RST),                 // 1-bit input reset
+		 .RST(fifo_reset[4]),                 // 1-bit input reset
 		 .WRCLK(fifo_wr_ck),             // 1-bit input write clock
 		 .WREN(wrt_en_ff[4])                // 1-bit input write enable
 		 );
@@ -1531,7 +1429,7 @@ module dmb_receiver #(
 		 .DI(din_ff[5][15:0]),                   // Input data, width defined by DATA_WIDTH parameter
 		 .RDCLK(DMBVME_CLK_S2),             // 1-bit input read clock
 		 .RDEN(RD_EN_FF[5]),               // 1-bit input read enable
-		 .RST(RST),                 // 1-bit input reset
+		 .RST(fifo_reset[5]),                 // 1-bit input reset
 		 .WRCLK(fifo_wr_ck),             // 1-bit input write clock
 		 .WREN(wrt_en_ff[5])                // 1-bit input write enable
 		 );
@@ -1563,7 +1461,7 @@ module dmb_receiver #(
 		 .DI(din_ff[6][15:0]),                   // Input data, width defined by DATA_WIDTH parameter
 		 .RDCLK(DMBVME_CLK_S2),             // 1-bit input read clock
 		 .RDEN(RD_EN_FF[6]),               // 1-bit input read enable
-		 .RST(RST),                 // 1-bit input reset
+		 .RST(fifo_reset[6]),                 // 1-bit input reset
 		 .WRCLK(fifo_wr_ck),             // 1-bit input write clock
 		 .WREN(wrt_en_ff[6])                // 1-bit input write enable
 		 );
@@ -1595,11 +1493,19 @@ module dmb_receiver #(
 		 .DI(din_ff[7][15:0]),                   // Input data, width defined by DATA_WIDTH parameter
 		 .RDCLK(DMBVME_CLK_S2),             // 1-bit input read clock
 		 .RDEN(RD_EN_FF[7]),               // 1-bit input read enable
-		 .RST(RST),                 // 1-bit input reset
+		 .RST(fifo_reset[7]),                 // 1-bit input reset
 		 .WRCLK(fifo_wr_ck),             // 1-bit input write clock
 		 .WREN(wrt_en_ff[7])                // 1-bit input write enable
 		 );
 
+   assign fifo_reset[1] = FIFO_RST[1] | RST;
+   assign fifo_reset[2] = FIFO_RST[2] | RST;
+   assign fifo_reset[3] = FIFO_RST[3] | RST;
+   assign fifo_reset[4] = FIFO_RST[4] | RST;
+   assign fifo_reset[5] = FIFO_RST[5] | RST;
+   assign fifo_reset[6] = FIFO_RST[6] | RST;
+   assign fifo_reset[7] = FIFO_RST[7] | RST;
+   
    always @*
      begin
 	if(FIFO_VME_MODE)
@@ -1628,13 +1534,13 @@ module dmb_receiver #(
 	     din_ff[5] <= wdata_ff[5];
 	     din_ff[6] <= wdata_ff[6];
 	     din_ff[7] <= wdata_ff[7];
-	     wrt_en_ff[1] <= wd_vld_ff[1];
-	     wrt_en_ff[2] <= wd_vld_ff[2];
-	     wrt_en_ff[3] <= wd_vld_ff[3];
-	     wrt_en_ff[4] <= wd_vld_ff[4];
-	     wrt_en_ff[5] <= wd_vld_ff[5];
-	     wrt_en_ff[6] <= wd_vld_ff[6];
-	     wrt_en_ff[7] <= wd_vld_ff[7];
+	     wrt_en_ff[1] <= wd_vld_ff[1] & ~KILL[1];
+	     wrt_en_ff[2] <= wd_vld_ff[2] & ~KILL[2];
+	     wrt_en_ff[3] <= wd_vld_ff[3] & ~KILL[3];
+	     wrt_en_ff[4] <= wd_vld_ff[4] & ~KILL[4];
+	     wrt_en_ff[5] <= wd_vld_ff[5] & ~KILL[5];
+	     wrt_en_ff[6] <= wd_vld_ff[6] & ~KILL[6];
+	     wrt_en_ff[7] <= wd_vld_ff[7] & ~KILL[7];
 	  end
      end
    
@@ -1653,19 +1559,19 @@ module dmb_receiver #(
 	endcase
      end
 
-   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_1(.RST(RST),.CLK(fifo_wr_ck),.WE(wrt_en_ff[1]),
+   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_1(.RST(fifo_reset[1]),.CLK(fifo_wr_ck),.WE(wrt_en_ff[1]),
 						    .RE(RD_EN_FF[1]),.FULL(full_ff[1]),.COUNT(wrdc_ff[1]));
-   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_2(.RST(RST),.CLK(fifo_wr_ck),.WE(wrt_en_ff[2]),
+   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_2(.RST(fifo_reset[2]),.CLK(fifo_wr_ck),.WE(wrt_en_ff[2]),
 						    .RE(RD_EN_FF[2]),.FULL(full_ff[2]),.COUNT(wrdc_ff[2]));
-   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_3(.RST(RST),.CLK(fifo_wr_ck),.WE(wrt_en_ff[3]),
+   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_3(.RST(fifo_reset[3]),.CLK(fifo_wr_ck),.WE(wrt_en_ff[3]),
 						    .RE(RD_EN_FF[3]),.FULL(full_ff[3]),.COUNT(wrdc_ff[3]));
-   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_4(.RST(RST),.CLK(fifo_wr_ck),.WE(wrt_en_ff[4]),
+   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_4(.RST(fifo_reset[4]),.CLK(fifo_wr_ck),.WE(wrt_en_ff[4]),
 						    .RE(RD_EN_FF[4]),.FULL(full_ff[4]),.COUNT(wrdc_ff[4]));
-   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_5(.RST(RST),.CLK(fifo_wr_ck),.WE(wrt_en_ff[5]),
+   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_5(.RST(fifo_reset[5]),.CLK(fifo_wr_ck),.WE(wrt_en_ff[5]),
 						    .RE(RD_EN_FF[5]),.FULL(full_ff[5]),.COUNT(wrdc_ff[5]));
-   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_6(.RST(RST),.CLK(fifo_wr_ck),.WE(wrt_en_ff[6]),
+   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_6(.RST(fifo_reset[6]),.CLK(fifo_wr_ck),.WE(wrt_en_ff[6]),
 						    .RE(RD_EN_FF[6]),.FULL(full_ff[6]),.COUNT(wrdc_ff[6]));
-   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_7(.RST(RST),.CLK(fifo_wr_ck),.WE(wrt_en_ff[7]),
+   fifo_wrd_count #(.width(12)) fifo_wrd_count_ff_7(.RST(fifo_reset[7]),.CLK(fifo_wr_ck),.WE(wrt_en_ff[7]),
 						    .RE(RD_EN_FF[7]),.FULL(full_ff[7]),.COUNT(wrdc_ff[7]));
 
    always @*

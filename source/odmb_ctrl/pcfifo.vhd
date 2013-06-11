@@ -8,9 +8,9 @@ library UNIMACRO;
 use UNIMACRO.vcomponents.all;
 use work.hdlmacro.all;
 
-entity ddufifo is
+entity pcfifo is
   generic (
-    NFIFO : integer range 1 to 16 := 8);  -- Number of FIFOs in DDUFIFO
+    NFIFO : integer range 1 to 16 := 8);  -- Number of FIFOs in PCFIFO
   port(
 
     clk_in  : in std_logic;
@@ -27,10 +27,10 @@ entity ddufifo is
     data_out : out std_logic_vector(15 downto 0)
     );
 
-end ddufifo;
+end pcfifo;
 
 
-architecture ddufifo_architecture of ddufifo is
+architecture pcfifo_architecture of pcfifo is
 
   component PULSE_EDGE is
     port (
@@ -347,4 +347,4 @@ begin
     
   end process;
   
-end ddufifo_architecture;
+end pcfifo_architecture;

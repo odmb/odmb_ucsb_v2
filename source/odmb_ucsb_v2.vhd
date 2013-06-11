@@ -330,9 +330,7 @@ architecture bdf_type of odmb_ucsb_v2 is
       );
     port (
       -- Chip Scope Pro Logic Analyzer control -- bgb
-      CSP_GTX_MAC_LA_CTRL : inout std_logic_vector(35 downto 0);
       CSP_PKT_FRM_LA_CTRL : inout std_logic_vector(35 downto 0);
-      CSP_FIFO_LA_CTRL    : inout std_logic_vector(35 downto 0);
 
       --External signals
       RST              : in  std_logic;
@@ -360,6 +358,7 @@ architecture bdf_type of odmb_ucsb_v2 is
       ORX_11_P         : in  std_logic;
       ORX_12_N         : in  std_logic;
       ORX_12_P         : in  std_logic;
+      KILL             : in std_logic_vector(NFEB downto 1);
       DCFEB1_DATA      : out std_logic_vector(15 downto 0);
       DCFEB2_DATA      : out std_logic_vector(15 downto 0);
       DCFEB3_DATA      : out std_logic_vector(15 downto 0);
@@ -371,9 +370,10 @@ architecture bdf_type of odmb_ucsb_v2 is
 
       --Internal signals
       FIFO_VME_MODE          : in  std_logic;
-      FIFO_SEL               : in  std_logic_vector(8 downto 1);
-      RD_EN_FF               : in  std_logic_vector(8 downto 1);
-      WR_EN_FF               : in  std_logic_vector(8 downto 1);
+      FIFO_RST               : in  std_logic_vector(NFEB downto 1);
+      FIFO_SEL               : in  std_logic_vector(NFEB downto 1);
+      RD_EN_FF               : in  std_logic_vector(NFEB downto 1);
+      WR_EN_FF               : in  std_logic_vector(NFEB downto 1);
       FF_DATA_IN             : in  std_logic_vector(15 downto 0);
       FF_DATA_OUT            : out std_logic_vector(15 downto 0);
       FF_WRD_CNT             : out std_logic_vector(11 downto 0);
@@ -529,7 +529,7 @@ architecture bdf_type of odmb_ucsb_v2 is
       cafifo_wr_addr : out std_logic_vector(3 downto 0);
       cafifo_rd_addr : out std_logic_vector(3 downto 0);
 
--- To DDUFIFO
+-- To PCFIFO
       gl_pc_tx_ack : in std_logic;
       pcclk        : in std_logic;
 -- To CONTROL
@@ -596,7 +596,7 @@ architecture bdf_type of odmb_ucsb_v2 is
       KILL          : in std_logic_vector(NFEB+2 downto 1);
       CRATEID       : in std_logic_vector(6 downto 0);
 
-      gtx_data_valid : out std_logic
+      ddu_data_valid : out std_logic
       );
 
   end component;
@@ -721,10 +721,12 @@ architecture bdf_type of odmb_ucsb_v2 is
       REPROG_B : out std_logic;
       TEST_INJ : out std_logic;
       TEST_PLS : out std_logic;
+      TEST_LCT : out std_logic;
 
       tp_sel     : out std_logic_vector(15 downto 0);
       odmb_ctrl  : out std_logic_vector(15 downto 0);
       dcfeb_ctrl : out std_logic_vector(15 downto 0);
+      odmb_data_sel  : out  std_logic_vector(7 downto 0);
       odmb_data  : in  std_logic_vector(15 downto 0);
 
       tc_l1a         : out std_logic;
@@ -751,11 +753,33 @@ architecture bdf_type of odmb_ucsb_v2 is
       -- TESTFIFOS
       TFF_DATA_OUT : in  std_logic_vector(15 downto 0);
       TFF_WRD_CNT  : in  std_logic_vector(11 downto 0);
-      TFF_SEL      : out std_logic_vector(8 downto 1);
-      RD_EN_TFF    : out std_logic_vector(8 downto 1)
+      TFF_RST      : out std_logic_vector(NFEB downto 1);
+      TFF_SEL      : out std_logic_vector(NFEB downto 1);
+      RD_EN_TFF    : out std_logic_vector(NFEB downto 1)
 
       );
 
+  end component;
+
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
+
+  component LCTDLY is  -- Aligns RAW_LCT with L1A by 2.4 us to 4.8 us
+    port (
+      DIN   : in std_logic;
+      CLK   : in std_logic;
+      DELAY : in std_logic_vector(5 downto 0);
+
+      DOUT : out std_logic
+      );
   end component;
 
 -- Global signals
@@ -764,12 +788,14 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal LOGIC36L : std_logic_vector(35 downto 0) := (others => '0');
   signal LOGIC36H : std_logic_vector(35 downto 0) := (others => '1');
   signal FW_RESET   : std_logic                     := '0';
-
+  signal PB_PULSE : std_logic := '0';
+  signal PB_B : std_logic_vector(1 downto 0);
+  
 -- Test Signals From/To J3
 
   signal d_in, d_out, d_oe          : std_logic_vector(63 downto 0);
-  signal resync, test_inj, test_pls : std_logic := '0';
-
+  signal resync, test_inj, test_pls, test_l1a, test_lct : std_logic := '0';
+  
 -- VME Signals
 
   signal vme_data_out : std_logic_vector (15 downto 0);
@@ -882,7 +908,7 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal fifo_oe                                    : std_logic_vector (NFEB+2 downto 1);
   signal fifo_in, fifo_out                          : std_logic_vector (15 downto 0);
 
-  -- To DDUFIFO
+  -- To PCFIFO
   signal gl_pc_tx_ack : std_logic := '0';
 
 -- JTAG signals To/From MBV
@@ -932,8 +958,8 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal tp_sel_reg     : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg  : std_logic_vector(15 downto 0) := (others => '0');
   signal dcfeb_ctrl_reg : std_logic_vector(15 downto 0) := (others => '0');
+  signal odmb_data_sel      : std_logic_vector(7 downto 0);
   signal odmb_data      : std_logic_vector(15 downto 0);
-  signal odmb_ctrl_case : std_logic_vector(7 downto 0);
 
 -- signals for V1
 
@@ -950,16 +976,13 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal tkn_error                                 : std_logic_vector(7 downto 1);
 
   -- dmb_receiver
-  signal FIFO_SEL    : std_logic_vector(8 downto 1) := (others => '0');
-  signal RD_EN_FF    : std_logic_vector(8 downto 1) := (others => '0');
-  signal WR_EN_FF    : std_logic_vector(8 downto 1) := (others => '0');
+  signal RD_EN_FF    : std_logic_vector(NFEB downto 1) := (others => '0');
+  signal WR_EN_FF    : std_logic_vector(NFEB downto 1) := (others => '0');
   signal FF_DATA_IN  : std_logic_vector(15 downto 0);
   signal FF_DATA_OUT : std_logic_vector(15 downto 0);
   signal FF_WRD_CNT  : std_logic_vector(11 downto 0);
   signal FF_STATUS   : std_logic_vector(15 downto 0);
 
-  signal DMBVME_CLK_S2    : std_logic := '0';
-  signal DAQ_RX_125REFCLK : std_logic := '0';
   signal FIFO_VME_MODE    : std_logic := '0';
 
 
@@ -1011,7 +1034,7 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal gtx0_data_valid                         : std_logic;
   signal gtx1_data                               : std_logic_vector(15 downto 0);
   signal gtx1_data_valid                         : std_logic;
-  signal gtx0_data_valid_cnt, gtx_data_valid_cnt : std_logic_vector(15 downto 0);
+  signal gtx0_data_valid_cnt, ddu_data_valid_cnt : std_logic_vector(15 downto 0);
   signal int_l1a_cnt                             : std_logic_vector(15 downto 0);
 
   signal gl1_clk, gl1_clk_2, gl1_clk_2_buf : std_logic;
@@ -1211,8 +1234,6 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal int_alct_dav, tc_alct_dav : std_logic;
   signal int_tmb_dav, tc_tmb_dav   : std_logic;
   signal int_lct, tc_lct           : std_logic_vector(NFEB downto 0);
-  signal ddu_data                  : std_logic_vector(15 downto 0) := (others => '0');
-  signal ddu_data_valid            : std_logic                     := '0';
 
   signal tc_run                                                  : std_logic;
   signal counter_clk, counter_clk_gl0, counter_clk160, reset_cnt : integer   := 0;
@@ -1243,10 +1264,11 @@ architecture bdf_type of odmb_ucsb_v2 is
   -- From/to TESTFIFOS to test FIFOs
   signal TFF_DATA_OUT : std_logic_vector(15 downto 0);
   signal TFF_WRD_CNT  : std_logic_vector(11 downto 0);
-  signal TFF_SEL      : std_logic_vector(8 downto 1);
-  signal RD_EN_TFF    : std_logic_vector(8 downto 1);
+  signal TFF_RST      : std_logic_vector(NFEB downto 1);
+  signal TFF_SEL      : std_logic_vector(NFEB downto 1);
+  signal RD_EN_TFF    : std_logic_vector(NFEB downto 1);
 
-  signal gtx_data_valid : std_logic;
+  signal ddu_data_valid : std_logic;
 
   signal testctrl_sel : std_logic := '0';
 
@@ -1873,10 +1895,12 @@ begin
       reprog_b => odmb_hardrst_b,
       test_inj => test_inj,
       test_pls => test_pls,
+      test_lct => test_lct,
 
       tp_sel     => tp_sel_reg,
       odmb_ctrl  => odmb_ctrl_reg,
       dcfeb_ctrl => dcfeb_ctrl_reg,
+      odmb_data_sel  => odmb_data_sel,
       odmb_data  => odmb_data,
 
       -- TESTCTRL
@@ -1904,15 +1928,28 @@ begin
       -- TESTFIFOS
       TFF_DATA_OUT => TFF_DATA_OUT,
       TFF_WRD_CNT  => TFF_WRD_CNT,
+      TFF_RST      => TFF_RST,
       TFF_SEL      => TFF_SEL,
       RD_EN_TFF    => RD_EN_TFF
       );
 
   -- Raw signals come unsynced from outside
+  LCTDLY_GTRG : LCTDLY port map(test_lct, clk40, LCT_L1A_DLY, test_l1a);
+
   testctrl_sel <= odmb_ctrl_reg(9);
-  raw_l1a                <= tc_l1a                when (testctrl_sel = '1') else not ccb_l1acc;
-  raw_lct(NFEB downto 1) <= tc_lct(NFEB downto 1) when (testctrl_sel = '1') else rawlct(NFEB-1 downto 0);
-  raw_lct(0)             <= tc_lct(0)             when (testctrl_sel = '1') else or_reduce(rawlct(NFEB-1 downto 0));
+
+  raw_l1a <= '1' when test_l1a = '1' else
+             tc_l1a when (testctrl_sel = '1') else
+             not ccb_l1acc;
+  raw_lct(0) <= '1' when test_lct = '1' else
+                tc_lct(0) when (testctrl_sel = '1') else
+                or_reduce(rawlct(NFEB-1 downto 0));
+  
+  raw_lct(NFEB downto 1) <= (others => '1') when test_lct = '1' else
+                            tc_lct(NFEB downto 1) when (testctrl_sel = '1') else
+                            rawlct(NFEB-1 downto 0);
+  
+
   --int_alct_dav           <= tc_alct_dav           when (testctrl_sel = '1') else alctdav;  -- lctdav2
   --int_tmb_dav            <= tc_tmb_dav            when (testctrl_sel = '1') else tmbdav;  -- lctdav1
   int_alct_dav           <= tc_alct_dav;  -- lctdav2
@@ -2011,7 +2048,7 @@ begin
       ext_dcfeb_l1a_cnt7   => ext_dcfeb_l1a_cnt7,
       dcfeb_l1a_dav7       => dcfeb_l1a_dav7,
 
--- To DDUFIFO
+-- To PCFIFO
       gl_pc_tx_ack => gl_pc_tx_ack,
       dduclk       => dduclk,
       pcclk        => pcclk,
@@ -2066,9 +2103,9 @@ begin
 
       leds => mbc_leds,
 
-      cal_mode   => dcfeb_ctrl_reg(4),
-      cal_trgsel => dcfeb_ctrl_reg(5),
-      cal_trgen  => dcfeb_ctrl_reg(9 downto 6),
+      cal_mode   => odmb_ctrl_reg(4),
+      cal_trgsel => odmb_ctrl_reg(5),
+      cal_trgen  => odmb_ctrl_reg(3 downto 0),
 
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
       TMB_PUSH_DLY  => TMB_PUSH_DLY,
@@ -2080,7 +2117,7 @@ begin
       KILL          => KILL,
       CRATEID       => CRATEID,
 
-      gtx_data_valid => gtx_data_valid
+      ddu_data_valid => ddu_data_valid
       );
 
 -- OT Manager
@@ -2536,7 +2573,7 @@ begin
 
   LVMB_ADC_SDO_MUX_PM : LVMB_ADC_SDO_MUX
     port map (
-      int_lvmb_adc_en  => odmb_ctrl_reg(10),
+      int_lvmb_adc_en  => odmb_ctrl_reg(11),
       int_lvmb_adc_sdo => int_lvmb_adc_sdout,
       lvmb_adc_sdo     => lvmb_sdout,
       adc_ce           => int_lvmb_csb,
@@ -2749,22 +2786,16 @@ begin
       )
     port map (
       -- Chip Scope Pro Logic Analyzer control -- bgb
-      CSP_GTX_MAC_LA_CTRL => LOGIC36L,
       CSP_PKT_FRM_LA_CTRL => LOGIC36L,
-      CSP_FIFO_LA_CTRL    => LOGIC36L,
 
       --External signals
       RST => reset,
+      DAQ_RX_125REFCLK       => clk40,
 
-      --DMBVME_CLK_S2          => gl1_clk_2,  --Data clock (for the 1.25 test)
-      --DAQ_RX_125REFCLK       => gl1_clk,
-      --DAQ_RX_160REFCLK_115_0 => clk40,
-
-      --ORX_01_N               => gl1_rx_n,
-      --ORX_01_P               => gl1_rx_p,
+      --DMBVME_CLK_S2          => gl1_clk_2,  -- Data clock for the PC TX simulation
+      --DAQ_RX_160REFCLK_115_0       => gl1_clk,    -- For the PC TX simulation
 
       DMBVME_CLK_S2          => clk2p5,
-      DAQ_RX_125REFCLK       => clk40,
       DAQ_RX_160REFCLK_115_0 => clk160,
       --DAQ_RX_160REFCLK_115_0 => gl0_clk,  -- For the DDU TX simulation
 
@@ -2794,6 +2825,7 @@ begin
       ORX_12_N => orx_buf_n(12),
       ORX_12_P => orx_buf_p(12),
 
+      KILL             => kill(7 downto 1),
       DCFEB1_DATA      => rx_dcfeb_data(1),
       DCFEB2_DATA      => rx_dcfeb_data(2),
       DCFEB3_DATA      => rx_dcfeb_data(3),
@@ -2804,6 +2836,7 @@ begin
       DCFEB_DATA_VALID => rx_dcfeb_data_valid,
       --Internal signals
       FIFO_VME_MODE    => fifo_vme_mode,
+      FIFO_RST         => TFF_RST,
       FIFO_SEL         => TFF_SEL,
       RD_EN_FF         => RD_EN_TFF,
       WR_EN_FF         => wr_en_ff,
@@ -2817,16 +2850,20 @@ begin
   gen_tmb_sel    <= odmb_ctrl_reg(7);
   gen_dcfeb_sel  <= odmb_ctrl_reg(7);
 
+  pb_b <= not pb;
+  PULSE_PB : PULSE_EDGE port map(pb_pulse, open, clk40, reset, 1, pb_b(1));
+
+  
   dcfeb_tms       <= int_tms;
   dcfeb_tdi       <= int_tdi;
-  dcfeb_l1a       <= int_l1a;
+  dcfeb_l1a       <= int_l1a or pb_pulse;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
 
   GEN_DCFEB : for I in NFEB downto 1 generate
   begin
 
-    dcfeb_data_valid(I) <= '0' when kill(I) = '0' else
+    dcfeb_data_valid(I) <= '0' when kill(I) = '1' else
                            rx_dcfeb_data_valid(I) when (gen_dcfeb_sel = '0') else
                            gen_dcfeb_data_valid(I);
     dcfeb_data(I) <= rx_dcfeb_data(I) when (gen_dcfeb_sel = '0') else gen_dcfeb_data(I);
@@ -2859,7 +2896,7 @@ begin
 
     dcfeb_tck(I) <= int_tck(I);
 
-    dcfeb_l1a_match(I) <= int_l1a_match(I) or not pb(1);
+    dcfeb_l1a_match(I) <= int_l1a_match(I) or pb_pulse;
     dcfeb_tx_ack(I)    <= '1' when gen_dcfeb_sel = '1' else daq_dcfeb_tx_ack(I);
 
     int_tdo(I)         <= dcfeb_tdo(I) when (gen_dcfeb_sel = '0') else gen_tdo(I);
@@ -2938,7 +2975,7 @@ begin
 
   end generate GEN_DCFEB;
 
-  -- gtx0_data_valid is high when tx from ddufifo to testctrl
+  -- gtx0_data_valid is high when tx from pcfifo to testctrl
   -- count rising edge of gtx0_data_valid
   gtx0_dv_cnt_proc : process (gtx0_data_valid, reset)
   begin
@@ -2958,15 +2995,15 @@ begin
     end if;
   end process;
 
-  -- count rising edge of gtx_data_valid (from control to ddufifo)
+  -- count rising edge of ddu_data_valid (from control to pcfifo)
   -- expect high on start of transmission of header, tailer
   -- and each data packet
-  gtx_dv_cnt_proc : process (gtx_data_valid, reset)
+  gtx_dv_cnt_proc : process (ddu_data_valid, reset)
   begin
     if (reset = '1') then
-      gtx_data_valid_cnt <= (others => '0');
-    elsif (rising_edge(gtx_data_valid)) then
-      gtx_data_valid_cnt <= gtx_data_valid_cnt + 1;
+      ddu_data_valid_cnt <= (others => '0');
+    elsif (rising_edge(ddu_data_valid)) then
+      ddu_data_valid_cnt <= ddu_data_valid_cnt + 1;
     end if;
   end process;
 
@@ -3073,14 +3110,12 @@ begin
 
 
 
-  odmb_ctrl_case <= "0" & odmb_ctrl_reg(6 downto 0);
-  
-  flf_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, mbc_instr, mbc_jtag_ir, odmb_ctrl_case,
+  flf_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, mbc_instr, mbc_jtag_ir, odmb_data_sel,
                         l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
-                        data_fifo_re_cnt, gtx0_data_valid_cnt, gtx_data_valid_cnt,data_fifo_oe_cnt )
+                        data_fifo_re_cnt, gtx0_data_valid_cnt, ddu_data_valid_cnt,data_fifo_oe_cnt )
   begin
     
-    case odmb_ctrl_case is
+    case odmb_data_sel is
 
       when x"00" => odmb_data <= "0000" & dcfeb_adc_mask(1);
       when x"01" => odmb_data <= dcfeb_fsel(1)(15 downto 0);
@@ -3168,8 +3203,8 @@ begin
       when x"49" => odmb_data <= into_cafifo_dav_cnt(9);
 
       when x"4A" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
-      when x"4B" => odmb_data <= gtx_data_valid_cnt;  -- from control to ddufifo        
-      when x"4C" => odmb_data <= gtx0_data_valid_cnt;  -- from ddufifo to testctrl
+      when x"4B" => odmb_data <= ddu_data_valid_cnt;   -- from control to pcfifo        
+      when x"4C" => odmb_data <= gtx0_data_valid_cnt;  -- from pcfifo to testctrl
 
       when x"51" => odmb_data <= data_fifo_re_cnt(1);  -- from control to FIFOs in top
       when x"52" => odmb_data <= data_fifo_re_cnt(2);  -- from control to FIFOs in top

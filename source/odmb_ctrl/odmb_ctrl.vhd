@@ -10,7 +10,7 @@ use ieee.std_logic_1164.all;
 
 entity ODMB_CTRL is
   generic (
-    NFIFO     : integer range 1 to 16 := 8;  -- Number of FIFOs in DDUFIFO
+    NFIFO     : integer range 1 to 16 := 8;  -- Number of FIFOs in PCFIFO
     NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
     FIFO_SIZE : integer range 1 to 64 := 16  -- Number FIFO words in CAFIFO
     );  
@@ -100,7 +100,7 @@ entity ODMB_CTRL is
     dcfeb_l1a_dav7  : out std_logic;    
     
 
--- To DDUFIFO
+-- To PCFIFO
     gl_pc_tx_ack : in std_logic;
     dduclk       : in std_logic;
     pcclk       : in std_logic;
@@ -166,7 +166,8 @@ entity ODMB_CTRL is
     CALLCT_DLY     : in  std_logic_vector(3 downto 0);
     KILL           : in  std_logic_vector(NFEB+2 downto 1);
     CRATEID        : in  std_logic_vector(6 downto 0);
-    gtx_data_valid : out std_logic
+    
+    ddu_data_valid : out std_logic
     );
 
 end ODMB_CTRL;
@@ -377,9 +378,9 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
   end component;
 
-  component ddufifo is
+  component pcfifo is
     generic (
-      NFIFO : integer range 1 to 16 := 8  -- Number of FIFOs in DDUFIFO
+      NFIFO : integer range 1 to 16 := 8  -- Number of FIFOs in PCFIFO
       );  
     port(
 
@@ -446,7 +447,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- TO CAFIFO
       FIFO_POP : out std_logic;
 
--- TO DDUFIFO
+-- TO PCFIFO
       EOF : out std_logic;
 
 -- FROM CAFIFO
@@ -508,7 +509,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
      ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
      dcfeb_l1a_dav7  : out std_logic;    
 
-     cafifo_wr_addr : out std_logic_vector(3 downto 0);
+      cafifo_wr_addr : out std_logic_vector(3 downto 0);
       cafifo_rd_addr : out std_logic_vector(3 downto 0)
       );
 
@@ -641,12 +642,12 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- CONTROL outputs
   signal cafifo_pop           : std_logic := '0';
   signal eof                  : std_logic := '0';
-  signal gtx_data             : std_logic_vector(15 downto 0);
-  signal gtx_data_valid_inner : std_logic := 'L';
+  signal ddu_data             : std_logic_vector(15 downto 0);
+  signal ddu_data_valid_inner : std_logic := 'L';
 
--- DDUFIFO outputs
-  signal ddu_data       : std_logic_vector(15 downto 0);
-  signal ddu_data_valid : std_logic;
+-- PCFIFO outputs
+  signal pc_data       : std_logic_vector(15 downto 0);
+  signal pc_data_valid : std_logic;
 
 -- TRGFIFO
 --  signal TRG_FIFO_FULL_B, TRG_FIFO_EMPTY_B, TRG_FIFO_PUSH, TRG_FIFO_POP, TRG_FIFO_ERR : std_logic;
@@ -916,8 +917,8 @@ begin
       RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
 
 -- to GigaBit Link
-      DOUT => gtx_data,
-      DAV  => gtx_data_valid_inner,
+      DOUT => ddu_data,
+      DAV  => ddu_data_valid_inner,
 
 -- to Data FIFOs
       OEFIFO_B   => data_fifo_oe,
@@ -949,7 +950,7 @@ begin
 -- TO CAFIFO
       FIFO_POP => cafifo_pop,
 
--- TO DDUFIFO
+-- TO PCFIFO
       EOF => eof,
 
 -- FROM CAFIFO
@@ -960,20 +961,14 @@ begin
 
       );
 
+  gtx0_data       <= ddu_data;
+  gtx0_data_valid <= ddu_data_valid_inner;
+  gtx1_data       <= pc_data;
+  gtx1_data_valid <= pc_data_valid;
 
---gtx0_data <= gtx_data;                                                                                      
---gtx0_data_valid <= gtx_data_valid; 
---gtx1_data <= gtx_data;                                                                                      
---gtx1_data_valid <= gtx_data_valid; 
+  ddu_data_valid <= ddu_data_valid_inner;
 
-  gtx0_data       <= gtx_data;
-  gtx0_data_valid <= gtx_data_valid_inner;
-  gtx1_data       <= ddu_data;
-  gtx1_data_valid <= ddu_data_valid;
-
-  gtx_data_valid <= gtx_data_valid_inner;
-
-  DDUFIFO_PM : ddufifo
+  PCFIFO_PM : pcfifo
     generic map (NFIFO => NFIFO)
 
     port map(
@@ -985,12 +980,12 @@ begin
       tx_ack => gl_pc_tx_ack,
       --tx_ack => logich,
 
-      dv_in   => gtx_data_valid_inner,
+      dv_in   => ddu_data_valid_inner,
       ld_in   => eof,
-      data_in => gtx_data,
+      data_in => ddu_data,
 
-      dv_out   => ddu_data_valid,
-      data_out => ddu_data);
+      dv_out   => pc_data_valid,
+      data_out => pc_data);
 
 
   CAFIFO_PM : cafifo

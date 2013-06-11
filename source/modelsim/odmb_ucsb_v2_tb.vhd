@@ -896,11 +896,12 @@ begin
   gl0_clk_n       <= not gl0_clk_n       after 5 ns;
   clk             <= not clk             after 10 ns;
 
-  orx_p(1) <= gl0_tx_p;  -- Test of the DDU TX
-  orx_n(1) <= gl0_tx_n;  -- Test of the DDU TX
+  --orx_p(1) <= gl0_tx_p;  -- Test of the DDU TX
+  --orx_n(1) <= gl0_tx_n;  -- Test of the DDU TX
 
-  --orx_p(1) <= gl1_tx_p;  -- Test of the DCFEB RX
-  --orx_n(1) <= gl1_tx_n;  -- Test of the DCFEB RX
+  orx_p(1) <= gl1_tx_p;  -- Test of the PC TX
+  orx_n(1) <= gl1_tx_n;  -- Test of the PC TX
+
   orx_p(2) <= gl1_tx_p;  -- Test of the DCFEB RX
   orx_n(2) <= gl1_tx_n;  -- Test of the DCFEB RX
   orx_p(3) <= gl1_tx_p;  -- Test of the DCFEB RX

@@ -8,7 +8,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity TESTFIFOS is
-  
+  generic (
+    NFEB          : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
+    );    
   port (
 
     SLOWCLK : in std_logic;
@@ -26,8 +28,9 @@ entity TESTFIFOS is
     TFF_DATA_OUT : in std_logic_vector(15 downto 0);
     TFF_WRD_CNT  : in std_logic_vector(11 downto 0);
 
-    TFF_SEL   : out std_logic_vector(8 downto 1);
-    RD_EN_TFF : out std_logic_vector(8 downto 1)
+    TFF_RST   : out std_logic_vector(NFEB downto 1);
+    TFF_SEL   : out std_logic_vector(NFEB downto 1);
+    RD_EN_TFF : out std_logic_vector(NFEB downto 1)
     );
 end TESTFIFOS;
 
@@ -35,12 +38,23 @@ end TESTFIFOS;
 
 architecture TESTFIFOS_Arch of TESTFIFOS is
 
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
+
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : std_logic_vector(15 downto 0);
 
-  type FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(8 downto 1);
+  type FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
   signal FIFO_RD : FIFO_RD_TYPE;
-  signal C_FIFO_RD   : std_logic_vector(8 downto 1) := (others => '0');
+  signal C_FIFO_RD   : std_logic_vector(NFEB downto 1) := (others => '0');
   signal OUT_TFF_READ   : std_logic_vector(15 downto 0) := (others => '0');
   signal R_TFF_READ, D_R_TFF_READ, Q_R_TFF_READ : std_logic := '0';
 
@@ -48,11 +62,15 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal R_TFF_WRD_CNT, D_R_TFF_WRD_CNT, Q_R_TFF_WRD_CNT : std_logic := '0';
 
   signal OUT_TFF_SEL   : std_logic_vector(15 downto 0) := (others => '0');
-  signal TFF_SEL_INNER : std_logic_vector(8 downto 1)  := (others => '0');
+  signal TFF_SEL_INNER : std_logic_vector(NFEB downto 1)  := (others => '0');
   signal TFF_SEL_CODE  : std_logic_vector(2 downto 0)  := (others => '0');
 
   signal W_TFF_SEL, D_W_TFF_SEL, Q_W_TFF_SEL : std_logic := '0';
   signal R_TFF_SEL, D_R_TFF_SEL, Q_R_TFF_SEL : std_logic := '0';
+
+  signal W_TFF_RST, D_W_TFF_RST, Q_W_TFF_RST : std_logic := '0';
+  signal PULSE_TFF_RST, IN_TFF_RST : std_logic_vector(NFEB downto 1) := (others => '0');
+  signal TFF_RST_INNER : std_logic_vector(NFEB downto 1) := (others => '0');
 
 begin  --Architecture
 
@@ -64,9 +82,10 @@ begin  --Architecture
   R_TFF_WRD_CNT <= '1' when (CMDDEV = x"100C") else '0';
   W_TFF_SEL     <= '1' when (CMDDEV = x"1010") else '0';
   R_TFF_SEL     <= '1' when (CMDDEV = x"1014") else '0';
+  W_TFF_RST     <= '1' when (CMDDEV = x"1020") else '0';
 
 -- Read TFF_READ
-  GEN_TFF_READ : for I in 1 to 8 generate
+  GEN_TFF_READ : for I in 1 to NFEB generate
   begin
     FIFO_RD(0)(I) <= R_TFF_READ and TFF_SEL_INNER(I);
     FDC_RD_EN1 : FDC port map(FIFO_RD(1)(I), STROBE,  C_FIFO_RD(I), FIFO_RD(0)(I));
@@ -82,7 +101,6 @@ begin  --Architecture
   FD_R_TFF_READ : FD port map(Q_R_TFF_READ, SLOWCLK, D_R_TFF_READ);
   DTACK_INNER     <= '0' when (Q_R_TFF_READ = '1')                else 'Z';
 
-  
 
 -- Read TFF_WRD_CNT
   OUT_TFF_WRD_CNT(11 downto 0) <= TFF_WRD_CNT when (STROBE = '1' and R_TFF_WRD_CNT = '1') else (others => 'Z');
@@ -96,14 +114,14 @@ begin  --Architecture
   begin
     FD_W_TFF_SEL : FDCE port map(TFF_SEL_CODE(I), STROBE, W_TFF_SEL, RST, INDATA(I));
   end generate GEN_TFF_SEL;
-  TFF_SEL_INNER <= x"01" when TFF_SEL_CODE = "001" else
-                   x"02" when TFF_SEL_CODE = "010" else
-                   x"04" when TFF_SEL_CODE = "011" else
-                   x"08" when TFF_SEL_CODE = "100" else
-                   x"10" when TFF_SEL_CODE = "101" else
-                   x"20" when TFF_SEL_CODE = "110" else
-                   x"40" when TFF_SEL_CODE = "111" else
-                   x"01";
+  TFF_SEL_INNER <= "0000001" when TFF_SEL_CODE = "001" else
+                   "0000010" when TFF_SEL_CODE = "010" else
+                   "0000100" when TFF_SEL_CODE = "011" else
+                   "0001000" when TFF_SEL_CODE = "100" else
+                   "0010000" when TFF_SEL_CODE = "101" else
+                   "0100000" when TFF_SEL_CODE = "110" else
+                   "1000000" when TFF_SEL_CODE = "111" else
+                   "0000001";
   TFF_SEL     <= TFF_SEL_INNER;
   D_W_TFF_SEL <= '1' when (STROBE = '1' and W_TFF_SEL = '1') else '0';
   FD_DTACK_TFF_SEL : FD port map(Q_W_TFF_SEL, SLOWCLK, D_W_TFF_SEL);
@@ -116,6 +134,17 @@ begin  --Architecture
   FD_R_TFF_SEL : FD port map(Q_R_TFF_SEL, SLOWCLK, D_R_TFF_SEL);
   DTACK_INNER <= '0' when (Q_R_TFF_SEL = '1')                else 'Z';
 
+
+-- Write TFF_RST (Reset test FIFOs)
+  GEN_TFF_RST : for I in NFEB downto 1 generate
+  begin
+    IN_TFF_RST(I) <= PULSE_TFF_RST(I) or RST;
+    FD_W_TFF_RST : FDCE port map(TFF_RST_INNER(I), STROBE, W_TFF_RST, IN_TFF_RST(I), INDATA(I-1));
+    PULSE_RESET : PULSE_EDGE port map(tff_rst(I), pulse_tff_rst(I), slowclk, rst, 1, tff_rst_inner(I));
+  end generate GEN_TFF_RST;
+  D_W_TFF_RST <= '1' when (STROBE = '1' and W_TFF_RST = '1') else '0';
+  FD_DTACK_TFF_RST : FD port map(Q_W_TFF_RST, SLOWCLK, D_W_TFF_RST);
+  DTACK_INNER <= '0' when (Q_W_TFF_RST = '1')                else 'Z';
 
 -- General assignments
   OUTDATA <= OUT_TFF_READ when R_TFF_READ = '1' else

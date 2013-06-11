@@ -6,6 +6,13 @@
 =                                                                    =
 ======================================================================
 
+V00-02: 11 June 2013, Manuel
+--------------------------------
+Made VMEMON easier to use.
+Do not require correct L1A_COUNTER from DCFEBs.
+Added test L1A(_MATCH).
+DCFEBs are killed by default to avoid hot fibers.
+
 V00-01: 30 May 2013, Manuel
 --------------------------------
 Made the multiplexers to be defaulted to real data, DCFEBs, and LVMB.

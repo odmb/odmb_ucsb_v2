@@ -11,6 +11,7 @@ entity VMEMON is
   port (
 
     SLOWCLK : in std_logic;
+    CLK40   : in std_logic;
     RST     : in std_logic;
 
     DEVICE  : in std_logic;
@@ -27,11 +28,13 @@ entity VMEMON is
     REPROG_B : out std_logic;
     TEST_INJ : out std_logic;
     TEST_PLS : out std_logic;
+    TEST_LCT : out std_logic;
 
-    TP_SEL     : out std_logic_vector(15 downto 0);
-    ODMB_CTRL  : out std_logic_vector(15 downto 0);
-    DCFEB_CTRL : out std_logic_vector(15 downto 0);
-    ODMB_DATA  : in  std_logic_vector(15 downto 0)
+    TP_SEL        : out std_logic_vector(15 downto 0);
+    ODMB_CTRL     : out std_logic_vector(15 downto 0);
+    DCFEB_CTRL    : out std_logic_vector(15 downto 0);
+    ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
+    ODMB_DATA     : in  std_logic_vector(15 downto 0)
 
     );
 end VMEMON;
@@ -53,10 +56,9 @@ architecture VMEMON_Arch of VMEMON is
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : unsigned(12 downto 0);
 
-  signal CMDHIGH                                  : std_logic;
-  signal BUSY                                     : std_logic;
-  signal W_ODMB_CTRL, R_ODMB_CTRL, READ_ODMB_DATA : std_logic;
-  signal W_DCFEB_CTRL, R_DCFEB_CTRL               : std_logic;
+  signal BUSY                                  : std_logic;
+  signal W_ODMB_CTRL, R_ODMB_CTRL, R_ODMB_DATA : std_logic;
+  signal W_DCFEB_CTRL, R_DCFEB_CTRL            : std_logic;
 
   signal ODMB_CTRL_INNER, DCFEB_CTRL_INNER                  : std_logic_vector(15 downto 0) := (others => '0');
   signal D_OUTDATA_1, Q_OUTDATA_1, D_OUTDATA_2, Q_OUTDATA_2 : std_logic;
@@ -65,24 +67,24 @@ architecture VMEMON_Arch of VMEMON is
   signal W_TP_SEL, D_W_TP_SEL, Q_W_TP_SEL : std_logic                     := '0';
   signal R_TP_SEL, D_R_TP_SEL, Q_R_TP_SEL : std_logic                     := '0';
 
-  signal ODMB_RST, DCFEB_RST                                          : std_logic_vector(15 downto 0) := (others => '0');
-  signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST, RESET_RST : std_logic                     := '0';
-  signal REPROG, DO_RESYNC                                             : std_logic                     := '0';
+  signal ODMB_RST, DCFEB_RST                                                         : std_logic_vector(15 downto 0) := (others => '0');
+  signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST, TEST_LCT_RST, RESET_RST : std_logic                     := '0';
+  signal REPROG, DO_RESYNC                                                           : std_logic                     := '0';
 
 begin
 
 -- generate CMDHIGH / generate WRITECTRL / generate READCTRL / generate READDATA
   CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input  
 
-  W_TP_SEL <= '1' when (CMDDEV = x"1020") else '0';
-  R_TP_SEL <= '1' when (CMDDEV = x"1024") else '0';
+  W_ODMB_CTRL  <= '1' when (CMDDEV = x"1000") else '0';
+  R_ODMB_CTRL  <= '1' when (CMDDEV = x"1004") else '0';
+  W_DCFEB_CTRL <= '1' when (CMDDEV = x"1010") else '0';
+  R_DCFEB_CTRL <= '1' when (CMDDEV = x"1014") else '0';
+  W_TP_SEL     <= '1' when (CMDDEV = x"1020") else '0';
+  R_TP_SEL     <= '1' when (CMDDEV = x"1024") else '0';
 
-  CMDHIGH        <= '1' when (COMMAND(9 downto 4) = "000000" and DEVICE = '1') else '0';
-  W_ODMB_CTRL    <= '1' when (COMMAND(3 downto 0) = "0000" and CMDHIGH = '1')  else '0';
-  R_ODMB_CTRL    <= '1' when (COMMAND(3 downto 0) = "0001" and CMDHIGH = '1')  else '0';
-  READ_ODMB_DATA <= '1' when (COMMAND(3 downto 0) = "0010" and CMDHIGH = '1') else '0';
-  W_DCFEB_CTRL   <= '1' when (COMMAND(3 downto 0) = "0100" and CMDHIGH = '1') else '0';
-  R_DCFEB_CTRL   <= '1' when (COMMAND(3 downto 0) = "0101" and CMDHIGH = '1') else '0';
+  R_ODMB_DATA               <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
+  ODMB_DATA_SEL(7 downto 0) <= COMMAND(9 downto 2);
 
 
 -- Write TP_SEL
@@ -119,21 +121,23 @@ begin
                     RESYNC_RST   when K = 1 else
                     TEST_INJ_RST when K = 2 else
                     TEST_PLS_RST when K = 3 else
+                    TEST_LCT_RST when K = 4 else
                     RST;
     ODMB_DCFEB_K : FDCE port map (DCFEB_CTRL_INNER(K), STROBE, W_DCFEB_CTRL, DCFEB_RST(K), INDATA(K));
   end generate GEN_DCFEB_CTRL;
   PULSE_REPROG : PULSE_EDGE port map(reprog, reprog_rst, slowclk, rst, 2, dcfeb_ctrl_inner(0));
   DO_RESYNC  <= dcfeb_ctrl_inner(1) or RST or reprog;
-  PULSE_RESYNC : PULSE_EDGE port map(resync, resync_rst, slowclk, '0', 2, do_resync);
+  PULSE_RESYNC : PULSE_EDGE port map(resync, resync_rst, clk40, '0', 1, do_resync);
   PULSE_INJ    : PULSE_EDGE port map(test_inj, test_inj_rst, slowclk, rst, 2, dcfeb_ctrl_inner(2));
   PULSE_PLS    : PULSE_EDGE port map(test_pls, test_pls_rst, slowclk, rst, 2, dcfeb_ctrl_inner(3));
+  PULSE_L1A    : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1, dcfeb_ctrl_inner(4));
   REPROG_B   <= not REPROG;
   DCFEB_CTRL <= DCFEB_CTRL_INNER;
 
   OUTDATA(15 downto 0) <= ODMB_CTRL_INNER(15 downto 0) when (STROBE = '1' and R_ODMB_CTRL = '1') else
-                          DCFEB_CTRL_INNER(15 downto 0) when (STROBE = '1' and R_DCFEB_CTRL = '1')   else
-                          OUT_TP_SEL(15 downto 0)       when (STROBE = '1' and R_TP_SEL = '1')       else
-                          ODMB_DATA(15 downto 0)        when (STROBE = '1' and READ_ODMB_DATA = '1') else
+                          DCFEB_CTRL_INNER(15 downto 0) when (STROBE = '1' and R_DCFEB_CTRL = '1') else
+                          OUT_TP_SEL(15 downto 0)       when (STROBE = '1' and R_TP_SEL = '1')     else
+                          ODMB_DATA(15 downto 0)        when (STROBE = '1' and R_ODMB_DATA = '1')  else
                           "ZZZZZZZZZZZZZZZZ";
 
 -- bug in uncleaned version?
@@ -145,7 +149,7 @@ begin
   DTACK_INNER <= '0' when (Q_OUTDATA_1 = '1') else 'Z';
 
 --  OUTDATA(15 downto 0) <= FLFDATA(15 downto 0) when (STROBE = '1' and READDATA = '1') else (others => '1');
-  D_OUTDATA_2 <= '1' when (STROBE = '1' and READ_ODMB_DATA = '1') else '0';
+  D_OUTDATA_2 <= '1' when (STROBE = '1' and R_ODMB_DATA = '1') else '0';
 
   FD_OUTDATA_2 : FD port map(Q_OUTDATA_2, SLOWCLK, D_OUTDATA_2);
 
