@@ -652,6 +652,14 @@ architecture bdf_type of odmb_ucsb_v2 is
       ul_jtag_tms    : in  std_logic_vector (6 downto 0);
       ul_jtag_tdi    : in  std_logic_vector (6 downto 0);
 
+-- JTAG Signals To/From ODMB JTAG
+
+      odmb_jtag_sel : out std_logic;
+      odmb_jtag_tck : out std_logic;
+      odmb_jtag_tms : out std_logic;
+      odmb_jtag_tdi : out std_logic;
+      odmb_jtag_tdo : in  std_logic;
+  
 -- JTAG Signals To/From ODMB_CTRL
 
       mbc_jtag_tck : out std_logic;
@@ -960,7 +968,8 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal dcfeb_ctrl_reg : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_data_sel      : std_logic_vector(7 downto 0);
   signal odmb_data      : std_logic_vector(15 downto 0);
-
+  signal mask_l1a, mask_l1a_match : std_logic := '0';
+  
 -- signals for V1
 
   signal ul_dav      : std_logic_vector(6 downto 0) := (others => '0');
@@ -1283,10 +1292,10 @@ begin
   qpll_autorestart <= '1';
   qpll_reset       <= not reset;
 
-  v6_tck         <= '0';
-  v6_tms         <= '0';
-  v6_tdi         <= '0';
-  v6_jtag_sel_inner <= '0';
+ -- v6_tck         <= '0';
+ -- v6_tms         <= '0';
+ -- v6_tdi         <= '0';
+ -- v6_jtag_sel_inner <= '0';
   v6_jtag_sel <= v6_jtag_sel_inner;
 
   tpl(15 downto 6) <= (others => '0');
@@ -1812,6 +1821,14 @@ begin
       ul_jtag_tms    => ul_jtag_tms,
       ul_jtag_tdi    => ul_jtag_tdi,
 
+-- JTAG Signals To/From ODMB JTAG
+
+      odmb_jtag_sel => v6_jtag_sel_inner,
+      odmb_jtag_tck => v6_tck,
+      odmb_jtag_tms => v6_tms,
+      odmb_jtag_tdi => v6_tdi,
+      odmb_jtag_tdo => odmb_tdo,
+
 -- JTAG Signals To/From odmb_ctrl
 
       mbc_jtag_tck => mbc_jtag_tck,
@@ -1937,7 +1954,7 @@ begin
   LCTDLY_GTRG : LCTDLY port map(test_lct, clk40, LCT_L1A_DLY, test_l1a);
 
   testctrl_sel <= odmb_ctrl_reg(9);
-
+  
   raw_l1a <= '1' when test_l1a = '1' else
              tc_l1a when (testctrl_sel = '1') else
              not ccb_l1acc;
@@ -2780,8 +2797,8 @@ begin
 
   DMB_RX_PM : dmb_receiver
     generic map (
-      USE_2p56GbE => 1,
       --USE_2p56GbE => 0,
+      USE_2p56GbE => 1,
       SIM_SPEEDUP => IS_SIMULATION
       )
     port map (
@@ -2790,13 +2807,15 @@ begin
 
       --External signals
       RST => reset,
+      
+      --DAQ_RX_125REFCLK       => gl1_clk,
+      --DMBVME_CLK_S2          => gl1_clk_2_buf,  -- Data clock for the PC TX simulation
+      --DAQ_RX_160REFCLK_115_0       => clk40,    -- For the PC TX simulation
+
       DAQ_RX_125REFCLK       => clk40,
-
-      --DMBVME_CLK_S2          => gl1_clk_2,  -- Data clock for the PC TX simulation
-      --DAQ_RX_160REFCLK_115_0       => gl1_clk,    -- For the PC TX simulation
-
       DMBVME_CLK_S2          => clk2p5,
       DAQ_RX_160REFCLK_115_0 => clk160,
+      
       --DAQ_RX_160REFCLK_115_0 => gl0_clk,  -- For the DDU TX simulation
 
       ORX_01_N => orx_buf_n(1),
@@ -2853,10 +2872,12 @@ begin
   pb_b <= not pb;
   PULSE_PB : PULSE_EDGE port map(pb_pulse, open, clk40, reset, 1, pb_b(1));
 
-  
+  mask_l1a <= odmb_ctrl_reg(11);
+  mask_l1a_match <= odmb_ctrl_reg(12);
+ 
   dcfeb_tms       <= int_tms;
   dcfeb_tdi       <= int_tdi;
-  dcfeb_l1a       <= int_l1a or pb_pulse;
+  dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a or pb_pulse;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
 
@@ -2896,7 +2917,7 @@ begin
 
     dcfeb_tck(I) <= int_tck(I);
 
-    dcfeb_l1a_match(I) <= int_l1a_match(I) or pb_pulse;
+    dcfeb_l1a_match(I) <= '0' when mask_l1a_match = '1' else int_l1a_match(I) or pb_pulse;
     dcfeb_tx_ack(I)    <= '1' when gen_dcfeb_sel = '1' else daq_dcfeb_tx_ack(I);
 
     int_tdo(I)         <= dcfeb_tdo(I) when (gen_dcfeb_sel = '0') else gen_tdo(I);
