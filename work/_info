@@ -3362,23 +3362,23 @@ n@d@a@q_@g@t@x_dual_rate_custom_@g@t@x
 !s85 0
 !i10b 1
 vdaq_optical_out
-V]>g7nmQVMP5W;4>B=D1cz3
+VN3cBI0bLa]86PS37Jz1J13
 r1
+!s85 0
 31
-I]7m[U^G80ank=9RDUcJZU1
+I1jU?O=RBHeA@kG>5H?e[?3
 R5
-R90
+w1371158187
 8C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/daq_optical_out/daq_optical_out.v
 FC:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/daq_optical_out/daq_optical_out.v
 L0 2
 R63
-R64
-!s100 A6M28cKcD`;haZ_6aTjZO2
 !s90 -reportprogress|300|-work|work|-vopt|C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/daq_optical_out/daq_optical_out.v|
-!s108 1370555450.614000
-!s107 C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/daq_optical_out/daq_optical_out.v|
-!s85 0
+R64
 !i10b 1
+!s100 Tk7ahGWJC>;6f=?Xz?lj>0
+!s108 1371158196.799000
+!s107 C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/daq_optical_out/daq_optical_out.v|
 vDAQ_Rate_Sel_FSM
 VD:N0@hcDMoTE<^MUC4e=X0
 r1
@@ -3900,12 +3900,12 @@ FC:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/dmb_receiver/dmb_receiver.v
 L0 9
 R63
 R64
-!s85 0
 !s90 -reportprogress|300|-work|work|-vopt|C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/dmb_receiver/dmb_receiver.v|
-!i10b 1
 !s100 <:?XL?Jbjh;<J2@IiGBQB3
 !s108 1371066647.212000
 !s107 C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/dmb_receiver/dmb_receiver.v|
+!s85 0
+!i10b 1
 vDOUBLE_RESET
 VW=3VNiLP`[6^f=X3HA^X@1
 r1
@@ -8057,7 +8057,7 @@ R13
 !s100 Z7D[bngYNWM]VRA>C<X]O2
 !i10b 1
 Eodmb_ucsb_v2
-Z203 w1371076275
+Z203 w1371153064
 R29
 R30
 R16
@@ -8076,7 +8076,7 @@ L27
 V1WimK64XRnb]1GB];kQ9a3
 R8
 32
-Z206 !s108 1371076288.457000
+Z206 !s108 1371153072.916000
 Z207 !s90 -reportprogress|300|-work|work|-2002|-explicit|-vopt|C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_ucsb_v2.vhd|
 Z208 !s107 C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_ucsb_v2.vhd|
 R12
@@ -8096,16 +8096,16 @@ R3
 R4
 DEx4 work 12 odmb_ucsb_v2 0 22 1WimK64XRnb]1GB];kQ9a3
 32
-l1289
+l1307
 L205
-V_zKgMSF@ojdMPl]Sg8h052
+VJZ>`o8bn=z96k?M@Xg0z91
 R8
 R206
 R207
 R208
 R12
 R13
-!s100 Zz95G]^7JB_g[nD`ROdC<0
+!s100 >6Q9VN]K>EhFa^GZ:o9T^1
 !i10b 1
 Eodmb_ucsb_v2_tb
 Z209 w1370928836
@@ -8253,7 +8253,7 @@ R13
 !s100 ;ZKV9L[4de2lO6SdJAkhj3
 !i10b 1
 Eodmb_vme
-Z218 w1370972129
+Z218 w1371153039
 R1
 R2
 R3
@@ -8263,33 +8263,33 @@ Z219 8C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/odmb_vme.vhd
 Z220 FC:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/odmb_vme.vhd
 l0
 L16
-Vn4mQ4<@<<gJPTEDPPC`c92
+VDQe=`S>dzKcO2?7PdfV;K2
 R8
 32
-Z221 !s108 1370972133.677000
+Z221 !s108 1371153069.905000
 Z222 !s90 -reportprogress|300|-work|work|-2002|-explicit|-vopt|C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/odmb_vme.vhd|
 Z223 !s107 C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/odmb_vme.vhd|
 R12
 R13
-!s100 [lgn@Xc:VSJD?06fS7^2[0
+!s100 L44Rd@VgDZhC@bO:PYTdR0
 !i10b 1
 Aodmb_vme_architecture
 R1
 R2
 R3
 R4
-DEx4 work 8 odmb_vme 0 22 n4mQ4<@<<gJPTEDPPC`c92
+DEx4 work 8 odmb_vme 0 22 DQe=`S>dzKcO2?7PdfV;K2
 32
-l560
-L189
-V@NT3FFcUnD>]FVYQJ1i183
+l573
+L195
+VIYV<RfZ31bXnF@efNkToC3
 R8
 R221
 R222
 R223
 R12
 R13
-!s100 Yj2A3Q:aCCc[cS]H4@Voo2
+!s100 RiYi5b19KDbh<YZ2k8l5?1
 !i10b 1
 Eodmbjtag
 Z224 w1370970831
@@ -10892,7 +10892,7 @@ R13
 !s100 mOMcHa?n4TVG6ZENJ7X0S2
 !i10b 1
 Etestfifos
-Z263 w1370932826
+Z263 w1371154045
 R31
 R3
 R4
@@ -10902,33 +10902,33 @@ Z264 8C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/testfifos.vhd
 Z265 FC:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/testfifos.vhd
 l0
 L10
-V>98[gImQ]YKYQd]kP[]Pc0
+VF>SaDJ3gW@MBbZG0<_]g51
 R8
 32
-Z266 !s108 1370936866.754000
+Z266 !s108 1371157550.053000
 Z267 !s90 -reportprogress|300|-work|work|-2002|-explicit|-vopt|C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/testfifos.vhd|
 Z268 !s107 C:/Users/odmb/Documents/LocalFW/odmb_ucsb_v2/source/odmb_vme/testfifos.vhd|
 R12
 R13
-!s100 ^UGLYI^n@JAhX5kW;mSI40
+!s100 ?:?cVS2Wf7I4Z0LIFJ?XQ3
 !i10b 1
 Atestfifos_arch
 R31
 R3
 R4
 R16
-DEx4 work 9 testfifos 0 22 >98[gImQ]YKYQd]kP[]Pc0
+DEx4 work 9 testfifos 0 22 F>SaDJ3gW@MBbZG0<_]g51
 32
-l75
-L39
-VRH`WG25RYVLAK0Fha7>FG0
+l93
+L45
+VMhDajj<08eZ8g^i3L4>II0
 R8
 R266
 R267
 R268
 R12
 R13
-!s100 X6KNVDBD]XAQm^P_Hi[i=2
+!s100 `G]VH79C8CO4L_4B:I0fg0
 !i10b 1
 Etrgcntrl
 Z269 w1369755623

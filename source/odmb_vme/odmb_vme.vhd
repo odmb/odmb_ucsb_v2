@@ -173,12 +173,18 @@ entity ODMB_VME is
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(6 downto 0);
 
+    -- PCTX FIFO signals
+    pctx_fifo_rst     : out std_logic;
+    pctx_fifo_rden    : out std_logic;
+    pctx_fifo_dout    : in  std_logic_vector(15 downto 0);
+    pctx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+
     -- TESTFIFOS
-    TFF_DATA_OUT : in  std_logic_vector(15 downto 0);
+    TFF_DOUT : in  std_logic_vector(15 downto 0);
     TFF_WRD_CNT  : in  std_logic_vector(11 downto 0);
     TFF_RST      : out std_logic_vector(NFEB downto 1);
     TFF_SEL      : out std_logic_vector(NFEB downto 1);
-    RD_EN_TFF    : out std_logic_vector(NFEB downto 1)
+    TFF_RDEN    : out std_logic_vector(NFEB downto 1)
 
 
     );
@@ -316,12 +322,19 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
-      TFF_DATA_OUT : in std_logic_vector(15 downto 0);
+      -- PCTX FIFO signals
+      pctx_fifo_rst     : out std_logic;
+      pctx_fifo_rden    : out std_logic;
+      pctx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      pctx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+
+      -- TFF (DCFEB test FIFOs)
+      TFF_DOUT : in std_logic_vector(15 downto 0);
       TFF_WRD_CNT  : in std_logic_vector(11 downto 0);
 
       TFF_RST   : out std_logic_vector(NFEB downto 1);
       TFF_SEL   : out std_logic_vector(NFEB downto 1);
-      RD_EN_TFF : out std_logic_vector(NFEB downto 1)
+      TFF_RDEN : out std_logic_vector(NFEB downto 1)
       );
   end component;
 
@@ -447,33 +460,33 @@ architecture ODMB_VME_architecture of ODMB_VME is
   end component;
 
   component ODMBJTAG is
-  
-  port (
+    
+    port (
 
-    FASTCLK : in std_logic;
-    SLOWCLK : in std_logic;
-    RST : in std_logic;
+      FASTCLK : in std_logic;
+      SLOWCLK : in std_logic;
+      RST     : in std_logic;
 
-    DEVICE : in std_logic;
-    STROBE : in std_logic;
-    COMMAND : in std_logic_vector(9 downto 0);
-    WRITER : in std_logic;
+      DEVICE  : in std_logic;
+      STROBE  : in std_logic;
+      COMMAND : in std_logic_vector(9 downto 0);
+      WRITER  : in std_logic;
 
-    INDATA : in std_logic_vector(15 downto 0);
-    OUTDATA : out std_logic_vector(15 downto 0);
+      INDATA  : in  std_logic_vector(15 downto 0);
+      OUTDATA : out std_logic_vector(15 downto 0);
 
-    DTACK : out std_logic;
+      DTACK : out std_logic;
 
-    INITJTAGS : in std_logic;
-    TCK : out std_logic;
-    TDI : out std_logic;
-    TMS : out std_logic;
-    ODMBTDO : in std_logic;
+      INITJTAGS : in  std_logic;
+      TCK       : out std_logic;
+      TDI       : out std_logic;
+      TMS       : out std_logic;
+      ODMBTDO   : in  std_logic;
 
-    JTAGSEL : out std_logic;
+      JTAGSEL : out std_logic;
 
-    LED : out std_logic
-    );
+      LED : out std_logic
+      );
 
   end component;
 
@@ -656,30 +669,30 @@ begin
   ODMBJTAG_PM : ODMBJTAG
     port map (
 
-    FASTCLK => clk,
-    SLOWCLK => clk_s2,
-    RST     => rst,
+      FASTCLK => clk,
+      SLOWCLK => clk_s2,
+      RST     => rst,
 
-    DEVICE  => device(2),
-    STROBE  => strobe,
-    COMMAND => cmd,
-    WRITER  => vme_write_b,
+      DEVICE  => device(2),
+      STROBE  => strobe,
+      COMMAND => cmd,
+      WRITER  => vme_write_b,
 
-    INDATA  => vme_data_in,
-    OUTDATA => outdata_odmbjtag,
+      INDATA  => vme_data_in,
+      OUTDATA => outdata_odmbjtag,
 
-    DTACK => vme_dtack_b,
+      DTACK => vme_dtack_b,
 
-    INITJTAGS      => '0',            -- to be defined
-    TCK            => odmb_jtag_tck,
-    TDI            => odmb_jtag_tdi,
-    TMS            => odmb_jtag_tms,
-    ODMBTDO        => odmb_jtag_tdo,
-  
-    JTAGSEL        => odmb_jtag_sel,
+      INITJTAGS => '0',                 -- to be defined
+      TCK       => odmb_jtag_tck,
+      TDI       => odmb_jtag_tdi,
+      TMS       => odmb_jtag_tms,
+      ODMBTDO   => odmb_jtag_tdo,
 
-    LED     => led_odmbjtag
-    );
+      JTAGSEL => odmb_jtag_sel,
+
+      LED => led_odmbjtag
+      );
 
   MBCJTAG_PM : MBCJTAG
     port map (
@@ -865,11 +878,18 @@ begin
 
       DTACK => VME_DTACK_B ,
 
-      TFF_DATA_OUT => TFF_DATA_OUT,
+      -- PCTX FIFO signals
+      pctx_fifo_rst     => pctx_fifo_rst,
+      pctx_fifo_rden    => pctx_fifo_rden,
+      pctx_fifo_dout    => pctx_fifo_dout,
+      pctx_fifo_wrd_cnt => pctx_fifo_wrd_cnt,
+
+      -- TFF (DCFEB test FIFOs)
+      TFF_DOUT => TFF_DOUT,
       TFF_WRD_CNT  => TFF_WRD_CNT,
       TFF_RST      => TFF_RST,
       TFF_SEL      => TFF_SEL,
-      RD_EN_TFF    => RD_EN_TFF
+      TFF_RDEN    => TFF_RDEN
 
       );
 
