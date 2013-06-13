@@ -74,6 +74,14 @@ entity ODMB_VME is
     mbc_jtag_tdi : out std_logic;
     mbc_jtag_tdo : in  std_logic;
 
+-- JTAG Signals To/From ODMB JTAG
+
+    odmb_jtag_sel : out std_logic;
+    odmb_jtag_tck : out std_logic;
+    odmb_jtag_tms : out std_logic;
+    odmb_jtag_tdi : out std_logic;
+    odmb_jtag_tdo : in  std_logic;
+
 -- Done from DCFEB FPGA (CFEBPRG)
 
     ul_done : in std_logic_vector(6 downto 0);
@@ -191,6 +199,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
+  signal LOGICH : std_logic := '1';
+  signal LOGICL : std_logic := '0';
+
   signal ext_vme_ga : std_logic_vector(5 downto 0);
 
   signal device         : std_logic_vector(9 downto 0);
@@ -204,6 +215,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal outdata_cfebjtag : std_logic_vector(15 downto 0);
 -- signal diagout_cfebjtag  : std_logic_vector(17 downto 0);
   signal led_cfebjtag     : std_logic;
+
+  signal outdata_odmbjtag : std_logic_vector(15 downto 0);
+  signal led_odmbjtag     : std_logic;
 
   signal outdata_mbcjtag : std_logic_vector(15 downto 0);
   signal led_mbcjtag     : std_logic;
@@ -432,6 +446,37 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
   end component;
 
+  component ODMBJTAG is
+  
+  port (
+
+    FASTCLK : in std_logic;
+    SLOWCLK : in std_logic;
+    RST : in std_logic;
+
+    DEVICE : in std_logic;
+    STROBE : in std_logic;
+    COMMAND : in std_logic_vector(9 downto 0);
+    WRITER : in std_logic;
+
+    INDATA : in std_logic_vector(15 downto 0);
+    OUTDATA : out std_logic_vector(15 downto 0);
+
+    DTACK : out std_logic;
+
+    INITJTAGS : in std_logic;
+    TCK : out std_logic;
+    TDI : out std_logic;
+    TMS : out std_logic;
+    ODMBTDO : in std_logic;
+
+    JTAGSEL : out std_logic;
+
+    LED : out std_logic
+    );
+
+  end component;
+
   component MBCJTAG is
     
     port (
@@ -564,7 +609,8 @@ begin
       device          => device,
       device0_outdata => outdata_testctrl,
       device1_outdata => outdata_cfebjtag,
-      device2_outdata => outdata_mbcjtag,
+--      device2_outdata => outdata_mbcjtag,
+      device2_outdata => outdata_odmbjtag,
       device3_outdata => outdata_vmemon,
       device4_outdata => outdata_vmeconfregs,
       device5_outdata => outdata_testfifos,
@@ -607,13 +653,41 @@ begin
       LED     => led_cfebjtag
       );
 
+  ODMBJTAG_PM : ODMBJTAG
+    port map (
+
+    FASTCLK => clk,
+    SLOWCLK => clk_s2,
+    RST     => rst,
+
+    DEVICE  => device(2),
+    STROBE  => strobe,
+    COMMAND => cmd,
+    WRITER  => vme_write_b,
+
+    INDATA  => vme_data_in,
+    OUTDATA => outdata_odmbjtag,
+
+    DTACK => vme_dtack_b,
+
+    INITJTAGS      => '0',            -- to be defined
+    TCK            => odmb_jtag_tck,
+    TDI            => odmb_jtag_tdi,
+    TMS            => odmb_jtag_tms,
+    ODMBTDO        => odmb_jtag_tdo,
+  
+    JTAGSEL        => odmb_jtag_sel,
+
+    LED     => led_odmbjtag
+    );
+
   MBCJTAG_PM : MBCJTAG
     port map (
 
       FASTCLK => clk,
       SLOWCLK => clk_s2,
       RST     => rst,
-      DEVICE  => device(2),
+      DEVICE  => LOGICL,
       STROBE  => strobe,
       COMMAND => cmd,
       WRITER  => vme_write_b,
