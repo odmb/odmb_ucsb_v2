@@ -1327,8 +1327,11 @@ begin
   tpl(23)          <= '0';
 
 
-
-  tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid)
+ -- Does this really need to be a process?  What a mess of a sensitivity list.
+  tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
+                         int_tmb_dav, dcfeb_data, tmb_data, tmb_data_valid, int_alct_dav, alct_data, 
+								 alct_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo, 
+								 v6_jtag_sel_inner)
   begin
     case tp_sel_reg is
       when x"0000" =>
@@ -1427,7 +1430,7 @@ begin
   tph(46) <= '0';
 
 
-  Select_TestPoints : process(diagout_lvdbmon, diagout_cfebjtag, qpll_clk40MHz)
+  Select_TestPoints : process(diagout_lvdbmon, diagout_cfebjtag, qpll_clk40MHz, select_diagnostic)
   begin
     if (select_diagnostic = 0) then
       d(0)  <= diagout_lvdbmon(0);      -- TP58   TP59 SLOWCLK
@@ -1485,6 +1488,7 @@ begin
 
   PULLUP_dtack_b : PULLUP port map (vme_dtack_v6_b);
   PULLDOWN_TMS   : PULLDOWN port map (dcfeb_tms);
+  PULLDOWN_ODMB_TMS   : PULLDOWN port map (v6_tms);
   GEN_PULLDOWN   : for I in 0 to 15 generate
   begin
     PULLDOWN_FIFO : PULLDOWN port map (fifo_out(I));
@@ -1517,11 +1521,13 @@ begin
   lvmb_sclk <= int_lvmb_sclk;
   lvmb_sdin <= int_lvmb_sdin;
 
-  test_vme_oe_b <= '1';  -- 3-state output enable for test_vme_data (high=input, low=output) 
+  -- Commented out to clear synth warning:
+--  test_vme_oe_b <= '1';  -- 3-state output enable for test_vme_data (high=input, low=output)
 -- test_vme_data_out <= "1010101010101010";     -- constant output (0xaaaa) for test_vme_data 
 
 -- flf_test_en <= tm_en;                                                                
-  tkn_test_en <= tm_en;
+-- Commented out to clear synth warning
+--  tkn_test_en <= tm_en;
 
 
 -- CODE_B (LED CONTROLS)
@@ -1782,11 +1788,13 @@ begin
 
 -- TX_DAT to DCFEBs
 
-  otx1 <= (others => '0');
+  --Commented out to clear synth warnings
+--  otx1 <= (others => '0');
 
 -- TX_CLK to DCFEBs
 
-  otx2 <= (others => '0');
+-- Commented out to clear synth warnings
+--  otx2 <= (others => '0');
 
   vme_dtack_v6_b <= int_vme_dtack_v6_b;
 

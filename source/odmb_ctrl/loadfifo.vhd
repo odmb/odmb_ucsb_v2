@@ -28,7 +28,8 @@ architecture LOADFIFO_Arch of LOADFIFO is
   signal Q1_SHIFT,Q2_SHIFT,Q3_SHIFT,LOAD,C_UPDATE : std_logic;
   signal D : std_logic_vector(2 downto 0);
   
-  signal JOEF_SHR_EN, JOEF_DR_CLK, JOEF_TDO : std_logic;
+--  signal JOEF_SHR_EN, JOEF_DR_CLK, JOEF_TDO : std_logic;
+  signal JOEF_SHR_EN, JOEF_DR_CLK           : std_logic;
   signal JOEF_SHR                           : std_logic_vector(NFEB+3 downto 1);
   signal JOEF_DR                            : std_logic_vector(NFEB+2 downto 1);
 
@@ -48,6 +49,6 @@ begin  --Architecture
     FDC_I  : FDC port map(JOEF_DR(I), JOEF_DR_CLK, RST, JOEF_SHR(I));
   end generate GEN_JOEF_SHR;
   JOEF(NFEB+2 downto 1) <= JOEF_DR(NFEB+2 downto 1);
-  JOEF_TDO                <= JOEF_SHR(1);
+ -- JOEF_TDO                <= JOEF_SHR(1);
 
 end LOADFIFO_Arch;

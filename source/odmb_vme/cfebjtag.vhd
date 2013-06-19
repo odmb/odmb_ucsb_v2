@@ -324,29 +324,32 @@ begin
 
     DTACK_INNER <= '0' when (RDTDODK='1') else 'Z';
 
+-- Comment out to clear synth warning
 -- Generate RTN_SHIFT_EN    
-    RTN_SHFT_EN <= DL_RTN_SHFT_EN(1) when SELFEB="0000001" else
-                   DL_RTN_SHFT_EN(2) when SELFEB="0000010" else
-                   DL_RTN_SHFT_EN(3) when SELFEB="0000100" else
-                   DL_RTN_SHFT_EN(4) when SELFEB="0001000" else
-                   DL_RTN_SHFT_EN(5) when SELFEB="0010000" else
-                   DL_RTN_SHFT_EN(6) when SELFEB="0100000" else
-                   DL_RTN_SHFT_EN(7) when SELFEB="1000000" else
-                   '0';
+--    RTN_SHFT_EN <= DL_RTN_SHFT_EN(1) when SELFEB="0000001" else
+--                   DL_RTN_SHFT_EN(2) when SELFEB="0000010" else
+--                   DL_RTN_SHFT_EN(3) when SELFEB="0000100" else
+--                   DL_RTN_SHFT_EN(4) when SELFEB="0001000" else
+--                   DL_RTN_SHFT_EN(5) when SELFEB="0010000" else
+--                   DL_RTN_SHFT_EN(6) when SELFEB="0100000" else
+--                   DL_RTN_SHFT_EN(7) when SELFEB="1000000" else
+--                   '0';
 
+-- Comment out to clear synth warning
 -- Generate RTN_TCK
-    RTN_TCK <= UL_JTAG_TCK(1) when SELFEB="0000001" else
-               UL_JTAG_TCK(2) when SELFEB="0000010" else
-               UL_JTAG_TCK(3) when SELFEB="0000100" else
-               UL_JTAG_TCK(4) when SELFEB="0001000" else
-               UL_JTAG_TCK(5) when SELFEB="0010000" else
-               UL_JTAG_TCK(6) when SELFEB="0100000" else
-               UL_JTAG_TCK(7) when SELFEB="1000000" else
-               '0';
+--    RTN_TCK <= UL_JTAG_TCK(1) when SELFEB="0000001" else
+--                UL_JTAG_TCK(2) when SELFEB="0000010" else
+--                UL_JTAG_TCK(3) when SELFEB="0000100" else
+--                UL_JTAG_TCK(4) when SELFEB="0001000" else
+--                UL_JTAG_TCK(5) when SELFEB="0010000" else
+--                UL_JTAG_TCK(6) when SELFEB="0100000" else
+--                UL_JTAG_TCK(7) when SELFEB="1000000" else
+--                '0';
 
 -- Generate OUTDATA
     CE_SHIFT1 <= SHDATAX and not ENABLE;   -- BGB
     SR16LCE(SLOWCLK, CE_SHIFT1, RST, TDO, Q_OUTDATA, Q_OUTDATA);   -- BGB
+-- Above commented values in this commented block:
     --SR16LCE(RTN_TCK, RTN_SHFT_EN, RST, TDO, Q_OUTDATA, Q_OUTDATA);
     OUTDATA(15 downto 0) <= Q_OUTDATA(15 downto 0) when (RDTDODK='1') else "ZZZZZZZZZZZZZZZZ";
 

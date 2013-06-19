@@ -26,9 +26,9 @@ module daq_ddu_out #(
    reg [1:0] 	 tx_ddu_k;
    reg [15:0] 	 tx_ddu_data;
    
-   wire 	 txout_clk80;
-   wire 	 pll_lock_ddu;
-   wire 	 rst_done_ddu;
+//   wire 	 txout_clk80;
+ //  wire 	 pll_lock_ddu;
+ //  wire 	 rst_done_ddu;
 
    assign DDU_DATA_CLK = usr_clk_wordwise;
    

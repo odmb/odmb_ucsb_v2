@@ -20,14 +20,14 @@ end INSTRGDC;
 
 architecture INSTRGDC_Arch of INSTRGDC is
 
-  signal SELUPDATE : std_logic := 'L';     -- Signal to update F (FUNUPD in schematic)
+--  signal SELUPDATE : std_logic := 'L';     -- Signal to update F (FUNUPD in schematic)
   signal SELSHIFT : std_logic := 'L';      -- Enable shifting BTDI into D
   signal D : std_logic_vector(7 downto 0); -- Registers to hold data from BTDI
 
 begin  -- INSTRGDC_Arch
 
   SELSHIFT <= SHIFT and SEL1;
-  SELUPDATE <= UPDATE and SEL1;
+--  SELUPDATE <= UPDATE and SEL1;
   
   -- purpose: shift BTDI into D[7:0]
   -- type   : combinational

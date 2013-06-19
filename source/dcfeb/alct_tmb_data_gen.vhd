@@ -2,7 +2,7 @@
 --
 -- Title       : dcfeb data generator
 -- Design      : 
--- Author      : Guido Magazzù
+-- Author      : Guido Magazzu
 --
 ---------------------------------------------------------------------------------------------------
 --
@@ -54,7 +54,7 @@ begin
 
 -- l1a_counter
   
-  l1a_cnt : process (clk, l1a)
+  l1a_cnt : process (clk, l1a, rst)
 
     variable l1a_cnt_data : std_logic_vector(23 downto 0);
 
@@ -74,7 +74,7 @@ begin
 
 -- dw_counter
 
-  alct_dw_cnt : process (clk, alct_dw_cnt_en, alct_dw_cnt_rst)
+  alct_dw_cnt : process (clk, alct_dw_cnt_en, alct_dw_cnt_rst, rst)
 
     variable alct_dw_cnt_data : std_logic_vector(11 downto 0);
 
@@ -94,7 +94,7 @@ begin
     
   end process;
 
-  tmb_dw_cnt : process (clk, tmb_dw_cnt_en, tmb_dw_cnt_rst)
+  tmb_dw_cnt : process (clk, tmb_dw_cnt_en, tmb_dw_cnt_rst, rst)
 
     variable tmb_dw_cnt_data : std_logic_vector(11 downto 0);
 

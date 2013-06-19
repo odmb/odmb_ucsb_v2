@@ -97,11 +97,11 @@ end component;
   signal shift_tpusr			  : std_ulogic;
   signal update_tpusr		  : std_ulogic;
   signal shift_ir_tpusr		  : std_ulogic;
-  signal update_ir_tpusr	  : std_ulogic;
+--  signal update_ir_tpusr	  : std_ulogic;
 
 -- for future expansion  
-  signal SEL3			  : std_ulogic := '0';
-  signal SEL4			  : std_ulogic := '0';
+--  signal SEL3			  : std_ulogic := '0';
+--  signal SEL4			  : std_ulogic := '0';
 
 -- Registers
   signal BypassReg		: std_ulogic := '0';
@@ -111,12 +111,12 @@ end component;
   signal IDreg		         : std_logic_vector (31 downto 0);
 
 -- Instruction decode signals  
-  signal BYPASS_sig		: std_ulogic := '0';
-  signal IDCODE_sig		: std_ulogic := '0';
+--  signal BYPASS_sig		: std_ulogic := '0';
+--  signal IDCODE_sig		: std_ulogic := '0';
   signal USER1_sig		: std_ulogic := '0';
   signal USER2_sig		: std_ulogic := '0';
-  signal USER3_sig		: std_ulogic := '0';
-  signal USER4_sig		: std_ulogic := '0';
+--  signal USER3_sig		: std_ulogic := '0';
+--  signal USER4_sig		: std_ulogic := '0';
 
 
 begin
@@ -149,7 +149,7 @@ begin
        shift_tpusr     <= tap_shift_dr;
        update_tpusr    <= tap_update_dr;
        shift_ir_tpusr  <= tap_shift_ir;
-       update_ir_tpusr <= tap_update_ir;
+--       update_ir_tpusr <= tap_update_ir;
     end if;
 end process  prcs_usr_sigs;
 
@@ -189,61 +189,60 @@ prcs_JtagDecodeIR:process(IR_reg)
 begin
 	case IR_reg is
 		when IR_CAPTURE_VAL =>
-			BYPASS_sig <= '0';
-			IDCODE_sig <= '0';
+--			BYPASS_sig <= '0';
+--			IDCODE_sig <= '0';
 			USER1_sig  <= '0';
 			USER2_sig  <= '0';
-			USER3_sig  <= '0';
-			USER4_sig  <= '0';
+--			USER3_sig  <= '0';
+--			USER4_sig  <= '0';
 		when BYPASS_INSTR => 
-			BYPASS_sig <= '1';
-			IDCODE_sig <= '0';
+--			BYPASS_sig <= '1';
+--			IDCODE_sig <= '0';
 			USER1_sig  <= '0';
 			USER2_sig  <= '0';
-			USER3_sig  <= '0';
-			USER4_sig  <= '0';
+--			USER3_sig  <= '0';
+--			USER4_sig  <= '0';
 		when IDCODE_INSTR => 
-			BYPASS_sig <= '0';
-			IDCODE_sig <= '1';
-			USER1_sig  <= '0';
+--			BYPASS_sig <= '0';
+--			USER1_sig  <= '0';
 			USER2_sig  <= '0';
-			USER3_sig  <= '0';
-			USER4_sig  <= '0';
+--			USER3_sig  <= '0';
+--			USER4_sig  <= '0';
 		when USER1_INSTR => 
-			BYPASS_sig <= '0';
-			IDCODE_sig <= '0';
+--			BYPASS_sig <= '0';
+--			IDCODE_sig <= '0';
 			USER1_sig  <= '1';
 			USER2_sig  <= '0';
-			USER3_sig  <= '0';
-			USER4_sig  <= '0';
+--			USER3_sig  <= '0';
+--			USER4_sig  <= '0';
 		when USER2_INSTR => 
-			BYPASS_sig <= '0';
-			IDCODE_sig <= '0';
+--			BYPASS_sig <= '0';
+--			IDCODE_sig <= '0';
 			USER1_sig  <= '0';
 			USER2_sig  <= '1';
-			USER3_sig  <= '0';
-			USER4_sig  <= '0';
+--			USER3_sig  <= '0';
+--			USER4_sig  <= '0';
 		when USER3_INSTR => 
-			BYPASS_sig <= '0';
-			IDCODE_sig <= '0';
+--			BYPASS_sig <= '0';
+--			IDCODE_sig <= '0';
 			USER1_sig  <= '0';
 			USER2_sig  <= '0';
-			USER3_sig  <= '1';
-			USER4_sig  <= '0';
+--			USER3_sig  <= '1';
+--			USER4_sig  <= '0';
 		when USER4_INSTR => 
-			BYPASS_sig <= '0';
-			IDCODE_sig <= '0';
+--			BYPASS_sig <= '0';
+--			IDCODE_sig <= '0';
 			USER1_sig  <= '0';
 			USER2_sig  <= '0';
-			USER3_sig  <= '0';
-			USER4_sig  <= '1';
+--			USER3_sig  <= '0';
+--			USER4_sig  <= '1';
 		when others => 
-			BYPASS_sig <= '0';
-			IDCODE_sig <= '0';
+--			BYPASS_sig <= '0';
+--			IDCODE_sig <= '0';
 			USER1_sig  <= '0';
 			USER2_sig  <= '0';
-			USER3_sig  <= '0';
-			USER4_sig  <= '0';
+--			USER3_sig  <= '0';
+--			USER4_sig  <= '0';
 	end case;
 end process prcs_JtagDecodeIR;
   
@@ -281,8 +280,8 @@ end process prcs_IDcode_reg;
 
 	SEL1     <= USER1_sig;
 	SEL2     <= USER2_sig;
-	SEL3     <= USER3_sig;
-	SEL4     <= USER4_sig;
+--	SEL3     <= USER3_sig;
+--	SEL4     <= USER4_sig;
       
 --####################################################################
 --#####                         OUTPUT                           #####

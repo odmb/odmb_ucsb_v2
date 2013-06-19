@@ -107,9 +107,9 @@
 
     // ground and vcc signals
     wire            tied_to_ground_i;
-    wire    [63:0]  tied_to_ground_vec_i;
-    wire            tied_to_vcc_i;
-    wire    [63:0]  tied_to_vcc_vec_i;
+//    wire    [63:0]  tied_to_ground_vec_i;
+//    wire            tied_to_vcc_i;
+//    wire    [63:0]  tied_to_vcc_vec_i;
     wire            gtx0_gtxtest_bit1;
     wire            gtx0_gtxtest_done;
     wire    [12:0]  gtx0_gtxtest_i;
@@ -119,9 +119,9 @@
 //********************************* Main Body of Code**************************
 
     assign tied_to_ground_i             = 1'b0;
-    assign tied_to_ground_vec_i         = 64'h0000000000000000;
-    assign tied_to_vcc_i                = 1'b1;
-    assign tied_to_vcc_vec_i            = 64'hffffffffffffffff;
+//    assign tied_to_ground_vec_i         = 64'h0000000000000000;
+//    assign tied_to_vcc_i                = 1'b1;
+//    assign tied_to_vcc_vec_i            = 64'hffffffffffffffff;
 
     assign gtx0_gtxtest_i          = {11'b10000000000,gtx0_gtxtest_bit1,1'b0};
     assign gtx0_txreset_i          = gtx0_gtxtest_done || GTX0_TXRESET_IN;

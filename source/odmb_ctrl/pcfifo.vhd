@@ -62,8 +62,9 @@ architecture pcfifo_architecture of pcfifo is
   signal f0_next_state, f0_current_state : fsm_state_type;
 
   signal f0_rden                                : std_logic;
-  signal f0_empty, f0_aempty, f0_afull, f0_full : std_logic;
-  signal f0_wr_cnt, f0_rd_cnt                   : std_logic_vector(9 downto 0);
+ -- signal f0_empty, f0_aempty, f0_afull, f0_full : std_logic;
+  signal f0_empty : std_logic;
+  -- signal f0_wr_cnt, f0_rd_cnt                   : std_logic_vector(9 downto 0);
   signal f0_out                                 : std_logic_vector(15 downto 0);
   signal f0_ld                                  : std_logic;
 
@@ -210,14 +211,14 @@ begin
       WREN        => fifo_wren(1)       -- Input write enable
       );
 
-  f0_aempty <= fifo_aempty(1);
-  f0_afull  <= fifo_afull(1);
+ -- f0_aempty <= fifo_aempty(1);
+  --f0_afull  <= fifo_afull(1);
   f0_out    <= fifo_out(1)(15 downto 0);
   f0_ld     <= fifo_out(1)(17);
   f0_empty  <= fifo_empty(1);
-  f0_full   <= fifo_full(1);
-  f0_rd_cnt <= fifo_rd_cnt(1);
-  f0_wr_cnt <= fifo_wr_cnt(1);
+  --f0_full   <= fifo_full(1);
+  --f0_rd_cnt <= fifo_rd_cnt(1);
+  --f0_wr_cnt <= fifo_wr_cnt(1);
 
 --  FIFO_0 : FIFO_DUALCLOCK_MACRO
 --    generic map (

@@ -187,7 +187,7 @@ begin  --Architecture
 
   end process;
 
-  CREATE_FSR_vector : process (RST, INDATA, WRITE_FSR, STROBE)
+  CREATE_FSR_vector : process (RST, INDATA, WRITE_FSR, STROBE, FSR_vector)
   begin
     FDCE(INDATA(0), STROBE, WRITE_FSR, RST, FSR_vector(0));
     FDCE(INDATA(1), STROBE, WRITE_FSR, RST, FSR_vector(1));
@@ -213,7 +213,9 @@ begin  --Architecture
 
   tc_run <= tc_run_inner;
 
-  CREATE_OUTDATA : process (STROBE, READ_FSR, READ_STR, READ_WRC, READ_RDC, READ_FIFO, FSR_vector, FIFO_STR, FIFO_WRC, FIFO_RDC, SLOWCLK, D_DTACK, E_DTACK)  --Also CREATE_DTACK
+  CREATE_OUTDATA : process (STROBE, READ_FSR, READ_STR, READ_WRC, READ_RDC, READ_FIFO, FSR_vector,
+                            FIFO_DATA, READ_TRC, TRG_CNT_DATA, FIFO_STR, FIFO_WRC, FIFO_RDC, SLOWCLK,
+                            D_DTACK, E_DTACK)  --Also CREATE_DTACK
   begin
     if (STROBE = '1' and READ_FSR = '1') then
       OUTDATA(15 downto 5) <= (others => '0');
@@ -236,7 +238,8 @@ begin  --Architecture
     end if;
   end process;
 
-  CREATE_DTACK_READ_FSR : process (READ_FSR, STROBE, SLOWCLK, D_DTACK_WRITE_FSR, E_DTACK_WRITE_FSR)
+  CREATE_DTACK_READ_FSR : process (READ_FSR, STROBE, SLOWCLK, D_DTACK_WRITE_FSR, E_DTACK_WRITE_FSR,
+                                   D_DTACK_READ_FSR, E_DTACK_READ_FSR)
   begin
     D_DTACK_READ_FSR <= READ_FSR and STROBE;
     FD(D_DTACK_READ_FSR, SLOWCLK, E_DTACK_READ_FSR);
@@ -247,7 +250,8 @@ begin  --Architecture
     end if;
   end process;
 
-  CREATE_DTACK_READ_STR : process (READ_STR, STROBE, SLOWCLK, D_DTACK_WRITE_STR, E_DTACK_WRITE_STR)
+  CREATE_DTACK_READ_STR : process (READ_STR, STROBE, SLOWCLK, D_DTACK_WRITE_STR, E_DTACK_WRITE_STR,
+                                   D_DTACK_READ_STR, E_DTACK_READ_STR)
   begin
     D_DTACK_READ_STR <= READ_STR and STROBE;
     FD(D_DTACK_READ_STR, SLOWCLK, E_DTACK_READ_STR);
@@ -258,7 +262,8 @@ begin  --Architecture
     end if;
   end process;
 
-  CREATE_DTACK_READ_WRC : process (READ_WRC, STROBE, SLOWCLK, D_DTACK_WRITE_WRC, E_DTACK_WRITE_WRC)
+  CREATE_DTACK_READ_WRC : process (READ_WRC, STROBE, SLOWCLK, D_DTACK_WRITE_WRC, E_DTACK_WRITE_WRC,
+                                   D_DTACK_READ_WRC, E_DTACK_READ_WRC)
   begin
     D_DTACK_READ_WRC <= READ_WRC and STROBE;
     FD(D_DTACK_READ_WRC, SLOWCLK, E_DTACK_READ_WRC);
@@ -269,7 +274,8 @@ begin  --Architecture
     end if;
   end process;
 
-  CREATE_DTACK_READ_RDC : process (READ_RDC, STROBE, SLOWCLK, D_DTACK_WRITE_RDC, E_DTACK_WRITE_RDC)
+  CREATE_DTACK_READ_RDC : process (READ_RDC, STROBE, SLOWCLK, D_DTACK_WRITE_RDC, E_DTACK_WRITE_RDC,
+                                   D_DTACK_READ_RDC, E_DTACK_READ_RDC)
   begin
     D_DTACK_READ_RDC <= READ_RDC and STROBE;
     FD(D_DTACK_READ_RDC, SLOWCLK, E_DTACK_READ_RDC);
@@ -280,7 +286,8 @@ begin  --Architecture
     end if;
   end process;
 
-  CREATE_DTACK_READ_FIFO : process (READ_FIFO, STROBE, SLOWCLK, D_DTACK_READ_FIFO, E1_DTACK_READ_FIFO, E2_DTACK_READ_FIFO, E_DTACK_READ_FIFO)
+  CREATE_DTACK_READ_FIFO : process (READ_FIFO, STROBE, SLOWCLK, D_DTACK_READ_FIFO, E1_DTACK_READ_FIFO, E1_DTACK_WRITE_FIFO,
+                                    E2_DTACK_READ_FIFO, E_DTACK_READ_FIFO)
   begin
     D_DTACK_READ_FIFO <= READ_FIFO and STROBE;
     FD(D_DTACK_READ_FIFO, SLOWCLK, E1_DTACK_READ_FIFO);
@@ -304,7 +311,8 @@ begin  --Architecture
     end if;
   end process;
 
-  CREATE_DTACK_WRITE_FIFO : process (WRITE_FIFO, STROBE, SLOWCLK, D_DTACK_WRITE_FIFO, E_DTACK_WRITE_FIFO)
+  CREATE_DTACK_WRITE_FIFO : process (WRITE_FIFO, STROBE, SLOWCLK, D_DTACK_WRITE_FIFO, E_DTACK_WRITE_FIFO,
+												 E1_DTACK_WRITE_FIFO,E2_DTACK_WRITE_FIFO)
   begin
     D_DTACK_WRITE_FIFO <= WRITE_FIFO and STROBE;
     FD(D_DTACK_WRITE_FIFO, SLOWCLK, E1_DTACK_WRITE_FIFO);
@@ -511,7 +519,7 @@ begin  --Architecture
   TS_FIFO_OUT    <= tc_fifo_out(1) & tc_fifo_out(0);
   EVENT_FIFO_OUT <= tc_fifo_out(2);
 
-  TS_CNT : process (CLK, tc_run_inner)
+  TS_CNT : process (CLK, tc_run_inner, RST, ts_cnt_rst)
 
     variable TS_CNT_DATA : std_logic_vector(31 downto 0);
 

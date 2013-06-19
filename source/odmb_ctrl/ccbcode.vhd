@@ -31,7 +31,7 @@ end CCBCODE;
 
 architecture CCBCODE_arch of CCBCODE is
   
-  signal RSTDATA : std_logic;
+ -- signal RSTDATA : std_logic;
   signal BC0_CMD, BC0_RST, BC0_INNER : std_logic;
   signal START_TRG_CMD, START_TRG_RST, START_TRG_INNER : std_logic;
   signal STOP_TRG_CMD, STOP_TRG_RST, STOP_TRG_INNER : std_logic;
@@ -66,7 +66,7 @@ architecture CCBCODE_arch of CCBCODE is
 begin
 
   -- generate RSTDATA replace with the following (apparently NOT used)
-  RSTDATA <= '1' when (CCB_CMD_S = '0' and CCB_DATA(7 downto 1) = "1010101") else '0';
+--  RSTDATA <= '1' when (CCB_CMD_S = '0' and CCB_DATA(7 downto 1) = "1010101") else '0';
 
   -- generate BC0
   BC0_CMD <= '1' when (CCB_CMD_S = '0' and CCB_CMD(5 downto 0) = "111110") else '0';
