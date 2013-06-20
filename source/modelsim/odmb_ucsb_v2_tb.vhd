@@ -1218,8 +1218,8 @@ begin
 
       gl0_tx_p  => gl0_tx_p,            -- out
       gl0_tx_n  => gl0_tx_n,            -- out
-      gl0_rx_p  => gl0_rx_p,            -- in
-      gl0_rx_n  => gl0_rx_n,            -- in
+      gl0_rx_p  => gl0_tx_p,            -- in
+      gl0_rx_n  => gl0_tx_n,            -- in
       gl0_clk_p => gl0_clk_p,           -- in
       gl0_clk_n => gl0_clk_n,           -- in
 
