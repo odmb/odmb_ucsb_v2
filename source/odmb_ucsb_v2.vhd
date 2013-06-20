@@ -271,26 +271,59 @@ architecture bdf_type of odmb_ucsb_v2 is
 
   end component;
 
-  component daq_ddu_out is
+  --component daq_ddu_out is
+  --  generic (
+  --    SIM_SPEEDUP : integer := 0
+  --    );
+  --  port (
+  --    RST          : in  std_logic;
+  --    -- External signals
+  --    RX_DDU_N     : in  std_logic;     -- GTX receive data in - signal
+  --    RX_DDU_P     : in  std_logic;     -- GTX receive data in + signal
+  --    TX_DDU_N     : out std_logic;     -- GTX transmit data out - signal
+  --    TX_DDU_P     : out std_logic;     -- GTX transmit data out + signal
+  --    -- Reference clocks ideally straight from the IBUFDS_GTXE1 output
+  --    REF_CLK_80   : in  std_logic;     -- 80 MHz for DDU data rate
+  --    -- Internal signals
+  --    TXD          : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
+  --    TXD_VLD      : in  std_logic;     -- Flag for valid data;
+  --    DDU_DATA_CLK : out std_logic  -- Clock that should be used for passing data and controls to this module
+  --    );
+  --end component;
+
+  component gigalink_ddu is
     generic (
       SIM_SPEEDUP : integer := 0
       );
     port (
-      RST          : in  std_logic;
-      -- External signals
-      RX_DDU_N     : in  std_logic;     -- GTX receive data in - signal
-      RX_DDU_P     : in  std_logic;     -- GTX receive data in + signal
-      TX_DDU_N     : out std_logic;     -- GTX transmit data out - signal
-      TX_DDU_P     : out std_logic;     -- GTX transmit data out + signal
-      -- Reference clocks ideally straight from the IBUFDS_GTXE1 output
-      REF_CLK_80   : in  std_logic;     -- 80 MHz for DDU data rate
-      -- Internal signals
-      TXD          : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
-      TXD_VLD      : in  std_logic;     -- Flag for valid data;
-      DDU_DATA_CLK : out std_logic  -- Clock that should be used for passing data and controls to this module
+      -- Global signals
+      REF_CLK_80 : in std_logic;        -- 80 MHz for DDU data rate
+      RST        : in std_logic;
+
+      -- Transmitter signals
+      TXD      : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
+      TXD_VLD  : in  std_logic;         -- Flag for valid data;
+      TX_DDU_N : out std_logic;         -- GTX transmit data out - signal
+      TX_DDU_P : out std_logic;         -- GTX transmit data out + signal
+
+      -- Receiver signals
+      RX_DDU_N : in  std_logic;         -- GTX receive data in - signal
+      RX_DDU_P : in  std_logic;         -- GTX receive data in + signal
+      RXD      : out std_logic_vector(15 downto 0);  -- Data received
+      RXD_VLD  : out std_logic;         -- Flag for valid data;
+
+      -- FIFO signals
+      VME_CLK          : in  std_logic;
+      TX_FIFO_RST      : in  std_logic;
+      TX_FIFO_RDEN     : in  std_logic;
+      TX_FIFO_DOUT : out std_logic_vector(15 downto 0);
+      TX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0);
+      RX_FIFO_RST      : in  std_logic;
+      RX_FIFO_RDEN     : in  std_logic;
+      RX_FIFO_DOUT : out std_logic_vector(15 downto 0);
+      RX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0)
       );
   end component;
-
 
   component daq_optical_out is
     generic (
@@ -764,19 +797,29 @@ architecture bdf_type of odmb_ucsb_v2 is
       KILL          : out std_logic_vector(NFEB+2 downto 1);
       CRATEID       : out std_logic_vector(6 downto 0);
 
-      -- PCTX FIFO signals
-      pctx_fifo_rst     : out std_logic;
-      pctx_fifo_rden    : out std_logic;
-      pctx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pctx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      -- PC_TX FIFO signals
+      pc_tx_fifo_rst     : out std_logic;
+      pc_tx_fifo_rden    : out std_logic;
+      pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+
+      -- DDU FIFO signals
+      ddu_tx_fifo_rst      : out std_logic;
+      ddu_tx_fifo_rden     : out std_logic;
+      ddu_tx_fifo_dout : in  std_logic_vector(15 downto 0);
+      ddu_tx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
+      ddu_rx_fifo_rst      : out std_logic;
+      ddu_rx_fifo_rden     : out std_logic;
+      ddu_rx_fifo_dout : in  std_logic_vector(15 downto 0);
+      ddu_rx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
 
       -- TESTFIFOS
-      TFF_DOUT : in  std_logic_vector(15 downto 0);
-      TFF_WRD_CNT  : in  std_logic_vector(11 downto 0);
-      TFF_RST      : out std_logic_vector(NFEB downto 1);
-      TFF_SEL      : out std_logic_vector(NFEB downto 1);
+      TFF_DOUT    : in  std_logic_vector(15 downto 0);
+      TFF_WRD_CNT : in  std_logic_vector(11 downto 0);
+      TFF_RST     : out std_logic_vector(NFEB downto 1);
+      TFF_SEL     : out std_logic_vector(NFEB downto 1);
       TFF_RDEN    : out std_logic_vector(NFEB downto 1)
-
+      
       );
 
   end component;
@@ -997,10 +1040,24 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal tkn_error                                 : std_logic_vector(7 downto 1);
 
   -- GIGALINK_TX (daq_optical_out)
-  signal pctx_fifo_rst     : std_logic;
-  signal pctx_fifo_rden    : std_logic;
-  signal pctx_fifo_dout    : std_logic_vector(15 downto 0);
-  signal pctx_fifo_wrd_cnt : std_logic_vector(11 downto 0);
+  signal pc_tx_fifo_rst     : std_logic;
+  signal pc_tx_fifo_rden    : std_logic;
+  signal pc_tx_fifo_dout    : std_logic_vector(15 downto 0);
+  signal pc_tx_fifo_wrd_cnt : std_logic_vector(11 downto 0);
+
+  -- GIGALINK_DDU
+  signal gl0_rx_buf_p,gl0_rx_buf_n      : std_logic;
+  signal ddu_rx_data     : std_logic_vector(15 downto 0);
+  signal ddu_rx_data_valid     : std_logic;
+
+  signal ddu_tx_fifo_rst      : std_logic;
+  signal ddu_tx_fifo_rden     : std_logic;
+  signal ddu_tx_fifo_dout : std_logic_vector (15 downto 0);
+  signal ddu_tx_fifo_wrd_cnt  : std_logic_vector (11 downto 0);
+  signal ddu_rx_fifo_rst      : std_logic;
+  signal ddu_rx_fifo_rden     : std_logic;
+  signal ddu_rx_fifo_dout : std_logic_vector (15 downto 0);
+  signal ddu_rx_fifo_wrd_cnt  : std_logic_vector (11 downto 0);
 
   -- dmb_receiver
   signal RD_EN_FF    : std_logic_vector(NFEB downto 1) := (others => '0');
@@ -1045,7 +1102,7 @@ architecture bdf_type of odmb_ucsb_v2 is
 
 -- From/To Giga-Bit Links
 
-  signal gl0_tx, gl0_rx, gl1_tx, gl1_rx                         : std_logic;
+  signal gl0_tx, gl1_tx, gl1_rx                         : std_logic;
   signal gl0_tx_buf_n, gl0_tx_buf_p, gl1_tx_buf_n, gl1_tx_buf_p : std_logic;
 
   signal gl_pc_daq_data_clk, gl_pc_daq_tdis : std_logic;
@@ -1289,10 +1346,10 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal CRATEID       : std_logic_vector(6 downto 0);
 
   -- From/to TESTFIFOS to test FIFOs
-  signal TFF_DOUT : std_logic_vector(15 downto 0);
-  signal TFF_WRD_CNT  : std_logic_vector(11 downto 0);
-  signal TFF_RST      : std_logic_vector(NFEB downto 1);
-  signal TFF_SEL      : std_logic_vector(NFEB downto 1);
+  signal TFF_DOUT    : std_logic_vector(15 downto 0);
+  signal TFF_WRD_CNT : std_logic_vector(11 downto 0);
+  signal TFF_RST     : std_logic_vector(NFEB downto 1);
+  signal TFF_SEL     : std_logic_vector(NFEB downto 1);
   signal TFF_RDEN    : std_logic_vector(NFEB downto 1);
 
   signal ddu_data_valid : std_logic;
@@ -1327,11 +1384,11 @@ begin
   tpl(23)          <= '0';
 
 
- -- Does this really need to be a process?  What a mess of a sensitivity list.
+  -- Does this really need to be a process?  What a mess of a sensitivity list.
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
-                         int_tmb_dav, dcfeb_data, tmb_data, tmb_data_valid, int_alct_dav, alct_data, 
-								 alct_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo, 
-								 v6_jtag_sel_inner)
+                         int_tmb_dav, dcfeb_data, tmb_data, tmb_data_valid, int_alct_dav, alct_data,
+                         alct_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
+                         v6_jtag_sel_inner)
   begin
     case tp_sel_reg is
       when x"0000" =>
@@ -1486,10 +1543,10 @@ begin
   reset <= por_reg(31) or not pb(0);
 
 
-  PULLUP_dtack_b : PULLUP port map (vme_dtack_v6_b);
-  PULLDOWN_TMS   : PULLDOWN port map (dcfeb_tms);
-  PULLDOWN_ODMB_TMS   : PULLDOWN port map (v6_tms);
-  GEN_PULLDOWN   : for I in 0 to 15 generate
+  PULLUP_dtack_b    : PULLUP port map (vme_dtack_v6_b);
+  PULLDOWN_TMS      : PULLDOWN port map (dcfeb_tms);
+  PULLDOWN_ODMB_TMS : PULLDOWN port map (v6_tms);
+  GEN_PULLDOWN      : for I in 0 to 15 generate
   begin
     PULLDOWN_FIFO : PULLDOWN port map (fifo_out(I));
   end generate GEN_PULLDOWN;
@@ -1556,7 +1613,9 @@ begin
 -- From OT1 (GigaBit Link)
 
 -- gl0_rx
-  gl0_rx_buf : IBUFDS port map (I => gl0_rx_p, IB => gl0_rx_n, O => gl0_rx);
+--  gl0_rx_buf : IBUFDS port map (I => gl0_rx_p, IB => gl0_rx_n, O => gl0_rx);
+    gl0_rx_ibuf_p : IBUF port map (O => gl0_rx_buf_p, I => gl0_rx_p);
+    gl0_rx_ibuf_n : IBUF port map (O => gl0_rx_buf_n, I => gl0_rx_n);
 
 -- From OT2 (GigaBit Link)
 
@@ -1968,17 +2027,27 @@ begin
       KILL          => KILL,
       CRATEID       => CRATEID,
 
-      -- PCTX FIFO signals
-      pctx_fifo_rst     => pctx_fifo_rst,
-      pctx_fifo_rden    => pctx_fifo_rden,
-      pctx_fifo_dout    => pctx_fifo_dout,
-      pctx_fifo_wrd_cnt => pctx_fifo_wrd_cnt,
+      -- PC_TX FIFO signals
+      pc_tx_fifo_rst     => pc_tx_fifo_rst,
+      pc_tx_fifo_rden    => pc_tx_fifo_rden,
+      pc_tx_fifo_dout    => pc_tx_fifo_dout,
+      pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
 
+      -- DDU TX/RX FIFO signals
+      ddu_tx_fifo_rst      => ddu_tx_fifo_rst,
+      ddu_tx_fifo_rden     => ddu_tx_fifo_rden,
+      ddu_tx_fifo_dout => ddu_tx_fifo_dout,
+      ddu_tx_fifo_wrd_cnt  => ddu_tx_fifo_wrd_cnt,
+      ddu_rx_fifo_rst      => ddu_rx_fifo_rst,
+      ddu_rx_fifo_rden     => ddu_rx_fifo_rden,
+      ddu_rx_fifo_dout => ddu_rx_fifo_dout,
+      ddu_rx_fifo_wrd_cnt  => ddu_rx_fifo_wrd_cnt,
+      
       -- TESTFIFOS
-      TFF_DOUT => TFF_DOUT,
-      TFF_WRD_CNT  => TFF_WRD_CNT,
-      TFF_RST      => TFF_RST,
-      TFF_SEL      => TFF_SEL,
+      TFF_DOUT    => TFF_DOUT,
+      TFF_WRD_CNT => TFF_WRD_CNT,
+      TFF_RST     => TFF_RST,
+      TFF_SEL     => TFF_SEL,
       TFF_RDEN    => TFF_RDEN
       );
 
@@ -2780,25 +2849,55 @@ begin
   end process;
 
 
-  GIGALINK_DDU_TX_PM : daq_ddu_out
+  --GIGALINK_DDU_TX_PM : daq_ddu_out
+  --  generic map (
+  --    SIM_SPEEDUP => IS_SIMULATION
+  --    )
+  --  port map (
+  --    RST          => reset,
+  --    -- External signals
+  --    RX_DDU_N     => logicl,           -- GTX receive data in - signal
+  --    RX_DDU_P     => logich,           -- GTX receive data in + signal
+  --    TX_DDU_N     => gl0_tx_n,         -- GTX transmit data out - signal
+  --    TX_DDU_P     => gl0_tx_p,         -- GTX transmit data out + signal
+  --    -- Reference clocks ideally straight from the IBUFDS_GTXE1 output
+  --    REF_CLK_80   => gl0_clk,          -- 80 MHz for DDU data rate
+  --    -- Internal signals
+  --    TXD          => gtx0_data,        -- Data to be transmitted
+  --    TXD_VLD      => gtx0_data_valid,  -- Flag for valid data;
+  --    DDU_DATA_CLK => ddu_data_clk  -- Clock that should be used for passing data and controls to this module
+  --    );
+
+  GIGALINK_DDU_PM : gigalink_ddu
     generic map (
       SIM_SPEEDUP => IS_SIMULATION
       )
     port map (
-      RST          => reset,
-      -- External signals
-      RX_DDU_N     => logicl,           -- GTX receive data in - signal
-      RX_DDU_P     => logich,           -- GTX receive data in + signal
-      TX_DDU_N     => gl0_tx_n,         -- GTX transmit data out - signal
-      TX_DDU_P     => gl0_tx_p,         -- GTX transmit data out + signal
-      -- Reference clocks ideally straight from the IBUFDS_GTXE1 output
-      REF_CLK_80   => gl0_clk,          -- 80 MHz for DDU data rate
-      -- Internal signals
-      TXD          => gtx0_data,        -- Data to be transmitted
-      TXD_VLD      => gtx0_data_valid,  -- Flag for valid data;
-      DDU_DATA_CLK => ddu_data_clk  -- Clock that should be used for passing data and controls to this module
-      );
+      REF_CLK_80 => gl0_clk,            -- 80 MHz for DDU data rate
+      RST        => reset,
+      -- Transmitter signals
+      TXD        => gtx0_data,          -- Data to be transmitted
+      TXD_VLD    => gtx0_data_valid,    -- Flag for valid data;
+      TX_DDU_N   => gl0_tx_n,           -- GTX transmit data out - signal
+      TX_DDU_P   => gl0_tx_p,           -- GTX transmit data out + signal
 
+      -- Receiver signals
+      RX_DDU_N => gl0_rx_buf_n,         -- GTX receive data in - signal
+      RX_DDU_P => gl0_rx_buf_p,         -- GTX receive data in + signal
+      RXD      => ddu_rx_data,
+      RXD_VLD  => ddu_rx_data_valid,
+
+      VME_CLK          => clk2p5,
+      TX_FIFO_RST      => ddu_tx_fifo_rst ,
+      TX_FIFO_RDEN     => ddu_tx_fifo_rden ,
+      TX_FIFO_DOUT => ddu_tx_fifo_dout ,
+      TX_FIFO_WRD_CNT  => ddu_tx_fifo_wrd_cnt ,
+      RX_FIFO_RST      => ddu_rx_fifo_rst ,
+      RX_FIFO_RDEN     => ddu_rx_fifo_rden ,
+      RX_FIFO_DOUT => ddu_rx_fifo_dout ,
+      RX_FIFO_WRD_CNT  => ddu_rx_fifo_wrd_cnt 
+
+      );
 
 
   GIGALINK_PC_TX_PM : daq_optical_out
@@ -2826,11 +2925,11 @@ begin
       RATE_3_2             => open,
       TX_ACK               => gl_pc_tx_ack,
       DAQ_DATA_CLK         => gl_pc_daq_data_clk,
-      FIFO_RST             => pctx_fifo_rst,
-      RD_EN_FF             => pctx_fifo_rden,
+      FIFO_RST             => pc_tx_fifo_rst,
+      RD_EN_FF             => pc_tx_fifo_rden,
       VME_CLK              => clk2p5,
-      FIFO_DATA_OUT        => pctx_fifo_dout,
-      FIFO_WRD_CNT         => pctx_fifo_wrd_cnt
+      FIFO_DATA_OUT        => pc_tx_fifo_dout,
+      FIFO_WRD_CNT         => pc_tx_fifo_wrd_cnt
 
       );
 
