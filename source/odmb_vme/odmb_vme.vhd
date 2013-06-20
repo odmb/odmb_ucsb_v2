@@ -173,12 +173,22 @@ entity ODMB_VME is
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(6 downto 0);
 
-    -- PCTX FIFO signals
-    pctx_fifo_rst     : out std_logic;
-    pctx_fifo_rden    : out std_logic;
-    pctx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    pctx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+    -- PC_TX FIFO signals
+    pc_tx_fifo_rst     : out std_logic;
+    pc_tx_fifo_rden    : out std_logic;
+    pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
+    pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
+    -- DDU FIFO signals
+    ddu_tx_fifo_rst : out std_logic;
+    ddu_tx_fifo_rden : out std_logic;
+    ddu_tx_fifo_dout: in std_logic_vector(15 downto 0);
+    ddu_tx_fifo_wrd_cnt: in std_logic_vector(11 downto 0);
+    ddu_rx_fifo_rst : out std_logic;
+    ddu_rx_fifo_rden : out std_logic;
+    ddu_rx_fifo_dout: in std_logic_vector(15 downto 0);
+    ddu_rx_fifo_wrd_cnt: in std_logic_vector(11 downto 0);    
+    
     -- TESTFIFOS
     TFF_DOUT : in  std_logic_vector(15 downto 0);
     TFF_WRD_CNT  : in  std_logic_vector(11 downto 0);
@@ -322,11 +332,21 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
-      -- PCTX FIFO signals
-      pctx_fifo_rst     : out std_logic;
-      pctx_fifo_rden    : out std_logic;
-      pctx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pctx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      -- PC_TX FIFO signals
+      pc_tx_fifo_rst     : out std_logic;
+      pc_tx_fifo_rden    : out std_logic;
+      pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+
+      -- DDU_TX/RX Fifo signals
+      ddu_tx_fifo_rst      : out std_logic;
+      ddu_tx_fifo_rden     : out std_logic;
+      ddu_tx_fifo_dout : in  std_logic_vector(15 downto 0);
+      ddu_tx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
+      ddu_rx_fifo_rst      : out std_logic;
+      ddu_rx_fifo_rden     : out std_logic;
+      ddu_rx_fifo_dout : in  std_logic_vector(15 downto 0);
+      ddu_rx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
 
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT : in std_logic_vector(15 downto 0);
@@ -878,12 +898,22 @@ begin
 
       DTACK => VME_DTACK_B ,
 
-      -- PCTX FIFO signals
-      pctx_fifo_rst     => pctx_fifo_rst,
-      pctx_fifo_rden    => pctx_fifo_rden,
-      pctx_fifo_dout    => pctx_fifo_dout,
-      pctx_fifo_wrd_cnt => pctx_fifo_wrd_cnt,
+      -- PC_TX FIFO signals
+      pc_tx_fifo_rst     => pc_tx_fifo_rst,
+      pc_tx_fifo_rden    => pc_tx_fifo_rden,
+      pc_tx_fifo_dout    => pc_tx_fifo_dout,
+      pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
 
+      -- DDU_TX/RX Fifo signals
+      ddu_tx_fifo_rst      => ddu_tx_fifo_rst,
+      ddu_tx_fifo_rden     => ddu_tx_fifo_rden,
+      ddu_tx_fifo_dout => ddu_tx_fifo_dout,
+      ddu_tx_fifo_wrd_cnt  => ddu_tx_fifo_wrd_cnt,
+      ddu_rx_fifo_rst      => ddu_rx_fifo_rst,
+      ddu_rx_fifo_rden     => ddu_rx_fifo_rden,
+      ddu_rx_fifo_dout => ddu_rx_fifo_dout,
+      ddu_rx_fifo_wrd_cnt  => ddu_rx_fifo_wrd_cnt,
+      
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT => TFF_DOUT,
       TFF_WRD_CNT  => TFF_WRD_CNT,
