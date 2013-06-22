@@ -1,15 +1,17 @@
 library ieee;
 library work;
-use work.Latches_Flipflops.all;
+--use work.Latches_Flipflops.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 library UNIMACRO;
 use UNIMACRO.vcomponents.all;
+library UNISIM;
+use UNISIM.vcomponents.all;
 
 entity TESTCTRL is
   generic (
-    NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
-    );  
+    NFEB : integer range 1 to 7 := 7    -- Number of DCFEBS, 7 in the final design
+    );
 
   port (
     CLK     : in std_logic;
@@ -41,9 +43,10 @@ end TESTCTRL;
 architecture TESTCTRL_Arch of TESTCTRL is
 
   --Declaring internal signals
-  signal CMDHIGH, WRITE_FIFO, READ_FIFO, WRITE_FSR, READ_FSR, READ_STR, READ_WRC, READ_RDC, READ_TRC : std_logic;
+  signal CMDDEV : std_logic_vector(15 downto 0);
+
+  signal WRITE_FIFO, READ_FIFO, WRITE_FSR, READ_FSR, READ_STR, READ_WRC, READ_RDC, READ_TRC : std_logic;
   signal FSR_vector                                                                                  : std_logic_vector(12 downto 0);
-  signal E_DTACK, D_DTACK                                                                            : std_logic;
   signal D_DTACK_WRITE_FSR, E_DTACK_WRITE_FSR                                                        : std_logic;
   signal D_DTACK_READ_FSR, E_DTACK_READ_FSR                                                          : std_logic;
   signal D_DTACK_WRITE_STR, E_DTACK_WRITE_STR                                                        : std_logic;
@@ -66,10 +69,10 @@ architecture TESTCTRL_Arch of TESTCTRL is
 
   signal ts_cnt_out, ts_fifo_out : std_logic_vector(31 downto 0);
 
-  type   tc_fifo_cnt_data_type is array (3 downto 0) of std_logic_vector(10 downto 0);
+  type tc_fifo_cnt_data_type is array (3 downto 0) of std_logic_vector(10 downto 0);
   signal tc_fifo_wr_cnt, tc_fifo_rd_cnt : tc_fifo_cnt_data_type;
 
-  type     tc_fifo_in_type is array (3 downto 0) of std_logic_vector(15 downto 0);
+  type tc_fifo_in_type is array (3 downto 0) of std_logic_vector(15 downto 0);
   signal   tc_fifo_in                                                 : tc_fifo_in_type;
   signal   fifo_sel                                                   : std_logic_vector(3 downto 0);
   signal   fifo_str                                                   : std_logic_vector(15 downto 0);
@@ -84,12 +87,12 @@ architecture TESTCTRL_Arch of TESTCTRL is
   signal   event_fifo_out                                             : std_logic_vector(15 downto 0);
   signal   tc_fifo_rst                                                : std_logic;
   signal   ts_cnt_rst                                                 : std_logic;
-  type     boolean_array is array (3 downto 0) of boolean;
+  type boolean_array is array (3 downto 0) of boolean;
   constant tc_fifo_fwft                                               : boolean_array := (false, true, true, true);
 
   signal trg_cnt_rst      : std_logic;
   signal trg_cnt_sel      : std_logic_vector(3 downto 0);
-  type   lct_cnt_data_type is array (7 downto 0) of std_logic_vector(15 downto 0);
+  type lct_cnt_data_type is array (7 downto 0) of std_logic_vector(15 downto 0);
   signal lct_cnt_out      : lct_cnt_data_type;
   signal l1a_cnt_out      : std_logic_vector(15 downto 0);
   signal alct_dav_cnt_out : std_logic_vector(15 downto 0);
@@ -120,89 +123,20 @@ begin  --Architecture
 -- FSR(7) -> trg_cnt_rst (reset trigger counters)
 -- FSR(11 downto 8) -> trg_cnt_sel (select trigger counter)
 
--- COMMAND(3 downto 0) = "1000" (20) -> WRITE FSR
--- COMMAND(3 downto 0) = "1001" (24) -> READ FSR
--- COMMAND(3 downto 0) = "0010" (08) -> WRITE FIFO
--- COMMAND(3 downto 0) = "0011" (0c) -> READ FIFO
--- COMMAND(3 downto 0) = "0111" (1c) -> READ FIFO STATUS REGISTER
--- COMMAND(3 downto 0) = "1011" (2c) -> READ WRITE COUNTER REGISTER
--- COMMAND(3 downto 0) = "1111" (3c) -> READ FIFO READ COUNTER REGISTER
--- COMMAND(3 downto 0) = "1010" (28) -> READ TRIGGER COUNTER
-  
-  CREATE_DECODE : process (DEVICE, COMMAND, CMDHIGH)
+  CMDDEV     <= "000" & DEVICE & COMMAND(9 downto 0) & "00";
+  WRITE_FSR  <= '1' when (CMDDEV = x"1020") else '0';  -- WRITE FSR
+  READ_FSR   <= '1' when (CMDDEV = x"1024") else '0';  -- READ FSR
+  WRITE_FIFO <= '1' when (CMDDEV = x"1008") else '0';  -- WRITE FIFO
+  READ_FIFO  <= '1' when (CMDDEV = x"100c") else '0';  -- READ FIFO
+  READ_STR   <= '1' when (CMDDEV = x"101c") else '0';  -- READ FIFO STATUS REGISTER
+  READ_WRC   <= '1' when (CMDDEV = x"102c") else '0';  -- READ WRITE COUNTER REGISTER
+  READ_RDC   <= '1' when (CMDDEV = x"103c") else '0';  -- READ FIFO READ COUNTER REGISTER
+  READ_TRC   <= '1' when (CMDDEV = x"1028") else '0';  -- READ TRIGGER COUNTER
+
+  CREATE_FSR_vector : for I in 12 downto 0 generate
   begin
-    if (COMMAND(9 downto 4) = "000000" and DEVICE='1') then
-      CMDHIGH <= '1';
-    else
-      CMDHIGH <= '0';
-    end if;
-
-    if (COMMAND(0) = '0' and COMMAND(1) = '0' and COMMAND(2) = '0' and COMMAND(3) = '1' and CMDHIGH = '1') then
-      WRITE_FSR <= '1';
-    else
-      WRITE_FSR <= '0';
-    end if;
-
-    if (COMMAND(0) = '1' and COMMAND(1) = '0' and COMMAND(2) = '0' and COMMAND(3) = '1' and CMDHIGH = '1') then
-      READ_FSR <= '1';
-    else
-      READ_FSR <= '0';
-    end if;
-
-    if (COMMAND(0) = '0' and COMMAND(1) = '1' and COMMAND(2) = '0' and COMMAND(3) = '0' and CMDHIGH = '1') then
-      WRITE_FIFO <= '1';
-    else
-      WRITE_FIFO <= '0';
-    end if;
-
-    if (COMMAND(0) = '1' and COMMAND(1) = '1' and COMMAND(2) = '0' and COMMAND(3) = '0' and CMDHIGH = '1') then
-      READ_FIFO <= '1';
-    else
-      READ_FIFO <= '0';
-    end if;
-
-    if (COMMAND(0) = '1' and COMMAND(1) = '1' and COMMAND(2) = '1' and COMMAND(3) = '0' and CMDHIGH = '1') then
-      READ_STR <= '1';
-    else
-      READ_STR <= '0';
-    end if;
-
-    if (COMMAND(0) = '1' and COMMAND(1) = '1' and COMMAND(2) = '0' and COMMAND(3) = '1' and CMDHIGH = '1') then
-      READ_WRC <= '1';
-    else
-      READ_WRC <= '0';
-    end if;
-
-    if (COMMAND(0) = '1' and COMMAND(1) = '1' and COMMAND(2) = '1' and COMMAND(3) = '1' and CMDHIGH = '1') then
-      READ_RDC <= '1';
-    else
-      READ_RDC <= '0';
-    end if;
-
-    if (COMMAND(0) = '0' and COMMAND(1) = '1' and COMMAND(2) = '0' and COMMAND(3) = '1' and CMDHIGH = '1') then
-      READ_TRC <= '1';
-    else
-      READ_TRC <= '0';
-    end if;
-
-  end process;
-
-  CREATE_FSR_vector : process (RST, INDATA, WRITE_FSR, STROBE, FSR_vector)
-  begin
-    FDCE(INDATA(0), STROBE, WRITE_FSR, RST, FSR_vector(0));
-    FDCE(INDATA(1), STROBE, WRITE_FSR, RST, FSR_vector(1));
-    FDCE(INDATA(2), STROBE, WRITE_FSR, RST, FSR_vector(2));
-    FDCE(INDATA(3), STROBE, WRITE_FSR, RST, FSR_vector(3));
-    FDCE(INDATA(4), STROBE, WRITE_FSR, RST, FSR_vector(4));
-    FDCE(INDATA(5), STROBE, WRITE_FSR, RST, FSR_vector(5));
-    FDCE(INDATA(6), STROBE, WRITE_FSR, RST, FSR_vector(6));
-    FDCE(INDATA(7), STROBE, WRITE_FSR, RST, FSR_vector(7));
-    FDCE(INDATA(8), STROBE, WRITE_FSR, RST, FSR_vector(8));
-    FDCE(INDATA(9), STROBE, WRITE_FSR, RST, FSR_vector(9));
-    FDCE(INDATA(10), STROBE, WRITE_FSR, RST, FSR_vector(10));
-    FDCE(INDATA(11), STROBE, WRITE_FSR, RST, FSR_vector(11));
-    FDCE(INDATA(12), STROBE, WRITE_FSR, RST, FSR_vector(12));
-  end process;
+    FD_FSR_vec      : FDCE port map (FSR_vector(I), STROBE, WRITE_FSR, RST, INDATA(I));
+  end generate CREATE_FSR_vector;
 
   FIFO_SEL     <= FSR_vector(3 downto 0);
   tc_run_inner <= FSR_vector(4);
@@ -213,234 +147,68 @@ begin  --Architecture
 
   tc_run <= tc_run_inner;
 
-  CREATE_OUTDATA : process (STROBE, READ_FSR, READ_STR, READ_WRC, READ_RDC, READ_FIFO, FSR_vector,
-                            FIFO_DATA, READ_TRC, TRG_CNT_DATA, FIFO_STR, FIFO_WRC, FIFO_RDC, SLOWCLK,
-                            D_DTACK, E_DTACK)  --Also CREATE_DTACK
+  OUTDATA <= "00000000000" & FSR_vector(4 downto 0) when (STROBE = '1' and READ_FSR = '1')  else
+             FIFO_STR(15 downto 0)                  when (STROBE = '1' and READ_STR = '1')  else
+             "00000" & FIFO_WRC(10 downto 0)        when (STROBE = '1' and READ_WRC = '1')  else
+             "00000" & FIFO_RDC(10 downto 0)        when (STROBE = '1' and READ_RDC = '1')  else
+             FIFO_DATA(15 downto 0)                 when (STROBE = '1' and READ_FIFO = '1') else
+             TRG_CNT_DATA(15 downto 0)              when (STROBE = '1' and READ_TRC = '1')  else
+             FIFO_DATA(15 downto 0);
+
+  D_DTACK_READ_FSR   <= READ_FSR and STROBE;
+  FD_DTACK_FSR             : FD port map (E_DTACK_READ_FSR, SLOWCLK, D_DTACK_READ_FSR);
+  D_DTACK_READ_STR   <= READ_STR and STROBE;
+  FD_DTACK_STR             : FD port map (E_DTACK_READ_STR, SLOWCLK, D_DTACK_READ_STR);
+  D_DTACK_READ_WRC   <= READ_WRC and STROBE;
+  FD_DTACK_WRC             : FD port map (E_DTACK_READ_WRC, SLOWCLK, D_DTACK_READ_WRC);
+  D_DTACK_READ_RDC   <= READ_RDC and STROBE;
+  FD_DTACK_RDC             : FD port map (E_DTACK_READ_RDC, SLOWCLK, D_DTACK_READ_RDC);
+  D_DTACK_READ_FIFO  <= READ_FIFO and STROBE;
+  FD_DTACK_READ_FIFO_DE1   : FD port map (E1_DTACK_READ_FIFO, SLOWCLK, D_DTACK_READ_FIFO);
+  FD_DTACK_READ_FIFO_E1E2  : FD port map (E2_DTACK_READ_FIFO, SLOWCLK, E1_DTACK_READ_FIFO);
+  FD_DTACK_READ_FIFO_E2E   : FD port map (E_DTACK_READ_FIFO, SLOWCLK, E2_DTACK_READ_FIFO);
+  D_DTACK_WRITE_FSR  <= WRITE_FSR and STROBE;
+  FD_DTACK_WRITE_FSR       : FD port map (E_DTACK_WRITE_FSR, SLOWCLK, D_DTACK_WRITE_FSR);
+  D_DTACK_WRITE_FIFO <= WRITE_FIFO and STROBE;
+  FD_DTACK_WRITE_FIFO_DE1  : FD port map (E1_DTACK_WRITE_FIFO, SLOWCLK, D_DTACK_WRITE_FIFO);
+  FD_DTACK_WRITE_FIFO_E1E2 : FD port map (E2_DTACK_WRITE_FIFO, SLOWCLK, E1_DTACK_WRITE_FIFO);
+  E_DTACK_WRITE_FIFO <= E1_DTACK_WRITE_FIFO or E2_DTACK_WRITE_FIFO;
+  D_DTACK_READ_TRC   <= READ_TRC and STROBE;
+  FD_DTACK_READ_TRC        : FD port map (E_DTACK_READ_TRC, SLOWCLK, D_DTACK_READ_TRC);
+
+  DTACK <= '0' when (E_DTACK_READ_FSR = '1' or E_DTACK_READ_STR = '1' or E_DTACK_READ_WRC = '1' or
+                     E_DTACK_READ_RDC = '1' or E_DTACK_READ_FIFO = '1' or E_DTACK_WRITE_FSR = '1' or
+                     E_DTACK_WRITE_FIFO = '1' or E_DTACK_READ_TRC = '1') else 'Z';
+
+
+  CREATE_FIFO_RD_EN    : for I in 3 downto 0 generate
   begin
-    if (STROBE = '1' and READ_FSR = '1') then
-      OUTDATA(15 downto 5) <= (others => '0');
-      OUTDATA(4 downto 0)  <= FSR_vector(4 downto 0);
-    elsif (STROBE = '1' and READ_STR = '1') then
-      OUTDATA(15 downto 0) <= FIFO_STR(15 downto 0);
-    elsif (STROBE = '1' and READ_WRC = '1') then
-      OUTDATA(15 downto 11) <= (others => '0');
-      OUTDATA(10 downto 0)   <= FIFO_WRC(10 downto 0);
-    elsif (STROBE = '1' and READ_RDC = '1') then
-      OUTDATA(15 downto 11) <= (others => '0');
-      OUTDATA(10 downto 0)   <= FIFO_RDC(10 downto 0);
-    elsif (STROBE = '1' and READ_FIFO = '1') then
-      OUTDATA(15 downto 0) <= FIFO_DATA(15 downto 0);
-    elsif (STROBE = '1' and READ_TRC = '1') then
-      OUTDATA(15 downto 0) <= TRG_CNT_DATA(15 downto 0);
-    else
---      OUTDATA(15 downto 0) <= "ZZZZZZZZZZZZZZZZ";
-      OUTDATA(15 downto 0) <= FIFO_DATA(15 downto 0);
-    end if;
-  end process;
+    FIFO_RD(I)      <= READ_FIFO and FSR_vector(I);
+    FD_FIFO_RD_EN_I1   : FDC port map (I1_FIFO_RD_EN(I), STROBE, C_FIFO_RD_EN(I), FIFO_RD(I));
+    FD_FIFO_RD_EN_I1I2 : FDC port map (I2_FIFO_RD_EN(I), SLOWCLK, C_FIFO_RD_EN(I), I1_FIFO_RD_EN(I));
+    FD_FIFO_RD_EN_I2I3 : FDC port map (I3_FIFO_RD_EN(I), SLOWCLK, RST, I2_FIFO_RD_EN(I));
+    C_FIFO_RD_EN(I) <= RST or I3_FIFO_RD_EN(I);
+  end generate CREATE_FIFO_RD_EN;
+  FIFO_RD_EN        <= I2_FIFO_RD_EN;
 
-  CREATE_DTACK_READ_FSR : process (READ_FSR, STROBE, SLOWCLK, D_DTACK_WRITE_FSR, E_DTACK_WRITE_FSR,
-                                   D_DTACK_READ_FSR, E_DTACK_READ_FSR)
+  CREATE_FIFO_WR_DATA : for I in 15 downto 0 generate
   begin
-    D_DTACK_READ_FSR <= READ_FSR and STROBE;
-    FD(D_DTACK_READ_FSR, SLOWCLK, E_DTACK_READ_FSR);
-    if (E_DTACK_READ_FSR = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
+    FD_INDATA_I1      : FD port map (I1_INDATA(I), STROBE, INDATA(I));
+    FD_INDATA_I1I2    : FD port map (I2_INDATA(I), SLOWCLK, I1_INDATA(I));
+  end generate CREATE_FIFO_WR_DATA;
+  FIFO_WR_DATA <= I2_INDATA;
 
-  CREATE_DTACK_READ_STR : process (READ_STR, STROBE, SLOWCLK, D_DTACK_WRITE_STR, E_DTACK_WRITE_STR,
-                                   D_DTACK_READ_STR, E_DTACK_READ_STR)
+
+  CREATE_FIFO_WR_EN    : for I in 3 downto 0 generate
   begin
-    D_DTACK_READ_STR <= READ_STR and STROBE;
-    FD(D_DTACK_READ_STR, SLOWCLK, E_DTACK_READ_STR);
-    if (E_DTACK_READ_STR = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
+    FIFO_WR(I)      <= WRITE_FIFO and FSR_vector(I);
+    FD_FIFO_WR_EN_I1   : FDC port map (I1_FIFO_WR_EN(I), STROBE, C_FIFO_WR_EN(I), FIFO_WR(I));
+    FD_FIFO_WR_EN_I1I2 : FDC port map (I2_FIFO_WR_EN(I), SLOWCLK, C_FIFO_WR_EN(I), I1_FIFO_WR_EN(I));
+    FD_FIFO_WR_EN_I2I3 : FDC port map (I3_FIFO_WR_EN(I), SLOWCLK, RST, I2_FIFO_WR_EN(I));
+    C_FIFO_WR_EN(I) <= RST or I3_FIFO_WR_EN(I);
+  end generate CREATE_FIFO_WR_EN;
+  FIFO_WR_EN        <= I2_FIFO_WR_EN;
 
-  CREATE_DTACK_READ_WRC : process (READ_WRC, STROBE, SLOWCLK, D_DTACK_WRITE_WRC, E_DTACK_WRITE_WRC,
-                                   D_DTACK_READ_WRC, E_DTACK_READ_WRC)
-  begin
-    D_DTACK_READ_WRC <= READ_WRC and STROBE;
-    FD(D_DTACK_READ_WRC, SLOWCLK, E_DTACK_READ_WRC);
-    if (E_DTACK_READ_WRC = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
-
-  CREATE_DTACK_READ_RDC : process (READ_RDC, STROBE, SLOWCLK, D_DTACK_WRITE_RDC, E_DTACK_WRITE_RDC,
-                                   D_DTACK_READ_RDC, E_DTACK_READ_RDC)
-  begin
-    D_DTACK_READ_RDC <= READ_RDC and STROBE;
-    FD(D_DTACK_READ_RDC, SLOWCLK, E_DTACK_READ_RDC);
-    if (E_DTACK_READ_RDC = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
-
-  CREATE_DTACK_READ_FIFO : process (READ_FIFO, STROBE, SLOWCLK, D_DTACK_READ_FIFO, E1_DTACK_READ_FIFO, E1_DTACK_WRITE_FIFO,
-                                    E2_DTACK_READ_FIFO, E_DTACK_READ_FIFO)
-  begin
-    D_DTACK_READ_FIFO <= READ_FIFO and STROBE;
-    FD(D_DTACK_READ_FIFO, SLOWCLK, E1_DTACK_READ_FIFO);
-    FD(E1_DTACK_READ_FIFO, SLOWCLK, E2_DTACK_READ_FIFO);
-    FD(E2_DTACK_READ_FIFO, SLOWCLK, E_DTACK_READ_FIFO);
-    if (E_DTACK_READ_FIFO = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
-
-  CREATE_DTACK_WRITE_FSR : process (WRITE_FSR, STROBE, SLOWCLK, D_DTACK_WRITE_FSR, E_DTACK_WRITE_FSR)
-  begin
-    D_DTACK_WRITE_FSR <= WRITE_FSR and STROBE;
-    FD(D_DTACK_WRITE_FSR, SLOWCLK, E_DTACK_WRITE_FSR);
-    if (E_DTACK_WRITE_FSR = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
-
-  CREATE_DTACK_WRITE_FIFO : process (WRITE_FIFO, STROBE, SLOWCLK, D_DTACK_WRITE_FIFO, E_DTACK_WRITE_FIFO,
-												 E1_DTACK_WRITE_FIFO,E2_DTACK_WRITE_FIFO)
-  begin
-    D_DTACK_WRITE_FIFO <= WRITE_FIFO and STROBE;
-    FD(D_DTACK_WRITE_FIFO, SLOWCLK, E1_DTACK_WRITE_FIFO);
-    FD(E1_DTACK_WRITE_FIFO, SLOWCLK, E2_DTACK_WRITE_FIFO);
-    E_DTACK_WRITE_FIFO <= E1_DTACK_WRITE_FIFO or E2_DTACK_WRITE_FIFO;
-    if (E_DTACK_WRITE_FIFO = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
-
-  CREATE_DTACK_READ_TRC : process (READ_TRC, STROBE, SLOWCLK, D_DTACK_READ_TRC, E_DTACK_READ_TRC)
-  begin
-    D_DTACK_READ_TRC <= READ_TRC and STROBE;
-    FD(D_DTACK_READ_TRC, SLOWCLK, E_DTACK_READ_TRC);
-    if (E_DTACK_READ_TRC = '1') then
-      DTACK <= '0';
-    else
-      DTACK <= 'Z';
-    end if;
-  end process;
-
-  CREATE_FIFO_RD_EN : process (RST, SLOWCLK, FIFO_RD, FSR_vector, READ_FIFO, STROBE, I1_FIFO_RD_EN, I2_FIFO_RD_EN, I3_FIFO_RD_EN, C_FIFO_RD_EN)
-  begin
-    FIFO_RD(0)      <= READ_FIFO and FSR_vector(0);
-    FDC(FIFO_RD(0), STROBE, C_FIFO_RD_EN(0), I1_FIFO_RD_EN(0));
-    FDC(I1_FIFO_RD_EN(0), SLOWCLK, C_FIFO_RD_EN(0), I2_FIFO_RD_EN(0));
-    FDC(I2_FIFO_RD_EN(0), SLOWCLK, RST, I3_FIFO_RD_EN(0));
-    C_FIFO_RD_EN(0) <= RST or I3_FIFO_RD_EN(0);
-
-    FIFO_RD(1)      <= READ_FIFO and FSR_vector(1);
-    FDC(FIFO_RD(1), STROBE, C_FIFO_RD_EN(1), I1_FIFO_RD_EN(1));
-    FDC(I1_FIFO_RD_EN(1), SLOWCLK, C_FIFO_RD_EN(1), I2_FIFO_RD_EN(1));
-    FDC(I2_FIFO_RD_EN(1), SLOWCLK, RST, I3_FIFO_RD_EN(1));
-    C_FIFO_RD_EN(1) <= RST or I3_FIFO_RD_EN(1);
-
-    FIFO_RD(2)      <= READ_FIFO and FSR_vector(2);
-    FDC(FIFO_RD(2), STROBE, C_FIFO_RD_EN(2), I1_FIFO_RD_EN(2));
-    FDC(I1_FIFO_RD_EN(2), SLOWCLK, C_FIFO_RD_EN(2), I2_FIFO_RD_EN(2));
-    FDC(I2_FIFO_RD_EN(2), SLOWCLK, RST, I3_FIFO_RD_EN(2));
-    C_FIFO_RD_EN(2) <= RST or I3_FIFO_RD_EN(2);
-
-    FIFO_RD(3)      <= READ_FIFO and FSR_vector(3);
-    FDC(FIFO_RD(3), STROBE, C_FIFO_RD_EN(3), I1_FIFO_RD_EN(3));
-    FDC(I1_FIFO_RD_EN(3), SLOWCLK, C_FIFO_RD_EN(3), I2_FIFO_RD_EN(3));
-    FDC(I2_FIFO_RD_EN(3), SLOWCLK, RST, I3_FIFO_RD_EN(3));
-    C_FIFO_RD_EN(3) <= RST or I3_FIFO_RD_EN(3);
-
-
-    FIFO_RD_EN <= I2_FIFO_RD_EN;
-
---    if (FSR_vector(7 downto 0) = "00000001") then
---      FIFO_RD_EN(0) <= READ_FIFO and STROBE;
---      FIFO_RD_EN(7 downto 1) <= "0000000";
---    else
---      FIFO_RD_EN(7 downto 0) <= "00000000";
---    end if;  
-  end process;
-
-  CREATE_FIFO_WR_DATA : process (STROBE, SLOWCLK, INDATA, I1_INDATA, I2_INDATA)
-  begin
-    FD(INDATA(0), STROBE, I1_INDATA(0));
-    FD(I1_INDATA(0), SLOWCLK, I2_INDATA(0));
-    FD(INDATA(1), STROBE, I1_INDATA(1));
-    FD(I1_INDATA(1), SLOWCLK, I2_INDATA(1));
-    FD(INDATA(2), STROBE, I1_INDATA(2));
-    FD(I1_INDATA(2), SLOWCLK, I2_INDATA(2));
-    FD(INDATA(3), STROBE, I1_INDATA(3));
-    FD(I1_INDATA(3), SLOWCLK, I2_INDATA(3));
-    FD(INDATA(4), STROBE, I1_INDATA(4));
-    FD(I1_INDATA(4), SLOWCLK, I2_INDATA(4));
-    FD(INDATA(5), STROBE, I1_INDATA(5));
-    FD(I1_INDATA(5), SLOWCLK, I2_INDATA(5));
-    FD(INDATA(6), STROBE, I1_INDATA(6));
-    FD(I1_INDATA(6), SLOWCLK, I2_INDATA(6));
-    FD(INDATA(7), STROBE, I1_INDATA(7));
-    FD(I1_INDATA(7), SLOWCLK, I2_INDATA(7));
-    FD(INDATA(8), STROBE, I1_INDATA(8));
-    FD(I1_INDATA(8), SLOWCLK, I2_INDATA(8));
-    FD(INDATA(9), STROBE, I1_INDATA(9));
-    FD(I1_INDATA(9), SLOWCLK, I2_INDATA(9));
-    FD(INDATA(10), STROBE, I1_INDATA(10));
-    FD(I1_INDATA(10), SLOWCLK, I2_INDATA(10));
-    FD(INDATA(11), STROBE, I1_INDATA(11));
-    FD(I1_INDATA(11), SLOWCLK, I2_INDATA(11));
-    FD(INDATA(12), STROBE, I1_INDATA(12));
-    FD(I1_INDATA(12), SLOWCLK, I2_INDATA(12));
-    FD(INDATA(13), STROBE, I1_INDATA(13));
-    FD(I1_INDATA(13), SLOWCLK, I2_INDATA(13));
-    FD(INDATA(14), STROBE, I1_INDATA(14));
-    FD(I1_INDATA(14), SLOWCLK, I2_INDATA(14));
-    FD(INDATA(15), STROBE, I1_INDATA(15));
-    FD(I1_INDATA(15), SLOWCLK, I2_INDATA(15));
-    FIFO_WR_DATA <= I2_INDATA;
-  end process;
-
-
-  CREATE_FIFO_WR_EN : process (RST, SLOWCLK, FIFO_WR, FSR_vector, WRITE_FIFO, STROBE, I1_FIFO_WR_EN, I2_FIFO_WR_EN, I3_FIFO_WR_EN, C_FIFO_WR_EN)
-  begin
-
-    FIFO_WR(0)      <= WRITE_FIFO and FSR_vector(0);
-    FDC(FIFO_WR(0), STROBE, C_FIFO_WR_EN(0), I1_FIFO_WR_EN(0));
-    FDC(I1_FIFO_WR_EN(0), SLOWCLK, C_FIFO_WR_EN(0), I2_FIFO_WR_EN(0));
-    FDC(I2_FIFO_WR_EN(0), SLOWCLK, RST, I3_FIFO_WR_EN(0));
-    C_FIFO_WR_EN(0) <= RST or I3_FIFO_WR_EN(0);
-
-    FIFO_WR(1)      <= WRITE_FIFO and FSR_vector(1);
-    FDC(FIFO_WR(1), STROBE, C_FIFO_WR_EN(1), I1_FIFO_WR_EN(1));
-    FDC(I1_FIFO_WR_EN(1), SLOWCLK, C_FIFO_WR_EN(1), I2_FIFO_WR_EN(1));
-    FDC(I2_FIFO_WR_EN(1), SLOWCLK, RST, I3_FIFO_WR_EN(1));
-    C_FIFO_WR_EN(1) <= RST or I3_FIFO_WR_EN(1);
-
-    FIFO_WR(2)      <= WRITE_FIFO and FSR_vector(2);
-    FDC(FIFO_WR(2), STROBE, C_FIFO_WR_EN(2), I1_FIFO_WR_EN(2));
-    FDC(I1_FIFO_WR_EN(2), SLOWCLK, C_FIFO_WR_EN(2), I2_FIFO_WR_EN(2));
-    FDC(I2_FIFO_WR_EN(2), SLOWCLK, RST, I3_FIFO_WR_EN(2));
-    C_FIFO_WR_EN(2) <= RST or I3_FIFO_WR_EN(2);
-
-    FIFO_WR(3)      <= WRITE_FIFO and FSR_vector(3);
-    FDC(FIFO_WR(3), STROBE, C_FIFO_WR_EN(3), I1_FIFO_WR_EN(3));
-    FDC(I1_FIFO_WR_EN(3), SLOWCLK, C_FIFO_WR_EN(3), I2_FIFO_WR_EN(3));
-    FDC(I2_FIFO_WR_EN(3), SLOWCLK, RST, I3_FIFO_WR_EN(3));
-    C_FIFO_WR_EN(3) <= RST or I3_FIFO_WR_EN(3);
-
-    FIFO_WR_EN <= I2_FIFO_WR_EN;
-    
-  end process;
 
   GEN_TC_FIFO_VALS : for I in 2 downto 0 generate  -- (DDU_DATA,L1A/ALCT_DAV/TMB_DAV/LCT,TSH,TSL)
   begin
@@ -458,8 +226,6 @@ begin  --Architecture
   tc_fifo_rd_ck(3) <= slowclk;
   tc_fifo_in(3)    <= ddu_data       when (tc_run_inner = '1') else indata;
 
-
-
   GEN_TC_FIFO : for I in 3 downto 0 generate  -- (DDU_DATA,L1A/ALCT_DAV/TMB_DAV/LCT,TSH,TSL)
 
   begin
@@ -469,7 +235,7 @@ begin  --Architecture
         ALMOST_FULL_OFFSET      => X"0080",  -- Sets almost full threshold
         ALMOST_EMPTY_OFFSET     => X"0080",  -- Sets the almost empty threshold
         DATA_WIDTH              => 16,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
-        FIFO_SIZE               => "36Kb",   -- Target BRAM, "18Kb" or "36Kb" 
+        FIFO_SIZE               => "36Kb",  -- Target BRAM, "18Kb" or "36Kb" 
         FIRST_WORD_FALL_THROUGH => tc_fifo_fwft(I))  -- Sets the FIFO FWFT to TRUE or FALSE
 
       port map (
@@ -559,7 +325,7 @@ begin  --Architecture
       end if;
     end if;
 
-    
+
   end process;
 
   L1A      <= L1A_INNER;
@@ -615,32 +381,15 @@ begin  --Architecture
 
   end process;
 
--- LCT_CNT: process (CLK,tc_run_inner,lct_inner,trg_cnt_rst,rst)
--- 
--- TYPE LCT_CNT_DATA_TYPE is array (7 downto 0) of std_logic_vector(15 downto 0);
--- VARIABLE LCT_CNT_DATA  : LCT_CNT_DATA_TYPE;
--- 
--- BEGIN
--- 
---      IF (RST = '1' or trg_cnt_rst = '1') THEN
---              LCT_CNT_DATA := (OTHERS => '0');
---      ELSIF (tc_run_inner = '1') AND (lct_inner(I) = '1') AND (RISING_EDGE(CLK)) then
---              LCT_CNT_DATA := std_logic_vector(unsigned(LCT_CNT_DATA) + 1);
---      END IF;              
---      
---      LCT_CNT_OUT(I) <= LCT_CNT_DATA;
--- 
--- END PROCESS;
-
   GEN_LCT_CNT_OUT : for I in 0 to 7 generate
   begin
-    LCT_CNT_OUT(I) <= (others => '0') when (RST = '1' or trg_cnt_rst = '1') else
+    LCT_CNT_OUT(I) <= (others => '0')                                when (RST = '1' or trg_cnt_rst = '1')                                     else
                       std_logic_vector(unsigned(LCT_CNT_OUT(I)) + 1) when (tc_run_inner = '1') and (lct_inner(I) = '1') and (RISING_EDGE(CLK)) else
                       LCT_CNT_OUT(I);
   end generate GEN_LCT_CNT_OUT;
 
 
-  TRG_CNT_DATA <= LCT_CNT_OUT(0) when (TRG_CNT_SEL = "0000") else
+  TRG_CNT_DATA <= LCT_CNT_OUT(0)   when (TRG_CNT_SEL = "0000") else
                   LCT_CNT_OUT(1)   when (TRG_CNT_SEL = "0001") else
                   LCT_CNT_OUT(2)   when (TRG_CNT_SEL = "0010") else
                   LCT_CNT_OUT(3)   when (TRG_CNT_SEL = "0011") else
