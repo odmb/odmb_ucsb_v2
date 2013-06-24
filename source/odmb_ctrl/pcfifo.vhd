@@ -1,6 +1,5 @@
 library IEEE;
 use IEEE.STD_LOGIC_UNSIGNED.all;
---use IEEE.STD_LOGIC_INTEGER.all;
 use IEEE.STD_LOGIC_1164.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -43,28 +42,11 @@ architecture pcfifo_architecture of pcfifo is
       );
   end component;
 
-  component EOFGEN is
-    port(
-      clk : in std_logic;
-      rst : in std_logic;
-
-      dv_in   : in std_logic;
-      data_in : in std_logic_vector(15 downto 0);
-
-      dv_out   : out std_logic;
-      data_out : out std_logic_vector(17 downto 0)
-      );
-
-  end component;
-
-
   type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER);
   signal f0_next_state, f0_current_state : fsm_state_type;
 
   signal f0_rden                                : std_logic;
- -- signal f0_empty, f0_aempty, f0_afull, f0_full : std_logic;
   signal f0_empty : std_logic;
-  -- signal f0_wr_cnt, f0_rd_cnt                   : std_logic_vector(9 downto 0);
   signal f0_out                                 : std_logic_vector(15 downto 0);
   signal f0_ld                                  : std_logic;
 
@@ -81,7 +63,7 @@ architecture pcfifo_architecture of pcfifo is
   signal fifo_full                : std_logic_vector(NFIFO downto 1);
   signal fifo_wren, fifo_wrck     : std_logic_vector(NFIFO downto 1);
   signal fifo_rden, fifo_rdck     : std_logic_vector(NFIFO downto 1);
-  type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(9 downto 0);
+  type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
   signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
 
   signal pck_cnt_out : std_logic_vector(7 downto 0);
@@ -90,19 +72,6 @@ architecture pcfifo_architecture of pcfifo is
 begin
 
 -- FIFOs
-
---EOFGEN_PM : EOFGEN
---    port map (
---
---        clk => clk_in,
---        rst => rst,
---
---        dv_in   => dv_in,
---        data_in => data_in,
---
---        dv_out   => fifo_wren(NFIFO),
---        data_out => fifo_in(NFIFO));
---
 
   int_clk          <= clk_in;
   fifo_wrck(NFIFO) <= clk_in;
@@ -119,7 +88,7 @@ begin
       ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
       ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
       DATA_WIDTH              => 18,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
-      FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
       FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
@@ -155,7 +124,7 @@ begin
         ALMOST_FULL_OFFSET      => X"0080",  -- Sets almost full threshold
         ALMOST_EMPTY_OFFSET     => X"0080",  -- Sets the almost empty threshold
         DATA_WIDTH              => 18,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
-        FIFO_SIZE               => "18Kb",   -- Target BRAM, "18Kb" or "36Kb" 
+        FIFO_SIZE               => "36Kb",   -- Target BRAM, "18Kb" or "36Kb" 
         FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
       port map (
@@ -190,7 +159,7 @@ begin
       ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
       ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
       DATA_WIDTH              => 18,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
-      FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
       FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
@@ -211,41 +180,9 @@ begin
       WREN        => fifo_wren(1)       -- Input write enable
       );
 
- -- f0_aempty <= fifo_aempty(1);
-  --f0_afull  <= fifo_afull(1);
   f0_out    <= fifo_out(1)(15 downto 0);
   f0_ld     <= fifo_out(1)(17);
   f0_empty  <= fifo_empty(1);
-  --f0_full   <= fifo_full(1);
-  --f0_rd_cnt <= fifo_rd_cnt(1);
-  --f0_wr_cnt <= fifo_wr_cnt(1);
-
---  FIFO_0 : FIFO_DUALCLOCK_MACRO
---    generic map (
---      DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
---      ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
---      ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
---      DATA_WIDTH              => 16,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
---      FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 
---      FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
---
---    port map (
---      ALMOSTEMPTY => f0_aempty,         -- Output almost empty 
---      ALMOSTFULL  => f0_afull,          -- Output almost full
---      DO          => f0_out,            -- Output data
---      EMPTY       => f0_empty,          -- Output empty
---      FULL        => f0_full,           -- Output full
---      RDCOUNT     => f0_rd_cnt,         -- Output read count
---      RDERR       => open,              -- Output read error
---      WRCOUNT     => f0_wr_cnt,         -- Output write count
---      WRERR       => open,              -- Output write error
---      DI          => data_in,           -- Input data
---      RDCLK       => clk_out,           -- Input read clock
---      RDEN        => f0_rden,           -- Input read enable
---      RST         => rst,               -- Input reset
---      WRCLK       => clk_in,            -- Input write clock
---      WREN        => f0_wren            -- Input write enable
---      );
 
   FDCACK   : FDC port map(tx_ack_q(0), tx_ack, tx_ack_q(2), tx_ack_q_b);
   FDACK_Q  : FD port map(tx_ack_q(1), clk_out, tx_ack_q(0));
@@ -253,8 +190,6 @@ begin
   tx_ack_q_b <= not tx_ack_q(2);
 
 -- FSMs 
-
---  FDLD : FD port map(ld_in_q, clk_in, ld_in);
 
   LD_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_in, rst, 1, ld_out);
 
