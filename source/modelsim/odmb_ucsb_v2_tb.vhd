@@ -348,277 +348,6 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         );
   end component;
 
---COMPONENT odmb_v6 is
---      port
---      (
---      tc_run_out    : out   std_logic;  -- OK           NEW!
---
----- From/To VME connector To/From MBV
---
---              vme_data : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);         -- OK           d(15 DOWNTO 0)
---              vme_addr : IN STD_LOGIC_VECTOR(23 DOWNTO 1);                    -- OK           a(23 DOWNTO 1)
---              vme_am : IN STD_LOGIC_VECTOR(5 DOWNTO 0);                               -- OK           am(6 DOWNTO 0)
---              vme_gap : IN STD_LOGIC;                                                                         -- OK           gap = ga(5)
---              vme_ga : IN STD_LOGIC_VECTOR(4 DOWNTO 0);                               -- OK           ga(4 DOWNTO 0)
---              vme_bg0 : IN STD_LOGIC;                                                                         -- OK           NEW!
---              vme_bg1 : IN STD_LOGIC;                                                                         -- OK           NEW!
---              vme_bg2 : IN STD_LOGIC;                                                                         -- OK           NEW!
---              vme_bg3 : IN STD_LOGIC;                                                                         -- OK           NEW!
---              vme_as_b : IN STD_LOGIC;                                                                        -- OK           as*
---              vme_ds_b : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                     -- OK           ds1*,ds0*
---              vme_sysreset_b : IN STD_LOGIC;                                                  -- OK           sysreset*
---              vme_sysfail_b : IN STD_LOGIC;                                                           -- OK           sysfail*
---              vme_sysfail_out : OUT STD_LOGIC;                                                        -- OK           NEW!
---              vme_berr_b : IN STD_LOGIC;                                                                      -- OK           berr*
---              vme_berr_out : OUT STD_LOGIC;                                                           -- OK           NEW!
---              vme_iack_b : IN STD_LOGIC;                                                                      -- OK           iack*
---              vme_lword_b : IN STD_LOGIC;                                                             -- OK           lword*
---              vme_write_b : IN STD_LOGIC;                                                             -- OK           write*
---              vme_clk : IN STD_LOGIC;                                                                         -- OK           ???
---              vme_dtack_v6_b : INOUT STD_LOGIC;                                               -- OK           dtack*
---              vme_tovme : OUT STD_LOGIC;                                                                      -- OK           not (tovme)
---              vme_doe : OUT STD_LOGIC;                                                                        -- OK           not (doe*)
---
----- From/To J6 (J3) connector to ODMB_CTRL
---
---              ccb_cmd : IN STD_LOGIC_VECTOR(5 DOWNTO 0);                      -- OK           ccbcmnd(5 DOWNTO 0)
---              ccb_cmd_s : IN STD_LOGIC;                                                                       -- OK           ccbcmnd(6)
---              ccb_data : IN STD_LOGIC_VECTOR(7 DOWNTO 0);                     -- OK           ccbdata(7 DOWNTO 0)
---              ccb_data_s : IN STD_LOGIC;                                                                      -- OK           ccbdata(8)
---              ccb_cal : IN STD_LOGIC_VECTOR(2 DOWNTO 0);                      -- OK           ccbcal(14 DOWNTO 12)
---              ccb_crsv : IN STD_LOGIC_VECTOR(4 DOWNTO 0);                     -- OK           nc (J3/B2), ccbrsv(3 DOWNTO 0) = crsv(3 DOWNTO 0)
---              ccb_drsv : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                     -- OK           ccbrsv(5 DOWNTO 4) = drsv(1 DOWNTO 0)
---              ccb_rsvo : IN STD_LOGIC_VECTOR(4 DOWNTO 0);                     -- OK           nc (J3/A21), ccbsrv(10 DOWNTO 7) = rsvo(3 DOWNTO 0)
---              ccb_rsvi : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);                    -- OK           ccbsrv(14 DOWNTO 12)
---              ccb_bx0 : IN STD_LOGIC;                                                                         -- OK           bx0
---              ccb_bxrst : IN STD_LOGIC;                                                                       -- OK           bxrst
---              ccb_l1arst : IN STD_LOGIC;                                                                      -- OK           l1arst
---              ccb_l1acc : IN STD_LOGIC;                                                                       -- OK           l1acc
---              ccb_l1rls : OUT STD_LOGIC;                                                                      -- OK           l1rls
---              ccb_clken : IN STD_LOGIC;                                                                       -- OK           clkena
---
---              ccb_hardrst : IN STD_LOGIC;                                                             -- OK           
---              ccb_softrst : IN STD_LOGIC;                                                             -- OK           
---
----- From J6/J7 (J3/J4) to FIFOs
---
---              tmb : IN STD_LOGIC_VECTOR(17 DOWNTO 0);                         -- OK           f6di(17 DOWNTO 0)
---              alct : IN STD_LOGIC_VECTOR(17 DOWNTO 0);                                -- OK           f7di(17 DOWNTO 0)
---              rawlct : IN STD_LOGIC_VECTOR(NFEB DOWNTO 0);                            -- OK           ???
---              tmbffclk : IN STD_LOGIC;                                                                        -- OK           tmbffclk
---
----- From/To J3/J4 t/fromo ODMB_CTRL
---
---              lctdav1 : IN STD_LOGIC;                                                                         -- OK           lctdav1
---              lctdav2 : IN STD_LOGIC;                                                                         -- OK           lctdav2
-----            rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);                     
---              rsvtd_in : IN STD_LOGIC_VECTOR(4        DOWNTO 0);                      -- OK           rstvd(7 DOWNTO 4)
---              rsvtd_out : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);           -- OK           rstvd(2 DOWNTO 0)
---              lctrqst : OUT STD_LOGIC_VECTOR(2 DOWNTO 1);                     -- OK           lctrqst(2 DOWNTO 1)
---
---
----- From/To QPLL (From/To DAQMBV)
---
---              qpll_autorestart : OUT STD_LOGIC;                                               -- OK           NEW!
---              qpll_mode : OUT STD_LOGIC;                                                                      -- OK           NEW!
---              qpll_extcontrol : OUT STD_LOGIC;                                                        -- OK           NEW!
---              qpll_reset : OUT STD_LOGIC;                                                             -- OK           NEW!
---              qpll_f0sel : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);          -- OK           NEW!
---              qpll_locked : IN STD_LOGIC;                                                             -- OK           NEW!
---              qpll_error : IN STD_LOGIC;                                                                      -- OK           NEW!
---
---              qpll_clk40MHz_p : IN STD_LOGIC;                                                 -- OK           NEW!
---              qpll_clk40MHz_n : IN STD_LOGIC;                                                 -- OK           NEW!
---              qpll_clk80MHz_p : IN STD_LOGIC;                                                 -- OK           NEW!
---              qpll_clk80MHz_n : IN STD_LOGIC;                                                 -- OK           NEW!
-----            qpll_clk160MHz_p : IN STD_LOGIC;                                                        -- NEW!
-----            qpll_clk160MHz_n : IN STD_LOGIC;                                                        -- NEW!
---              
----- From/To LVMB (From/To DAQMBV and DAQMBC)
---
---              lvmb_pon : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);            -- OK           pwon(6 DOWNTO 1)
---              pon_load : OUT STD_LOGIC;                                                               -- OK           loadpwon
---              pon_en : OUT STD_LOGIC;                                                                 -- OK           pwon_en*
---              r_lvmb_pon : IN STD_LOGIC_VECTOR(7 DOWNTO 0);   -- OK           multi(6 DOWNTO 1) (r_pwon(6 DOWNTO 1))
---              lvmb_csb : OUT STD_LOGIC_VECTOR(6 DOWNTO 0);            -- OK           multi(13 DOWNTO 7)
---              lvmb_sclk : OUT STD_LOGIC;                                                              -- OK           multi(14)
---              lvmb_sdin : OUT STD_LOGIC;                                                              -- OK           multi(15)
---              lvmb_sdout : IN STD_LOGIC;                                                              -- OK           multi(16)
---
----- From/To ADC (From/To DAQMBV)
---
---              adc_sclk : OUT STD_LOGIC;                                               -- OK           NEW!
---              adc_sdain : OUT STD_LOGIC;                                              -- OK           NEW!
---              adc_sdaout : IN STD_LOGIC;                                              -- OK           NEW!
---              adc_cs : OUT STD_LOGIC;                                                 -- OK           NEW!
---
----- From/To DAC (From/To DAQMBV)
---
---              dac_sclk : OUT STD_LOGIC;                                               -- OK           NEW!
---              dac_sdain : OUT STD_LOGIC;                                              -- OK           NEW!
---              dac_sdaout : IN STD_LOGIC;                                              -- OK           NEW!
---              dac_cs : OUT STD_LOGIC;                                                 -- OK           NEW!
---
----- To LEDs
---
---              leds : OUT STD_LOGIC_VECTOR(11 DOWNTO 0);       -- OK           NEW!    
---
----- To Frequency Divider FF
---
---              fd_pre : OUT STD_LOGIC;                                                 -- OK           NEW!    
---              fd_clr : OUT STD_LOGIC;                                                 -- OK           NEW!    
---
----- From Push Buttons
---
---              pb : IN STD_LOGIC_VECTOR(3 DOWNTO 0);           -- OK
---
----- From/To Test Connector for Single-Ended signals
---
-----            d : INOUT STD_LOGIC_VECTOR(63 DOWNTO 0);        -- OK           
---              d : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);  -- OK           
---
---
----- From/To Test Connector J3 for LVDS signals
---
---              gtx_0_p : IN STD_LOGIC;                                 -- OK                   
---              gtx_0_n : IN STD_LOGIC;                                 -- OK                   
---              grx_0_p : OUT STD_LOGIC;                                -- OK (out)                     
---              grx_0_n : OUT STD_LOGIC;                                -- OK (out)                     
---
---              ck_0_p : IN STD_LOGIC;                                  -- OK                   
---              ck_0_n : IN STD_LOGIC;                                  -- OK                   
---              ck_1_p : IN STD_LOGIC;                                  -- OK                   
---              ck_1_n : IN STD_LOGIC;                                  -- OK                   
---              tclk_p : IN STD_LOGIC;                                  -- OK                   
---              tclk_n : IN STD_LOGIC;                                  -- OK                   
---              rxb_p : OUT STD_LOGIC;                                  -- OK                   
---              rxb_n : OUT STD_LOGIC;                                  -- OK                   
---              
---              tx_0_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_0_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_1_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_1_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_2_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_2_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_3_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_3_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_4_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_4_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_5_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_5_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_6_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_6_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_7_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_7_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_8_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_8_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_9_p : OUT STD_LOGIC;                                 -- OK                   
---              tx_9_n : OUT STD_LOGIC;                                 -- OK                   
---              tx_10_p : OUT STD_LOGIC;                                -- OK                   
---              tx_10_n : OUT STD_LOGIC;                                -- OK                   
---
---              rx_0_p : IN STD_LOGIC;                                  -- OK           
---              rx_0_n : IN STD_LOGIC;                                  -- OK                   
---              rx_1_p : IN STD_LOGIC;                                  -- OK                           
---              rx_1_n : IN STD_LOGIC;                                  -- OK                           
---              rx_2_p : IN STD_LOGIC;                                  -- OK                           
---              rx_2_n : IN STD_LOGIC;                                  -- OK                           
---              rx_3_p : IN STD_LOGIC;                                  -- OK                           
---              rx_3_n : IN STD_LOGIC;                                  -- OK                           
---              rx_4_p : IN STD_LOGIC;                                  -- OK                   
---              rx_4_n : IN STD_LOGIC;                                  -- OK                   
---              rx_5_p : IN STD_LOGIC;                                  -- OK                           
---              rx_5_n : IN STD_LOGIC;                                  -- OK                           
---              rx_6_p : IN STD_LOGIC;                                  -- OK                           
---              rx_6_n : IN STD_LOGIC;                                  -- OK                           
---              rx_7_p : IN STD_LOGIC;                                  -- OK                           
---              rx_7_n : IN STD_LOGIC;                                  -- OK                           
---              rx_8_p : IN STD_LOGIC;                                  -- OK                   
---              rx_8_n : IN STD_LOGIC;                                  -- OK                   
---              rx_9_p : IN STD_LOGIC;                                  -- OK                           
---              rx_9_n : IN STD_LOGIC;                                  -- OK                           
---              rx_10_p : IN STD_LOGIC;                                 -- OK                           
---              rx_10_n : IN STD_LOGIC;                                 -- OK                           
---
----- To/From TX1 
---
---              otx1_p : OUT  STD_LOGIC_VECTOR(12 downto 1);            
---              otx1_n : OUT  STD_LOGIC_VECTOR(12 downto 1);            
---              otx1_tx_en : OUT  STD_LOGIC;                    -- OK
---              otx1_tx_dis : OUT  STD_LOGIC;                   -- OK
---              otx1_reset : OUT  STD_LOGIC;                    -- OK
---              otx1_fault : IN  STD_LOGIC;                     -- OK
---              
----- To/From TX2 
---
---              otx2_p : OUT  STD_LOGIC_VECTOR(12 downto 1);            
---              otx2_n : OUT  STD_LOGIC_VECTOR(12 downto 1);            
---              otx2_tx_en : OUT  STD_LOGIC;                    -- OK   
---              otx2_tx_dis : OUT  STD_LOGIC;                   -- OK   
---              otx2_reset : OUT  STD_LOGIC;                    -- OK   
---              otx2_fault : IN  STD_LOGIC;                     -- OK   
---
----- From/To RX1 
---
---              orx1_p : IN  STD_LOGIC_VECTOR(12 downto 1);     
---              orx1_n : IN  STD_LOGIC_VECTOR(12 downto 1);     
---              orx1_rx_en : OUT  STD_LOGIC;                    -- OK
---              orx1_en_sd : OUT  STD_LOGIC;                    -- OK
---              orx1_sd : IN  STD_LOGIC;                                -- OK
---              orx1_sq_en : OUT  STD_LOGIC;                    -- OK
---
----- From/To RX2 
---
---              orx2_p : IN  STD_LOGIC_VECTOR(12 downto 1);     
---              orx2_n : IN  STD_LOGIC_VECTOR(12 downto 1);     
---              orx2_rx_en : OUT  STD_LOGIC;                    -- OK   
---              orx2_en_sd : OUT  STD_LOGIC;                    -- OK   
---              orx2_sd : IN  STD_LOGIC;                                -- OK   
---              orx2_sq_en : OUT  STD_LOGIC;                    -- OK   
---
----- From/To OT1 (GigaBit Link)
---
---              gl0_tx_p : OUT  STD_LOGIC;                              -- OK
---              gl0_tx_n : OUT  STD_LOGIC;                              -- OK
---              gl0_rx_p : IN  STD_LOGIC;                               -- OK
---              gl0_rx_n : IN  STD_LOGIC;                               -- OK
---
----- From/To OT2 (GigaBit Link)
---
---              gl1_tx_p : OUT  STD_LOGIC;                              -- OK
---              gl1_tx_n : OUT  STD_LOGIC;                              -- OK
---              gl1_rx_p : IN  STD_LOGIC;                               -- OK
---              gl1_rx_n : IN  STD_LOGIC;                               -- OK
---
----- From IC7 (Clock Driver CDC)
---
---              cdc_clk_0_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_0_n : IN  STD_LOGIC;                    -- OK
---              cdc_clk_1_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_1_n : IN  STD_LOGIC;                    -- OK
---              cdc_clk_2_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_2_n : IN  STD_LOGIC;                    -- OK
---              cdc_clk_3_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_3_n : IN  STD_LOGIC;                    -- OK
---              cdc_clk_4_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_4_n : IN  STD_LOGIC;                    -- OK
---              cdc_clk_5_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_5_n : IN  STD_LOGIC;                    -- OK
---              cdc_clk_6_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_6_n : IN  STD_LOGIC;                    -- OK
---              cdc_clk_7_p : IN  STD_LOGIC;                    -- OK
---              cdc_clk_7_n : IN  STD_LOGIC;                    -- OK
---
----- From IC31 
---
---              gl0_clk : IN  STD_LOGIC;                                -- OK
---              gl1_clk : IN  STD_LOGIC;                                -- OK
---              
---              done_in : IN  STD_LOGIC 
---      );
---    
---end COMPONENT;
-
 
 -- clock and reset signals
 
@@ -925,140 +654,6 @@ begin
 
 -- Beginning of the Test Bench Section
 
-  PMAP_file_handler_event : file_handler_event
-
-    port map(
-
-      clk      => clk,
-      en       => goevent,
-      l1a      => l1a,
-      alct_dav => alct_dav,
-      tmb_dav  => tmb_dav,
-      lct      => lct
-      );
-
-  l1a_b <= not l1a;
-
-  PMAP_file_handler : file_handler
-
-    port map(
-
-      clk             => clk,
-      start           => start,
-      vme_cmd_reg     => vme_cmd_reg,
-      vme_dat_reg_in  => vme_dat_reg_in,
-      vme_dat_reg_out => vme_dat_mem_in,
-      vme_cmd_rd      => vme_mem_rden,
-      vme_dat_wr      => vme_dat_mem_wren
-      );
-
-  vme_cmd_mem_out <= vme_cmd_reg;
-  vme_dat_mem_out <= vme_dat_reg_in;
-
-  PMAP_test_controller : test_controller
-
-    port map(
-
-      clk       => clk,
-      rstn      => rstn,
-      sw_reset  => rst,
-      tc_enable => go,
-
-      -- From/To SLV_MGT Module
-
-      start     => start,
-      start_res => start_res,
-      stop      => stop,
-      stop_res  => stop_res,
-      mode      => mode,
-      cmd_n     => cmd_n,
-      busy      => busy,
-
-      vme_cmd_reg     => vme_cmd_reg,
-      vme_dat_reg_in  => vme_dat_reg_in,
-      vme_dat_reg_out => vme_dat_reg_out,
-
--- To/From VME Master
-
-      vme_cmd    => vme_cmd,
-      vme_cmd_rd => vme_cmd_rd,
-
-      vme_addr    => vme_addr,
-      vme_wr      => vme_wr,
-      vme_wr_data => vme_wr_data,
-      vme_rd      => vme_rd,
-      vme_rd_data => vme_rd_data,
-
--- From/To VME_CMD Memory and VME_DAT Memory
-
-      vme_mem_addr     => vme_mem_addr,
-      vme_mem_rden     => vme_mem_rden,
-      vme_cmd_mem_out  => vme_cmd_mem_out,
-      vme_dat_mem_out  => vme_dat_mem_out,
-      vme_dat_mem_wren => vme_dat_mem_wren,
-      vme_dat_mem_in   => vme_dat_mem_in
-
-      );
-
-  PMAP_VME_Master : vme_master
-    port map (
-
-      clk      => clk,
-      rstn     => rstn,
-      sw_reset => rst,
-
-      vme_cmd     => vme_cmd,
-      vme_cmd_rd  => vme_cmd_rd,
-      vme_wr      => vme_cmd,
-      vme_addr    => vme_addr,
-      vme_wr_data => vme_wr_data,
-      vme_rd      => vme_rd,
-      vme_rd_data => vme_rd_data,
-
-      ga   => ga,
-      addr => adr,
-      am   => am,
-
-      as      => as,
-      ds0     => ds(0),
-      ds1     => ds(1),
-      lword   => lword,
-      write_b => write_b,
-      iack    => iack,
-      berr    => berr,
-      sysfail => sysfail,
-      dtack   => dtack,
-
-      oe_b     => oe_b,
-      data_in  => outdata,
-      data_out => indata
-
-      );
-
-  vme_d00_buf : IOBUF port map (O => outdata(0), IO => data(0), I => indata(0), T => oe_b);
-  vme_d01_buf : IOBUF port map (O => outdata(1), IO => data(1), I => indata(1), T => oe_b);
-  vme_d02_buf : IOBUF port map (O => outdata(2), IO => data(2), I => indata(2), T => oe_b);
-  vme_d03_buf : IOBUF port map (O => outdata(3), IO => data(3), I => indata(3), T => oe_b);
-  vme_d04_buf : IOBUF port map (O => outdata(4), IO => data(4), I => indata(4), T => oe_b);
-  vme_d05_buf : IOBUF port map (O => outdata(5), IO => data(5), I => indata(5), T => oe_b);
-  vme_d06_buf : IOBUF port map (O => outdata(6), IO => data(6), I => indata(6), T => oe_b);
-  vme_d07_buf : IOBUF port map (O => outdata(7), IO => data(7), I => indata(7), T => oe_b);
-  vme_d08_buf : IOBUF port map (O => outdata(8), IO => data(8), I => indata(8), T => oe_b);
-  vme_d09_buf : IOBUF port map (O => outdata(9), IO => data(9), I => indata(9), T => oe_b);
-  vme_d10_buf : IOBUF port map (O => outdata(10), IO => data(10), I => indata(10), T => oe_b);
-  vme_d11_buf : IOBUF port map (O => outdata(11), IO => data(11), I => indata(11), T => oe_b);
-  vme_d12_buf : IOBUF port map (O => outdata(12), IO => data(12), I => indata(12), T => oe_b);
-  vme_d13_buf : IOBUF port map (O => outdata(13), IO => data(13), I => indata(13), T => oe_b);
-  vme_d14_buf : IOBUF port map (O => outdata(14), IO => data(14), I => indata(14), T => oe_b);
-  vme_d15_buf : IOBUF port map (O => outdata(15), IO => data(15), I => indata(15), T => oe_b);
-
-  PMAP_pon_reg : pon_reg
-    port map (
-      pon_en   => pon_en_b,
-      pon_load => pon_load,
-      pon_in   => lvmb_pon,
-      pon_out  => r_lvmb_pon);
-
 -- End of the Test Bench Section
 
   PMAP_odmb_ucsb_v2 : odmb_ucsb_v2
@@ -1220,6 +815,8 @@ begin
       gl0_tx_n  => gl0_tx_n,            -- out
       gl0_rx_p  => gl0_tx_p,            -- in
       gl0_rx_n  => gl0_tx_n,            -- in
+      --gl0_rx_p  => gl0_rx_p,            -- in
+      --gl0_rx_n  => gl0_rx_n,            -- in
       gl0_clk_p => gl0_clk_p,           -- in
       gl0_clk_n => gl0_clk_n,           -- in
 
@@ -1236,5 +833,139 @@ begin
       done_in      => done_in,
       ccb_evcntres => ccb_evcntres
       );
+
+  PMAP_file_handler_event : file_handler_event
+
+    port map(
+
+      clk      => clk,
+      en       => goevent,
+      l1a      => l1a,
+      alct_dav => alct_dav,
+      tmb_dav  => tmb_dav,
+      lct      => lct
+      );
+
+  l1a_b <= not l1a;
+
+  PMAP_file_handler : file_handler
+
+    port map(
+
+      clk             => clk,
+      start           => start,
+      vme_cmd_reg     => vme_cmd_reg,
+      vme_dat_reg_in  => vme_dat_reg_in,
+      vme_dat_reg_out => vme_dat_mem_in,
+      vme_cmd_rd      => vme_mem_rden,
+      vme_dat_wr      => vme_dat_mem_wren
+      );
+
+  vme_cmd_mem_out <= vme_cmd_reg;
+  vme_dat_mem_out <= vme_dat_reg_in;
+
+  PMAP_test_controller : test_controller
+
+    port map(
+
+      clk       => clk,
+      rstn      => rstn,
+      sw_reset  => rst,
+      tc_enable => go,
+
+      -- From/To SLV_MGT Module
+
+      start     => start,
+      start_res => start_res,
+      stop      => stop,
+      stop_res  => stop_res,
+      mode      => mode,
+      cmd_n     => cmd_n,
+      busy      => busy,
+
+      vme_cmd_reg     => vme_cmd_reg,
+      vme_dat_reg_in  => vme_dat_reg_in,
+      vme_dat_reg_out => vme_dat_reg_out,
+
+-- To/From VME Master
+
+      vme_cmd    => vme_cmd,
+      vme_cmd_rd => vme_cmd_rd,
+
+      vme_addr    => vme_addr,
+      vme_wr      => vme_wr,
+      vme_wr_data => vme_wr_data,
+      vme_rd      => vme_rd,
+      vme_rd_data => vme_rd_data,
+
+-- From/To VME_CMD Memory and VME_DAT Memory
+
+      vme_mem_addr     => vme_mem_addr,
+      vme_mem_rden     => vme_mem_rden,
+      vme_cmd_mem_out  => vme_cmd_mem_out,
+      vme_dat_mem_out  => vme_dat_mem_out,
+      vme_dat_mem_wren => vme_dat_mem_wren,
+      vme_dat_mem_in   => vme_dat_mem_in
+
+      );
+
+  PMAP_VME_Master : vme_master
+    port map (
+
+      clk      => clk,
+      rstn     => rstn,
+      sw_reset => rst,
+
+      vme_cmd     => vme_cmd,
+      vme_cmd_rd  => vme_cmd_rd,
+      vme_wr      => vme_cmd,
+      vme_addr    => vme_addr,
+      vme_wr_data => vme_wr_data,
+      vme_rd      => vme_rd,
+      vme_rd_data => vme_rd_data,
+
+      ga   => ga,
+      addr => adr,
+      am   => am,
+
+      as      => as,
+      ds0     => ds(0),
+      ds1     => ds(1),
+      lword   => lword,
+      write_b => write_b,
+      iack    => iack,
+      berr    => berr,
+      sysfail => sysfail,
+      dtack   => dtack,
+
+      oe_b     => oe_b,
+      data_in  => outdata,
+      data_out => indata
+
+      );
+
+  vme_d00_buf : IOBUF port map (O => outdata(0), IO => data(0), I => indata(0), T => oe_b);
+  vme_d01_buf : IOBUF port map (O => outdata(1), IO => data(1), I => indata(1), T => oe_b);
+  vme_d02_buf : IOBUF port map (O => outdata(2), IO => data(2), I => indata(2), T => oe_b);
+  vme_d03_buf : IOBUF port map (O => outdata(3), IO => data(3), I => indata(3), T => oe_b);
+  vme_d04_buf : IOBUF port map (O => outdata(4), IO => data(4), I => indata(4), T => oe_b);
+  vme_d05_buf : IOBUF port map (O => outdata(5), IO => data(5), I => indata(5), T => oe_b);
+  vme_d06_buf : IOBUF port map (O => outdata(6), IO => data(6), I => indata(6), T => oe_b);
+  vme_d07_buf : IOBUF port map (O => outdata(7), IO => data(7), I => indata(7), T => oe_b);
+  vme_d08_buf : IOBUF port map (O => outdata(8), IO => data(8), I => indata(8), T => oe_b);
+  vme_d09_buf : IOBUF port map (O => outdata(9), IO => data(9), I => indata(9), T => oe_b);
+  vme_d10_buf : IOBUF port map (O => outdata(10), IO => data(10), I => indata(10), T => oe_b);
+  vme_d11_buf : IOBUF port map (O => outdata(11), IO => data(11), I => indata(11), T => oe_b);
+  vme_d12_buf : IOBUF port map (O => outdata(12), IO => data(12), I => indata(12), T => oe_b);
+  vme_d13_buf : IOBUF port map (O => outdata(13), IO => data(13), I => indata(13), T => oe_b);
+  vme_d14_buf : IOBUF port map (O => outdata(14), IO => data(14), I => indata(14), T => oe_b);
+  vme_d15_buf : IOBUF port map (O => outdata(15), IO => data(15), I => indata(15), T => oe_b);
+
+  PMAP_pon_reg : pon_reg
+    port map (
+      pon_en   => pon_en_b,
+      pon_load => pon_load,
+      pon_in   => lvmb_pon,
+      pon_out  => r_lvmb_pon);
 
 end ODMB_UCSB_V2_TB_arch;
