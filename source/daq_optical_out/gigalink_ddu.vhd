@@ -17,10 +17,12 @@ entity GIGALINK_DDU is
     RST        : in std_logic;
 
     -- Transmitter signals
-    TXD      : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
-    TXD_VLD  : in  std_logic;           -- Flag for valid data;
-    TX_DDU_N : out std_logic;           -- GTX transmit data out - signal
-    TX_DDU_P : out std_logic;           -- GTX transmit data out + signal
+    TXD         : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
+    TXD_VLD     : in  std_logic;        -- Flag for valid data;
+    TX_DDU_N    : out std_logic;        -- GTX transmit data out - signal
+    TX_DDU_P    : out std_logic;        -- GTX transmit data out + signal
+    TXDIFFCTRL : in  std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+    LOOPBACK    : in  std_logic_vector(2 downto 0);  -- For internal loopback tests
 
     -- Receiver signals
     RX_DDU_N : in  std_logic;           -- GTX receive data in - signal
@@ -144,19 +146,18 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal logicl5 : std_logic_vector(4 downto 0) := (others => '0');
 
   -- TX_RX_80MHz inputs
-  signal loopback_in       : std_logic_vector(2 downto 0)  := (others => '0');
   signal gtxtest_in        : std_logic_vector(12 downto 0) := "1000000000000";
   signal gtx0_gtxtest_done : std_logic;
   signal gtx0_gtxtest_bit1 : std_logic;
   signal gtx0_txreset_in   : std_logic;
-
+  signal gtx0_txpreemphasis_in : std_logic_vector(3 downto 0) := "1000";
+  
   -- TX_RX_80MHz outputs
   signal gtx0_txplllkdet_out    : std_logic;
   signal gtx0_rxvalid_out       : std_logic;
   signal gtx0_rxcharisk_out     : std_logic_vector(3 downto 0);
   signal gtx0_rxbyterealign_out : std_logic;
   signal rxbyterealign_pulse    : std_logic := '0';
-  signal gtx0_txpreemphasis_in  : std_logic_vector(3 downto 0);
 
   -- FIFO signals
   signal tx_fifo_reset                  : std_logic := '0';
@@ -174,7 +175,7 @@ begin
 
   -- RX data valid is high when the RX is valid and we are not receiving a K character
   -- The pulse avoids some false positives during resets
-  PULSE_ALIGN : PULSE_EDGE port map(rxbyterealign_pulse, open, usr_clk, RST, 10, gtx0_rxbyterealign_out);
+  PULSE_ALIGN : PULSE_EDGE port map(rxbyterealign_pulse, open, usr_clk, RST, 10000, gtx0_rxbyterealign_out);
   rxd_vld_inner <= '1' when (gtx0_rxvalid_out = '1' and gtx0_rxcharisk_out = x"0" and
                              rxbyterealign_pulse = '0') else '0';
   tx_ddu_data <= TXD  when TXD_VLD = '1' else IDLE;
@@ -182,9 +183,8 @@ begin
   RXD         <= rxd_inner;
   RXD_VLD     <= rxd_vld_inner;
 
-  gtxtest_in            <= "10000000000" & gtx0_gtxtest_bit1 & '0';
-  gtx0_txreset_in       <= gtx0_gtxtest_done or RST;
-  gtx0_txpreemphasis_in <= "1111";
+  gtxtest_in      <= "10000000000" & gtx0_gtxtest_bit1 & '0';
+  gtx0_txreset_in <= gtx0_gtxtest_done or RST;
 
   TX_RX_80MHZ_PM : TX_RX_80MHZ
     generic map (
@@ -196,7 +196,7 @@ begin
       --GTX0  (X0Y4)
 
       ------------------------ Loopback and Powerdown Ports ----------------------
-      GTX0_LOOPBACK_IN       => loopback_in,
+      GTX0_LOOPBACK_IN       => LOOPBACK,
       ----------------------- Receive Ports - 8b10b Decoder ----------------------
       GTX0_RXDISPERR_OUT     => open,
       GTX0_RXNOTINTABLE_OUT  => open,
@@ -226,7 +226,7 @@ begin
       GTX0_TXOUTCLK_OUT      => open,
       GTX0_TXUSRCLK2_IN      => usr_clk,
       ---------------- Transmit Ports - TX Driver and OOB signaling --------------
-      GTX0_TXDIFFCTRL_IN     => logicl4,
+      GTX0_TXDIFFCTRL_IN     => TXDIFFCTRL,
       GTX0_TXN_OUT           => TX_DDU_N,
       GTX0_TXP_OUT           => TX_DDU_P,
       GTX0_TXPOSTEMPHASIS_IN => logicl5,
