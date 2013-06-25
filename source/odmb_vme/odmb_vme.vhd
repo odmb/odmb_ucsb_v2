@@ -150,6 +150,8 @@ entity ODMB_VME is
     dcfeb_ctrl    : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
     odmb_data     : in  std_logic_vector(15 downto 0);
+    TXDIFFCTRL   : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+    LOOPBACK      : out std_logic_vector(2 downto 0);  -- For internal loopback tests
 
     -- TESTCTRL
     tc_l1a         : out std_logic;
@@ -180,20 +182,20 @@ entity ODMB_VME is
     pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
     -- DDU FIFO signals
-    ddu_tx_fifo_rst : out std_logic;
-    ddu_tx_fifo_rden : out std_logic;
-    ddu_tx_fifo_dout: in std_logic_vector(15 downto 0);
-    ddu_tx_fifo_wrd_cnt: in std_logic_vector(11 downto 0);
-    ddu_rx_fifo_rst : out std_logic;
-    ddu_rx_fifo_rden : out std_logic;
-    ddu_rx_fifo_dout: in std_logic_vector(15 downto 0);
-    ddu_rx_fifo_wrd_cnt: in std_logic_vector(11 downto 0);    
-    
+    ddu_tx_fifo_rst     : out std_logic;
+    ddu_tx_fifo_rden    : out std_logic;
+    ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
+    ddu_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+    ddu_rx_fifo_rst     : out std_logic;
+    ddu_rx_fifo_rden    : out std_logic;
+    ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
+    ddu_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+
     -- TESTFIFOS
-    TFF_DOUT : in  std_logic_vector(15 downto 0);
-    TFF_WRD_CNT  : in  std_logic_vector(11 downto 0);
-    TFF_RST      : out std_logic_vector(NFEB downto 1);
-    TFF_SEL      : out std_logic_vector(NFEB downto 1);
+    TFF_DOUT    : in  std_logic_vector(15 downto 0);
+    TFF_WRD_CNT : in  std_logic_vector(11 downto 0);
+    TFF_RST     : out std_logic_vector(NFEB downto 1);
+    TFF_SEL     : out std_logic_vector(NFEB downto 1);
     TFF_RDEN    : out std_logic_vector(NFEB downto 1)
 
 
@@ -279,7 +281,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
       ODMB_CTRL     : out std_logic_vector(15 downto 0);
       DCFEB_CTRL    : out std_logic_vector(15 downto 0);
       ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
-      ODMB_DATA     : in  std_logic_vector(15 downto 0)
+      ODMB_DATA     : in  std_logic_vector(15 downto 0);
+      TXDIFFCTRL   : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+      LOOPBACK      : out std_logic_vector(2 downto 0)  -- For internal loopback tests
 
       );
   end component;
@@ -339,21 +343,21 @@ architecture ODMB_VME_architecture of ODMB_VME is
       pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
       -- DDU_TX/RX Fifo signals
-      ddu_tx_fifo_rst      : out std_logic;
-      ddu_tx_fifo_rden     : out std_logic;
-      ddu_tx_fifo_dout : in  std_logic_vector(15 downto 0);
-      ddu_tx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
-      ddu_rx_fifo_rst      : out std_logic;
-      ddu_rx_fifo_rden     : out std_logic;
-      ddu_rx_fifo_dout : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
+      ddu_tx_fifo_rst     : out std_logic;
+      ddu_tx_fifo_rden    : out std_logic;
+      ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      ddu_rx_fifo_rst     : out std_logic;
+      ddu_rx_fifo_rden    : out std_logic;
+      ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
       -- TFF (DCFEB test FIFOs)
-      TFF_DOUT : in std_logic_vector(15 downto 0);
-      TFF_WRD_CNT  : in std_logic_vector(11 downto 0);
+      TFF_DOUT    : in std_logic_vector(15 downto 0);
+      TFF_WRD_CNT : in std_logic_vector(11 downto 0);
 
-      TFF_RST   : out std_logic_vector(NFEB downto 1);
-      TFF_SEL   : out std_logic_vector(NFEB downto 1);
+      TFF_RST  : out std_logic_vector(NFEB downto 1);
+      TFF_SEL  : out std_logic_vector(NFEB downto 1);
       TFF_RDEN : out std_logic_vector(NFEB downto 1)
       );
   end component;
@@ -851,7 +855,9 @@ begin
       ODMB_CTRL     => odmb_ctrl,
       DCFEB_CTRL    => dcfeb_ctrl,
       ODMB_DATA_SEL => odmb_data_sel,
-      ODMB_DATA     => odmb_data
+      ODMB_DATA     => odmb_data,
+      TXDIFFCTRL   => txdiffctrl,     -- Controls the TX voltage swing
+      LOOPBACK      => loopback        -- For internal loopback tests
 
       );
 
@@ -905,20 +911,20 @@ begin
       pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
 
       -- DDU_TX/RX Fifo signals
-      ddu_tx_fifo_rst      => ddu_tx_fifo_rst,
-      ddu_tx_fifo_rden     => ddu_tx_fifo_rden,
-      ddu_tx_fifo_dout => ddu_tx_fifo_dout,
-      ddu_tx_fifo_wrd_cnt  => ddu_tx_fifo_wrd_cnt,
-      ddu_rx_fifo_rst      => ddu_rx_fifo_rst,
-      ddu_rx_fifo_rden     => ddu_rx_fifo_rden,
-      ddu_rx_fifo_dout => ddu_rx_fifo_dout,
-      ddu_rx_fifo_wrd_cnt  => ddu_rx_fifo_wrd_cnt,
-      
+      ddu_tx_fifo_rst     => ddu_tx_fifo_rst,
+      ddu_tx_fifo_rden    => ddu_tx_fifo_rden,
+      ddu_tx_fifo_dout    => ddu_tx_fifo_dout,
+      ddu_tx_fifo_wrd_cnt => ddu_tx_fifo_wrd_cnt,
+      ddu_rx_fifo_rst     => ddu_rx_fifo_rst,
+      ddu_rx_fifo_rden    => ddu_rx_fifo_rden,
+      ddu_rx_fifo_dout    => ddu_rx_fifo_dout,
+      ddu_rx_fifo_wrd_cnt => ddu_rx_fifo_wrd_cnt,
+
       -- TFF (DCFEB test FIFOs)
-      TFF_DOUT => TFF_DOUT,
-      TFF_WRD_CNT  => TFF_WRD_CNT,
-      TFF_RST      => TFF_RST,
-      TFF_SEL      => TFF_SEL,
+      TFF_DOUT    => TFF_DOUT,
+      TFF_WRD_CNT => TFF_WRD_CNT,
+      TFF_RST     => TFF_RST,
+      TFF_SEL     => TFF_SEL,
       TFF_RDEN    => TFF_RDEN
 
       );
