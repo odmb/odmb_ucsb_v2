@@ -301,10 +301,12 @@ architecture bdf_type of odmb_ucsb_v2 is
       RST        : in std_logic;
 
       -- Transmitter signals
-      TXD      : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
-      TXD_VLD  : in  std_logic;         -- Flag for valid data;
-      TX_DDU_N : out std_logic;         -- GTX transmit data out - signal
-      TX_DDU_P : out std_logic;         -- GTX transmit data out + signal
+      TXD         : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
+      TXD_VLD     : in  std_logic;      -- Flag for valid data;
+      TX_DDU_N    : out std_logic;      -- GTX transmit data out - signal
+      TX_DDU_P    : out std_logic;      -- GTX transmit data out + signal
+      TXDIFFCTRL : in  std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+      LOOPBACK    : in  std_logic_vector(2 downto 0);  -- For internal loopback tests
 
       -- Receiver signals
       RX_DDU_N : in  std_logic;         -- GTX receive data in - signal
@@ -313,15 +315,15 @@ architecture bdf_type of odmb_ucsb_v2 is
       RXD_VLD  : out std_logic;         -- Flag for valid data;
 
       -- FIFO signals
-      VME_CLK          : in  std_logic;
-      TX_FIFO_RST      : in  std_logic;
-      TX_FIFO_RDEN     : in  std_logic;
-      TX_FIFO_DOUT : out std_logic_vector(15 downto 0);
-      TX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0);
-      RX_FIFO_RST      : in  std_logic;
-      RX_FIFO_RDEN     : in  std_logic;
-      RX_FIFO_DOUT : out std_logic_vector(15 downto 0);
-      RX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0)
+      VME_CLK         : in  std_logic;
+      TX_FIFO_RST     : in  std_logic;
+      TX_FIFO_RDEN    : in  std_logic;
+      TX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
+      TX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
+      RX_FIFO_RST     : in  std_logic;
+      RX_FIFO_RDEN    : in  std_logic;
+      RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
+      RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0)
       );
   end component;
 
@@ -406,6 +408,7 @@ architecture bdf_type of odmb_ucsb_v2 is
       DCFEB6_DATA      : out std_logic_vector(15 downto 0);
       DCFEB7_DATA      : out std_logic_vector(15 downto 0);
       DCFEB_DATA_VALID : out std_logic_vector(NFEB downto 1);
+      CRC_VALID        : out std_logic_vector(NFEB downto 1);
 
       --Internal signals
       FIFO_VME_MODE          : in  std_logic;
@@ -775,6 +778,8 @@ architecture bdf_type of odmb_ucsb_v2 is
       dcfeb_ctrl    : out std_logic_vector(15 downto 0);
       odmb_data_sel : out std_logic_vector(7 downto 0);
       odmb_data     : in  std_logic_vector(15 downto 0);
+      TXDIFFCTRL   : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+      LOOPBACK      : out std_logic_vector(2 downto 0);  -- For internal loopback tests
 
       tc_l1a         : out std_logic;
       tc_alct_dav    : out std_logic;
@@ -804,14 +809,14 @@ architecture bdf_type of odmb_ucsb_v2 is
       pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
       -- DDU FIFO signals
-      ddu_tx_fifo_rst      : out std_logic;
-      ddu_tx_fifo_rden     : out std_logic;
-      ddu_tx_fifo_dout : in  std_logic_vector(15 downto 0);
-      ddu_tx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
-      ddu_rx_fifo_rst      : out std_logic;
-      ddu_rx_fifo_rden     : out std_logic;
-      ddu_rx_fifo_dout : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_wrd_cnt  : in  std_logic_vector(11 downto 0);
+      ddu_tx_fifo_rst     : out std_logic;
+      ddu_tx_fifo_rden    : out std_logic;
+      ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      ddu_rx_fifo_rst     : out std_logic;
+      ddu_rx_fifo_rden    : out std_logic;
+      ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
       -- TESTFIFOS
       TFF_DOUT    : in  std_logic_vector(15 downto 0);
@@ -819,7 +824,7 @@ architecture bdf_type of odmb_ucsb_v2 is
       TFF_RST     : out std_logic_vector(NFEB downto 1);
       TFF_SEL     : out std_logic_vector(NFEB downto 1);
       TFF_RDEN    : out std_logic_vector(NFEB downto 1)
-      
+
       );
 
   end component;
@@ -989,7 +994,7 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal int_l1a_match                   : std_logic_vector (NFEB downto 1);  -- To be sent out to pins in V2
 
   type   l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
-  signal l1a_match_cnt : l1a_match_cnt_type;
+  signal l1a_match_cnt, crc_cnt : l1a_match_cnt_type;
 
   type   dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
   signal into_cafifo_dav_cnt                : dav_cnt_type;
@@ -1046,20 +1051,23 @@ architecture bdf_type of odmb_ucsb_v2 is
   signal pc_tx_fifo_wrd_cnt : std_logic_vector(11 downto 0);
 
   -- GIGALINK_DDU
-  signal gl0_rx_buf_p,gl0_rx_buf_n      : std_logic;
-  signal ddu_rx_data     : std_logic_vector(15 downto 0);
-  signal ddu_rx_data_valid     : std_logic;
+  signal gl0_rx_buf_p, gl0_rx_buf_n : std_logic;
+  signal ddu_rx_data                : std_logic_vector(15 downto 0);
+  signal ddu_rx_data_valid          : std_logic;
+  signal txdiffctrl                : std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+  signal loopback                   : std_logic_vector(2 downto 0);  -- For internal loopback tests
 
-  signal ddu_tx_fifo_rst      : std_logic;
-  signal ddu_tx_fifo_rden     : std_logic;
-  signal ddu_tx_fifo_dout : std_logic_vector (15 downto 0);
-  signal ddu_tx_fifo_wrd_cnt  : std_logic_vector (11 downto 0);
-  signal ddu_rx_fifo_rst      : std_logic;
-  signal ddu_rx_fifo_rden     : std_logic;
-  signal ddu_rx_fifo_dout : std_logic_vector (15 downto 0);
-  signal ddu_rx_fifo_wrd_cnt  : std_logic_vector (11 downto 0);
+  signal ddu_tx_fifo_rst     : std_logic;
+  signal ddu_tx_fifo_rden    : std_logic;
+  signal ddu_tx_fifo_dout    : std_logic_vector (15 downto 0);
+  signal ddu_tx_fifo_wrd_cnt : std_logic_vector (11 downto 0);
+  signal ddu_rx_fifo_rst     : std_logic;
+  signal ddu_rx_fifo_rden    : std_logic;
+  signal ddu_rx_fifo_dout    : std_logic_vector (15 downto 0);
+  signal ddu_rx_fifo_wrd_cnt : std_logic_vector (11 downto 0);
 
   -- dmb_receiver
+  signal CRC_VALID   : std_logic_vector(NFEB downto 1) := (others => '0');
   signal RD_EN_FF    : std_logic_vector(NFEB downto 1) := (others => '0');
   signal WR_EN_FF    : std_logic_vector(NFEB downto 1) := (others => '0');
   signal FF_DATA_IN  : std_logic_vector(15 downto 0);
@@ -1102,7 +1110,7 @@ architecture bdf_type of odmb_ucsb_v2 is
 
 -- From/To Giga-Bit Links
 
-  signal gl0_tx, gl1_tx, gl1_rx                         : std_logic;
+  signal gl0_tx, gl1_tx, gl1_rx                                 : std_logic;
   signal gl0_tx_buf_n, gl0_tx_buf_p, gl1_tx_buf_n, gl1_tx_buf_p : std_logic;
 
   signal gl_pc_daq_data_clk, gl_pc_daq_tdis : std_logic;
@@ -1135,12 +1143,15 @@ architecture bdf_type of odmb_ucsb_v2 is
 
   signal clkin, qpll_clk40MHz, qpll_clk80MHz, qpll_clk160MHz, clk160 : std_logic;
 
-  signal pll1_fb, pll1_rst, pll1_pd, pll1_locked : std_logic := '0';
+  signal pll1_fb, pll1_fb_slow, pll1_rst, pll1_pd, pll1_locked, pll1_locked_slow : std_logic := '0';
 
   signal pll_clk80, clk80     : std_logic;  -- reallyfastclk (80MHz) 
   signal pll_clk40, clk40     : std_logic;  -- fastclk (40MHz) 
   signal pll_clk10, clk10     : std_logic;  -- midclk  (10MHz) 
   signal pll_clk5, clk5       : std_logic;  -- Generates clk2p5 and clk1p25
+  --signal pll_clk2p5, clk2p5     : std_logic;  -- (2.5MHz) 
+  --signal pll_clk1p25, clk1p25     : std_logic;  -- (2.5MHz) 
+  --signal pll_clk0p625, clk0p625     : std_logic;  -- (2.5MHz) 
   signal clk2p5, clk2p5_inv   : std_logic;  -- slowclk (2.5MHz)
   signal clk1p25, clk1p25_inv : std_logic;  -- slowclk2 (1.25MHz)
 
@@ -1614,8 +1625,8 @@ begin
 
 -- gl0_rx
 --  gl0_rx_buf : IBUFDS port map (I => gl0_rx_p, IB => gl0_rx_n, O => gl0_rx);
-    gl0_rx_ibuf_p : IBUF port map (O => gl0_rx_buf_p, I => gl0_rx_p);
-    gl0_rx_ibuf_n : IBUF port map (O => gl0_rx_buf_n, I => gl0_rx_n);
+  gl0_rx_ibuf_p : IBUF port map (O => gl0_rx_buf_p, I => gl0_rx_p);
+  gl0_rx_ibuf_n : IBUF port map (O => gl0_rx_buf_n, I => gl0_rx_n);
 
 -- From OT2 (GigaBit Link)
 
@@ -1797,7 +1808,6 @@ begin
     port map (
       -- Clock Outputs: 1-bit (each) User configurable clock outputs
       CLKOUT0   => open,                -- 1-bit CLKOUT0 output
-      --CLKOUT0   => pll_clk80,           -- 1-bit CLKOUT0 output
       CLKOUT0B  => open,                -- 1-bit Inverted CLKOUT0 output
       CLKOUT1   => pll_clk40,           -- 1-bit CLKOUT1 output
       CLKOUT1B  => open,                -- 1-bit Inverted CLKOUT1 output
@@ -1823,6 +1833,70 @@ begin
       );
 
 
+  --MMCM_BASE_PLL_SLOW : MMCM_BASE
+  --  generic map (
+  --    BANDWIDTH          => "OPTIMIZED",  -- Jitter programming ("HIGH","LOW","OPTIMIZED")
+  --    CLKFBOUT_MULT_F    => 16.0,  -- Multiply value for all CLKOUT (5.0-64.0).
+  --    CLKFBOUT_PHASE     => 0.0,  -- Phase offset in degrees of CLKFB (0.00-360.00).
+  --    CLKIN1_PERIOD      => 200.0,  -- Input clock period in ns to ps resolution (i.e. 33.333 is 30 MHz).
+  --    CLKOUT0_DIVIDE_F   => 1.0,  -- Divide amount for CLKOUT0 (1.000-128.000).
+  --    -- CLKOUT0_DUTY_CYCLE - CLKOUT6_DUTY_CYCLE: Duty cycle for each CLKOUT (0.01-0.99).
+  --    CLKOUT0_DUTY_CYCLE => 0.5,
+  --    CLKOUT1_DUTY_CYCLE => 0.5,
+  --    CLKOUT2_DUTY_CYCLE => 0.5,
+  --    CLKOUT3_DUTY_CYCLE => 0.5,
+  --    CLKOUT4_DUTY_CYCLE => 0.5,
+  --    CLKOUT5_DUTY_CYCLE => 0.5,
+  --    CLKOUT6_DUTY_CYCLE => 0.5,
+  --    -- CLKOUT0_PHASE - CLKOUT6_PHASE: Phase offset for each CLKOUT (-360.000-360.000).
+  --    CLKOUT0_PHASE      => 0.0,
+  --    CLKOUT1_PHASE      => 0.0,
+  --    CLKOUT2_PHASE      => 0.0,
+  --    CLKOUT3_PHASE      => 0.0,
+  --    CLKOUT4_PHASE      => 0.0,
+  --    CLKOUT5_PHASE      => 0.0,
+  --    CLKOUT6_PHASE      => 0.0,
+  --    -- CLKOUT1_DIVIDE - CLKOUT6_DIVIDE: Divide amount for each CLKOUT (1-128)
+  --    CLKOUT1_DIVIDE     => 32,         -- clk40 = CMSCLK(40 MHz)
+  --    CLKOUT2_DIVIDE     => 64,   -- clk10 = MIDCLK(10 MHz)               
+  --    CLKOUT3_DIVIDE     => 128,        -- clk5 - generates clk2p5 and clk1p25
+  --    CLKOUT4_DIVIDE     => 8,          -- Not used
+  --    CLKOUT5_DIVIDE     => 16,         -- Not used
+  --    CLKOUT6_DIVIDE     => 16,         -- Not used
+  --    CLKOUT4_CASCADE    => false,  -- Cascase CLKOUT4 counter with CLKOUT6 (TRUE/FALSE)
+  --    CLOCK_HOLD         => false,      -- Hold VCO Frequency (TRUE/FALSE)
+  --    DIVCLK_DIVIDE      => 1,          -- Master division value (1-80)
+  --    REF_JITTER1        => 0.0,  -- Reference input jitter in UI (0.000-0.999).
+  --    STARTUP_WAIT       => false       -- Not supported. Must be set to FALSE.
+  --    )
+  --  port map (
+  --    -- Clock Outputs: 1-bit (each) User configurable clock outputs
+  --    CLKOUT0   => open,                -- 1-bit CLKOUT0 output
+  --    CLKOUT0B  => open,                -- 1-bit Inverted CLKOUT0 output
+  --    CLKOUT1   => pll_clk2p5,           -- 1-bit CLKOUT1 output
+  --    CLKOUT1B  => open,                -- 1-bit Inverted CLKOUT1 output
+  --    CLKOUT2   => pll_clk1p25,           -- 1-bit CLKOUT2 output
+  --    CLKOUT2B  => open,                -- 1-bit Inverted CLKOUT2 output
+  --    CLKOUT3   => pll_clk0p625,            -- 1-bit CLKOUT3 output
+  --    CLKOUT3B  => open,                -- 1-bit Inverted CLKOUT3 output
+  --    CLKOUT4   => open,           -- 1-bit CLKOUT4 output
+  --    CLKOUT5   => open,                -- 1-bit CLKOUT5 output
+  --    CLKOUT6   => open,                -- 1-bit CLKOUT6 output
+  --    -- Feedback Clocks: 1-bit (each) Clock feedback ports
+  --    CLKFBOUT  => pll1_fb_slow,             -- 1-bit Feedback clock output
+  --    CLKFBOUTB => open,                -- 1-bit Inverted CLKFBOUT output
+  --    -- Status Port: 1-bit (each) MMCM status ports
+  --    LOCKED    => pll1_locked_slow,         -- 1-bit LOCK output
+  --    -- Clock Input: 1-bit (each) Clock input
+  --    CLKIN1    => pll_clk5,       -- qpll_clk40MHz,
+  --    -- Control Ports: 1-bit (each) MMCM control ports
+  --    PWRDWN    => pll1_pd,             -- 1-bit Power-down input
+  --    RST       => pll1_rst,            -- 1-bit Reset input
+  --    -- Feedback Clocks: 1-bit (each) Clock feedback ports
+  --    CLKFBIN   => pll1_fb_slow              -- 1-bit Feedback clock input
+  --    );
+
+
 -- End of MMCM_BASE_inst instantiation
 
 ---- Global Clock Buffers
@@ -1831,6 +1905,9 @@ begin
   clk40_buf : BUFG port map (I => pll_clk40, O => clk40);
   clk10_buf : BUFG port map (I => pll_clk10, O => clk10);
   clk5_buf  : BUFG port map (I => pll_clk5, O => clk5);
+  --clk2p5_buf  : BUFG port map (I => pll_clk2p5, O => clk2p5);
+  --clk1p25_buf  : BUFG port map (I => pll_clk1p25, O => clk1p25);
+  --clk0p625_buf  : BUFG port map (I => pll_clk0p625, O => clk0p625);
 
 -- Frequency dividers for the 2.5 and 1.25 MHz clocks which are too slow for the PLL 
   clk2p5_inv  <= not clk2p5;
@@ -2004,6 +2081,8 @@ begin
       dcfeb_ctrl    => dcfeb_ctrl_reg,
       odmb_data_sel => odmb_data_sel,
       odmb_data     => odmb_data,
+      TXDIFFCTRL   => txdiffctrl,
+      LOOPBACK      => loopback,
 
       -- TESTCTRL
       tc_l1a         => tc_l1a,
@@ -2034,15 +2113,15 @@ begin
       pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
 
       -- DDU TX/RX FIFO signals
-      ddu_tx_fifo_rst      => ddu_tx_fifo_rst,
-      ddu_tx_fifo_rden     => ddu_tx_fifo_rden,
-      ddu_tx_fifo_dout => ddu_tx_fifo_dout,
-      ddu_tx_fifo_wrd_cnt  => ddu_tx_fifo_wrd_cnt,
-      ddu_rx_fifo_rst      => ddu_rx_fifo_rst,
-      ddu_rx_fifo_rden     => ddu_rx_fifo_rden,
-      ddu_rx_fifo_dout => ddu_rx_fifo_dout,
-      ddu_rx_fifo_wrd_cnt  => ddu_rx_fifo_wrd_cnt,
-      
+      ddu_tx_fifo_rst     => ddu_tx_fifo_rst,
+      ddu_tx_fifo_rden    => ddu_tx_fifo_rden,
+      ddu_tx_fifo_dout    => ddu_tx_fifo_dout,
+      ddu_tx_fifo_wrd_cnt => ddu_tx_fifo_wrd_cnt,
+      ddu_rx_fifo_rst     => ddu_rx_fifo_rst,
+      ddu_rx_fifo_rden    => ddu_rx_fifo_rden,
+      ddu_rx_fifo_dout    => ddu_rx_fifo_dout,
+      ddu_rx_fifo_wrd_cnt => ddu_rx_fifo_wrd_cnt,
+
       -- TESTFIFOS
       TFF_DOUT    => TFF_DOUT,
       TFF_WRD_CNT => TFF_WRD_CNT,
@@ -2699,7 +2778,7 @@ begin
 
 
 
-  l1a_cnt : process (clk40, int_l1a_match, reset)
+  l1a_match_cnt_proc : process (clk40, int_l1a_match, reset)
     variable l1a_match_cnt_data : l1a_match_cnt_type;
   begin
     for index in 1 to NFEB loop
@@ -2712,6 +2791,24 @@ begin
       end if;
 
       l1a_match_cnt(index) <= l1a_match_cnt_data(index);
+    end loop;
+  end process;
+
+  --crc_cnt_proc : process (crc_valid, reset, gl1_clk_2_buf)
+  crc_cnt_proc : process (crc_valid, reset, clk160)
+    variable crc_cnt_data : l1a_match_cnt_type;
+  begin
+    for index in 1 to NFEB loop
+      if (reset = '1') then
+        crc_cnt_data(index) := (others => '0');
+        --elsif (rising_edge(gl1_clk_2_buf)) then
+      elsif (rising_edge(clk160)) then
+        if (crc_valid(index) = '1') then
+          crc_cnt_data(index) := crc_cnt_data(index) + 1;
+        end if;
+      end if;
+
+      crc_cnt(index) <= crc_cnt_data(index);
     end loop;
   end process;
 
@@ -2873,13 +2970,15 @@ begin
       SIM_SPEEDUP => IS_SIMULATION
       )
     port map (
-      REF_CLK_80 => gl0_clk,            -- 80 MHz for DDU data rate
-      RST        => reset,
+      REF_CLK_80  => gl0_clk,           -- 80 MHz for DDU data rate
+      RST         => reset,
       -- Transmitter signals
-      TXD        => gtx0_data,          -- Data to be transmitted
-      TXD_VLD    => gtx0_data_valid,    -- Flag for valid data;
-      TX_DDU_N   => gl0_tx_n,           -- GTX transmit data out - signal
-      TX_DDU_P   => gl0_tx_p,           -- GTX transmit data out + signal
+      TXD         => gtx0_data,         -- Data to be transmitted
+      TXD_VLD     => gtx0_data_valid,   -- Flag for valid data;
+      TX_DDU_N    => gl0_tx_n,          -- GTX transmit data out - signal
+      TX_DDU_P    => gl0_tx_p,          -- GTX transmit data out + signal
+      TXDIFFCTRL  => txdiffctrl,        -- Controls the TX voltage swing
+      LOOPBACK    => loopback,          -- For internal loopback tests
 
       -- Receiver signals
       RX_DDU_N => gl0_rx_buf_n,         -- GTX receive data in - signal
@@ -2887,15 +2986,16 @@ begin
       RXD      => ddu_rx_data,
       RXD_VLD  => ddu_rx_data_valid,
 
-      VME_CLK          => clk2p5,
-      TX_FIFO_RST      => ddu_tx_fifo_rst ,
-      TX_FIFO_RDEN     => ddu_tx_fifo_rden ,
-      TX_FIFO_DOUT => ddu_tx_fifo_dout ,
-      TX_FIFO_WRD_CNT  => ddu_tx_fifo_wrd_cnt ,
-      RX_FIFO_RST      => ddu_rx_fifo_rst ,
-      RX_FIFO_RDEN     => ddu_rx_fifo_rden ,
-      RX_FIFO_DOUT => ddu_rx_fifo_dout ,
-      RX_FIFO_WRD_CNT  => ddu_rx_fifo_wrd_cnt 
+      -- FIFO signals
+      VME_CLK         => clk2p5,
+      TX_FIFO_RST     => ddu_tx_fifo_rst ,
+      TX_FIFO_RDEN    => ddu_tx_fifo_rden ,
+      TX_FIFO_DOUT    => ddu_tx_fifo_dout ,
+      TX_FIFO_WRD_CNT => ddu_tx_fifo_wrd_cnt ,
+      RX_FIFO_RST     => ddu_rx_fifo_rst ,
+      RX_FIFO_RDEN    => ddu_rx_fifo_rden ,
+      RX_FIFO_DOUT    => ddu_rx_fifo_dout ,
+      RX_FIFO_WRD_CNT => ddu_rx_fifo_wrd_cnt
 
       );
 
@@ -2991,16 +3091,18 @@ begin
       DCFEB6_DATA      => rx_dcfeb_data(6),
       DCFEB7_DATA      => rx_dcfeb_data(7),
       DCFEB_DATA_VALID => rx_dcfeb_data_valid,
+      CRC_VALID        => crc_valid,
+
       --Internal signals
-      FIFO_VME_MODE    => fifo_vme_mode,
-      FIFO_RST         => TFF_RST,
-      FIFO_SEL         => TFF_SEL,
-      RD_EN_FF         => TFF_RDEN,
-      WR_EN_FF         => wr_en_ff,
-      FF_DATA_IN       => ff_data_in,
-      FF_DATA_OUT      => TFF_DOUT,
-      FF_WRD_CNT       => TFF_WRD_CNT,
-      FF_STATUS        => ff_status
+      FIFO_VME_MODE => fifo_vme_mode,
+      FIFO_RST      => TFF_RST,
+      FIFO_SEL      => TFF_SEL,
+      RD_EN_FF      => TFF_RDEN,
+      WR_EN_FF      => wr_en_ff,
+      FF_DATA_IN    => ff_data_in,
+      FF_DATA_OUT   => TFF_DOUT,
+      FF_WRD_CNT    => TFF_WRD_CNT,
+      FF_STATUS     => ff_status
       );
 
   gen_alct_sel  <= odmb_ctrl_reg(7);
@@ -3271,7 +3373,7 @@ begin
 
   flf_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, mbc_instr, mbc_jtag_ir, odmb_data_sel,
                         l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
-                        data_fifo_re_cnt, gtx0_data_valid_cnt, ddu_data_valid_cnt, data_fifo_oe_cnt)
+                        data_fifo_re_cnt, gtx0_data_valid_cnt, ddu_data_valid_cnt, data_fifo_oe_cnt, crc_cnt)
   begin
     
     case odmb_data_sel is
@@ -3374,6 +3476,14 @@ begin
       when x"57" => odmb_data <= data_fifo_re_cnt(7);  -- from control to FIFOs in top
       when x"58" => odmb_data <= data_fifo_re_cnt(8);  -- from control to FIFOs in top
       when x"59" => odmb_data <= data_fifo_re_cnt(9);  -- from control to FIFOs in top
+
+      when x"61" => odmb_data <= crc_cnt(1);
+      when x"62" => odmb_data <= crc_cnt(2);
+      when x"63" => odmb_data <= crc_cnt(3);
+      when x"64" => odmb_data <= crc_cnt(4);
+      when x"65" => odmb_data <= crc_cnt(5);
+      when x"66" => odmb_data <= crc_cnt(6);
+      when x"67" => odmb_data <= crc_cnt(7);
 
       when others => odmb_data <= "0000000000000000";
     end case;
