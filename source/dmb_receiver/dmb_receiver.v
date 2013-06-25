@@ -50,6 +50,7 @@ module dmb_receiver #(
     output [15:0]     DCFEB6_DATA,
     output [15:0]     DCFEB7_DATA,
     output [7:1]      DCFEB_DATA_VALID,
+    output [7:1]      CRC_VALID,
     // Internal signals
     input 	      FIFO_VME_MODE,
     input [7:1]       FIFO_RST,
@@ -122,6 +123,7 @@ module dmb_receiver #(
    wire [7:1] 	      fifo_reset;
    
    wire 	      clk_ds_i;
+   integer 	      index;
    
 
    //-----------------------------------------------------------------------------
@@ -206,40 +208,23 @@ module dmb_receiver #(
 	  end
 	else
 	  begin
-             rxcharisk_r_f[1]      <= rxcharisk_i_f[1];
-             mgt_rx_data_r_f[1]    <= mgt_rx_data_i_f[1];
-             rxdisperr_r_f[1]      <= rxdisperr_i_f[1];
-             rxnotintable_r_f[1]   <= rxnotintable_i_f[1];
-	     
-             rxcharisk_r_f[2]      <= rxcharisk_i_f[2];
-             mgt_rx_data_r_f[2]    <= mgt_rx_data_i_f[2];
-             rxdisperr_r_f[2]      <= rxdisperr_i_f[2];
-             rxnotintable_r_f[2]   <= rxnotintable_i_f[2];
-
-             rxcharisk_r_f[3]      <= rxcharisk_i_f[3];
-             mgt_rx_data_r_f[3]    <= mgt_rx_data_i_f[3];
-             rxdisperr_r_f[3]      <= rxdisperr_i_f[3];
-             rxnotintable_r_f[3]   <= rxnotintable_i_f[3];
-
-             rxcharisk_r_f[4]      <= rxcharisk_i_f[4];
-             mgt_rx_data_r_f[4]    <= mgt_rx_data_i_f[4];
-             rxdisperr_r_f[4]      <= rxdisperr_i_f[4];
-             rxnotintable_r_f[4]   <= rxnotintable_i_f[4];
-
-             rxcharisk_r_f[5]      <= rxcharisk_i_f[5];
-             mgt_rx_data_r_f[5]    <= mgt_rx_data_i_f[5];
-             rxdisperr_r_f[5]      <= rxdisperr_i_f[5];
-             rxnotintable_r_f[5]   <= rxnotintable_i_f[5];
-
-             rxcharisk_r_f[6]      <= rxcharisk_i_f[6];
-             mgt_rx_data_r_f[6]    <= mgt_rx_data_i_f[6];
-             rxdisperr_r_f[6]      <= rxdisperr_i_f[6];
-             rxnotintable_r_f[6]   <= rxnotintable_i_f[6];
-
-             rxcharisk_r_f[7]      <= rxcharisk_i_f[7];
-             mgt_rx_data_r_f[7]    <= mgt_rx_data_i_f[7];
-             rxdisperr_r_f[7]      <= rxdisperr_i_f[7];
-             rxnotintable_r_f[7]   <= rxnotintable_i_f[7];
+	     for (index = 1; index <= 7; index = index + 1)
+	       begin
+		  if (KILL[index] == 1'b0)
+		    begin
+		       rxcharisk_r_f[index]      <= rxcharisk_i_f[index];
+		       mgt_rx_data_r_f[index]    <= mgt_rx_data_i_f[index];
+		       rxdisperr_r_f[index]      <= rxdisperr_i_f[index];
+		       rxnotintable_r_f[index]   <= rxnotintable_i_f[index];
+		    end
+		  else
+		    begin
+		       rxcharisk_r_f[index]      <= 2'b00;
+		       mgt_rx_data_r_f[index]    <= 16'h0000;
+		       rxdisperr_r_f[index]      <= 2'b00;
+		       rxnotintable_r_f[index]   <= 2'b00;
+		    end // else: !if(KILL[index] = 1'b0)
+	       end
 	  end
      end
 
@@ -670,7 +655,8 @@ module dmb_receiver #(
 	begin: GbE_rx_gtx    //For 1 GbE (line rate of 1.25 Gbps)
 	   // Locally buffer the output of the IBUFDS_GTXE1 for reset logic
 	   BUFR bufr_clk_ds (
-			     .I   (DAQ_RX_125REFCLK),
+			     //.I   (DAQ_RX_125REFCLK),
+			     .I   (DMBVME_CLK_S2),
 			     .O   (clk_ds_i),
 			     .CE  (1'b1),
 			     .CLR (1'b0)
@@ -733,8 +719,8 @@ module dmb_receiver #(
               //----------------- Receive Ports - RX Data Path interface -----------------
               .GTX1_RXDATA_OUT                (mgt_rx_data_i_f[1]),
               .GTX1_RXRECCLK_OUT              (rxrecclk_f[1]),
-	      //        .GTX1_RXUSRCLK2_IN              (usr_clk_wordwise),
-              .GTX1_RXUSRCLK2_IN              (DMBVME_CLK_S2),  // This is to use the 62.5 MHz clk
+	      .GTX1_RXUSRCLK2_IN              (usr_clk_wordwise),
+              //.GTX1_RXUSRCLK2_IN              (DMBVME_CLK_S2),  // This is to use the 62.5 MHz clk
               //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
               .GTX1_RXN_IN                    (ORX_01_N),
               .GTX1_RXP_IN                    (ORX_01_P),
@@ -1084,6 +1070,8 @@ module dmb_receiver #(
 
 	end
    endgenerate
+
+   assign CRC_VALID = crc_chk_vld_ff;
    
    rx_frame_proc_la rx_frame_proc_1
      (
@@ -1534,13 +1522,13 @@ module dmb_receiver #(
 	     din_ff[5] <= wdata_ff[5];
 	     din_ff[6] <= wdata_ff[6];
 	     din_ff[7] <= wdata_ff[7];
-	     wrt_en_ff[1] <= wd_vld_ff[1] & ~KILL[1];
-	     wrt_en_ff[2] <= wd_vld_ff[2] & ~KILL[2];
-	     wrt_en_ff[3] <= wd_vld_ff[3] & ~KILL[3];
-	     wrt_en_ff[4] <= wd_vld_ff[4] & ~KILL[4];
-	     wrt_en_ff[5] <= wd_vld_ff[5] & ~KILL[5];
-	     wrt_en_ff[6] <= wd_vld_ff[6] & ~KILL[6];
-	     wrt_en_ff[7] <= wd_vld_ff[7] & ~KILL[7];
+	     wrt_en_ff[1] <= wd_vld_ff[1];
+	     wrt_en_ff[2] <= wd_vld_ff[2];
+	     wrt_en_ff[3] <= wd_vld_ff[3];
+	     wrt_en_ff[4] <= wd_vld_ff[4];
+	     wrt_en_ff[5] <= wd_vld_ff[5];
+	     wrt_en_ff[6] <= wd_vld_ff[6];
+	     wrt_en_ff[7] <= wd_vld_ff[7];
 	  end
      end
    
