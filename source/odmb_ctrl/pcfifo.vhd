@@ -43,7 +43,8 @@ architecture pcfifo_architecture of pcfifo is
   end component;
 
   type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER);
-  signal f0_next_state, f0_current_state : fsm_state_type;
+  signal f0_current_state : fsm_state_type := IDLE;
+  signal f0_next_state : fsm_state_type := IDLE;
 
   signal f0_rden                                : std_logic;
   signal f0_empty : std_logic;
@@ -66,7 +67,7 @@ architecture pcfifo_architecture of pcfifo is
   type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
   signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
 
-  signal pck_cnt_out : std_logic_vector(7 downto 0);
+  signal pck_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
   signal int_clk     : std_logic := '0';
   
 begin
@@ -193,8 +194,8 @@ begin
 
   LD_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_in, rst, 1, ld_out);
 
-  pck_cnt : process (ld_in, ld_out, rst, clk_in)
-    variable pck_cnt_data : std_logic_vector(7 downto 0);
+  pck_cnt : process (ld_in, ld_out, rst, clk_in, ld_out_pulse)
+    variable pck_cnt_data : std_logic_vector(7 downto 0) := (others => '0');
   begin
 
     if (rst = '1') then

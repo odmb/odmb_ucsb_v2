@@ -31,6 +31,12 @@ entity TESTFIFOS is
     PC_TX_FIFO_RST     : out std_logic;
     PC_TX_FIFO_RDEN    : out std_logic;
 
+    -- PC_RX FIFO signals
+    PC_RX_FIFO_DOUT    : in  std_logic_vector(15 downto 0);
+    PC_RX_FIFO_WRD_CNT : in  std_logic_vector(11 downto 0);
+    PC_RX_FIFO_RST     : out std_logic;
+    PC_RX_FIFO_RDEN    : out std_logic;
+
     -- DDU_TX FIFO signals
     DDU_TX_FIFO_DOUT    : in  std_logic_vector(15 downto 0);
     DDU_TX_FIFO_WRD_CNT : in  std_logic_vector(11 downto 0);
@@ -102,6 +108,18 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal PULSE_PC_TX_FF_RST, IN_PC_TX_FF_RST                : std_logic := '0';
   signal PC_TX_FF_RST_INNER                                 : std_logic := '0';
 
+  signal PC_RX_FF_RD                          : std_logic_vector(3 downto 0);
+  signal OUT_PC_RX_FF_READ                    : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_RX_FF_READ, C_PC_RX_FF_RD       : std_logic                     := '0';
+  signal D_R_PC_RX_FF_READ, Q_R_PC_RX_FF_READ : std_logic                     := '0';
+
+  signal OUT_PC_RX_FF_WRD_CNT                                           : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_RX_FF_WRD_CNT, D_R_PC_RX_FF_WRD_CNT, Q_R_PC_RX_FF_WRD_CNT : std_logic                     := '0';
+
+  signal W_PC_RX_FF_RST, D_W_PC_RX_FF_RST, Q_W_PC_RX_FF_RST : std_logic := '0';
+  signal PULSE_PC_RX_FF_RST, IN_PC_RX_FF_RST                : std_logic := '0';
+  signal PC_RX_FF_RST_INNER                                 : std_logic := '0';
+
   signal DDU_TX_FF_RD                           : std_logic_vector(3 downto 0);
   signal OUT_DDU_TX_FF_READ                     : std_logic_vector(15 downto 0) := (others => '0');
   signal R_DDU_TX_FF_READ, C_DDU_TX_FF_RD       : std_logic                     := '0';
@@ -144,6 +162,9 @@ begin  --Architecture
   W_PC_TX_FF_RST     <= '1' when (CMDDEV = x"1120") else '0';
 
   -- PC_RX: 200 series
+  R_PC_RX_FF_READ    <= '1' when (CMDDEV = x"1200") else '0';
+  R_PC_RX_FF_WRD_CNT <= '1' when (CMDDEV = x"120C") else '0';
+  W_PC_RX_FF_RST     <= '1' when (CMDDEV = x"1220") else '0';
 
   -- DDU_TX: 300 series
   R_DDU_TX_FF_READ    <= '1' when (CMDDEV = x"1300") else '0';
@@ -246,6 +267,35 @@ begin  --Architecture
   FD_DTACK_PC_TX_FF_RST : FD port map(Q_W_PC_TX_FF_RST, SLOWCLK, D_W_PC_TX_FF_RST);
   DTACK_INNER      <= '0' when (Q_W_PC_TX_FF_RST = '1')                else 'Z';
 
+-- Read PC_RX_FF_READ
+  PC_RX_FF_RD(0)  <= R_PC_RX_FF_READ;
+  FDC_PC_RX_RD_EN1 : FDC port map(PC_RX_FF_RD(1), STROBE, C_PC_RX_FF_RD, PC_RX_FF_RD(0));
+  FDC_PC_RX_RD_EN2 : FDC port map(PC_RX_FF_RD(2), SLOWCLK, C_PC_RX_FF_RD, PC_RX_FF_RD(1));
+  FDC_PC_RX_RD_EN3 : FDC port map(PC_RX_FF_RD(3), SLOWCLK, C_PC_RX_FF_RD, PC_RX_FF_RD(2));
+  C_PC_RX_FF_RD   <= RST or PC_RX_FF_RD(3);
+  PC_RX_FIFO_RDEN <= PC_RX_FF_RD(2);
+
+  OUT_PC_RX_FF_READ <= PC_RX_FIFO_DOUT when (STROBE = '1' and R_PC_RX_FF_READ = '1') else (others => 'Z');
+
+  D_R_PC_RX_FF_READ <= '1' when (STROBE = '1' and R_PC_RX_FF_READ = '1') else '0';
+  FD_R_PC_RX_FF_READ : FD port map(Q_R_PC_RX_FF_READ, SLOWCLK, D_R_PC_RX_FF_READ);
+  DTACK_INNER       <= '0' when (Q_R_PC_RX_FF_READ = '1')                else 'Z';
+
+-- Read PC_RX_FF_WRD_CNT
+  OUT_PC_RX_FF_WRD_CNT(11 downto 0) <= PC_RX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else (others => 'Z');
+
+  D_R_PC_RX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else '0';
+  FD_R_PC_RX_FF_WRD_CNT : FD port map(Q_R_PC_RX_FF_WRD_CNT, SLOWCLK, D_R_PC_RX_FF_WRD_CNT);
+  DTACK_INNER          <= '0' when (Q_R_PC_RX_FF_WRD_CNT = '1')                else 'Z';
+
+-- Write PC_RX_FF_RST (Reset PC_RX FIFO)
+  IN_PC_RX_FF_RST  <= PULSE_PC_RX_FF_RST or RST;
+  FD_W_PC_RX_FF_RST     : FDCE port map(PC_RX_FF_RST_INNER, STROBE, W_PC_RX_FF_RST, IN_PC_RX_FF_RST, INDATA(0));
+  PULSE_RESET_PC_RX     : PULSE_EDGE port map(pc_rx_fifo_rst, pulse_pc_rx_ff_rst, slowclk, rst, 1, pc_rx_ff_rst_inner);
+  D_W_PC_RX_FF_RST <= '1' when (STROBE = '1' and W_PC_RX_FF_RST = '1') else '0';
+  FD_DTACK_PC_RX_FF_RST : FD port map(Q_W_PC_RX_FF_RST, SLOWCLK, D_W_PC_RX_FF_RST);
+  DTACK_INNER      <= '0' when (Q_W_PC_RX_FF_RST = '1')                else 'Z';
+
 -- Read DDU_TX_FF_READ
   DDU_TX_FF_RD(0)  <= R_DDU_TX_FF_READ;
   FDC_DDU_TX_RD_EN1 : FDC port map(DDU_TX_FF_RD(1), STROBE, C_DDU_TX_FF_RD, DDU_TX_FF_RD(0));
@@ -310,6 +360,8 @@ begin  --Architecture
              OUT_TFF_WRD_CNT       when R_TFF_WRD_CNT = '1'       else
              OUT_PC_TX_FF_READ     when R_PC_TX_FF_READ = '1'     else
              OUT_PC_TX_FF_WRD_CNT  when R_PC_TX_FF_WRD_CNT = '1'  else
+             OUT_PC_RX_FF_READ     when R_PC_RX_FF_READ = '1'     else
+             OUT_PC_RX_FF_WRD_CNT  when R_PC_RX_FF_WRD_CNT = '1'  else
              OUT_DDU_TX_FF_READ    when R_DDU_TX_FF_READ = '1'    else
              OUT_DDU_TX_FF_WRD_CNT when R_DDU_TX_FF_WRD_CNT = '1' else
              OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1'    else

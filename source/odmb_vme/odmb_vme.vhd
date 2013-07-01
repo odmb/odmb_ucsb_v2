@@ -175,11 +175,15 @@ entity ODMB_VME is
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(6 downto 0);
 
-    -- PC_TX FIFO signals
+    -- PC FIFO signals
     pc_tx_fifo_rst     : out std_logic;
     pc_tx_fifo_rden    : out std_logic;
     pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
     pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+    pc_rx_fifo_rst     : out std_logic;
+    pc_rx_fifo_rden    : out std_logic;
+    pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
+    pc_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
     -- DDU FIFO signals
     ddu_tx_fifo_rst     : out std_logic;
@@ -336,11 +340,15 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
-      -- PC_TX FIFO signals
+      -- PC FIFO signals
       pc_tx_fifo_rst     : out std_logic;
       pc_tx_fifo_rden    : out std_logic;
       pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
       pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      pc_rx_fifo_rst     : out std_logic;
+      pc_rx_fifo_rden    : out std_logic;
+      pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
+      pc_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
 
       -- DDU_TX/RX Fifo signals
       ddu_tx_fifo_rst     : out std_logic;
@@ -904,11 +912,15 @@ begin
 
       DTACK => VME_DTACK_B ,
 
-      -- PC_TX FIFO signals
+      -- PC FIFO signals
       pc_tx_fifo_rst     => pc_tx_fifo_rst,
       pc_tx_fifo_rden    => pc_tx_fifo_rden,
       pc_tx_fifo_dout    => pc_tx_fifo_dout,
       pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
+      pc_rx_fifo_rst     => pc_rx_fifo_rst,
+      pc_rx_fifo_rden    => pc_rx_fifo_rden,
+      pc_rx_fifo_dout    => pc_rx_fifo_dout,
+      pc_rx_fifo_wrd_cnt => pc_rx_fifo_wrd_cnt,
 
       -- DDU_TX/RX Fifo signals
       ddu_tx_fifo_rst     => ddu_tx_fifo_rst,

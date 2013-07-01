@@ -1,4 +1,4 @@
--- GIGALINK_DDU: Optical transmitter and receiver to/from the DDU
+-- GIGALINK_DDU: Optical transmitter and receiver to/from the DDU (OT1, GL0)
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -45,7 +45,7 @@ end GIGALINK_DDU;
 
 architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
 
-  component TX_RX_80MHZ is
+  component WRAPPER_GIGALINK_DDU is
     generic (
       WRAPPER_SIM_GTXRESET_SPEEDUP : integer := 0  -- Set to 1 to speed up sim reset
       );
@@ -120,14 +120,15 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
       );
   end component;
 
-  component FIFO_WRD_COUNT is
-    generic(WIDTH : integer := 16);
+  component FIFOWORDS is
+    generic (WIDTH : integer := 16);
     port (
       RST   : in  std_logic;
-      CLK   : in  std_logic;
-      WE    : in  std_logic;
-      RE    : in  std_logic;
+      WRCLK : in  std_logic;
+      WREN  : in  std_logic;
       FULL  : in  std_logic;
+      RDCLK : in  std_logic;
+      RDEN  : in  std_logic;
       COUNT : out std_logic_vector(WIDTH-1 downto 0)
       );
   end component;
@@ -145,14 +146,14 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal logicl4 : std_logic_vector(3 downto 0) := (others => '0');
   signal logicl5 : std_logic_vector(4 downto 0) := (others => '0');
 
-  -- TX_RX_80MHz inputs
+  -- wrapper_gigalink_ddu inputs
   signal gtxtest_in        : std_logic_vector(12 downto 0) := "1000000000000";
   signal gtx0_gtxtest_done : std_logic;
   signal gtx0_gtxtest_bit1 : std_logic;
   signal gtx0_txreset_in   : std_logic;
   signal gtx0_txpreemphasis_in : std_logic_vector(3 downto 0) := "1000";
   
-  -- TX_RX_80MHz outputs
+  -- wrapper_gigalink_ddu outputs
   signal gtx0_txplllkdet_out    : std_logic;
   signal gtx0_rxvalid_out       : std_logic;
   signal gtx0_rxcharisk_out     : std_logic_vector(3 downto 0);
@@ -186,7 +187,7 @@ begin
   gtxtest_in      <= "10000000000" & gtx0_gtxtest_bit1 & '0';
   gtx0_txreset_in <= gtx0_gtxtest_done or RST;
 
-  TX_RX_80MHZ_PM : TX_RX_80MHZ
+  WRAPPER_GIGALINK_DDU_PM : WRAPPER_GIGALINK_DDU
     generic map (
       WRAPPER_SIM_GTXRESET_SPEEDUP => SIM_SPEEDUP  -- Set to 1 to speed up sim reset
       )
@@ -277,10 +278,10 @@ begin
       WREN        => TXD_VLD            -- Input write enable
       );
 
-  TX_WRD_COUNT : FIFO_WRD_COUNT
+  TX_WRD_COUNT : FIFOWORDS
     generic map(12)
-    port map(RST  => tx_fifo_reset, CLK => usr_clk, WE => txd_vld, RE => TX_FIFO_RDEN,
-             FULL => tx_fifo_full, COUNT => TX_FIFO_WRD_CNT);
+    port map(RST   => tx_fifo_reset, WRCLK => usr_clk, WREN => TXD_VLD, FULL => tx_fifo_full,
+             RDCLK => VME_CLK, RDEN => TX_FIFO_RDEN, COUNT => TX_FIFO_WRD_CNT);
 
   
   rx_fifo_reset <= RST or RX_FIFO_RST;
@@ -312,10 +313,10 @@ begin
       WREN        => rxd_vld_inner      -- Input write enable
       );
 
-  RX_WRD_COUNT : FIFO_WRD_COUNT
+  RX_WRD_COUNT : FIFOWORDS
     generic map(12)
-    port map(RST  => rx_fifo_reset, CLK => usr_clk, WE => rxd_vld_inner, RE => RX_FIFO_RDEN,
-             FULL => rx_fifo_full, COUNT => RX_FIFO_WRD_CNT);
+    port map(RST   => rx_fifo_reset, WRCLK => usr_clk, WREN => rxd_vld_inner, FULL => rx_fifo_full,
+             RDCLK => VME_CLK, RDEN => RX_FIFO_RDEN, COUNT => RX_FIFO_WRD_CNT);
 
 
 end GIGALINK_DDU_ARCH;

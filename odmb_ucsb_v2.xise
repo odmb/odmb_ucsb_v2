@@ -186,18 +186,6 @@
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
     </file>
-    <file xil_pn:name="source/dmb_receiver/ipcore_rx/csp_fifo_la.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/dmb_receiver/ipcore_rx/csp_gtx_mac_la.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/dmb_receiver/ipcore_rx/csp_pkt_frm_la.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
     <file xil_pn:name="source/dmb_receiver/ipcore_rx/mgt_32gbps_16bit_1to12.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
@@ -211,42 +199,6 @@
       <association xil_pn:name="Implementation"/>
     </file>
     <file xil_pn:name="source/dmb_receiver/ipcore_rx/mgt_125gbps_16bit_1to12_gtx.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/clk_div_reset.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/crc_gen.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/daq_gtx_dual_rate_custom.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/daq_gtx_dual_rate_custom_gtx.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/daq_optical_out.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/ipcore_dir/daq_tx_la.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/ipcore_dir/daq_tx_vio.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/fizzim/DAQ_Rate_Sel_FSM.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/fizzim/Frame_Proc_FSM.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
     </file>
@@ -282,22 +234,7 @@
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
     </file>
-    <file xil_pn:name="source/daq_optical_out/ddu/gtx_80_ddu_custom_gtx.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/ddu/double_reset.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/ddu/gtx_80_ddu_custom.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
-    <file xil_pn:name="source/daq_optical_out/ddu/daq_ddu_out.v" xil_pn:type="FILE_VERILOG">
-      <association xil_pn:name="BehavioralSimulation"/>
-      <association xil_pn:name="Implementation"/>
-    </file>
+    <file xil_pn:name="source/daq_optical_out/ddu/double_reset.v" xil_pn:type="FILE_VERILOG"/>
     <file xil_pn:name="source/odmb_ctrl/pcfifo.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
@@ -306,16 +243,63 @@
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
     </file>
-    <file xil_pn:name="source/daq_optical_out/gigalink_ddu.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="source/daq_optical_out/gigalink_ddu.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="source/daq_optical_out/tx_rx_80mhz.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="source/daq_optical_out/tx_rx_80mhz_gtx.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="ipcore_dir/tx_rx_125mhz.xco" xil_pn:type="FILE_COREGEN">
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
     </file>
-    <file xil_pn:name="source/daq_optical_out/tx_rx_80mhz.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="source/daq_optical_out/pc/ethernet_frame.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="source/daq_optical_out/pc/gigalink_pc.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="source/daq_optical_out/pc/gigalink_pc_gtx.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="source/daq_optical_out/pc/gigalink_pc_top.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="source/daq_optical_out/pc/mgt_usrclk_source_mmcm.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="source/gigalinks/fifowords.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation"/>
       <association xil_pn:name="Implementation"/>
     </file>
-    <file xil_pn:name="source/daq_optical_out/tx_rx_80mhz_gtx.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="source/gigalinks/double_reset.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/ethernet_frame.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/gigalink_ddu.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/gigalink_pc.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/mgt_usrclk_source_mmcm.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/wrapper_gigalink_ddu.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/wrapper_gigalink_ddu_gtx.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/wrapper_gigalink_pc.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/wrapper_gigalink_pc_gtx.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="source/gigalinks/crc_gen.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation"/>
+      <association xil_pn:name="Implementation"/>
+    </file>
+    <file xil_pn:name="ipcore_dir/tx_rx_125mhz.xise" xil_pn:type="FILE_COREGENISE">
       <association xil_pn:name="Implementation"/>
     </file>
   </files>

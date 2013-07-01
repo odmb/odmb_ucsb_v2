@@ -6,6 +6,11 @@
 =                                                                    =
 ======================================================================
 
+V00-03: 1 July 2013, Manuel
+--------------------------------
+Wrote new TX/RX for the GL0 and GL1, with their corresponding FIFOs.
+Added a CRC counter to check the DCFEB transmission.
+
 V00-02: 11 June 2013, Manuel
 --------------------------------
 Made VMEMON easier to use.
