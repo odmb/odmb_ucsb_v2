@@ -61,7 +61,7 @@ begin
     elsif rising_edge(WRCLK) then
       if word_wrcnt_en = '1' and FULL = '0' then
         word_cnt_data := word_cnt_data + 1;
-      elsif word_rdcnt_en = '1' then
+      elsif word_rdcnt_en = '1' and word_cnt_data > 0 then
         word_cnt_data := word_cnt_data - 1;
       end if;
     end if;
