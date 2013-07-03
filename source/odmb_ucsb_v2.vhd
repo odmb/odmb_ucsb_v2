@@ -271,67 +271,48 @@ architecture bdf_type of odmb_ucsb_v2 is
 
   end component;
 
-  --component daq_ddu_out is
-  --  generic (
-  --    SIM_SPEEDUP : integer := 0
-  --    );
-  --  port (
-  --    RST          : in  std_logic;
-  --    -- External signals
-  --    RX_DDU_N     : in  std_logic;     -- GTX receive data in - signal
-  --    RX_DDU_P     : in  std_logic;     -- GTX receive data in + signal
-  --    TX_DDU_N     : out std_logic;     -- GTX transmit data out - signal
-  --    TX_DDU_P     : out std_logic;     -- GTX transmit data out + signal
-  --    -- Reference clocks ideally straight from the IBUFDS_GTXE1 output
-  --    REF_CLK_80   : in  std_logic;     -- 80 MHz for DDU data rate
-  --    -- Internal signals
-  --    TXD          : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
-  --    TXD_VLD      : in  std_logic;     -- Flag for valid data;
-  --    DDU_DATA_CLK : out std_logic  -- Clock that should be used for passing data and controls to this module
-  --    );
-  --end component;
+  component GIGALINK_PC is
+    generic (
+      SIM_SPEEDUP : integer := 0
+      );
+    port (
+      -- Global signals
+      RST    : in std_logic;
+      --REFCLK_N : in std_logic;            -- 125 MHz for PC data rate
+      --REFCLK_P : in std_logic;            -- 125 MHz for PC data rate
+      REFCLK : in std_logic;            -- 125 MHz for PC data rate
 
-component GIGALINK_PC is
-  generic (
-    SIM_SPEEDUP : integer := 0
-    );
-  port (
-    -- Global signals
-    RST      : in std_logic;
-    REFCLK_N : in std_logic;            -- 125 MHz for PC data rate
-    REFCLK_P : in std_logic;            -- 125 MHz for PC data rate
+      -- Transmitter signals
+      TXD     : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
+      TXD_VLD : in  std_logic;          -- Flag for valid data;
+      TX_ACK  : out std_logic;  -- TX acknowledgement (ethernet header has finished)
+      TXD_N   : out std_logic;          -- GTX transmit data out - signal
+      TXD_P   : out std_logic;          -- GTX transmit data out + signal
+      USRCLK  : out std_logic;          -- Data clock coming from the TX PLL
 
-    -- Transmitter signals
-    TXD     : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
-    TXD_VLD : in  std_logic;            -- Flag for valid data;
-    TX_ACK  : out std_logic;  -- TX acknowledgement (ethernet header has finished)
-    TXD_N   : out std_logic;            -- GTX transmit data out - signal
-    TXD_P   : out std_logic;            -- GTX transmit data out + signal
-    USRCLK  : out std_logic;            -- Data clock coming from the TX PLL
+      TXDIFFCTRL : in std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+      LOOPBACK   : in std_logic_vector(2 downto 0);  -- For internal loopback tests
 
-    TXDIFFCTRL : in std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
-    LOOPBACK   : in std_logic_vector(2 downto 0);  -- For internal loopback tests
+      -- Receiver signals
+      RXD_N   : in  std_logic;          -- GTX receive data in - signal
+      RXD_P   : in  std_logic;          -- GTX receive data in + signal
+      RXD     : out std_logic_vector(15 downto 0);  -- Data received
+      RXD_VLD : out std_logic;          -- Flag for valid data;
 
-    -- Receiver signals
-    RXD_N   : in  std_logic;            -- GTX receive data in - signal
-    RXD_P   : in  std_logic;            -- GTX receive data in + signal
-    RXD     : out std_logic_vector(15 downto 0);  -- Data received
-    RXD_VLD : out std_logic;             -- Flag for valid data;
-
-    TX_FIFO_WREN_OUT : out std_logic;             -- Flag for valid data;
-    TXD_FRAME_OUT : out std_logic_vector(15 downto 0);
-    ROM_CNT_OUT : out std_logic_vector(2 downto 0);
-     -- FIFO signals
-    VME_CLK         : in  std_logic;
-    TX_FIFO_RST     : in  std_logic;
-    TX_FIFO_RDEN    : in  std_logic;
-    TX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-    TX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
-    RX_FIFO_RST     : in  std_logic;
-    RX_FIFO_RDEN    : in  std_logic;
-    RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-    RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0)   
-    );
+      TX_FIFO_WREN_OUT : out std_logic;  -- Flag for valid data;
+      TXD_FRAME_OUT    : out std_logic_vector(15 downto 0);
+      ROM_CNT_OUT      : out std_logic_vector(2 downto 0);
+      -- FIFO signals
+      VME_CLK          : in  std_logic;
+      TX_FIFO_RST      : in  std_logic;
+      TX_FIFO_RDEN     : in  std_logic;
+      TX_FIFO_DOUT     : out std_logic_vector(15 downto 0);
+      TX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0);
+      RX_FIFO_RST      : in  std_logic;
+      RX_FIFO_RDEN     : in  std_logic;
+      RX_FIFO_DOUT     : out std_logic_vector(15 downto 0);
+      RX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0)
+      );
   end component;
 
   component gigalink_ddu is
@@ -340,22 +321,22 @@ component GIGALINK_PC is
       );
     port (
       -- Global signals
-      REF_CLK_80 : in std_logic;  -- 80 MHz for DDU data rate
+      REF_CLK_80 : in std_logic;        -- 80 MHz for DDU data rate
       RST        : in std_logic;
 
       -- Transmitter signals
       TXD        : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
-      TXD_VLD    : in  std_logic;  -- Flag for valid data;
-      TX_DDU_N   : out std_logic;  -- GTX transmit data out - signal
-      TX_DDU_P   : out std_logic;  -- GTX transmit data out + signal
+      TXD_VLD    : in  std_logic;       -- Flag for valid data;
+      TX_DDU_N   : out std_logic;       -- GTX transmit data out - signal
+      TX_DDU_P   : out std_logic;       -- GTX transmit data out + signal
       TXDIFFCTRL : in  std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
       LOOPBACK   : in  std_logic_vector(2 downto 0);  -- For internal loopback tests
 
       -- Receiver signals
-      RX_DDU_N : in  std_logic;  -- GTX receive data in - signal
-      RX_DDU_P : in  std_logic;  -- GTX receive data in + signal
+      RX_DDU_N : in  std_logic;         -- GTX receive data in - signal
+      RX_DDU_P : in  std_logic;         -- GTX receive data in + signal
       RXD      : out std_logic_vector(15 downto 0);  -- Data received
-      RXD_VLD  : out std_logic;  -- Flag for valid data;
+      RXD_VLD  : out std_logic;         -- Flag for valid data;
 
       -- FIFO signals
       VME_CLK         : in  std_logic;
@@ -367,43 +348,6 @@ component GIGALINK_PC is
       RX_FIFO_RDEN    : in  std_logic;
       RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
       RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0)
-      );
-  end component;
-
-  component daq_optical_out is
-    generic (
-      USE_CHIPSCOPE : integer := 1;
-      SIM_SPEEDUP   : integer := 1
-      );
-    port (
-      DAQ_TX_VIO_CNTRL     : inout std_logic_vector(35 downto 0);  --Chip Scope Pro control signals for virtual I/O
-      DAQ_TX_LA_CNTRL      : inout std_logic_vector(35 downto 0);  --Chip Scope Pro control signals for logic analyzer
-      RST                  : in    std_logic;
-      -- External signals
-      DAQ_RX_N             : in    std_logic;  -- GTX receive data in - signal
-      DAQ_RX_P             : in    std_logic;  -- GTX receive data in + signal
-      DAQ_TDIS             : out   std_logic;  -- optical transceiver transmit disable signal
-      DAQ_TX_N             : out   std_logic;  -- GTX transmit data out - signal
-      DAQ_TX_P             : out   std_logic;  -- GTX transmit data out + signal
-      -- Reference clocks ideally straight from the IBUFDS_GTXE1 output 
-      DAQ_TX_125REFCLK     : in    std_logic;  -- 125 MHz for 1 GbE
-      DAQ_TX_125REFCLK_DV2 : in    std_logic;  -- 62.5 MHz user clock for 1 GbE
-      DAQ_TX_160REFCLK     : in    std_logic;  -- 160 MHz for  2.56 GbE
-      -- Internal signals
-      L1A_MATCH            : in    std_logic;  -- Currently only for logic analyzer input
-      TXD                  : in    std_logic_vector(15 downto 0);  -- Data to be transmitted
-      TXD_VLD              : in    std_logic;  -- Flag for valid data; initiates data transfer
-      JDAQ_RATE            : in    std_logic;  -- requested DAQ rate from JTAG interface
-      RATE_1_25            : out   std_logic;  -- Flag to indicate 1.25 Gbps line rate operation
-      RATE_3_2             : out   std_logic;  -- Flag to indicate 3.2 Gbps line rate operation
-      TX_ACK               : out   std_logic;  -- Handshake signal indicates preamble has been sent, data flow should start
-      DAQ_DATA_CLK         : out   std_logic;  -- Clock that should be used for passing data and controls to this module    
-      -- FIFO signals
-      FIFO_RST             : in    std_logic;
-      RD_EN_FF             : in    std_logic;
-      VME_CLK              : in    std_logic;
-      FIFO_DATA_OUT        : out   std_logic_vector(15 downto 0);
-      FIFO_WRD_CNT         : out   std_logic_vector(11 downto 0)
       );
   end component;
 
@@ -821,7 +765,7 @@ component GIGALINK_PC is
       dcfeb_ctrl    : out std_logic_vector(15 downto 0);
       odmb_data_sel : out std_logic_vector(7 downto 0);
       odmb_data     : in  std_logic_vector(15 downto 0);
-      TXDIFFCTRL   : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+      TXDIFFCTRL    : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
       LOOPBACK      : out std_logic_vector(2 downto 0);  -- For internal loopback tests
 
       tc_l1a         : out std_logic;
@@ -850,7 +794,7 @@ component GIGALINK_PC is
       pc_tx_fifo_rden    : out std_logic;
       pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
       pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
-     pc_rx_fifo_rst     : out std_logic;
+      pc_rx_fifo_rst     : out std_logic;
       pc_rx_fifo_rden    : out std_logic;
       pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
       pc_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
@@ -1104,15 +1048,15 @@ component GIGALINK_PC is
   signal pc_rx_fifo_rden    : std_logic;
   signal pc_rx_fifo_dout    : std_logic_vector(15 downto 0);
   signal pc_rx_fifo_wrd_cnt : std_logic_vector(11 downto 0);
-  signal pc_txd_frame : std_logic_vector(15 downto 0);
-  signal rom_cnt_out : std_logic_vector(2 downto 0);
-  signal pc_tx_fifo_wren : std_logic;
+  signal pc_txd_frame       : std_logic_vector(15 downto 0);
+  signal rom_cnt_out        : std_logic_vector(2 downto 0);
+  signal pc_tx_fifo_wren    : std_logic;
 
   -- GIGALINK_DDU
   signal gl0_rx_buf_p, gl0_rx_buf_n : std_logic;
   signal ddu_rx_data                : std_logic_vector(15 downto 0);
   signal ddu_rx_data_valid          : std_logic;
-  signal txdiffctrl                : std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+  signal txdiffctrl                 : std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
   signal loopback                   : std_logic_vector(2 downto 0);  -- For internal loopback tests
 
   signal ddu_tx_fifo_rst     : std_logic;
@@ -1388,11 +1332,11 @@ component GIGALINK_PC is
   signal int_tmb_dav, tc_tmb_dav   : std_logic;
   signal int_lct, tc_lct           : std_logic_vector(NFEB downto 0);
 
-  signal tc_run                                                  : std_logic;
+  signal tc_run                                                   : std_logic;
   signal counter_clk, counter_clk_gl0, counter_clk_gl1, reset_cnt : integer   := 0;
-  signal clk1, clk2, clk4, clk8, gl0_clk_slow, gl1_clk_2_slow       : std_logic := '0';
-  signal clk1_inv, clk2_inv, clk4_inv                            : std_logic := '1';
-  signal ts_out                                                  : std_logic_vector(31 downto 0);
+  signal clk1, clk2, clk4, clk8, gl0_clk_slow, gl1_clk_2_slow     : std_logic := '0';
+  signal clk1_inv, clk2_inv, clk4_inv                             : std_logic := '1';
+  signal ts_out                                                   : std_logic_vector(31 downto 0);
 
   signal led_cnt                 : integer   := 0;
   signal led_cnt_rst, led_cnt_en : std_logic := '0';
@@ -1426,9 +1370,6 @@ component GIGALINK_PC is
   signal testctrl_sel : std_logic := '0';
 
   signal eof : std_logic;
---  signal v6_tck : std_logic := '0';
---  signal v6_tms : std_logic := '0';
---  signal v6_tdi : std_logic := '0';
   
 begin
 
@@ -1436,10 +1377,6 @@ begin
   qpll_autorestart <= '1';
   qpll_reset       <= not reset;
 
-  -- v6_tck         <= '0';
-  -- v6_tms         <= '0';
-  -- v6_tdi         <= '0';
-  -- v6_jtag_sel_inner <= '0';
   v6_jtag_sel <= v6_jtag_sel_inner;
 
   tpl(15 downto 6) <= (others => '0');
@@ -1452,12 +1389,13 @@ begin
   tpl(22)          <= int_l1a_match(7);
   tpl(23)          <= '0';
 
+  d <= (others => '0');
 
-  -- Does this really need to be a process?  What a mess of a sensitivity list.
+  -- TD: Does this really need to be a process?  What a mess of a sensitivity list.
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
                          int_tmb_dav, dcfeb_data, tmb_data, tmb_data_valid, int_alct_dav, alct_data,
                          alct_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
-                         v6_jtag_sel_inner)
+                         v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo)
   begin
     case tp_sel_reg is
       when x"0000" =>
@@ -1544,6 +1482,12 @@ begin
         tph(41) <= rom_cnt_out(0);
         tph(42) <= rom_cnt_out(1);
 
+      when x"0013" =>
+        tph(27) <= int_tdi;
+        tph(28) <= int_tms;
+        tph(41) <= int_tdo(7);
+        tph(42) <= int_tck(7);
+
       when others =>
         tph(27) <= gtx0_data_valid;
         tph(28) <= cafifo_l1a_dav(1);
@@ -1564,57 +1508,11 @@ begin
   tph(38) <= '1';
   tph(39) <= '1';
   tph(40) <= '1';
+  tph(43) <= '0';
   tph(44) <= '0';
+  tph(45) <= '0';
   tph(46) <= '0';
 
-
-  Select_TestPoints : process(diagout_lvdbmon, diagout_cfebjtag, qpll_clk40MHz, select_diagnostic)
-  begin
-    if (select_diagnostic = 0) then
-      d(0)  <= diagout_lvdbmon(0);      -- TP58   TP59 SLOWCLK
-      d(1)  <= diagout_lvdbmon(1);      -- TP60   TP61 CE_ADCDATA
-      d(2)  <= diagout_lvdbmon(2);      -- TP62   TP63 CLKMON
-      d(3)  <= diagout_lvdbmon(3);      -- TP64   TP65 ADCCLK_INNER
-      d(4)  <= diagout_lvdbmon(4);      -- TP66   TP66 BUSY
-      d(5)  <= diagout_lvdbmon(5);      -- TP68   TP68 L_ADCDATA
-      d(6)  <= diagout_lvdbmon(6);      -- TP70
-      d(7)  <= diagout_lvdbmon(7);      -- TP72
-      d(8)  <= diagout_lvdbmon(8);      -- TP74
-      d(32) <= diagout_lvdbmon(9);      -- TP59
-      d(33) <= diagout_lvdbmon(10);     -- TP61
-      d(34) <= diagout_lvdbmon(11);     -- TP63
-      d(35) <= diagout_lvdbmon(12);     -- TP65
-      d(36) <= diagout_lvdbmon(13);     -- TP67
-      d(37) <= diagout_lvdbmon(14);     -- TP69
-      d(38) <= diagout_lvdbmon(15);     -- TP71
-      d(39) <= diagout_lvdbmon(16);     -- TP73
-      d(40) <= diagout_lvdbmon(17);     -- TP75
-    elsif (select_diagnostic = 1) then
-      d(0)  <= diagout_cfebjtag(0);     -- TP58   TP59 TCK(1)
-      d(1)  <= diagout_cfebjtag(1);     -- TP60   TP61 TDI
-      d(2)  <= diagout_cfebjtag(2);     -- TP62   TP63 TMS
-      d(3)  <= diagout_cfebjtag(3);     -- TP64   TP65 DL_RTN_SHFT_EN(1)
-      d(4)  <= diagout_cfebjtag(4);     -- TP66   TP66 UL_JTAG_TCK(1)
-      d(5)  <= diagout_cfebjtag(5);     -- TP68   TP68 SELFEB(1)
-      d(6)  <= diagout_cfebjtag(6);     -- TP70   TP70 FEBTDO(1)
-      d(7)  <= diagout_cfebjtag(7);     -- TP72   TP72 READTDO
-      d(8)  <= diagout_cfebjtag(8);     -- TP74
-      d(32) <= diagout_cfebjtag(9);     -- TP59
-      d(33) <= diagout_cfebjtag(10);    -- TP61
-      d(34) <= diagout_cfebjtag(11);    -- TP63
-      d(35) <= diagout_cfebjtag(12);    -- TP65   SLOWCLK
-      d(36) <= diagout_cfebjtag(13);    -- TP67
-      d(37) <= diagout_cfebjtag(14);    -- TP69
-      d(38) <= diagout_cfebjtag(15);    -- TP71
-      d(39) <= diagout_cfebjtag(16);    -- TP73
-      d(40) <= diagout_cfebjtag(17);    -- TP75
-    else
-      d(8 downto 0)   <= (others => '0');
-      d(40 downto 32) <= (others => '0');
-    end if;
-    d(31 downto 9)  <= (others => '0');
-    d(63 downto 41) <= (others => '0');
-  end process Select_TestPoints;
 
 -- Power ON reset [The FD is to avoid an event on an array]
   FD_RESET : FD port map(int_reset, clk2p5, fw_reset);
@@ -1624,10 +1522,10 @@ begin
   reset <= por_reg(31) or not pb(0);
 
 
-  PULLUP_dtack_b    : PULLUP port map (vme_dtack_v6_b);
-  PULLDOWN_TMS      : PULLDOWN port map (dcfeb_tms);
-  PULLDOWN_ODMB_TMS : PULLDOWN port map (v6_tms);
-  GEN_PULLDOWN      : for I in 0 to 15 generate
+  PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
+  PULLDOWN_DCFEB_TMS : PULLDOWN port map (int_tms);
+  PULLDOWN_ODMB_TMS  : PULLDOWN port map (v6_tms);
+  GEN_PULLDOWN       : for I in 0 to 15 generate
   begin
     PULLDOWN_FIFO : PULLDOWN port map (fifo_out(I));
   end generate GEN_PULLDOWN;
@@ -1668,40 +1566,17 @@ begin
 --  tkn_test_en <= tm_en;
 
 
--- CODE_B (LED CONTROLS)
-
--- leds_in(7 downto 0) <= int_lvmb_pon(7 downto 0);
-
   lvmb_pon <= int_lvmb_pon(7 downto 0);
-
---led00_buf : OBUFT port map (O => leds(0), I => '0', T => d(53));      
---led01_buf : OBUFT port map (O => leds(1), I => '0', T => d(52));      
---led02_buf : OBUFT port map (O => leds(2), I => '0', T => d(51));      
---led03_buf : OBUFT port map (O => leds(3), I => '0', T => d(50));      
---led04_buf : OBUFT port map (O => leds(4), I => '0', T => d(49));      
---led05_buf : OBUFT port map (O => leds(5), I => '0', T => d(48));      
---led06_buf : OBUFT port map (O => leds(6), I => '0', T => d(47));      
---led07_buf : OBUFT port map (O => leds(7), I => '0', T => d(46));      
---led08_buf : OBUFT port map (O => leds(8), I => '0', T => pb(0));      
---led09_buf : OBUFT port map (O => leds(9), I => '0', T => pb(1));      
---led10_buf : OBUFT port map (O => leds(10), I => '0', T => pb(2));     
---led11_buf : OBUFT port map (O => leds(11), I => '0', T => pb(3));     
 
 -- ------------------------------------------------------------------------------------------------- 
 
 -- CODE_C (LVDS input buffers)
 
 -- From OT1 (GigaBit Link)
-
--- gl0_rx
---  gl0_rx_buf : IBUFDS port map (I => gl0_rx_p, IB => gl0_rx_n, O => gl0_rx);
   gl0_rx_ibuf_p : IBUF port map (O => gl0_rx_buf_p, I => gl0_rx_p);
   gl0_rx_ibuf_n : IBUF port map (O => gl0_rx_buf_n, I => gl0_rx_n);
 
 -- From OT2 (GigaBit Link)
-
--- gl1_rx
-  --gl1_rx_buf : IBUFDS port map (I => gl1_rx_p, IB => gl1_rx_n, O => gl1_rx);
   gl1_rx_ibuf_p : IBUF port map (O => gl1_rx_buf_p, I => gl1_rx_p);
   gl1_rx_ibuf_n : IBUF port map (O => gl1_rx_buf_n, I => gl1_rx_n);
 
@@ -1733,8 +1608,8 @@ begin
   qpll_clk160MHz_bufg : BUFG port map (O => clk160, I => qpll_clk160MHz);
 
   -- Clock for PC TX
-  --gl1_clk_buf_gtxe1 : IBUFDS_GTXE1 port map (I => gl1_clk_p, IB => gl1_clk_n, CEB => logicl,
-  --                                           O => gl1_clk, ODIV2 => gl1_clk_2);
+  gl1_clk_buf_gtxe1 : IBUFDS_GTXE1 port map (I => gl1_clk_p, IB => gl1_clk_n, CEB => logicl,
+                                             O => gl1_clk, ODIV2 => open);
   --gl1_clk_2_bufr : BUFR port map (O => gl1_clk_2_buf, CE => logich, CLR => logicl, I => gl1_clk_2);
   --gl1_clk_2_bufg  : BUFG port map (O => gl1_clk_2_buf,  I => gl1_clk_2);
   pcclk <= gl1_clk_2_buf;
@@ -2154,7 +2029,7 @@ begin
       dcfeb_ctrl    => dcfeb_ctrl_reg,
       odmb_data_sel => odmb_data_sel,
       odmb_data     => odmb_data,
-      TXDIFFCTRL   => txdiffctrl,
+      TXDIFFCTRL    => txdiffctrl,
       LOOPBACK      => loopback,
 
       -- TESTCTRL
@@ -2184,11 +2059,11 @@ begin
       pc_tx_fifo_rden    => pc_tx_fifo_rden,
       pc_tx_fifo_dout    => pc_tx_fifo_dout,
       pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
-     pc_rx_fifo_rst     => pc_rx_fifo_rst,
+      pc_rx_fifo_rst     => pc_rx_fifo_rst,
       pc_rx_fifo_rden    => pc_rx_fifo_rden,
       pc_rx_fifo_dout    => pc_rx_fifo_dout,
       pc_rx_fifo_wrd_cnt => pc_rx_fifo_wrd_cnt,
-      
+
       -- DDU TX/RX FIFO signals
       ddu_tx_fifo_rst     => ddu_tx_fifo_rst,
       ddu_tx_fifo_rden    => ddu_tx_fifo_rden,
@@ -3023,39 +2898,18 @@ begin
   end process;
 
 
-  --GIGALINK_DDU_TX_PM : daq_ddu_out
-  --  generic map (
-  --    SIM_SPEEDUP => IS_SIMULATION
-  --    )
-  --  port map (
-  --    RST          => reset,
-  --    -- External signals
-  --    RX_DDU_N     => logicl,           -- GTX receive data in - signal
-  --    RX_DDU_P     => logich,           -- GTX receive data in + signal
-  --    TX_DDU_N     => gl0_tx_n,         -- GTX transmit data out - signal
-  --    TX_DDU_P     => gl0_tx_p,         -- GTX transmit data out + signal
-  --    -- Reference clocks ideally straight from the IBUFDS_GTXE1 output
-  --    REF_CLK_80   => gl0_clk,          -- 80 MHz for DDU data rate
-  --    -- Internal signals
-  --    TXD          => gtx0_data,        -- Data to be transmitted
-  --    TXD_VLD      => gtx0_data_valid,  -- Flag for valid data;
-  --    DDU_DATA_CLK => ddu_data_clk  -- Clock that should be used for passing data and controls to this module
-  --    );
-
-
-  
   GIGALINK_DDU_PM : gigalink_ddu
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
-      REF_CLK_80  => gl0_clk,           -- 80 MHz for DDU data rate
-      RST         => reset,
+      REF_CLK_80 => gl0_clk,            -- 80 MHz for DDU data rate
+      RST        => reset,
       -- Transmitter signals
-      TXD         => gtx0_data,         -- Data to be transmitted
-      TXD_VLD     => gtx0_data_valid,   -- Flag for valid data;
-      TX_DDU_N    => gl0_tx_n,          -- GTX transmit data out - signal
-      TX_DDU_P    => gl0_tx_p,          -- GTX transmit data out + signal
-      TXDIFFCTRL  => txdiffctrl,        -- Controls the TX voltage swing
-      LOOPBACK    => loopback,          -- For internal loopback tests
+      TXD        => gtx0_data,          -- Data to be transmitted
+      TXD_VLD    => gtx0_data_valid,    -- Flag for valid data;
+      TX_DDU_N   => gl0_tx_n,           -- GTX transmit data out - signal
+      TX_DDU_P   => gl0_tx_p,           -- GTX transmit data out + signal
+      TXDIFFCTRL => txdiffctrl,         -- Controls the TX voltage swing
+      LOOPBACK   => loopback,           -- For internal loopback tests
 
       -- Receiver signals
       RX_DDU_N => gl0_rx_buf_n,         -- GTX receive data in - signal
@@ -3080,76 +2934,43 @@ begin
   GIGALINK_PC_PM : gigalink_pc
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
-      RST        => reset,
-      REFCLK_N   => gl1_clk_n,
-      REFCLK_P   => gl1_clk_p,
+      RST     => reset,
+      --REFCLK_N   => gl1_clk_n,
+      --REFCLK_P   => gl1_clk_p,
+      REFCLK  => gl1_clk,
       -- Transmitter signals
-      TXD        => gtx1_data,          -- Data to be transmitted
-      TXD_VLD    => gtx1_data_valid,    -- Flag for valid data;
-      TX_ACK     => gl_pc_tx_ack,  -- TX acknowledgement (ethernet header has finished)
-      TXD_N   => gl1_tx_n,           -- GTX transmit data out - signal
-      TXD_P   => gl1_tx_p,           -- GTX transmit data out + signal
-      USRCLK     => gl1_clk_2_buf,
-      
-      TXDIFFCTRL => txdiffctrl,         -- Controls the TX voltage swing
-      LOOPBACK   => loopback,           -- For internal loopback tests
-    ROM_CNT_OUT => ROM_CNT_OUT,
+      TXD     => gtx1_data,             -- Data to be transmitted
+      TXD_VLD => gtx1_data_valid,       -- Flag for valid data;
+      TX_ACK  => gl_pc_tx_ack,  -- TX acknowledgement (ethernet header has finished)
+      TXD_N   => gl1_tx_n,              -- GTX transmit data out - signal
+      TXD_P   => gl1_tx_p,              -- GTX transmit data out + signal
+      USRCLK  => gl1_clk_2_buf,
+
+      TXDIFFCTRL  => txdiffctrl,        -- Controls the TX voltage swing
+      LOOPBACK    => loopback,          -- For internal loopback tests
+      ROM_CNT_OUT => ROM_CNT_OUT,
 
       -- Receiver signals
-      RXD_N => gl1_rx_buf_n,         -- GTX receive data in - signal
-      RXD_P => gl1_rx_buf_p,         -- GTX receive data in + signal
-      RXD      => pc_rx_data,
-      RXD_VLD  => pc_rx_data_valid,
+      RXD_N   => gl1_rx_buf_n,          -- GTX receive data in - signal
+      RXD_P   => gl1_rx_buf_p,          -- GTX receive data in + signal
+      RXD     => pc_rx_data,
+      RXD_VLD => pc_rx_data_valid,
 
-   TX_FIFO_WREN_OUT  => pc_tx_fifo_wren,
-    TXD_FRAME_OUT => pc_txd_frame,
-     -- FIFO signals
-      VME_CLK         => clk2p5,
-      TX_FIFO_RST     => pc_tx_fifo_rst ,
-      TX_FIFO_RDEN    => pc_tx_fifo_rden ,
-      TX_FIFO_DOUT    => pc_tx_fifo_dout ,
-      TX_FIFO_WRD_CNT => pc_tx_fifo_wrd_cnt ,
-      RX_FIFO_RST     => pc_rx_fifo_rst ,
-      RX_FIFO_RDEN    => pc_rx_fifo_rden ,
-      RX_FIFO_DOUT    => pc_rx_fifo_dout ,
-      RX_FIFO_WRD_CNT => pc_rx_fifo_wrd_cnt
+      TX_FIFO_WREN_OUT => pc_tx_fifo_wren,
+      TXD_FRAME_OUT    => pc_txd_frame,
+      -- FIFO signals
+      VME_CLK          => clk2p5,
+      TX_FIFO_RST      => pc_tx_fifo_rst ,
+      TX_FIFO_RDEN     => pc_tx_fifo_rden ,
+      TX_FIFO_DOUT     => pc_tx_fifo_dout ,
+      TX_FIFO_WRD_CNT  => pc_tx_fifo_wrd_cnt ,
+      RX_FIFO_RST      => pc_rx_fifo_rst ,
+      RX_FIFO_RDEN     => pc_rx_fifo_rden ,
+      RX_FIFO_DOUT     => pc_rx_fifo_dout ,
+      RX_FIFO_WRD_CNT  => pc_rx_fifo_wrd_cnt
 
       );
 
-
-
-  --GIGALINK_PC_TX_PM : daq_optical_out
-  --  generic map(
-  --    USE_CHIPSCOPE => 0,
-  --    SIM_SPEEDUP   => IS_SIMULATION
-  --    )
-  --  port map(
-  --    DAQ_TX_VIO_CNTRL     => LOGIC36L,
-  --    DAQ_TX_LA_CNTRL      => LOGIC36L,
-  --    RST                  => reset,
-  --    DAQ_RX_N             => LOGICL,
-  --    DAQ_RX_P             => LOGICH,
-  --    DAQ_TDIS             => gl_pc_daq_tdis,
-  --    DAQ_TX_N             => gl1_tx_n,
-  --    DAQ_TX_P             => gl1_tx_p,
-  --    DAQ_TX_125REFCLK     => gl1_clk,  -- daq_tx_125refclk,
-  --    DAQ_TX_125REFCLK_DV2 => gl1_clk_2_buf,  -- daq_tx_125refclk_dv2,
-  --    DAQ_TX_160REFCLK     => LOGICL,
-  --    L1A_MATCH            => LOGICL,
-  --    TXD                  => gtx1_data,
-  --    TXD_VLD              => gtx1_data_valid,
-  --    JDAQ_RATE            => LOGICL,  -- '0' selects clock: 125 MHz (1.25 Gb), '1' selects 160 MHz (3.2 Gb)
-  --    RATE_1_25            => open,
-  --    RATE_3_2             => open,
-  --    TX_ACK               => open,
-  --    DAQ_DATA_CLK         => gl_pc_daq_data_clk,
-  --    FIFO_RST             => pc_tx_fifo_rst,
-  --    RD_EN_FF             => pc_tx_fifo_rden,
-  --    VME_CLK              => clk2p5,
-  --    FIFO_DATA_OUT        => pc_tx_fifo_dout,
-  --    FIFO_WRD_CNT         => pc_tx_fifo_wrd_cnt
-
-  --    );
 
   DMB_RX_PM : dmb_receiver
     generic map (
