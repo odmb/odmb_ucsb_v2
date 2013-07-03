@@ -6,6 +6,10 @@
 =                                                                    =
 ======================================================================
 
+V00-04: 2 July 2013, Manuel
+--------------------------------
+Fixed a pulldown on int_tms, and some cleaning.
+
 V00-03: 1 July 2013, Manuel
 --------------------------------
 Wrote new TX/RX for the GL0 and GL1, with their corresponding FIFOs.
