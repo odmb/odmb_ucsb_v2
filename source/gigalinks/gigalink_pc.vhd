@@ -14,9 +14,10 @@ entity GIGALINK_PC is
     );
   port (
     -- Global signals
-    RST      : in std_logic;
-    REFCLK_N : in std_logic;            -- 125 MHz for PC data rate
-    REFCLK_P : in std_logic;            -- 125 MHz for PC data rate
+    RST    : in std_logic;
+    --REFCLK_N : in std_logic;            -- 125 MHz for PC data rate
+    --REFCLK_P : in std_logic;            -- 125 MHz for PC data rate
+    REFCLK : in std_logic;              -- 125 MHz for PC data rate
 
     -- Transmitter signals
     TXD     : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
@@ -58,7 +59,7 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
 
   component WRAPPER_GIGALINK_PC
     generic (
-      WRAPPER_SIM_GTXRESET_SPEEDUP : integer    := 0  -- Set to 1 to speed up sim reset
+      WRAPPER_SIM_GTXRESET_SPEEDUP : integer := 0  -- Set to 1 to speed up sim reset
       );
     port (
       --_________________________________________________________________________
@@ -515,15 +516,15 @@ begin
 
   ----------------------------- Reference Clocks ----------------------------
 
-  Q0_CLK0_REFCLK_IBUFDS_I : IBUFDS_GTXE1
-    port map (
-      O     => q0_clk0_refclk_i,
-      ODIV2 => open,
-      CEB   => tied_to_ground_i,
-      I     => REFCLK_P,
-      IB    => REFCLK_N
-      );
-
+  --Q0_CLK0_REFCLK_IBUFDS_I : IBUFDS_GTXE1
+  --  port map (
+  --    O     => q0_clk0_refclk_i,
+  --    ODIV2 => open,
+  --    CEB   => tied_to_ground_i,
+  --    I     => REFCLK_P,
+  --    IB    => REFCLK_N
+  --    );
+  q0_clk0_refclk_i <= REFCLK;
 
   Q0_CLK0_REFCLK_BUFG_I : BUFG
     port map (
