@@ -1,0 +1,9 @@
+W  8020  5  Select ADC
+R  8024  0  Read selected ADC
+
+W  8010  5  Set DCFEB on
+R  8014  0  Read which DCFEB is on
+R  8018  0  Read power on status
+
+W  8000  89  Send control byte to ADC
+R  8004  0  Read voltage
