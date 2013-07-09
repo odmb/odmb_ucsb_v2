@@ -40,7 +40,6 @@ end LVDBMON;
 
 architecture LVDBMON_Arch of LVDBMON is
 
-  signal CMDHIGH : std_logic;
   signal BUSY : std_logic;
   signal WRITEADC,READMON,WRITEPOWER,READPOWER,READPOWERSTATUS,SELADC,READADC : STD_LOGIC;
   signal SELADC_vector : std_logic_vector(3 downto 1);
@@ -60,14 +59,14 @@ architecture LVDBMON_Arch of LVDBMON is
   signal CE_OUTDATA_FULL : std_logic;
   signal Q_OUTDATA_FULL : std_logic_vector(15 downto 0);
   signal SLI_ADCDATA,L_ADCDATA,CE_ADCDATA : std_logic;
-  signal D_ADCDATA,Q_ADCDATA: std_logic_vector(7 downto 0);
+  signal Q_ADCDATA: std_logic_vector(7 downto 0);
+  --signal D_ADCDATA: std_logic_vector(7 downto 0);
   signal CMDDEV : unsigned(12 downto 0);
   
 begin  --Architecture
 
 -- Decode instruction
-  CMDHIGH <= '1' when (COMMAND(9 downto 4) = "000000" and DEVICE = '1') else '0';
-  CMDDEV <= unsigned(CMDHIGH & "000000" & COMMAND(3 downto 0) & "00");
+  CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input
   
   WRITEADC        <= '1' when (CMDDEV = x"1000") else '0';
   READMON         <= '1' when (CMDDEV = x"1004") else '0';
@@ -83,7 +82,8 @@ begin  --Architecture
   	FDCE_OUT : FDCE port map (SELADC_vector(i+1),STROBE,SELADC,RST,INDATA(i));
   end generate FDCE_GEN;	
   
-  OUTDATA <= "0000000000000" & SELADC_vector(3 downto 1) when (STROBE='1' and READADC='1') else (others => 'Z');
+  OUTDATA <= '0' & x"000" & SELADC_vector(3 downto 1) when (STROBE='1' and READADC='1') else (others => 'Z');
+
   D_OUTDATA <= '1' when (STROBE='1' and READADC='1') else '0';
   FD_OUTDATA : FD port map (Q_OUTDATA,SLOWCLK,D_OUTDATA);
   DTACK_INNER <= '0' when (Q_OUTDATA='1') else 'Z';
@@ -174,8 +174,6 @@ begin  --Architecture
   FDCE_LOAD2 : FDCE port map (Q2_LOAD,SLOWCLK,CE_LOAD,RST,LOAD);
   FDC_LOAD3 : FDC port map (Q3_LOAD,SLOWCLK,RST,Q2_LOAD);
 
--- Guido: to bring DTACK high after the end of the ADC acquisition (otherwise we need to wait for another code)
---    if (RST='1' or WRITEADC='0') then
   CLR2_LOAD <= '1' when (RST='1' or WRITEADC='0' or BUSY='0') else '0';
   FDC_LOAD4 : FDC port map (Q4_LOAD,Q3_LOAD,CLR2_LOAD,VCC);
   DTACK_INNER <= '0' when (Q4_LOAD='1') else 'Z';
@@ -187,6 +185,6 @@ begin  --Architecture
   ADCCLK <= ADCCLK_INNER;
 
 -- Generate DIAGLVDB
-  DIAGLVDB(17 downto 0) <= "000000000000" & L_ADCDATA & BUSY & ADCCLK_INNER & CLKMON & CE_ADCDATA & SLOWCLK;
+  DIAGLVDB(17 downto 0) <= x"000" & L_ADCDATA & BUSY & ADCCLK_INNER & CLKMON & CE_ADCDATA & SLOWCLK;
   
 end LVDBMON_Arch;
