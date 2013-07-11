@@ -47,7 +47,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal CMDDEV      : unsigned(12 downto 0);
 
   signal OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
-  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0004";
+  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0005";
   signal R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
 
   signal OUT_LCT_L1A                         : std_logic_vector(15 downto 0) := (others => '0');
