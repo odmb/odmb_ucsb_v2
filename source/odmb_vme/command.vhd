@@ -68,7 +68,6 @@ architecture COMMAND_MODULE_Arch of COMMAND_MODULE is
   signal CE_DOE_B, CLR_DOE_B : std_logic;
   signal TIMER               : std_logic_vector(7 downto 0);
   signal TOVME_INNER_B       : std_logic;
-  signal blank1, blank2      : std_logic;
   signal ADRSDEV             : std_logic_vector(4 downto 0);
 
   -----------------------------------------------------------------------------
@@ -78,7 +77,7 @@ begin  --Architecture
   -- Generate DOE_B
   CE_DOE_B  <= '1' when TOVME_INNER_B = '0' and TIMER(7) = '0' else '0';
   CLR_DOE_B <= TOVME_INNER_B;
-  CB8CE_DOE : CB8CE port map (blank1, TIMER, blank2, SLOWCLK, CE_DOE_B, CLR_DOE_B);
+  CB8CE_DOE : CB8CE port map (open, TIMER, open, SLOWCLK, CE_DOE_B, CLR_DOE_B);
   DOE_B     <= TIMER(7);
 
   -- Generate VALIDGA
@@ -92,8 +91,8 @@ begin  --Architecture
   begin
     ILD_AM : ILD port map(AMS(i), AM(i), AS);
   end generate ILD_AM_GEN;
-  VALIDAM     <= '1' when (AMS(0) /= AMS(1) and AMS(3) = '1' and AMS(4) = '1' and AMS(5) = '1' and LWORD = '1') else '0';
-  GOODAM      <= '1' when (AMS(0) /= AMS(1) and AMS(3) = '1' and AMS(4) = '1' and AMS(5) = '1' and LWORD = '1') else '0';
+  VALIDAM     <= '1' when (AMS(0) /= AMS(1) and AMS(5 downto 3) = "111" and LWORD = '1') else '0';
+  GOODAM      <= '1' when (AMS(0) /= AMS(1) and AMS(5 downto 3) = "111" and LWORD = '1') else '0';
   FASTCLK_NOT <= not FASTCLK;
 
   -- Generate STROBE
@@ -102,19 +101,20 @@ begin  --Architecture
     ILD_ADRS : ILD port map(ADRS_INNER(i), ADR(i), AS);
   end generate ILD_ADRS_GEN;
 
-  BOARD_SEL_NEW <= '1' when (ADRS_INNER(23) = CGA(4) and ADRS_INNER(22) = CGA(3) and ADRS_INNER(21) = CGA(2) and ADRS_INNER(20) = CGA(1) and ADRS_INNER(19) = CGA(0)) else '0';
-  PRE_BOARDENB  <= '1' when (BOARD_SEL_NEW = '1' and VALIDGA = '1')                                                                                                   else '0';
-  BROADCAST     <= '1' when (ADRS_INNER(21) = '0' and ADRS_INNER(19) = '1' and ADRS_INNER(22) = '1' and ADRS_INNER(23) = '1')                                         else '0';
-  BOARDENB      <= '1' when (OLDCRATE = '1' or PRE_BOARDENB = '1' or BROADCAST = '1')                                                                                 else '0';
-  SYSOK         <= '1' when (SYSFAIL = '1' and IACK = '1')                                                                                                            else '0';
+  BOARD_SEL_NEW <= '1' when (ADRS_INNER(23 downto 19) = CGA(4 downto 0))              else '0';
+  PRE_BOARDENB  <= '1' when (BOARD_SEL_NEW = '1' and VALIDGA = '1')                   else '0';
+  BROADCAST     <= '1' when (ADRS_INNER(23 downto 19) = "11111")                      else '0';
+  BOARDENB      <= '1' when (OLDCRATE = '1' or PRE_BOARDENB = '1' or BROADCAST = '1') else '0';
+  SYSOK         <= '1' when (SYSFAIL = '1' and IACK = '1')                            else '0';
 
   (TOVME_INNER_B, TOVME_B, LED(0)) <= std_logic_vector'("001") when (GOODAM = '1' and WRITER = '1' and SYSOK = '1' and BOARDENB = '1') else
                                       std_logic_vector'("110");
   ASYNSTRB     <= '1' when (SYSOK = '1' and VALIDAM = '1' and BOARDENB = '1' and DS0 = '0' and DS1 = '0') else '0';
   ASYNSTRB_NOT <= not ASYNSTRB;
+
   FDC_STROBE   : FDC port map(STROBE_TEMP1, FASTCLK, ASYNSTRB_NOT, ASYNSTRB);
   FDC_1_STROBE : FDC_1 port map(STROBE_TEMP2, FASTCLK, ASYNSTRB_NOT, ASYNSTRB);
-  STROBE       <= '1' when (STROBE_TEMP1 = '1' and STROBE_TEMP2 = '1')                                    else '0';
+  STROBE <= '1' when (STROBE_TEMP1 = '1' and STROBE_TEMP2 = '1') else '0';
 
   -- Generate LED(1) / Generate LED(2)
   LED(1) <= not ASYNSTRB;
