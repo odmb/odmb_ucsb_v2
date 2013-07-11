@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Company: UCSB
 -- Engineer/Physicists: Guido Magazzu, Frank Golf, Manuel Franco Sevilla, David Nash
---                      Tom Danielson
+--                      Tom Danielson, Adam Dishaw, Jack Bradmiller-Feld
 --
 -- Create Date:     03/03/2013
 -- Project Name:    ODMB_UCSB_V2
@@ -112,7 +112,7 @@ entity odmb_ucsb_v2 is
 
       tmb      : in std_logic_vector(17 downto 0);
       alct     : in std_logic_vector(17 downto 0);
-      rawlct   : in std_logic_vector(NFEB-1 downto 0);
+      rawlct   : in std_logic_vector(NFEB downto 0);
       tmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
@@ -120,7 +120,7 @@ entity odmb_ucsb_v2 is
       tmbdav    : in  std_logic;        --  lctdav1
       alctdav   : in  std_logic;        --  lctdav2
 --    rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);     
-      rsvtd_in  : in  std_logic_vector(4 downto 0);
+      rsvtd_in  : in  std_logic_vector(4 downto 0); -- rsvt_in(1:2) are rawlct(6:7) 
       rsvtd_out : out std_logic_vector(2 downto 0);
       lctrqst   : out std_logic_vector(2 downto 1);
 
@@ -1160,11 +1160,6 @@ architecture bdf_type of odmb_ucsb_v2 is
 
 -- Other signals
 
-  signal iob_rsvtd_out : std_logic_vector (7 downto 0);
--- signal       rsvtd_out : STD_LOGIC_VECTOR (3 downto 0);
-  signal iob_rsvtd_in  : std_logic_vector (7 downto 0);
--- signal       rsvtd_in : STD_LOGIC_VECTOR (2 downto 0);
-
   signal reset, int_reset : std_logic := '0';
 
   signal int_dl_jtag_tdo : std_logic_vector(7 downto 1) := "0000000";
@@ -1387,7 +1382,7 @@ begin
   tpl(20)          <= int_l1a_match(5);
   tpl(21)          <= int_l1a_match(6);
   tpl(22)          <= int_l1a_match(7);
-  tpl(23)          <= '0';
+  tpl(23)          <= int_l1a;
 
   d <= (others => '0');
 
@@ -1496,17 +1491,17 @@ begin
     end case;
   end process;
 
-  tph(29) <= int_l1a;
-  tph(30) <= '0';
+  tph(29) <= cafifo_l1a_dav(1);
+  tph(30) <= cafifo_l1a_dav(2);
   tph(31) <= gtx0_data_valid;
   tph(32) <= gtx1_data_valid;
-  tph(33) <= cafifo_l1a_dav(1);
-  tph(34) <= cafifo_l1a_dav(2);
-  tph(35) <= cafifo_l1a_dav(3);
-  tph(36) <= cafifo_l1a_dav(4);
-  tph(37) <= '1';
-  tph(38) <= '1';
-  tph(39) <= '1';
+  tph(33) <= raw_lct(1);
+  tph(34) <= raw_lct(2);
+  tph(35) <= raw_lct(3);
+  tph(36) <= raw_lct(4);
+  tph(37) <= raw_lct(5);
+  tph(38) <= raw_lct(6);
+  tph(39) <= raw_lct(7);
   tph(40) <= '1';
   tph(43) <= '0';
   tph(44) <= '0';
@@ -2092,11 +2087,11 @@ begin
              not ccb_l1acc;
   raw_lct(0) <= '1' when test_lct = '1' else
                 tc_lct(0) when (testctrl_sel = '1') else
-                or_reduce(rawlct(NFEB-1 downto 0));
+                rawlct(0);
   
   raw_lct(NFEB downto 1) <= (others => '1') when test_lct = '1' else
                             tc_lct(NFEB downto 1) when (testctrl_sel = '1') else
-                            rawlct(NFEB-1 downto 0);
+                            rawlct(NFEB downto 1);
 
 
   --int_alct_dav           <= tc_alct_dav           when (testctrl_sel = '1') else alctdav;  -- lctdav2
@@ -2148,7 +2143,6 @@ begin
       alct_dav  => int_alct_dav,        -- lctdav2 - from J4
       lctrqst   => lctrqst,             -- lctrqst(2 downto 1) - to J4
       rsvtd_in  => rsvtd_in,            -- spare(7 DOWNTO 3) - to J4
---              rsvtd_out => rsvtd_out(6 downto 3),                                                                                     -- spare(7 DOWNTO 3) - from J4
       rsvtd_out => rsvtd_out,           -- spare(2 DOWNTO 0) - from J4
 
 -- From GigaLinks

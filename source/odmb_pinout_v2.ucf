@@ -246,13 +246,16 @@ NET  "rawlct[2]"		LOC = "AC27"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT
 NET  "rawlct[3]"		LOC = "AD27"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
 NET  "rawlct[4]"		LOC = "AE28"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
 NET  "rawlct[5]"		LOC = "AE27"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
-NET  "rawlct[6]"		LOC = "AL30"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
+NET  "rawlct[6]"		LOC = "AL31"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
+NET  "rawlct[7]"		LOC = "AM32"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
+
+# NET  "rawlct[6]"		LOC = "AL30"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
 NET  "rsvtd_out[0]"  		LOC = "W30"  	| IOSTANDARD = LVCMOS25; # ok  (out)   #STAT0
 NET  "rsvtd_out[1]"  		LOC = "V28"  	| IOSTANDARD = LVCMOS25; # ok  (out)    #STAT0
 NET  "rsvtd_out[2]"  		LOC = "AC25"  	| IOSTANDARD = LVCMOS25; # ok  (out)    #STAT0
 NET  "rsvtd_in[0]"  		LOC = "AK31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "rsvtd_in[1]"  		LOC = "AL31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "rsvtd_in[2]"  		LOC = "AM32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+# NET  "rsvtd_in[1]"  		LOC = "AL31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+# NET  "rsvtd_in[2]"  		LOC = "AM32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "rsvtd_in[3]"  		LOC = "AM31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "tmb[0]"			LOC = "AA31"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "tmb[10]"  		LOC = "AG32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0

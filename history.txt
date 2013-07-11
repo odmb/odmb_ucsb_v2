@@ -6,6 +6,10 @@
 =                                                                    =
 ======================================================================
 
+V00-05: 10 July 2013, Manuel
+--------------------------------
+Arranged RAWLCT[0:7] according to the OTMB manual.
+
 V00-04: 2 July 2013, Manuel
 --------------------------------
 Fixed a pulldown on int_tms, and some cleaning.

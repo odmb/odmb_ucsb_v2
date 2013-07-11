@@ -224,14 +224,14 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
-        v6_tck : out std_logic;
-        v6_tms : out std_logic;
-        v6_tdi : out std_logic;
-      v6_jtag_sel : out std_logic;
-      
-      odmb_tms : in  std_logic;
-      odmb_tdi : in  std_logic;
-      odmb_tdo : in  std_logic;
+        v6_tck      : out std_logic;
+        v6_tms      : out std_logic;
+        v6_tdi      : out std_logic;
+        v6_jtag_sel : out std_logic;
+
+        odmb_tms : in std_logic;
+        odmb_tdi : in std_logic;
+        odmb_tdo : in std_logic;
 
 -- From/To J6 (J3) connector to ODMB_CTRL
 
@@ -259,7 +259,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
         tmb      : in std_logic_vector(17 downto 0);
         alct     : in std_logic_vector(17 downto 0);
-        rawlct   : in std_logic_vector(NFEB-1 downto 0);
+        rawlct   : in std_logic_vector(NFEB downto 0);
         tmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
@@ -275,7 +275,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
         qpll_autorestart : out std_logic;
         qpll_reset       : out std_logic;
-        qpll_f0sel       : in std_logic_vector(3 downto 0);
+        qpll_f0sel       : in  std_logic_vector(3 downto 0);
         qpll_locked      : in  std_logic;
         qpll_error       : in  std_logic;
         qpll_clk40MHz_p  : in  std_logic;
@@ -298,8 +298,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- To LEDs
 
-      ledg : out std_logic_vector(6 downto 1);
-      ledr : out std_logic_vector(6 downto 1);
+        ledg : out std_logic_vector(6 downto 1);
+        ledr : out std_logic_vector(6 downto 1);
 
 -- From Push Buttons
 
@@ -366,7 +366,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 -- signals from file_handler_event
 
   signal l1a      : std_logic;
-  signal l1a_b      : std_logic := '1';
+  signal l1a_b    : std_logic := '1';
   signal alct_dav : std_logic;
   signal tmb_dav  : std_logic;
   signal lct      : std_logic_vector(NFEB downto 0);
@@ -480,41 +480,40 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
-  signal v6_tck : std_logic;
-  signal v6_tms : std_logic;
-  signal v6_tdi : std_logic;
+  signal v6_tck      : std_logic;
+  signal v6_tms      : std_logic;
+  signal v6_tdi      : std_logic;
   signal v6_jtag_sel : std_logic;
-  
+
   signal odmb_tms : std_logic := '0';
   signal odmb_tdi : std_logic := '0';
   signal odmb_tdo : std_logic := '0';
 
 -- From/To J6 (J3) connector to ODMB_CTRL (All signals active low)
 
-  signal ccb_cmd     : std_logic_vector(5 downto 0) := "000000";    -- in
-  signal ccb_cmd_s   : std_logic                    := '1';         -- in
-  signal ccb_data    : std_logic_vector(7 downto 0) := "00000000";  -- in
-  signal ccb_data_s  : std_logic                    := '1';         -- in
-  signal ccb_cal     : std_logic_vector(2 downto 0) := (others => '1');       -- in
-  signal ccb_crsv    : std_logic_vector(4 downto 0) := "00000";     -- in
-  signal ccb_drsv    : std_logic_vector(1 downto 0) := "00";        -- in
-  signal ccb_rsvo    : std_logic_vector(4 downto 0) := "00000";     -- in
-  signal ccb_rsvi    : std_logic_vector(2 downto 0);                -- out
-  signal ccb_bx0     : std_logic                    := '1';         -- in
-  signal ccb_bxrst   : std_logic                    := '1';         -- in
-  signal ccb_l1arst  : std_logic                    := '1';         -- in
-  signal ccb_l1acc   : std_logic                    := '1';         -- in
-  signal ccb_l1rls   : std_logic;                                   -- out
-  signal ccb_clken   : std_logic                    := '1';         -- in
-  signal ccb_hardrst : std_logic                    := '1';         -- in
-  signal ccb_softrst : std_logic                    := '1';         -- in
+  signal ccb_cmd     : std_logic_vector(5 downto 0) := "000000";         -- in
+  signal ccb_cmd_s   : std_logic                    := '1';              -- in
+  signal ccb_data    : std_logic_vector(7 downto 0) := "00000000";       -- in
+  signal ccb_data_s  : std_logic                    := '1';              -- in
+  signal ccb_cal     : std_logic_vector(2 downto 0) := (others => '1');  -- in
+  signal ccb_crsv    : std_logic_vector(4 downto 0) := "00000";          -- in
+  signal ccb_drsv    : std_logic_vector(1 downto 0) := "00";             -- in
+  signal ccb_rsvo    : std_logic_vector(4 downto 0) := "00000";          -- in
+  signal ccb_rsvi    : std_logic_vector(2 downto 0);                     -- out
+  signal ccb_bx0     : std_logic                    := '1';              -- in
+  signal ccb_bxrst   : std_logic                    := '1';              -- in
+  signal ccb_l1arst  : std_logic                    := '1';              -- in
+  signal ccb_l1acc   : std_logic                    := '1';              -- in
+  signal ccb_l1rls   : std_logic;                                        -- out
+  signal ccb_clken   : std_logic                    := '1';              -- in
+  signal ccb_hardrst : std_logic                    := '1';              -- in
+  signal ccb_softrst : std_logic                    := '1';              -- in
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-  signal tmb      : std_logic_vector(17 downto 0)   := "000000000000000000";  -- in
-  signal alct     : std_logic_vector(17 downto 0)   := "000000000000000000";  -- in
-  signal rawlct   : std_logic_vector(NFEB downto 0) := "00000000";  -- in
-  signal tmbffclk : std_logic                       := '0';         -- in
+  signal tmb      : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
+  signal alct     : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
+  signal tmbffclk : std_logic                     := '0';  -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
@@ -551,8 +550,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- To LEDs
 
-  signal ledg       : std_logic_vector(6 downto 1);
-  signal ledr       : std_logic_vector(6 downto 1);
+  signal ledg : std_logic_vector(6 downto 1);
+  signal ledr : std_logic_vector(6 downto 1);
 
 -- From Push Buttons
 
@@ -613,36 +612,36 @@ begin
   go <= '1' after 10 us;
   --goevent <= '1' after 300 us;
 
-  qpll_clk40MHz_p <= not qpll_clk40MHz_p after 10 ns;
-  qpll_clk40MHz_n <= not qpll_clk40MHz_n after 10 ns;
-  qpll_clk80MHz_p <= not qpll_clk80MHz_p after 5 ns;
-  qpll_clk80MHz_n <= not qpll_clk80MHz_n after 5 ns;
+  qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 10 ns;
+  qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 10 ns;
+  qpll_clk80MHz_p  <= not qpll_clk80MHz_p  after 5 ns;
+  qpll_clk80MHz_n  <= not qpll_clk80MHz_n  after 5 ns;
   qpll_clk160MHz_p <= not qpll_clk160MHz_p after 2.5 ns;
   qpll_clk160MHz_n <= not qpll_clk160MHz_n after 2.5 ns;
-  gl1_clk_p       <= not gl1_clk_p       after 3.2 ns;
-  gl1_clk_n       <= not gl1_clk_n       after 3.2 ns;
-  gl0_clk_p       <= not gl0_clk_p       after 5 ns;
-  gl0_clk_n       <= not gl0_clk_n       after 5 ns;
-  clk             <= not clk             after 10 ns;
+  gl1_clk_p        <= not gl1_clk_p        after 3.2 ns;
+  gl1_clk_n        <= not gl1_clk_n        after 3.2 ns;
+  gl0_clk_p        <= not gl0_clk_p        after 5 ns;
+  gl0_clk_n        <= not gl0_clk_n        after 5 ns;
+  clk              <= not clk              after 10 ns;
 
   --orx_p(1) <= gl0_tx_p;  -- Test of the DDU TX
   --orx_n(1) <= gl0_tx_n;  -- Test of the DDU TX
 
-  orx_p(1) <= gl1_tx_p;  -- Test of the PC TX
-  orx_n(1) <= gl1_tx_n;  -- Test of the PC TX
+  orx_p(1) <= gl1_tx_p;                 -- Test of the PC TX
+  orx_n(1) <= gl1_tx_n;                 -- Test of the PC TX
 
-  orx_p(2) <= gl1_tx_p;  -- Test of the DCFEB RX
-  orx_n(2) <= gl1_tx_n;  -- Test of the DCFEB RX
-  orx_p(3) <= gl1_tx_p;  -- Test of the DCFEB RX
-  orx_n(3) <= gl1_tx_n;  -- Test of the DCFEB RX
-  orx_p(4) <= gl1_tx_p;  -- Test of the DCFEB RX
-  orx_n(4) <= gl1_tx_n;  -- Test of the DCFEB RX
-  orx_p(5) <= gl1_tx_p;  -- Test of the DCFEB RX
-  orx_n(5) <= gl1_tx_n;  -- Test of the DCFEB RX
-  orx_p(6) <= gl1_tx_p;  -- Test of the DCFEB RX
-  orx_n(6) <= gl1_tx_n;  -- Test of the DCFEB RX
-  orx_p(7) <= gl1_tx_p;  -- Test of the DCFEB RX
-  orx_n(7) <= gl1_tx_n;  -- Test of the DCFEB RX
+  orx_p(2) <= gl1_tx_p;                 -- Test of the DCFEB RX
+  orx_n(2) <= gl1_tx_n;                 -- Test of the DCFEB RX
+  orx_p(3) <= gl1_tx_p;                 -- Test of the DCFEB RX
+  orx_n(3) <= gl1_tx_n;                 -- Test of the DCFEB RX
+  orx_p(4) <= gl1_tx_p;                 -- Test of the DCFEB RX
+  orx_n(4) <= gl1_tx_n;                 -- Test of the DCFEB RX
+  orx_p(5) <= gl1_tx_p;                 -- Test of the DCFEB RX
+  orx_n(5) <= gl1_tx_n;                 -- Test of the DCFEB RX
+  orx_p(6) <= gl1_tx_p;                 -- Test of the DCFEB RX
+  orx_n(6) <= gl1_tx_n;                 -- Test of the DCFEB RX
+  orx_p(7) <= gl1_tx_p;                 -- Test of the DCFEB RX
+  orx_n(7) <= gl1_tx_n;                 -- Test of the DCFEB RX
 
   rst <= '0', '1' after 200 ns, '0' after 13000 ns;
 
@@ -708,9 +707,9 @@ begin
 
 -- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
-      v6_tck => v6_tck,
-      v6_tms => v6_tms,
-      v6_tdi => v6_tdi,
+      v6_tck      => v6_tck,
+      v6_tms      => v6_tms,
+      v6_tdi      => v6_tdi,
       v6_jtag_sel => v6_jtag_sel,
 
       odmb_tms => odmb_tms,
@@ -732,7 +731,7 @@ begin
       ccb_bxrst   => ccb_bxrst,         -- in
       ccb_l1arst  => ccb_l1arst,        -- in
 --              ccb_l1acc => ccb_l1acc, -- in
-      ccb_l1acc   => l1a_b,               -- from file_handler_event
+      ccb_l1acc   => l1a_b,             -- from file_handler_event
       ccb_l1rls   => ccb_l1rls,         -- out
       ccb_clken   => ccb_clken,         -- in
       ccb_hardrst => ccb_hardrst,       -- in           
@@ -742,8 +741,7 @@ begin
 
       tmb      => tmb,                  -- in
       alct     => alct,                 -- in
---              rawlct => rawlct, -- in
-      rawlct   => lct(NFEB downto 1),   -- from file_handler_event
+      rawlct   => lct,                  -- from file_handler_event
       tmbffclk => tmbffclk,             -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
