@@ -4,7 +4,7 @@ library unisim;
 use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.hdlmacro.all;
+library hdlmacro; use hdlmacro.hdlmacro.all;
 
 entity LVDBMON is
   

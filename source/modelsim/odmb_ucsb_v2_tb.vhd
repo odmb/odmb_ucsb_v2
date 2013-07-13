@@ -1,37 +1,17 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+-- ODMB_UCSB_V2_TB: Test bench for the simulation of the ODMB firmware (ODMB_UCSB_V2)
 
 library work;
+library ieee;
+library std;
 use work.Latches_Flipflops.all;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use std.textio.all;
 
-library UNIMACRO;
-use UNIMACRO.vcomponents.all;
-
-library UNISIM;
-use UNISIM.vcomponents.all;
-
-library STD;
-use STD.TEXTIO.all;
-
-
---library ieee;
---library work;
---use work.Latches_Flipflops.all;
---use work.CFEBJTAG;
---use work.Command_Module;
---use work.vme_master_fsm;
---use ieee.std_logic_1164.all;
---LIBRARY UNIMACRO;
---USE UNIMACRO.vcomponents.all;
---Library unisim;
---use UNISIM.vcomponents.all;
---use UNISIM.vpck.all;
---use UNISIM.all;
---use IEEE.numeric_std.all;
---library STD;
---use STD.TEXTIO.ALL;
-
+library unimacro;
+library unisim;
+use unimacro.vcomponents.all;
+use unisim.vcomponents.all;
 
 entity ODMB_UCSB_V2_TB is
   generic (
@@ -468,13 +448,13 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal dcfeb_tms       : std_logic;
   signal dcfeb_tdi       : std_logic;
   signal dcfeb_tdo       : std_logic_vector(NFEB downto 1) := "0000000";  -- in
-  signal dcfeb_bco       : std_logic;
-  signal dcfeb_resync    : std_logic;
-  signal odmb_hardrst_b  : std_logic;
-  signal dcfeb_reprgen_b : std_logic;
-  signal dcfeb_injpls    : std_logic;
-  signal dcfeb_extpls    : std_logic;
-  signal dcfeb_l1a       : std_logic;
+  signal dcfeb_bco       : std_logic := '0';
+  signal dcfeb_resync    : std_logic := '0';
+  signal odmb_hardrst_b  : std_logic := '0';
+  signal dcfeb_reprgen_b : std_logic := '0';
+  signal dcfeb_injpls    : std_logic := '0';
+  signal dcfeb_extpls    : std_logic := '0';
+  signal dcfeb_l1a       : std_logic := '0';
   signal dcfeb_l1a_match : std_logic_vector(NFEB downto 1);
   signal dcfeb_done      : std_logic_vector(NFEB downto 1) := "0000000";  -- in
 
@@ -527,7 +507,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   signal qpll_autorestart : std_logic;                     -- out
   signal qpll_reset       : std_logic;                     -- out
-  signal qpll_f0sel       : std_logic_vector(3 downto 0);  -- out
+  signal qpll_f0sel       : std_logic_vector(3 downto 0) := (others => '0');  -- out
   signal qpll_locked      : std_logic := '1';              -- in
   signal qpll_error       : std_logic := '1';              -- in
   signal qpll_clk40MHz_p  : std_logic := '0';              -- in
@@ -655,7 +635,7 @@ begin
 
 -- End of the Test Bench Section
 
-  PMAP_odmb_ucsb_v2 : odmb_ucsb_v2
+  odmb_ucsb_v2_TOP : odmb_ucsb_v2
     generic map(
       IS_SIMULATION => 1,
       NFEB          => 7)

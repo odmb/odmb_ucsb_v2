@@ -16,7 +16,6 @@ ENTITY vme_outdata_sel IS
 		device4_outdata : IN STD_LOGIC_VECTOR(15 downto 0);
 		device5_outdata : IN STD_LOGIC_VECTOR(15 downto 0);
 		device8_outdata : IN STD_LOGIC_VECTOR(15 downto 0);
-		device9_outdata : IN STD_LOGIC_VECTOR(15 downto 0);
 		outdata : OUT STD_LOGIC_VECTOR(15 downto 0)
 	);
 END vme_outdata_sel;
@@ -33,7 +32,6 @@ begin
 				  device4_outdata when device="0000010000" else
 				  device5_outdata when device="0000100000" else
 				  device8_outdata when device="0100000000" else
-				  device9_outdata when device="1000000000" else
 				  "0000000000000000";
 
 END vme_outdata_sel_architecture;

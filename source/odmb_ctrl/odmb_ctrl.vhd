@@ -53,34 +53,26 @@ entity ODMB_CTRL is
 
 -- From GigaLinks
 
-    grx0_data       : in std_logic_vector(15 downto 0);  -- glin(15 downto 0)                                                                      
+    grx0_data       : in std_logic_vector(15 downto 0);                                   
     grx0_data_valid : in std_logic;
-    grx1_data       : in std_logic_vector(15 downto 0);  -- glin(15 downto 0)                                                                                      
+    grx1_data       : in std_logic_vector(15 downto 0);                                                           
     grx1_data_valid : in std_logic;
 
 -- From GigaLinks
 
-    gtx0_data       : out std_logic_vector(15 downto 0);  -- dout(15 downto 0)                                                                                      
+    gtx0_data       : out std_logic_vector(15 downto 0);              
     gtx0_data_valid : out std_logic;
-    gtx1_data       : out std_logic_vector(15 downto 0);  -- dout(15 downto 0)                                                                                      
+    gtx1_data       : out std_logic_vector(15 downto 0);                                                    
     gtx1_data_valid : out std_logic;
 
 -- From/To Data FIFOs
 
-    fifo_rd_ck   : out std_logic;
     data_fifo_re : out std_logic_vector(NFEB+2 downto 1);
     data_fifo_oe : out std_logic_vector(NFEB+2 downto 1);
 
     fifo_out : in std_logic_vector(15 downto 0);
-
     fifo_eof : in std_logic;
 
-    fifo_mrst_b : out std_logic;        -- ok -> fifo_mrst* - to FIFOs 
-    fifo_prst_b : out std_logic;        -- ok -> fifo_pst* - to FIFOs 
-
-    fifo_full_b  : in std_logic_vector(NFEB+2 downto 1);  -- full*(7 DOWNTO 1) - from FIFOs 
-    fifo_half_b  : in std_logic_vector(NFEB+2 downto 1);  -- half*(7 DOWNTO 1) - from FIFOs 
-    fifo_pae_b   : in std_logic_vector(NFEB+2 downto 1);  -- paef*(7 DOWNTO 1) - from FIFOs 
     fifo_empty_b : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs 
 
 -- From CAFIFO to Data FIFOs
@@ -649,9 +641,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   signal pc_data       : std_logic_vector(15 downto 0);
   signal pc_data_valid : std_logic;
 
--- TRGFIFO
---  signal TRG_FIFO_FULL_B, TRG_FIFO_EMPTY_B, TRG_FIFO_PUSH, TRG_FIFO_POP, TRG_FIFO_ERR : std_logic;
-
 -- RANDOMTRG outputs
   signal rndmgtrg, rndmpls, selran : std_logic;
   signal rndmlct                   : std_logic_vector(NFEB downto 0);
@@ -1159,16 +1148,4 @@ dcfeb_extpulse <= pulse;
   lctrqst   <= "00";
   rsvtd_out <= "000";
 
-
--- From/To FIFOs
-
-  fifo_rd_ck <= '0';
-
-  fifo_mrst_b <= '0';
-  fifo_prst_b <= '0';
-
--- From/To DCFEBs (FF-EMU-MOD)
-
---              dl_lct <= "0000000";
-  
 end ODMB_CTRL_arch;

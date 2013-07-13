@@ -2,12 +2,11 @@
 
 -- Device 0 => TESTCNTL
 -- Device 1 => CFEBJTAG
--- Device 2 => MBCJTAG
+-- Device 2 => ODMBJTAG
 -- Device 3 => VMEMON
 -- Device 4 => VMECONFREGS
 -- Device 5 => TESTFIFOS
 -- Device 8 => LVDBMON
--- Device 9 => FIFOMON
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -100,18 +99,6 @@ entity ODMB_VME is
     dac_sdain  : out std_logic;
     dac_sdaout : in  std_logic;
 
--- To/From DCFEB FIFOs
-
-    fifo_wr_ck : out std_logic;
-    fifo_wr_en : out std_logic_vector (9 downto 1);
-    fifo_rw_en : out std_logic_vector (9 downto 1);
-    fifo_rm_en : out std_logic_vector (9 downto 1);
-    fifo_tm_en : out std_logic_vector (9 downto 1);
-
-    fifo_in  : out std_logic_vector (15 downto 0);
-    fifo_out : in  std_logic_vector (15 downto 0);
-
-
 -- From/To LVMB
 
     lvmb_pon   : out std_logic_vector(7 downto 0);
@@ -125,17 +112,6 @@ entity ODMB_VME is
 
     diagout_cfebjtag : out std_logic_vector(17 downto 0);
     diagout_lvdbmon  : out std_logic_vector(17 downto 0);
-
--- From/To FIFOs
-
-    tfifo_data  : in  std_logic_vector(15 downto 0);
-    tfifo_wc    : in  std_logic_vector(9 downto 0);
-    tfifo_rc    : in  std_logic_vector(9 downto 0);
-    tfifo_str   : in  std_logic_vector(15 downto 0);
-    tfifo_wr_en : out std_logic_vector(7 downto 0);
-    tfifo_rd_en : out std_logic_vector(7 downto 0);
-    tfifo_sel   : out std_logic_vector(7 downto 0);
-    tfifo_mode  : out std_logic;
 
 -- From VMEMON
     FW_RESET : out std_logic;
@@ -247,7 +223,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal outdata_lvdbmon : std_logic_vector(15 downto 0);
 
   signal cmd_adrs        : std_logic_vector(15 downto 0);
-  signal outdata_fifomon : std_logic_vector(15 downto 0);
 
   signal outdata_vmemon      : std_logic_vector(15 downto 0);
   signal outdata_vmeconfregs : std_logic_vector(15 downto 0);
@@ -258,9 +233,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal outdata_testctrl : std_logic_vector(15 downto 0);
 
   component VMEMON is
-    
     port (
-
       SLOWCLK : in std_logic;
       CLK40   : in std_logic;
       RST     : in std_logic;
@@ -288,14 +261,12 @@ architecture ODMB_VME_architecture of ODMB_VME is
       ODMB_DATA     : in  std_logic_vector(15 downto 0);
       TXDIFFCTRL   : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
       LOOPBACK      : out std_logic_vector(2 downto 0)  -- For internal loopback tests
-
       );
   end component;
 
 
   component VMECONFREGS is
     port (
-
       SLOWCLK : in std_logic;
       RST     : in std_logic;
 
@@ -398,38 +369,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
       TC_RUN         : out std_logic;
       TS_OUT         : out std_logic_vector(31 downto 0)
       );
-
-  end component;
-
-  component FIFOMON is
-    
-    port (
-
-      SLOWCLK : in std_logic;
-      RST     : in std_logic;
-
-      DEVICE  : in std_logic;
-      STROBE  : in std_logic;
-      COMMAND : in std_logic_vector(9 downto 0);
-
-      INDATA  : in  std_logic_vector(15 downto 0);
-      OUTDATA : out std_logic_vector(15 downto 0);
-
-      DTACK : out std_logic;
-
-      FIFO_WR_EN : out std_logic_vector(7 downto 0);
-      FIFO_RD_EN : out std_logic_vector(7 downto 0);
-      FIFO_SEL   : out std_logic_vector(7 downto 0);
-      FIFO_MODE  : out std_logic;
-      FIFO_DATA  : in  std_logic_vector(15 downto 0);
-      FIFO_STR   : in  std_logic_vector(15 downto 0);
-      FIFO_WRC   : in  std_logic_vector(9 downto 0);
-      FIFO_RDC   : in  std_logic_vector(9 downto 0));
-
   end component;
 
   component LVDBMON is
-    
     port (
 
       SLOWCLK : in std_logic;
@@ -456,13 +398,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DIAGLVDB : out std_logic_vector(17 downto 0)
       );
-
   end component;
 
   component CFEBJTAG is
-    
     port (
-
       FASTCLK : in std_logic;
       SLOWCLK : in std_logic;
       RST     : in std_logic;
@@ -488,13 +427,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DIAGOUT : out std_logic_vector(17 downto 0);
       LED     : out std_logic
       );
-
   end component;
 
   component ODMBJTAG is
-    
     port (
-
       FASTCLK : in std_logic;
       SLOWCLK : in std_logic;
       RST     : in std_logic;
@@ -519,11 +455,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       LED : out std_logic
       );
-
   end component;
 
   component MBCJTAG is
-    
     port (
       DEVICE    : in std_logic;
       COMMAND   : in std_logic_vector(9 downto 0);
@@ -543,13 +477,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
       TCK     : out std_logic;
       LED     : out std_logic
       );
-
   end component;
 
   component COMMAND_MODULE is
-    
     port (
-
       FASTCLK : in std_logic;
       SLOWCLK : in std_logic;
 
@@ -576,16 +507,11 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DIAGOUT : out std_logic_vector(19 downto 0);
       LED     : out std_logic_vector(2 downto 0)
-
       );
-
   end component;
 
   component vme_outdata_sel is
-    
-    port
-      (
-
+    port (
         device          : in  std_logic_vector(9 downto 0);
         device0_outdata : in  std_logic_vector(15 downto 0);
         device1_outdata : in  std_logic_vector(15 downto 0);
@@ -594,11 +520,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
         device4_outdata : in  std_logic_vector(15 downto 0);
         device5_outdata : in  std_logic_vector(15 downto 0);
         device8_outdata : in  std_logic_vector(15 downto 0);
-        device9_outdata : in  std_logic_vector(15 downto 0);
         outdata         : out std_logic_vector(15 downto 0)
-
         );
-
   end component;
 
 
@@ -660,7 +583,6 @@ begin
       device4_outdata => outdata_vmeconfregs,
       device5_outdata => outdata_testfifos,
       device8_outdata => outdata_lvdbmon,
-      device9_outdata => outdata_fifomon,
       outdata         => vme_data_out
       );
 
@@ -778,33 +700,6 @@ begin
       LOADON     => pon_load,
 
       DIAGLVDB => diagout_lvdbmon
-
-      );
-
-  FIFOMON_PM : FIFOMON
-    port map (
-
-      SLOWCLK => clk_s2,
-      RST     => rst,
-
-      DEVICE  => device(9),
-      STROBE  => strobe,
-      COMMAND => cmd,
-
-      INDATA  => vme_data_in,
-      OUTDATA => outdata_fifomon,
-
-      DTACK => vme_dtack_b,
-
-      FIFO_WR_EN => tfifo_wr_en,
-      FIFO_RD_EN => tfifo_rd_en,
-      FIFO_SEL   => tfifo_sel,
-      FIFO_MODE  => tfifo_mode,
-      FIFO_DATA  => tfifo_data,
-      FIFO_STR   => tfifo_str,
-      FIFO_WRC   => tfifo_wc,
-      FIFO_RDC   => tfifo_rc
-
 
       );
 
@@ -946,7 +841,6 @@ begin
 -- lvmb_pon <= "00000000";
 -- pon_load <= '0';
   pon_oe_b <= '0';
--- lvmb_csb <= "0000000";               
 -- lvmb_sclk <= '0';
 -- lvmb_sdin <= '0';                    
 
@@ -962,17 +856,6 @@ begin
   dac_cs    <= '0';
   dac_sclk  <= '0';
   dac_sdain <= '0';
-
--- To/From DCFEB FIFOs
-
-  fifo_wr_ck <= '0';
-  fifo_wr_en <= "000000000";
-  fifo_rw_en <= "000000000";
-  fifo_rm_en <= (others => '1');
-  fifo_tm_en <= "000000000";
-
-  fifo_in <= (others => '0');
-
 
 end ODMB_VME_architecture;
 

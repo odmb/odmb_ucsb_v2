@@ -4,7 +4,7 @@ library work;
 use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
-use work.hdlmacro.all;
+library hdlmacro; use hdlmacro.hdlmacro.all;
 
 entity RANDOMTRG is
   generic (

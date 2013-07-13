@@ -8,7 +8,7 @@ library UNISIM;
 use UNISIM.vcomponents.all;
 library UNIMACRO;
 use UNIMACRO.vcomponents.all;
-use work.hdlmacro.all;
+library hdlmacro; use hdlmacro.hdlmacro.all;
 
 entity cafifo is
   generic (

@@ -1,6 +1,6 @@
 library ieee;
 library work;
-use work.hdlMacro.all;
+library hdlmacro; use hdlmacro.hdlmacro.all;
 --use work.Latches_Flipflops.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
