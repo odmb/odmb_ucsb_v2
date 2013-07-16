@@ -6,6 +6,12 @@
 =                                                                    =
 ======================================================================
 
+V00-06: 15 July 2013, Manuel
+--------------------------------
+Made hdlmacro into a library.
+Removed FIFOMON, tfifos, and many other unsued variables.
+Re-ordered components for easy viewing in ISE and ModelSim.
+
 V00-05: 10 July 2013, Manuel
 --------------------------------
 Arranged RAWLCT[0:7] according to the OTMB manual.
