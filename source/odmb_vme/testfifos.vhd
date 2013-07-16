@@ -195,7 +195,9 @@ begin  --Architecture
 
 
 -- Read TFF_WRD_CNT
-  OUT_TFF_WRD_CNT(11 downto 0) <= TFF_WRD_CNT when (STROBE = '1' and R_TFF_WRD_CNT = '1') else (others => 'Z');
+  OUT_TFF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_TFF_WRD_CNT(11 downto 0) <= TFF_WRD_CNT when (STROBE = '1' and R_TFF_WRD_CNT = '1') else
+                                  (others => 'Z');
 
   D_R_TFF_WRD_CNT <= '1' when (STROBE = '1' and R_TFF_WRD_CNT = '1') else '0';
   FD_R_TFF_WRD_CNT : FD port map(Q_R_TFF_WRD_CNT, SLOWCLK, D_R_TFF_WRD_CNT);
@@ -220,7 +222,9 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_TFF_SEL = '1')                else 'Z';
 
 -- Read TFF_SEL
-  OUT_TFF_SEL(2 downto 0) <= TFF_SEL_CODE when (STROBE = '1' and R_TFF_SEL = '1') else (others => 'Z');
+  OUT_TFF_SEL(15 downto 3) <= (others => '0');
+  OUT_TFF_SEL(2 downto 0) <= TFF_SEL_CODE when (STROBE = '1' and R_TFF_SEL = '1') else
+                             (others => 'Z');
 
   D_R_TFF_SEL <= '1' when (STROBE = '1' and R_TFF_SEL = '1') else '0';
   FD_R_TFF_SEL : FD port map(Q_R_TFF_SEL, SLOWCLK, D_R_TFF_SEL);
@@ -253,7 +257,9 @@ begin  --Architecture
   DTACK_INNER       <= '0' when (Q_R_PC_TX_FF_READ = '1')                else 'Z';
 
 -- Read PC_TX_FF_WRD_CNT
-  OUT_PC_TX_FF_WRD_CNT(11 downto 0) <= PC_TX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_TX_FF_WRD_CNT = '1') else (others => 'Z');
+  OUT_PC_TX_FF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_PC_TX_FF_WRD_CNT(11 downto 0) <= PC_TX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_TX_FF_WRD_CNT = '1') else
+                                       (others => 'Z');
 
   D_R_PC_TX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_PC_TX_FF_WRD_CNT = '1') else '0';
   FD_R_PC_TX_FF_WRD_CNT : FD port map(Q_R_PC_TX_FF_WRD_CNT, SLOWCLK, D_R_PC_TX_FF_WRD_CNT);
@@ -282,7 +288,9 @@ begin  --Architecture
   DTACK_INNER       <= '0' when (Q_R_PC_RX_FF_READ = '1')                else 'Z';
 
 -- Read PC_RX_FF_WRD_CNT
-  OUT_PC_RX_FF_WRD_CNT(11 downto 0) <= PC_RX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else (others => 'Z');
+  OUT_PC_RX_FF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_PC_RX_FF_WRD_CNT(11 downto 0) <= PC_RX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else
+                                       (others => 'Z');
 
   D_R_PC_RX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else '0';
   FD_R_PC_RX_FF_WRD_CNT : FD port map(Q_R_PC_RX_FF_WRD_CNT, SLOWCLK, D_R_PC_RX_FF_WRD_CNT);
@@ -311,7 +319,9 @@ begin  --Architecture
   DTACK_INNER        <= '0' when (Q_R_DDU_TX_FF_READ = '1')                else 'Z';
 
 -- Read DDU_TX_FF_WRD_CNT
-  OUT_DDU_TX_FF_WRD_CNT(11 downto 0) <= DDU_TX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_TX_FF_WRD_CNT = '1') else (others => 'Z');
+  OUT_DDU_TX_FF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_DDU_TX_FF_WRD_CNT(11 downto 0) <= DDU_TX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_TX_FF_WRD_CNT = '1') else
+                                        (others => 'Z');
 
   D_R_DDU_TX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_DDU_TX_FF_WRD_CNT = '1') else '0';
   FD_R_DDU_TX_FF_WRD_CNT : FD port map(Q_R_DDU_TX_FF_WRD_CNT, SLOWCLK, D_R_DDU_TX_FF_WRD_CNT);
@@ -340,7 +350,9 @@ begin  --Architecture
   DTACK_INNER        <= '0' when (Q_R_DDU_RX_FF_READ = '1')                else 'Z';
 
 -- Read DDU_RX_FF_WRD_CNT
-  OUT_DDU_RX_FF_WRD_CNT(11 downto 0) <= DDU_RX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_RX_FF_WRD_CNT = '1') else (others => 'Z');
+  OUT_DDU_RX_FF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_DDU_RX_FF_WRD_CNT(11 downto 0) <= DDU_RX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_RX_FF_WRD_CNT = '1') else
+                                        (others => 'Z');
 
   D_R_DDU_RX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_DDU_RX_FF_WRD_CNT = '1') else '0';
   FD_R_DDU_RX_FF_WRD_CNT : FD port map(Q_R_DDU_RX_FF_WRD_CNT, SLOWCLK, D_R_DDU_RX_FF_WRD_CNT);
@@ -366,7 +378,7 @@ begin  --Architecture
              OUT_DDU_TX_FF_WRD_CNT when R_DDU_TX_FF_WRD_CNT = '1' else
              OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1'    else
              OUT_DDU_RX_FF_WRD_CNT when R_DDU_RX_FF_WRD_CNT = '1' else
-             (others => 'Z');
+             (others => 'L');
   DTACK <= DTACK_INNER;
   
 end TESTFIFOS_Arch;

@@ -38,8 +38,12 @@ architecture ETHERNET_FRAME_ARCH of ETHERNET_FRAME is
       );
   end component;
 
-  signal eth_idle, sop_pre, preamble, sof_pre : std_logic_vector(15 downto 0);
-  signal eop, carrier_extend                  : std_logic_vector(15 downto 0);
+  constant eth_idle       : std_logic_vector(15 downto 0) := x"50BC";
+  constant sop_pre        : std_logic_vector(15 downto 0) := x"55FB";
+  constant preamble       : std_logic_vector(15 downto 0) := x"5555";
+  constant sof_pre        : std_logic_vector(15 downto 0) := x"D555";
+  constant eop            : std_logic_vector(15 downto 0) := x"F7FD";
+  constant carrier_extend : std_logic_vector(15 downto 0) := x"F7F7";
 
   signal txd_dly1, txd_dly2, crc_dly1, crc_dly2 : std_logic_vector(15 downto 0);
   signal txd_vld1, txd_vld2, txd_vld3           : std_logic := '0';
@@ -55,13 +59,6 @@ architecture ETHERNET_FRAME_ARCH of ETHERNET_FRAME is
 begin
 
   ROM_CNT_OUT <= std_logic_vector(to_unsigned(rom_cnt, 3));
-
-  eth_idle       <= x"50BC";
-  sop_pre        <= x"55FB";
-  preamble       <= x"5555";
-  sof_pre        <= x"D555";
-  eop            <= x"F7FD";
-  carrier_extend <= x"F7F7";
 
   gen_txd_dly : for ind in 0 to 15 generate
   begin

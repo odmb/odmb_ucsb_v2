@@ -46,9 +46,9 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : unsigned(12 downto 0);
 
-  signal OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
-  signal FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0006";
-  signal R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
+  constant FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0006";
+  signal   OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
+  signal   R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
 
   signal OUT_LCT_L1A                         : std_logic_vector(15 downto 0) := (others => '0');
   signal LCT_L1A_DLY_INNER                   : std_logic_vector(5 downto 0);
@@ -132,7 +132,9 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_LCT_L1A = '1')                else 'Z';
 
 -- Read LCT_L1A_DLY
-  OUT_LCT_L1A(5 downto 0) <= LCT_L1A_DLY_INNER when (STROBE = '1' and R_LCT_L1A = '1') else (others => 'Z');
+  OUT_LCT_L1A(15 downto 6) <= (others => '0');
+  OUT_LCT_L1A(5 downto 0)  <= LCT_L1A_DLY_INNER when (STROBE = '1' and R_LCT_L1A = '1') else
+                             (others => 'Z');
 
   D_R_LCT_L1A <= '1' when (STROBE = '1' and R_LCT_L1A = '1') else '0';
   FD_R_LCT_L1A : FD port map(Q_R_LCT_L1A, SLOWCLK, D_R_LCT_L1A);
@@ -149,7 +151,9 @@ begin  --Architecture
   DTACK_INNER  <= '0' when (Q_W_TMB_PUSH = '1')                else 'Z';
 
 -- Read TMB_PUSH_DLY
-  OUT_TMB_PUSH(4 downto 0) <= TMB_PUSH_DLY_INNER when (STROBE = '1' and R_TMB_PUSH = '1') else (others => 'Z');
+  OUT_TMB_PUSH(15 downto 5) <= (others => '0');
+  OUT_TMB_PUSH(4 downto 0)  <= TMB_PUSH_DLY_INNER when (STROBE = '1' and R_TMB_PUSH = '1') else
+                              (others => 'Z');
 
   D_R_TMB_PUSH <= '1' when (STROBE = '1' and R_TMB_PUSH = '1') else '0';
   FD_R_TMB_PUSH : FD port map(Q_R_TMB_PUSH, SLOWCLK, D_R_TMB_PUSH);
@@ -166,7 +170,9 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_PUSH = '1')                else 'Z';
 
 -- Read PUSH_DLY
-  OUT_PUSH(4 downto 0) <= PUSH_DLY_INNER when (STROBE = '1' and R_PUSH = '1') else (others => 'Z');
+  OUT_PUSH(15 downto 5) <= (others => '0');
+  OUT_PUSH(4 downto 0) <= PUSH_DLY_INNER when (STROBE = '1' and R_PUSH = '1') else
+                          (others => 'Z');
 
   D_R_PUSH    <= '1' when (STROBE = '1' and R_PUSH = '1') else '0';
   FD_R_PUSH : FD port map(Q_R_PUSH, SLOWCLK, D_R_PUSH);
@@ -183,7 +189,9 @@ begin  --Architecture
   DTACK_INNER   <= '0' when (Q_W_ALCT_PUSH = '1')                else 'Z';
 
 -- Read ALCT_PUSH_DLY
-  OUT_ALCT_PUSH(4 downto 0) <= ALCT_PUSH_DLY_INNER when (STROBE = '1' and R_ALCT_PUSH = '1') else (others => 'Z');
+  OUT_ALCT_PUSH(15 downto 5) <= (others => '0');
+  OUT_ALCT_PUSH(4 downto 0) <= ALCT_PUSH_DLY_INNER when (STROBE = '1' and R_ALCT_PUSH = '1') else
+                               (others => 'Z');
 
   D_R_ALCT_PUSH <= '1' when (STROBE = '1' and R_ALCT_PUSH = '1') else '0';
   FD_R_ALCT_PUSH : FD port map(Q_R_ALCT_PUSH, SLOWCLK, D_R_ALCT_PUSH);
@@ -200,7 +208,9 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_INJ_DLY = '1')                else 'Z';
 
 -- Read INJ_DLY
-  OUT_INJ_DLY(4 downto 0) <= INJ_DLY_INNER when (STROBE = '1' and R_INJ_DLY = '1') else (others => 'Z');
+  OUT_INJ_DLY(15 downto 5) <= (others => '0');
+  OUT_INJ_DLY(4 downto 0) <= INJ_DLY_INNER when (STROBE = '1' and R_INJ_DLY = '1') else
+                             (others => 'Z');
 
   D_R_INJ_DLY <= '1' when (STROBE = '1' and R_INJ_DLY = '1') else '0';
   FD_R_INJ_DLY : FD port map(Q_R_INJ_DLY, SLOWCLK, D_R_INJ_DLY);
@@ -217,7 +227,9 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_EXT_DLY = '1')                else 'Z';
 
 -- Read EXT_DLY
-  OUT_EXT_DLY(4 downto 0) <= EXT_DLY_INNER when (STROBE = '1' and R_EXT_DLY = '1') else (others => 'Z');
+  OUT_EXT_DLY(15 downto 5) <= (others => '0');
+  OUT_EXT_DLY(4 downto 0) <= EXT_DLY_INNER when (STROBE = '1' and R_EXT_DLY = '1') else
+                             (others => 'Z');
 
   D_R_EXT_DLY <= '1' when (STROBE = '1' and R_EXT_DLY = '1') else '0';
   FD_R_EXT_DLY : FD port map(Q_R_EXT_DLY, SLOWCLK, D_R_EXT_DLY);
@@ -234,7 +246,9 @@ begin  --Architecture
   DTACK_INNER    <= '0' when (Q_W_CALLCT_DLY = '1')                else 'Z';
 
 -- Read CALLCT_DLY
-  OUT_CALLCT_DLY(3 downto 0) <= CALLCT_DLY_INNER when (STROBE = '1' and R_CALLCT_DLY = '1') else (others => 'Z');
+  OUT_CALLCT_DLY(15 downto 4) <= (others => '0');
+  OUT_CALLCT_DLY(3 downto 0) <= CALLCT_DLY_INNER when (STROBE = '1' and R_CALLCT_DLY = '1') else
+                                (others => 'Z');
 
   D_R_CALLCT_DLY <= '1' when (STROBE = '1' and R_CALLCT_DLY = '1') else '0';
   FD_R_CALLCT_DLY : FD port map(Q_R_CALLCT_DLY, SLOWCLK, D_R_CALLCT_DLY);
@@ -251,7 +265,9 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_KILL = '1')                else 'Z';
 
 -- Read KILL
-  OUT_KILL(NFEB+1 downto 0) <= KILL_INNER when (STROBE = '1' and R_KILL = '1') else (others => 'Z');
+  OUT_KILL(15 downto NFEB+2) <= (others => '0');
+  OUT_KILL(NFEB+1 downto 0) <= KILL_INNER when (STROBE = '1' and R_KILL = '1') else
+                               (others => 'Z');
 
   D_R_KILL    <= '1' when (STROBE = '1' and R_KILL = '1') else '0';
   FD_R_KILL : FD port map(Q_R_KILL, SLOWCLK, D_R_KILL);
@@ -268,7 +284,9 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_CRATEID = '1')                else 'Z';
 
 -- Read CRATEID
-  OUT_CRATEID(6 downto 0) <= CRATEID_INNER when (STROBE = '1' and R_CRATEID = '1') else (others => 'Z');
+  OUT_CRATEID(15 downto 7) <= (others => '0');
+  OUT_CRATEID(6 downto 0) <= CRATEID_INNER when (STROBE = '1' and R_CRATEID = '1') else
+                             (others => 'Z');
 
   D_R_CRATEID <= '1' when (STROBE = '1' and R_CRATEID = '1') else '0';
   FD_R_CRATEID : FD port map(Q_R_CRATEID, SLOWCLK, D_R_CRATEID);
@@ -292,7 +310,7 @@ begin  --Architecture
              OUT_KILL       when R_KILL = '1'       else
              OUT_FW_VERSION when R_FW_VERSION = '1' else
              OUT_CRATEID    when R_CRATEID = '1'    else
-             (others => 'Z');
+             (others => 'L');
   DTACK <= DTACK_INNER;
   
 end VMECONFREGS_Arch;

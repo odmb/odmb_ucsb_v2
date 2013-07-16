@@ -46,7 +46,7 @@ architecture TESTCTRL_Arch of TESTCTRL is
   signal CMDDEV : std_logic_vector(15 downto 0);
 
   signal WRITE_FIFO, READ_FIFO, WRITE_FSR, READ_FSR, READ_STR, READ_WRC, READ_RDC, READ_TRC : std_logic;
-  signal FSR_vector                                                                                  : std_logic_vector(12 downto 0);
+  signal FSR_vector                                                                                  : std_logic_vector(11 downto 0);
   signal D_DTACK_WRITE_FSR, E_DTACK_WRITE_FSR                                                        : std_logic;
   signal D_DTACK_READ_FSR, E_DTACK_READ_FSR                                                          : std_logic;
   signal D_DTACK_WRITE_STR, E_DTACK_WRITE_STR                                                        : std_logic;
@@ -133,7 +133,7 @@ begin  --Architecture
   READ_RDC   <= '1' when (CMDDEV = x"103c") else '0';  -- READ FIFO READ COUNTER REGISTER
   READ_TRC   <= '1' when (CMDDEV = x"1028") else '0';  -- READ TRIGGER COUNTER
 
-  CREATE_FSR_vector : for I in 12 downto 0 generate
+  CREATE_FSR_vector : for I in 11 downto 0 generate
   begin
     FD_FSR_vec      : FDCE port map (FSR_vector(I), STROBE, WRITE_FSR, RST, INDATA(I));
   end generate CREATE_FSR_vector;

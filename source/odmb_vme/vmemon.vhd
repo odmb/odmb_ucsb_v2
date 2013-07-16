@@ -163,7 +163,9 @@ begin
   DTACK_INNER  <= '0' when (Q_W_LOOPBACK = '1')                else 'Z';
 
 -- Read LOOPBACK
-  OUT_LOOPBACK(2 downto 0) <= LOOPBACK_INNER when (STROBE = '1' and R_LOOPBACK = '1') else (others => 'Z');
+  OUT_LOOPBACK(15 downto 3) <= (others => '0');
+  OUT_LOOPBACK(2 downto 0)  <= LOOPBACK_INNER when (STROBE = '1' and R_LOOPBACK = '1') else
+                               (others => 'Z');
 
   D_R_LOOPBACK <= '1' when (STROBE = '1' and R_LOOPBACK = '1') else '0';
   FD_R_LOOPBACK : FD port map(Q_R_LOOPBACK, SLOWCLK, D_R_LOOPBACK);
@@ -195,23 +197,19 @@ begin
                           OUT_LOOPBACK(15 downto 0)     when (STROBE = '1' and R_LOOPBACK = '1')   else
                           OUT_TXDIFFCTRL(15 downto 0)   when (STROBE = '1' and R_TXDIFFCTRL = '1') else
                           ODMB_DATA(15 downto 0)        when (STROBE = '1' and R_ODMB_DATA = '1')  else
-                          "ZZZZZZZZZZZZZZZZ";
+                          (others => 'L');
 
 -- bug in uncleaned version?
   D_OUTDATA_1 <= '1' when ((STROBE = '1') and ((W_ODMB_CTRL = '1') or (R_ODMB_CTRL = '1') or (W_DCFEB_CTRL = '1')
                                                or (R_DCFEB_CTRL = '1'))) else '0';
 
   FD_OUTDATA_1 : FD port map(Q_OUTDATA_1, SLOWCLK, D_OUTDATA_1);
-
-  DTACK_INNER <= '0' when (Q_OUTDATA_1 = '1') else 'Z';
-
---  OUTDATA(15 downto 0) <= FLFDATA(15 downto 0) when (STROBE = '1' and READDATA = '1') else (others => '1');
-  D_OUTDATA_2 <= '1' when (STROBE = '1' and R_ODMB_DATA = '1') else '0';
-
   FD_OUTDATA_2 : FD port map(Q_OUTDATA_2, SLOWCLK, D_OUTDATA_2);
 
-  DTACK_INNER <= '0' when (Q_OUTDATA_2 = '1') else 'Z';
+  DTACK_INNER <= '0' when (Q_OUTDATA_1 = '1')                  else 'Z';
+  D_OUTDATA_2 <= '1' when (STROBE = '1' and R_ODMB_DATA = '1') else '0';
 
-  DTACK <= DTACK_INNER;
+  DTACK_INNER <= '0' when (Q_OUTDATA_2 = '1') else 'Z';
+  DTACK       <= DTACK_INNER;
 
 end VMEMON_Arch;

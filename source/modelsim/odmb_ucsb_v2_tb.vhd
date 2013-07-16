@@ -407,34 +407,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal dtack            : std_logic;
   signal indata           : std_logic_vector(15 downto 0);
   signal outdata          : std_logic_vector(15 downto 0);
-  signal outdata_cfebjtag : std_logic_vector(15 downto 0);
-  signal outdata_mbcjtag  : std_logic_vector(15 downto 0);
-  signal outdata_lvdbmon  : std_logic_vector(15 downto 0);
-  signal outdata_serdac   : std_logic_vector(15 downto 0);
-  signal outdata_seradc   : std_logic_vector(15 downto 0);
-  signal outdata_fifomon  : std_logic_vector(15 downto 0);
-  signal outdata_flfmon   : std_logic_vector(15 downto 0);
 
--- signals between command_module and cfebjtag_module
-
-  signal strobe, strobe_procs   : std_logic;
-  signal command, command_procs : std_logic_vector(9 downto 0);
-  signal device, device_procs   : std_logic_vector(15 downto 0);
-
--- unused output signal from command_module
-
-  signal indata_command                         : std_logic_vector(15 downto 0);
-  signal diagout_command, diagout_command_procs : std_logic_vector(19 downto 0);
-  signal led_command, led_command_procs         : std_logic_vector(2 downto 0);
-  signal adrs, adrs_procs                       : std_logic_vector(17 downto 2);  --NOTE:output of ADRS
-  signal data                                   : std_logic_vector(15 downto 0);
-  signal tovme, tovme_b, doe, doe_b             : std_logic;
-
--- unused output signal from cfebjtag_module
-
-  signal diagout_cfebjtag : std_logic_vector(17 downto 0);
-  signal led_cfebjtag     : std_logic;
-
+  signal tovme, doe_b             : std_logic;
 
   signal ccbinj : std_logic := '0';
   signal ccbpls : std_logic := '0';
@@ -645,7 +619,7 @@ begin
 
 -- From/To VME connector To/From MBV
 
-      vme_data        => data(15 downto 0),  -- inout
+      vme_data        => vme_data(15 downto 0),  -- inout
       vme_addr        => adr(23 downto 1),   -- in
       vme_am          => am(5 downto 0),     -- in
       vme_gap         => ga(5),         -- in
@@ -922,22 +896,22 @@ begin
 
       );
 
-  vme_d00_buf : IOBUF port map (O => outdata(0), IO => data(0), I => indata(0), T => oe_b);
-  vme_d01_buf : IOBUF port map (O => outdata(1), IO => data(1), I => indata(1), T => oe_b);
-  vme_d02_buf : IOBUF port map (O => outdata(2), IO => data(2), I => indata(2), T => oe_b);
-  vme_d03_buf : IOBUF port map (O => outdata(3), IO => data(3), I => indata(3), T => oe_b);
-  vme_d04_buf : IOBUF port map (O => outdata(4), IO => data(4), I => indata(4), T => oe_b);
-  vme_d05_buf : IOBUF port map (O => outdata(5), IO => data(5), I => indata(5), T => oe_b);
-  vme_d06_buf : IOBUF port map (O => outdata(6), IO => data(6), I => indata(6), T => oe_b);
-  vme_d07_buf : IOBUF port map (O => outdata(7), IO => data(7), I => indata(7), T => oe_b);
-  vme_d08_buf : IOBUF port map (O => outdata(8), IO => data(8), I => indata(8), T => oe_b);
-  vme_d09_buf : IOBUF port map (O => outdata(9), IO => data(9), I => indata(9), T => oe_b);
-  vme_d10_buf : IOBUF port map (O => outdata(10), IO => data(10), I => indata(10), T => oe_b);
-  vme_d11_buf : IOBUF port map (O => outdata(11), IO => data(11), I => indata(11), T => oe_b);
-  vme_d12_buf : IOBUF port map (O => outdata(12), IO => data(12), I => indata(12), T => oe_b);
-  vme_d13_buf : IOBUF port map (O => outdata(13), IO => data(13), I => indata(13), T => oe_b);
-  vme_d14_buf : IOBUF port map (O => outdata(14), IO => data(14), I => indata(14), T => oe_b);
-  vme_d15_buf : IOBUF port map (O => outdata(15), IO => data(15), I => indata(15), T => oe_b);
+  vme_d00_buf : IOBUF port map (O => outdata(0), IO => vme_data(0), I => indata(0), T => oe_b);
+  vme_d01_buf : IOBUF port map (O => outdata(1), IO => vme_data(1), I => indata(1), T => oe_b);
+  vme_d02_buf : IOBUF port map (O => outdata(2), IO => vme_data(2), I => indata(2), T => oe_b);
+  vme_d03_buf : IOBUF port map (O => outdata(3), IO => vme_data(3), I => indata(3), T => oe_b);
+  vme_d04_buf : IOBUF port map (O => outdata(4), IO => vme_data(4), I => indata(4), T => oe_b);
+  vme_d05_buf : IOBUF port map (O => outdata(5), IO => vme_data(5), I => indata(5), T => oe_b);
+  vme_d06_buf : IOBUF port map (O => outdata(6), IO => vme_data(6), I => indata(6), T => oe_b);
+  vme_d07_buf : IOBUF port map (O => outdata(7), IO => vme_data(7), I => indata(7), T => oe_b);
+  vme_d08_buf : IOBUF port map (O => outdata(8), IO => vme_data(8), I => indata(8), T => oe_b);
+  vme_d09_buf : IOBUF port map (O => outdata(9), IO => vme_data(9), I => indata(9), T => oe_b);
+  vme_d10_buf : IOBUF port map (O => outdata(10), IO => vme_data(10), I => indata(10), T => oe_b);
+  vme_d11_buf : IOBUF port map (O => outdata(11), IO => vme_data(11), I => indata(11), T => oe_b);
+  vme_d12_buf : IOBUF port map (O => outdata(12), IO => vme_data(12), I => indata(12), T => oe_b);
+  vme_d13_buf : IOBUF port map (O => outdata(13), IO => vme_data(13), I => indata(13), T => oe_b);
+  vme_d14_buf : IOBUF port map (O => outdata(14), IO => vme_data(14), I => indata(14), T => oe_b);
+  vme_d15_buf : IOBUF port map (O => outdata(15), IO => vme_data(15), I => indata(15), T => oe_b);
 
   PMAP_pon_reg : pon_reg
     port map (
@@ -945,5 +919,7 @@ begin
       pon_load => pon_load,
       pon_in   => lvmb_pon,
       pon_out  => r_lvmb_pon);
+
+  error <= '0';
 
 end ODMB_UCSB_V2_TB_arch;

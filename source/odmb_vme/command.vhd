@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 library work;
-library hdlmacro; use hdlmacro.hdlmacro.cb8ce;
+library hdlmacro; use hdlmacro.hdlmacro.all;
 
 entity COMMAND_MODULE is
   port (

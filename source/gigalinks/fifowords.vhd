@@ -15,7 +15,7 @@ entity FIFOWORDS is
     WREN  : in std_logic;
     FULL  : in std_logic;
 
-    RDCLK : in std_logic;
+    RDCLK : in std_logic;  -- Ignored for now, counts edges of RDEN
     RDEN  : in std_logic;
 
     COUNT : out std_logic_vector(WIDTH-1 downto 0)
@@ -41,15 +41,7 @@ architecture FIFOWORDS_ARCH of FIFOWORDS is
   signal word_wrcnt_en, word_rdcnt_en        : std_logic := '0';
   signal rden_pulse                          : std_logic := '0';
 
-  --signal count_inner : std_logic_vector(WIDTH-1 downto 0) := (others => '0');
-
 begin
-
-  --count_inner <= (others => '0') when RST = '1' else
-  --               count_inner + 1 when (rising_edge(WRCLK) and WREN = '1' and FULL = '0') else
-  --               count_inner - 1 when (rising_edge(RDCLK) and RDEN = '1')                else
-  --               count_inner;
-  --COUNT <= count_inner;
 
   PULSE_RDEN : PULSE_EDGE port map(rden_pulse, open, WRCLK, RST, 1, RDEN);
 

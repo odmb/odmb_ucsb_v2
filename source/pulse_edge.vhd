@@ -60,7 +60,7 @@ begin  --Architecture
     end if;
   end process;
 
-  pulse_fsm_logic : process (pulse1_inner, pulse_current_state, pulse_cnt)
+  pulse_fsm_logic : process (pulse1_inner, pulse_current_state, pulse_cnt, npulse)
   begin
     case pulse_current_state is
       when PULSE_IDLE =>

@@ -26,8 +26,6 @@ entity CFEBJTAG is
     TDI : out std_logic;
     TMS : out std_logic;
     FEBTDO : in std_logic_vector(7 downto 1);
-    DL_RTN_SHFT_EN  : IN STD_LOGIC_VECTOR (7 downto 1);	-- BGB
-    UL_JTAG_TCK : IN STD_LOGIC_VECTOR (7 downto 1);		-- BGB				
 
     LED : out std_logic;
     DIAGOUT : out std_logic_vector(17 downto 0)
@@ -70,7 +68,7 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal DV_DONEDATA, QV_DONEDATA : std_logic_vector(3 downto 0);
   signal CE_DONEDATA, CLR_DONEDATA, UP_DONEDATA, CEO_DONEDATA, TC_DONEDATA : std_logic;
   signal D_DONEDATA : std_logic;
-  signal DONEDATA : std_logic_vector(2 downto 0);
+  signal DONEDATA : std_logic_vector(1 downto 0) := (others => '0');
 
   signal CE_TAILEN, CLR_TAILEN, TAILEN : std_logic;
   signal SHTAIL : std_logic;
@@ -102,8 +100,6 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal D_DTACK,CE_DTACK,CLR_DTACK,Q1_DTACK,Q2_DTACK,Q3_DTACK,Q4_DTACK : std_logic;
 
   signal DTACK_INNER : std_logic;
-
-  signal RTN_TCK, RTN_SHFT_EN : std_logic;  
 
 begin 
 
@@ -222,7 +218,7 @@ begin
     D_DONEDATA <= '1' when (QV_DONEDATA="0000" and LOAD='0') else '0'; -- Bug in FG Version (D_DONEDATA vs (DONEDATA(1))
     FDCE(D_DONEDATA, SLOWCLK, SHDATA, LOAD, DONEDATA(0)); -- Bug in FG Version (D_DONEDATA vs (DONEDATA(1))
     FDC(DONEDATA(0), SLOWCLK, LOAD, DONEDATA(1));
-    FDC(DONEDATA(1), SLOWCLK, LOAD, DONEDATA(2));
+    --FDC(DONEDATA(1), SLOWCLK, LOAD, DONEDATA(2));
 
 -- Generate TMS when SHDATA=1 -- Guido - BUG!!!!!!!!!!
     TMS <= (TAILEN and D_DONEDATA) when (SHDATA='1') else 'Z'; -- Bug in FG Version (D2_DONEDATA replaces DONEDATA(1))
@@ -324,33 +320,9 @@ begin
 
     DTACK_INNER <= '0' when (RDTDODK='1') else 'Z';
 
--- Comment out to clear synth warning
--- Generate RTN_SHIFT_EN    
---    RTN_SHFT_EN <= DL_RTN_SHFT_EN(1) when SELFEB="0000001" else
---                   DL_RTN_SHFT_EN(2) when SELFEB="0000010" else
---                   DL_RTN_SHFT_EN(3) when SELFEB="0000100" else
---                   DL_RTN_SHFT_EN(4) when SELFEB="0001000" else
---                   DL_RTN_SHFT_EN(5) when SELFEB="0010000" else
---                   DL_RTN_SHFT_EN(6) when SELFEB="0100000" else
---                   DL_RTN_SHFT_EN(7) when SELFEB="1000000" else
---                   '0';
-
--- Comment out to clear synth warning
--- Generate RTN_TCK
---    RTN_TCK <= UL_JTAG_TCK(1) when SELFEB="0000001" else
---                UL_JTAG_TCK(2) when SELFEB="0000010" else
---                UL_JTAG_TCK(3) when SELFEB="0000100" else
---                UL_JTAG_TCK(4) when SELFEB="0001000" else
---                UL_JTAG_TCK(5) when SELFEB="0010000" else
---                UL_JTAG_TCK(6) when SELFEB="0100000" else
---                UL_JTAG_TCK(7) when SELFEB="1000000" else
---                '0';
-
 -- Generate OUTDATA
     CE_SHIFT1 <= SHDATAX and not ENABLE;   -- BGB
     SR16LCE(SLOWCLK, CE_SHIFT1, RST, TDO, Q_OUTDATA, Q_OUTDATA);   -- BGB
--- Above commented values in this commented block:
-    --SR16LCE(RTN_TCK, RTN_SHFT_EN, RST, TDO, Q_OUTDATA, Q_OUTDATA);
     OUTDATA(15 downto 0) <= Q_OUTDATA(15 downto 0) when (RDTDODK='1') else "ZZZZZZZZZZZZZZZZ";
 
 -- Generate DTACK when DATASHFT=1 or INSTSHFT=1
@@ -358,11 +330,6 @@ begin
     CE_DTACK <= not BUSY;
     CLR_DTACK <= not STROBE;
     FDCE(D_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q1_DTACK);
--- This is the old code.
---  FDC(Q1_LED, SLOWCLK, CLR_LED, Q2_LED);
---  FD(Q2_LED, SLOWCLK, Q3_LED);
---  FD(Q3_LED, SLOWCLK, Q4_LED);
--- This is the new code.
     FDCE(Q1_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q2_DTACK);
     FDCE(Q2_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q3_DTACK);
     FDCE(Q3_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q4_DTACK);

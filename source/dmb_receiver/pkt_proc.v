@@ -25,7 +25,7 @@ module pkt_proc
 );
   
   // state bits
-  parameter 
+  localparam 
   Wait_for_Pkt  = 3'b000, 
   Bad_Pkt       = 3'b001, 
   CkCRC         = 3'b010, 

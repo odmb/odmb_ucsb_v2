@@ -42,8 +42,8 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
 
   --Declaring internal signals
 
-  signal LOGICH : std_logic := '1';
-  signal LOGICL : std_logic := '0';
+  constant LOGICH : std_logic := '1';
+  constant LOGICL : std_logic := '0';
 
   signal CMDDEV                                                    : std_logic_vector(15 downto 0);
   signal DATASHFT, INSTSHFT, READTDO, WRITEJSEL, READJSEL, RSTJTAG : std_logic;
@@ -73,7 +73,7 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   signal DV_DONEDATA, QV_DONEDATA                                          : std_logic_vector(3 downto 0);
   signal CE_DONEDATA, CLR_DONEDATA, UP_DONEDATA, CEO_DONEDATA, TC_DONEDATA : std_logic;
   signal D_DONEDATA                                                        : std_logic;
-  signal DONEDATA                                                          : std_logic_vector(2 downto 0);
+  signal DONEDATA                                                          : std_logic_vector(1 downto 0);
 
   signal CE_TAILEN, CLR_TAILEN, TAILEN                                                : std_logic;
   signal SHTAIL                                                                       : std_logic;
@@ -216,7 +216,7 @@ begin
   D_DONEDATA <= '1' when (QV_DONEDATA = "0000" and LOAD = '0') else '0';
   FD_DONEDATA_D0 : FDCE port map (DONEDATA(0), SLOWCLK, SHDATA, LOAD, D_DONEDATA);
   FD_DONEDATA_01 : FDC port map (DONEDATA(1), SLOWCLK, LOAD, DONEDATA(0));
-  FD_DONEDATA_12 : FDC port map (DONEDATA(2), SLOWCLK, LOAD, DONEDATA(1));
+  --FD_DONEDATA_12 : FDC port map (DONEDATA(2), SLOWCLK, LOAD, DONEDATA(1));
 
 -- Generate TMS when SHDATA=1           -- Guido - BUG!!!!!!!!!!
   TMS <= (TAILEN and D_DONEDATA) when (SHDATA = '1') else 'Z';

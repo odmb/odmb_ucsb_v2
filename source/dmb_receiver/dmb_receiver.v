@@ -11,10 +11,6 @@ module dmb_receiver #(
 		      parameter SIM_SPEEDUP = 1
 		      )
    (
-    // Chip Scope Pro Logic Analyzer control -- bgb
-
-    inout [35:0]      CSP_PKT_FRM_LA_CTRL,
-
     input 	      RST,
     // External signals
     input 	      ORX_01_N,
@@ -237,12 +233,13 @@ module dmb_receiver #(
 	begin : GbE2p56_rx_gtx    //For 2.56 GbE (line rate of 3.2 Gbps)
 	   // Locally buffer the output of the IBUFDS_GTXE1 for reset logic
 	   
-	   BUFR bufr_clk_ds (
-			     .I   (DAQ_RX_160REFCLK_115_0),
-			     .O   (clk_ds_i),
-			     .CE  (1'b1),
-			     .CLR (1'b0)
-			     );
+	   BUFR #(.SIM_DEVICE("VIRTEX6"))
+	   bufr_clk_ds (
+	    .I   (DAQ_RX_160REFCLK_115_0),
+	    .O   (clk_ds_i),
+	    .CE  (1'b1),
+	    .CLR (1'b0)
+	    );
 	   
 	   MGT_32GBPS_16BIT_1TO12 #
 	     (
@@ -654,13 +651,14 @@ module dmb_receiver #(
       else
 	begin: GbE_rx_gtx    //For 1 GbE (line rate of 1.25 Gbps)
 	   // Locally buffer the output of the IBUFDS_GTXE1 for reset logic
-	   BUFR bufr_clk_ds (
-			     //.I   (DAQ_RX_125REFCLK),
-			     .I   (DMBVME_CLK_S2),
-			     .O   (clk_ds_i),
-			     .CE  (1'b1),
-			     .CLR (1'b0)
-			     );
+	   BUFR #(.SIM_DEVICE("VIRTEX6"))
+	   bufr_clk_ds (
+	    //.I   (DAQ_RX_125REFCLK),
+	    .I   (DMBVME_CLK_S2),
+	    .O   (clk_ds_i),
+	    .CE  (1'b1),
+	    .CLR (1'b0)
+	    );
 	   
 	   MGT_125GBPS_16BIT_1TO12 #
 	     (
@@ -1075,10 +1073,6 @@ module dmb_receiver #(
    
    rx_frame_proc_la rx_frame_proc_1
      (
-      // Chip Scope Pro Logic Analyzer control -- bgb
-
-      .CSP_PKT_FRM_LA_CTRL(CSP_PKT_FRM_LA_CTRL),
-
       // inputs
       .CLK(usr_clk_wordwise),
       .RST(reset_i),

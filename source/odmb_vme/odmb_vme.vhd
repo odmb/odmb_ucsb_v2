@@ -1,6 +1,6 @@
 -- ODMB_VME: Handles the VME protocol and selects VME device
 
--- Device 0 => TESTCNTL
+-- Device 0 => TESTCTRL
 -- Device 1 => CFEBJTAG
 -- Device 2 => ODMBJTAG
 -- Device 3 => VMEMON
@@ -12,9 +12,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
+
 entity ODMB_VME is
   generic (
-    NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
+    NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS
     );  
   port (
 
@@ -61,10 +62,6 @@ entity ODMB_VME is
     dl_jtag_tms    : out std_logic;
     dl_jtag_tdi    : out std_logic;
     dl_jtag_tdo    : in  std_logic_vector (6 downto 0);
-    dl_rtn_shft_en : in  std_logic_vector (6 downto 0);
-    ul_jtag_tck    : in  std_logic_vector (6 downto 0);
-    ul_jtag_tms    : in  std_logic_vector (6 downto 0);
-    ul_jtag_tdi    : in  std_logic_vector (6 downto 0);
 
 -- JTAG Signals To/From DMB_CTRL
 
@@ -84,20 +81,6 @@ entity ODMB_VME is
 -- Done from DCFEB FPGA (CFEBPRG)
 
     ul_done : in std_logic_vector(6 downto 0);
-
--- To/From O-DMB ADC
-
-    adc_cs     : out std_logic;
-    adc_sclk   : out std_logic;
-    adc_sdain  : out std_logic;
-    adc_sdaout : in  std_logic;
-
--- To/From O-DMB DAC
-
-    dac_cs     : out std_logic;
-    dac_sclk   : out std_logic;
-    dac_sdain  : out std_logic;
-    dac_sdaout : in  std_logic;
 
 -- From/To LVMB
 
@@ -126,7 +109,7 @@ entity ODMB_VME is
     dcfeb_ctrl    : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
     odmb_data     : in  std_logic_vector(15 downto 0);
-    TXDIFFCTRL   : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+    TXDIFFCTRL    : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
     LOOPBACK      : out std_logic_vector(2 downto 0);  -- For internal loopback tests
 
     -- TESTCTRL
@@ -186,51 +169,90 @@ end ODMB_VME;
 
 architecture ODMB_VME_architecture of ODMB_VME is
 
-  component PULSE_EDGE is
+  component TESTCTRL is
+    generic (
+      NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
+      );    
     port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
+      CLK     : in std_logic;
+      DDUCLK  : in std_logic;
+      SLOWCLK : in std_logic;
+      RST     : in std_logic;
+
+      DEVICE  : in std_logic;
+      STROBE  : in std_logic;
+      COMMAND : in std_logic_vector(9 downto 0);
+
+      INDATA  : in  std_logic_vector(15 downto 0);
+      OUTDATA : out std_logic_vector(15 downto 0);
+
+      DTACK : out std_logic;
+
+      L1A            : out std_logic;
+      ALCT_DAV       : out std_logic;
+      TMB_DAV        : out std_logic;
+      LCT            : out std_logic_vector(NFEB downto 0);
+      DDU_DATA       : in  std_logic_vector(15 downto 0);
+      DDU_DATA_VALID : in  std_logic;
+      TC_RUN         : out std_logic;
+      TS_OUT         : out std_logic_vector(31 downto 0)
       );
   end component;
 
-  signal LOGICH : std_logic := '1';
-  signal LOGICL : std_logic := '0';
+  component CFEBJTAG is
+    port (
+      FASTCLK : in std_logic;
+      SLOWCLK : in std_logic;
+      RST     : in std_logic;
 
-  signal ext_vme_ga : std_logic_vector(5 downto 0);
+      DEVICE  : in std_logic;
+      STROBE  : in std_logic;
+      COMMAND : in std_logic_vector(9 downto 0);
+      WRITER  : in std_logic;
 
-  signal device         : std_logic_vector(9 downto 0);
-  signal cmd            : std_logic_vector(9 downto 0);
-  signal strobe         : std_logic;
-  signal tovme_b, doe_b : std_logic;
+      INDATA  : in    std_logic_vector(15 downto 0);
+      OUTDATA : inout std_logic_vector(15 downto 0);
 
-  signal diagout_command : std_logic_vector(19 downto 0);
-  signal led_command     : std_logic_vector(2 downto 0);
+      DTACK : out std_logic;
 
-  signal outdata_cfebjtag : std_logic_vector(15 downto 0);
--- signal diagout_cfebjtag  : std_logic_vector(17 downto 0);
-  signal led_cfebjtag     : std_logic;
+      INITJTAGS      : in  std_logic;
+      TCK            : out std_logic_vector(7 downto 1);
+      TDI            : out std_logic;
+      TMS            : out std_logic;
+      FEBTDO         : in  std_logic_vector(7 downto 1);
 
-  signal outdata_odmbjtag : std_logic_vector(15 downto 0);
-  signal led_odmbjtag     : std_logic;
+      DIAGOUT : out std_logic_vector(17 downto 0);
+      LED     : out std_logic
+      );
+  end component;
 
-  signal outdata_mbcjtag : std_logic_vector(15 downto 0);
-  signal led_mbcjtag     : std_logic;
+  component ODMBJTAG is
+    port (
+      FASTCLK : in std_logic;
+      SLOWCLK : in std_logic;
+      RST     : in std_logic;
 
-  signal outdata_lvdbmon : std_logic_vector(15 downto 0);
+      DEVICE  : in std_logic;
+      STROBE  : in std_logic;
+      COMMAND : in std_logic_vector(9 downto 0);
+      WRITER  : in std_logic;
 
-  signal cmd_adrs        : std_logic_vector(15 downto 0);
+      INDATA  : in  std_logic_vector(15 downto 0);
+      OUTDATA : out std_logic_vector(15 downto 0);
 
-  signal outdata_vmemon      : std_logic_vector(15 downto 0);
-  signal outdata_vmeconfregs : std_logic_vector(15 downto 0);
-  signal outdata_testfifos   : std_logic_vector(15 downto 0);
+      DTACK : out std_logic;
 
-  signal jtag_tck : std_logic_vector(6 downto 0);
+      INITJTAGS : in  std_logic;
+      TCK       : out std_logic;
+      TDI       : out std_logic;
+      TMS       : out std_logic;
+      ODMBTDO   : in  std_logic;
 
-  signal outdata_testctrl : std_logic_vector(15 downto 0);
+      JTAGSEL : out std_logic;
+
+      LED : out std_logic
+      );
+  end component;
 
   component VMEMON is
     port (
@@ -259,7 +281,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DCFEB_CTRL    : out std_logic_vector(15 downto 0);
       ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
       ODMB_DATA     : in  std_logic_vector(15 downto 0);
-      TXDIFFCTRL   : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
+      TXDIFFCTRL    : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
       LOOPBACK      : out std_logic_vector(2 downto 0)  -- For internal loopback tests
       );
   end component;
@@ -341,36 +363,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
-  component TESTCTRL is
-    generic (
-      NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
-      );    
-    port (
-      CLK     : in std_logic;
-      DDUCLK  : in std_logic;
-      SLOWCLK : in std_logic;
-      RST     : in std_logic;
-
-      DEVICE  : in std_logic;
-      STROBE  : in std_logic;
-      COMMAND : in std_logic_vector(9 downto 0);
-
-      INDATA  : in  std_logic_vector(15 downto 0);
-      OUTDATA : out std_logic_vector(15 downto 0);
-
-      DTACK : out std_logic;
-
-      L1A            : out std_logic;
-      ALCT_DAV       : out std_logic;
-      TMB_DAV        : out std_logic;
-      LCT            : out std_logic_vector(NFEB downto 0);
-      DDU_DATA       : in  std_logic_vector(15 downto 0);
-      DDU_DATA_VALID : in  std_logic;
-      TC_RUN         : out std_logic;
-      TS_OUT         : out std_logic_vector(31 downto 0)
-      );
-  end component;
-
   component LVDBMON is
     port (
 
@@ -397,63 +389,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
       LOADON     : out std_logic;
 
       DIAGLVDB : out std_logic_vector(17 downto 0)
-      );
-  end component;
-
-  component CFEBJTAG is
-    port (
-      FASTCLK : in std_logic;
-      SLOWCLK : in std_logic;
-      RST     : in std_logic;
-
-      DEVICE  : in std_logic;
-      STROBE  : in std_logic;
-      COMMAND : in std_logic_vector(9 downto 0);
-      WRITER  : in std_logic;
-
-      INDATA  : in    std_logic_vector(15 downto 0);
-      OUTDATA : inout std_logic_vector(15 downto 0);
-
-      DTACK : out std_logic;
-
-      INITJTAGS      : in  std_logic;
-      TCK            : out std_logic_vector(7 downto 1);
-      TDI            : out std_logic;
-      TMS            : out std_logic;
-      FEBTDO         : in  std_logic_vector(7 downto 1);
-      DL_RTN_SHFT_EN : in  std_logic_vector (7 downto 1);
-      UL_JTAG_TCK    : in  std_logic_vector (7 downto 1);
-
-      DIAGOUT : out std_logic_vector(17 downto 0);
-      LED     : out std_logic
-      );
-  end component;
-
-  component ODMBJTAG is
-    port (
-      FASTCLK : in std_logic;
-      SLOWCLK : in std_logic;
-      RST     : in std_logic;
-
-      DEVICE  : in std_logic;
-      STROBE  : in std_logic;
-      COMMAND : in std_logic_vector(9 downto 0);
-      WRITER  : in std_logic;
-
-      INDATA  : in  std_logic_vector(15 downto 0);
-      OUTDATA : out std_logic_vector(15 downto 0);
-
-      DTACK : out std_logic;
-
-      INITJTAGS : in  std_logic;
-      TCK       : out std_logic;
-      TDI       : out std_logic;
-      TMS       : out std_logic;
-      ODMBTDO   : in  std_logic;
-
-      JTAGSEL : out std_logic;
-
-      LED : out std_logic
       );
   end component;
 
@@ -512,89 +447,92 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
   component vme_outdata_sel is
     port (
-        device          : in  std_logic_vector(9 downto 0);
-        device0_outdata : in  std_logic_vector(15 downto 0);
-        device1_outdata : in  std_logic_vector(15 downto 0);
-        device2_outdata : in  std_logic_vector(15 downto 0);
-        device3_outdata : in  std_logic_vector(15 downto 0);
-        device4_outdata : in  std_logic_vector(15 downto 0);
-        device5_outdata : in  std_logic_vector(15 downto 0);
-        device8_outdata : in  std_logic_vector(15 downto 0);
-        outdata         : out std_logic_vector(15 downto 0)
-        );
+      device          : in  std_logic_vector(9 downto 0);
+      device0_outdata : in  std_logic_vector(15 downto 0);
+      device1_outdata : in  std_logic_vector(15 downto 0);
+      device2_outdata : in  std_logic_vector(15 downto 0);
+      device3_outdata : in  std_logic_vector(15 downto 0);
+      device4_outdata : in  std_logic_vector(15 downto 0);
+      device5_outdata : in  std_logic_vector(15 downto 0);
+      device8_outdata : in  std_logic_vector(15 downto 0);
+      outdata         : out std_logic_vector(15 downto 0)
+      );
   end component;
 
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
+
+  constant LOGICH : std_logic := '1';
+  constant LOGICL : std_logic := '0';
+
+  signal ext_vme_ga : std_logic_vector(5 downto 0);
+
+  signal device         : std_logic_vector(9 downto 0);
+  signal cmd            : std_logic_vector(9 downto 0);
+  signal strobe         : std_logic;
+  signal tovme_b, doe_b : std_logic;
+
+  signal diagout_command : std_logic_vector(19 downto 0);
+  signal led_command     : std_logic_vector(2 downto 0);
+
+  signal outdata_cfebjtag : std_logic_vector(15 downto 0);
+  signal led_cfebjtag     : std_logic;
+
+  signal outdata_odmbjtag : std_logic_vector(15 downto 0);
+  signal led_odmbjtag     : std_logic;
+
+  signal outdata_mbcjtag : std_logic_vector(15 downto 0);
+  signal led_mbcjtag     : std_logic;
+
+  signal outdata_lvdbmon : std_logic_vector(15 downto 0);
+
+  signal cmd_adrs : std_logic_vector(15 downto 0);
+
+  signal outdata_vmemon      : std_logic_vector(15 downto 0);
+  signal outdata_vmeconfregs : std_logic_vector(15 downto 0);
+  signal outdata_testfifos   : std_logic_vector(15 downto 0);
+
+  signal outdata_testctrl : std_logic_vector(15 downto 0);
 
 begin
 
-  vme_doe_b       <= doe_b;
-  vme_doe         <= not doe_b;
-  vme_tovme_b     <= tovme_b;
-  vme_tovme       <= not tovme_b;
-  vme_sysfail_out <= '0';
-  vme_berr_out    <= '0';
-  vme_sysfail_out <= '0';
-  ext_vme_ga      <= vme_gap & vme_ga;
-
-  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
-
-
-  COMMAND_PM : COMMAND_MODULE
-    
+  DEV0_TESTCTRL : TESTCTRL
+    generic map (NFEB => NFEB)
     port map (
-
-      FASTCLK => clk,
+      CLK     => clk,
+      DDUCLK  => dduclk,
       SLOWCLK => clk_s2,
+      RST     => rst,
 
-      GA  => ext_vme_ga,                -- gap = ga(5)
-      ADR => vme_addr,
-      AM  => vme_am,
-
-      AS      => vme_as_b,
-      DS0     => vme_ds_b(0),
-      DS1     => vme_ds_b(1),
-      LWORD   => vme_lword_b,
-      WRITER  => vme_write_b,
-      IACK    => vme_iack_b,
-      BERR    => vme_berr_b,
-      SYSFAIL => vme_sysfail_b,
-
-      TOVME_B => tovme_b,
-      DOE_B   => doe_b,
-
-      DEVICE  => device,
+      DEVICE  => device(0),
       STROBE  => strobe,
       COMMAND => cmd,
-      ADRS    => cmd_adrs,
 
-      DIAGOUT => diagout_command,
-      LED     => led_command
+      INDATA  => vme_data_in,
+      OUTDATA => outdata_testctrl,
+
+      DTACK => vme_dtack_b,
+
+      L1A            => TC_L1A,
+      ALCT_DAV       => TC_ALCT_DAV,
+      TMB_DAV        => TC_TMB_DAV,
+      LCT            => TC_LCT,
+      DDU_DATA       => DDU_DATA,
+      DDU_DATA_VALID => DDU_DATA_VALID,
+      TC_RUN         => TC_RUN,
+      TS_OUT         => TS_OUT
       );
 
-  VME_OUT_SEL_PM : vme_outdata_sel
+  DEV1_CFEBJTAG : CFEBJTAG
     port map (
-
-      device          => device,
-      device0_outdata => outdata_testctrl,
-      device1_outdata => outdata_cfebjtag,
---      device2_outdata => outdata_mbcjtag,
-      device2_outdata => outdata_odmbjtag,
-      device3_outdata => outdata_vmemon,
-      device4_outdata => outdata_vmeconfregs,
-      device5_outdata => outdata_testfifos,
-      device8_outdata => outdata_lvdbmon,
-      outdata         => vme_data_out
-      );
-
--- Device 0 => TESTCTRL
-
--- Device 1 => CFEBJTAG
-
-  dl_jtag_tck <= jtag_tck;
-
-  CFEBJTAG_PM : CFEBJTAG
-    port map (
-
       FASTCLK => clk,
       SLOWCLK => clk_s2,
       RST     => rst,
@@ -609,20 +547,17 @@ begin
       DTACK => vme_dtack_b,
 
       INITJTAGS      => '0',            -- to be defined
-      TCK            => jtag_tck,
+      TCK            => dl_jtag_tck,
       TDI            => dl_jtag_tdi,
       TMS            => dl_jtag_tms,
       FEBTDO         => dl_jtag_tdo,
-      DL_RTN_SHFT_EN => dl_rtn_shft_en,
-      UL_JTAG_TCK    => jtag_tck,
 
       DIAGOUT => diagout_cfebjtag,
       LED     => led_cfebjtag
       );
 
-  ODMBJTAG_PM : ODMBJTAG
+  DEV2_ODMBJTAG : ODMBJTAG
     port map (
-
       FASTCLK => clk,
       SLOWCLK => clk_s2,
       RST     => rst,
@@ -648,92 +583,9 @@ begin
       LED => led_odmbjtag
       );
 
-  MBCJTAG_PM : MBCJTAG
+
+  DEV3_VMEMON : VMEMON
     port map (
-
-      FASTCLK => clk,
-      SLOWCLK => clk_s2,
-      RST     => rst,
-      DEVICE  => LOGICL,
-      STROBE  => strobe,
-      COMMAND => cmd,
-      WRITER  => vme_write_b,
-
-      INDATA  => vme_data_in,
-      OUTDATA => outdata_mbcjtag,
-
-      DTACK => vme_dtack_b,
-
-      INITJTAGS => '0',                 -- to be defined
-      TCK       => mbc_jtag_tck,
-      TDI       => mbc_jtag_tdi,
-      TMS       => mbc_jtag_tms,
-      MBCTDO    => mbc_jtag_tdo,
-
-      LED => led_mbcjtag
-      );
-
-
-  LVDBMON_PM : LVDBMON
-    port map(
-
-      SLOWCLK => clk_s2,
-      RST     => rst,
-
-      DEVICE  => device(8),
-      STROBE  => strobe,
-      COMMAND => cmd,
-      WRITER  => vme_write_b,
-
-      INDATA  => vme_data_in,
-      OUTDATA => outdata_lvdbmon,
-
-      DTACK => vme_dtack_b,
-
-      LVADCEN => lvmb_csb,
-      ADCCLK  => lvmb_sclk,
-      ADCDATA => lvmb_sdin,
-      ADCIN   => lvmb_sdout,
-
-      LVTURNON   => lvmb_pon,
-      R_LVTURNON => r_lvmb_pon,
-      LOADON     => pon_load,
-
-      DIAGLVDB => diagout_lvdbmon
-
-      );
-
-  TESTCTRL_PM : TESTCTRL
-    generic map (NFEB => NFEB)
-    port map (
-
-      CLK     => clk,
-      DDUCLK  => dduclk,
-      SLOWCLK => clk_s2,
-      RST     => rst,
-
-      DEVICE  => device(0),
-      STROBE  => strobe,
-      COMMAND => cmd,
-
-      INDATA  => vme_data_in,
-      OUTDATA => outdata_testctrl,
-
-      DTACK => vme_dtack_b,
-
-      L1A            => TC_L1A,
-      ALCT_DAV       => TC_ALCT_DAV,
-      TMB_DAV        => TC_TMB_DAV,
-      LCT            => TC_LCT,
-      DDU_DATA       => DDU_DATA,
-      DDU_DATA_VALID => DDU_DATA_VALID,
-      TC_RUN         => TC_RUN,
-      TS_OUT         => TS_OUT
-      );
-
-  VMEMON_PM : VMEMON
-    port map (
-
       SLOWCLK => clk_s2,
       CLK40   => clk,
       RST     => rst,
@@ -759,15 +611,14 @@ begin
       DCFEB_CTRL    => dcfeb_ctrl,
       ODMB_DATA_SEL => odmb_data_sel,
       ODMB_DATA     => odmb_data,
-      TXDIFFCTRL   => txdiffctrl,     -- Controls the TX voltage swing
-      LOOPBACK      => loopback        -- For internal loopback tests
+      TXDIFFCTRL    => txdiffctrl,      -- Controls the TX voltage swing
+      LOOPBACK      => loopback         -- For internal loopback tests
 
       );
 
 
-  VMECONFREGS_PM : VMECONFREGS
+  DEV4_VMECONFREGS : VMECONFREGS
     port map (
-
       SLOWCLK => CLK_S2 ,
       RST     => RST ,
 
@@ -792,9 +643,8 @@ begin
       CRATEID => CRATEID
       );
 
-  TESTFIFOS_PM : TESTFIFOS
+  DEV5_TESTFIFOS : TESTFIFOS
     port map (
-
       SLOWCLK => CLK_S2 ,
       RST     => RST ,
 
@@ -836,26 +686,116 @@ begin
 
       );
 
+  DEV8_LVDBMON : LVDBMON
+    port map(
+      SLOWCLK => clk_s2,
+      RST     => rst,
+
+      DEVICE  => device(8),
+      STROBE  => strobe,
+      COMMAND => cmd,
+      WRITER  => vme_write_b,
+
+      INDATA  => vme_data_in,
+      OUTDATA => outdata_lvdbmon,
+
+      DTACK => vme_dtack_b,
+
+      LVADCEN => lvmb_csb,
+      ADCCLK  => lvmb_sclk,
+      ADCDATA => lvmb_sdin,
+      ADCIN   => lvmb_sdout,
+
+      LVTURNON   => lvmb_pon,
+      R_LVTURNON => r_lvmb_pon,
+      LOADON     => pon_load,
+
+      DIAGLVDB => diagout_lvdbmon
+
+      );
+
+  DEVX_MBCJTAG : MBCJTAG
+    port map (
+      FASTCLK => clk,
+      SLOWCLK => clk_s2,
+      RST     => rst,
+      DEVICE  => LOGICL,
+      STROBE  => strobe,
+      COMMAND => cmd,
+      WRITER  => vme_write_b,
+
+      INDATA  => vme_data_in,
+      OUTDATA => outdata_mbcjtag,
+
+      DTACK => vme_dtack_b,
+
+      INITJTAGS => '0',                 -- to be defined
+      TCK       => mbc_jtag_tck,
+      TDI       => mbc_jtag_tdi,
+      TMS       => mbc_jtag_tms,
+      MBCTDO    => mbc_jtag_tdo,
+
+      LED => led_mbcjtag
+      );
+
+
+  COMMAND_PM : COMMAND_MODULE
+    port map (
+      FASTCLK => clk,
+      SLOWCLK => clk_s2,
+
+      GA  => ext_vme_ga,                -- gap = ga(5)
+      ADR => vme_addr,
+      AM  => vme_am,
+
+      AS      => vme_as_b,
+      DS0     => vme_ds_b(0),
+      DS1     => vme_ds_b(1),
+      LWORD   => vme_lword_b,
+      WRITER  => vme_write_b,
+      IACK    => vme_iack_b,
+      BERR    => vme_berr_b,
+      SYSFAIL => vme_sysfail_b,
+
+      TOVME_B => tovme_b,
+      DOE_B   => doe_b,
+
+      DEVICE  => device,
+      STROBE  => strobe,
+      COMMAND => cmd,
+      ADRS    => cmd_adrs,
+
+      DIAGOUT => diagout_command,
+      LED     => led_command
+      );
+
+  VME_OUT_SEL_PM : vme_outdata_sel
+    port map (
+      device          => device,
+      device0_outdata => outdata_testctrl,
+      device1_outdata => outdata_cfebjtag,
+      device2_outdata => outdata_odmbjtag,
+      device3_outdata => outdata_vmemon,
+      device4_outdata => outdata_vmeconfregs,
+      device5_outdata => outdata_testfifos,
+      device8_outdata => outdata_lvdbmon,
+      outdata         => vme_data_out
+      );
+
+  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
+
+  vme_doe_b       <= doe_b;
+  vme_doe         <= not doe_b;
+  vme_tovme_b     <= tovme_b;
+  vme_tovme       <= not tovme_b;
+  vme_sysfail_out <= '0';
+  vme_berr_out    <= '0';
+  vme_sysfail_out <= '0';
+  ext_vme_ga      <= vme_gap & vme_ga;
+
 -- From/To LVMB
-
--- lvmb_pon <= "00000000";
--- pon_load <= '0';
   pon_oe_b <= '0';
--- lvmb_sclk <= '0';
--- lvmb_sdin <= '0';                    
 
-
--- To/From O-DMB ADC
-
-  adc_cs    <= '0';
-  adc_sclk  <= '0';
-  adc_sdain <= '0';
-
--- To/From O-DMB DAC
-
-  dac_cs    <= '0';
-  dac_sclk  <= '0';
-  dac_sdain <= '0';
 
 end ODMB_VME_architecture;
 

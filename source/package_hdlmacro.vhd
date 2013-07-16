@@ -357,28 +357,6 @@ port(
   );
 end component;
 
--- Global Clock MUX Buffer with Clock enable and Output State 1
-component BUFGCE_1
-  
-port(
-    O  : out std_logic;
-
-    CE : in std_logic;
-    I  : in std_logic
-  );
-end component;
-
--- Global Clock MUX Buffer with Clock enable and Output State 0
-component BUFGCE
-  
-port(
-    O  : out std_logic;
-
-    CE : in std_logic;
-    I  : in std_logic
-  );
-end component;
-
 -- Multiple 3- state Buffer with Active Low Enable
 component BUFT16
 port(
@@ -1875,20 +1853,6 @@ end component;
 
 -- Transparent Input Data Latch
 component ILDI
-generic(
-    INIT : bit := '0'
-    );
-
-port (
-    Q  : out STD_LOGIC;
-    D  : in STD_LOGIC;
-    G  : in STD_LOGIC
-    );
-
-end component;
-
--- Transparent Input Data Latch
-component ILD
 generic(
     INIT : bit := '0'
     );
@@ -4439,62 +4403,6 @@ begin
  end process;
 
 end BUFE8_V;
-
-
-
--- Global Clock MUX Buffer with Clock enable and Output State 1
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-entity BUFGCE_1 is
-  
-port(
-    O  : out std_logic;
-
-    CE : in std_logic;
-    I  : in std_logic
-  );
-end BUFGCE_1;
-
-architecture BUFGCE_1_V of BUFGCE_1 is
-begin
-  process (I, CE)
-  begin
-    if (CE='1') then
-      O <= I;
-    else
-      O <= '1';
-  end if;
- end process;
-
-end BUFGCE_1_V;
-
-
-
--- Global Clock MUX Buffer with Clock enable and Output State 0
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-entity BUFGCE is
-  
-port(
-    O  : out std_logic;
-
-    CE : in std_logic;
-    I  : in std_logic
-  );
-end BUFGCE;
-
-architecture BUFGCE_V of BUFGCE is
-begin
-  process (I, CE)
-  begin
-    if (CE='1') then
-      O <= I;
-    else
-      O <= '0';
-  end if;
- end process;
-
-end BUFGCE_V;
 
 
 
@@ -8788,42 +8696,6 @@ signal q_tmp : std_logic := TO_X01(INIT);
 
 begin
    Q <= q_tmp;
-process(D, G)
-begin
-  if (G = '1') then
-      q_tmp <= D;
-  end if;
-end process;
-
-
-end Behavioral;
-
-
-
--- Transparent Input Data Latch
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-entity ILD is
-generic(
-    INIT : bit := '0'
-    );
-
-port (
-    Q  : out STD_LOGIC;
-    D  : in STD_LOGIC;
-    G  : in STD_LOGIC
-    );
--- attribute IOB         : string ;
--- attribute IOB of Q : signal is "True";	
-
-end ILD;
-
-architecture Behavioral of ILD is
-signal q_tmp : std_logic := TO_X01(INIT);
-
-begin
-   Q <= q_tmp;
-
 process(D, G)
 begin
   if (G = '1') then
