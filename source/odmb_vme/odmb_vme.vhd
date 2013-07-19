@@ -15,7 +15,7 @@ use IEEE.std_logic_unsigned.all;
 
 entity ODMB_VME is
   generic (
-    NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS
+    NFEB : integer range 1 to 7 := 7    -- Number of DCFEBS
     );  
   port (
 
@@ -58,10 +58,10 @@ entity ODMB_VME is
 
 -- JTAG Signals To/From DCFEBs
 
-    dl_jtag_tck    : out std_logic_vector (6 downto 0);
-    dl_jtag_tms    : out std_logic;
-    dl_jtag_tdi    : out std_logic;
-    dl_jtag_tdo    : in  std_logic_vector (6 downto 0);
+    dl_jtag_tck : out std_logic_vector (6 downto 0);
+    dl_jtag_tms : out std_logic;
+    dl_jtag_tdi : out std_logic;
+    dl_jtag_tdo : in  std_logic_vector (6 downto 0);
 
 -- JTAG Signals To/From DMB_CTRL
 
@@ -97,12 +97,14 @@ entity ODMB_VME is
     diagout_lvdbmon  : out std_logic_vector(17 downto 0);
 
 -- From VMEMON
-    FW_RESET : out std_logic;
-    RESYNC   : out std_logic;
-    REPROG_B : out std_logic;
-    TEST_INJ : out std_logic;
-    TEST_PLS : out std_logic;
-    TEST_LCT : out std_logic;
+    FW_RESET      : out std_logic;
+    RESYNC        : out std_logic;
+    REPROG_B      : out std_logic;
+    TEST_INJ      : out std_logic;
+    TEST_PLS      : out std_logic;
+    TEST_LCT      : out std_logic;
+    OTMB_LCT_RQST : out std_logic;
+    OTMB_EXT_TRIG : out std_logic;
 
     tp_sel        : out std_logic_vector(15 downto 0);
     odmb_ctrl     : out std_logic_vector(15 downto 0);
@@ -215,11 +217,11 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
-      INITJTAGS      : in  std_logic;
-      TCK            : out std_logic_vector(7 downto 1);
-      TDI            : out std_logic;
-      TMS            : out std_logic;
-      FEBTDO         : in  std_logic_vector(7 downto 1);
+      INITJTAGS : in  std_logic;
+      TCK       : out std_logic_vector(7 downto 1);
+      TDI       : out std_logic;
+      TMS       : out std_logic;
+      FEBTDO    : in  std_logic_vector(7 downto 1);
 
       DIAGOUT : out std_logic_vector(17 downto 0);
       LED     : out std_logic
@@ -269,12 +271,14 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
-      FW_RESET : out std_logic;
-      RESYNC   : out std_logic;
-      REPROG_B : out std_logic;
-      TEST_INJ : out std_logic;
-      TEST_PLS : out std_logic;
-      TEST_LCT : out std_logic;
+      FW_RESET      : out std_logic;
+      RESYNC        : out std_logic;
+      REPROG_B      : out std_logic;
+      TEST_INJ      : out std_logic;
+      TEST_PLS      : out std_logic;
+      TEST_LCT      : out std_logic;
+      OTMB_LCT_RQST : out std_logic;
+      OTMB_EXT_TRIG : out std_logic;
 
       TP_SEL        : out std_logic_vector(15 downto 0);
       ODMB_CTRL     : out std_logic_vector(15 downto 0);
@@ -546,11 +550,11 @@ begin
 
       DTACK => vme_dtack_b,
 
-      INITJTAGS      => '0',            -- to be defined
-      TCK            => dl_jtag_tck,
-      TDI            => dl_jtag_tdi,
-      TMS            => dl_jtag_tms,
-      FEBTDO         => dl_jtag_tdo,
+      INITJTAGS => '0',                 -- to be defined
+      TCK       => dl_jtag_tck,
+      TDI       => dl_jtag_tdi,
+      TMS       => dl_jtag_tms,
+      FEBTDO    => dl_jtag_tdo,
 
       DIAGOUT => diagout_cfebjtag,
       LED     => led_cfebjtag
@@ -599,12 +603,14 @@ begin
 
       DTACK => vme_dtack_b,
 
-      FW_RESET => fw_reset,
-      RESYNC   => resync,
-      REPROG_B => reprog_b,
-      TEST_INJ => test_inj,
-      TEST_PLS => test_pls,
-      TEST_LCT => test_lct,
+      FW_RESET      => fw_reset,
+      RESYNC        => resync,
+      REPROG_B      => reprog_b,
+      TEST_INJ      => test_inj,
+      TEST_PLS      => test_pls,
+      TEST_LCT      => test_lct,
+      OTMB_LCT_RQST => otmb_lct_rqst,
+      OTMB_EXT_TRIG => otmb_ext_trig,
 
       TP_SEL        => tp_sel,
       ODMB_CTRL     => odmb_ctrl,

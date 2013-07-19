@@ -288,6 +288,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       TEST_INJ : out std_logic;
       TEST_PLS : out std_logic;
       TEST_LCT : out std_logic;
+    OTMB_LCT_RQST : out std_logic;
+    OTMB_EXT_TRIG : out std_logic;
 
       tp_sel        : out std_logic_vector(15 downto 0);
       odmb_ctrl     : out std_logic_vector(15 downto 0);
@@ -383,7 +385,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       rawlct    : in  std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
       alct_dav  : in  std_logic;        -- lctdav1 - from J4
       tmb_dav   : in  std_logic;        -- lctdav2 - from J4
-      lctrqst   : out std_logic_vector (2 downto 1);  -- lctrqst(2 downto 1) - to J4
       rsvtd_in  : in  std_logic_vector(4 downto 0);  -- spare(7 DOWNTO 3) - to J4
       rsvtd_out : out std_logic_vector(2 downto 0);  -- spare(2 DOWNTO 0) - from J4
 
@@ -724,7 +725,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal   PB_B     : std_logic_vector(1 downto 0);
 
   signal resync, test_inj, test_pls, test_l1a, test_lct : std_logic := '0';
-
+  signal otmb_lct_rqst, otmb_ext_trig : std_logic := '0';
+  
 -- VME Signals
 
   signal vme_data_out : std_logic_vector (15 downto 0);
@@ -795,7 +797,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_l1a_match : std_logic_vector (NFEB downto 1);  -- To be sent out to pins in V2
 
   type   l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
-  signal l1a_match_cnt, crc_cnt : l1a_match_cnt_type;
+  signal l1a_match_cnt, raw_lct_cnt, crc_cnt : l1a_match_cnt_type;
 
   type   dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
   signal into_cafifo_dav_cnt                : dav_cnt_type;
@@ -1146,6 +1148,8 @@ begin
       test_inj => test_inj,
       test_pls => test_pls,
       test_lct => test_lct,
+      OTMB_LCT_RQST => otmb_lct_rqst,
+      OTMB_EXT_TRIG => otmb_ext_trig,
 
       tp_sel        => tp_sel_reg,
       odmb_ctrl     => odmb_ctrl_reg,
@@ -1239,7 +1243,6 @@ begin
       rawlct    => raw_lct,  -- rawlct(NFEB downto 0) - from -- from testctrl
       tmb_dav   => int_tmb_dav,         -- lctdav1 - from J4
       alct_dav  => int_alct_dav,        -- lctdav2 - from J4
-      lctrqst   => lctrqst,             -- lctrqst(2 downto 1) - to J4
       rsvtd_in  => rsvtd_in,            -- spare(7 DOWNTO 3) - to J4
       rsvtd_out => rsvtd_out,           -- spare(2 DOWNTO 0) - from J4
 
@@ -1739,6 +1742,8 @@ begin
 
 ---------------------------  General assignments  ---------------------------
 -----------------------------------------------------------------------------
+  lctrqst(1) <= otmb_lct_rqst;    
+  lctrqst(2) <= otmb_ext_trig;    
   
   gen_alct_sel  <= odmb_ctrl_reg(7);
   gen_tmb_sel   <= odmb_ctrl_reg(7);
@@ -1990,16 +1995,32 @@ begin
                             rawlct(NFEB downto 1);
 
 
-  --int_alct_dav           <= tc_alct_dav           when (testctrl_sel = '1') else alctdav;  -- lctdav2
-  --int_tmb_dav            <= tc_tmb_dav            when (testctrl_sel = '1') else tmbdav;  -- lctdav1
-  int_alct_dav <= tc_alct_dav;          -- lctdav2
-  int_tmb_dav  <= tc_tmb_dav;           -- lctdav1
+  int_alct_dav           <= tc_alct_dav           when (testctrl_sel = '1') else alctdav;  -- lctdav2
+  int_tmb_dav            <= tc_tmb_dav            when (testctrl_sel = '1') else tmbdav;  -- lctdav1
+  --int_alct_dav <= tc_alct_dav;          -- lctdav2
+  --int_tmb_dav  <= tc_tmb_dav;           -- lctdav1
   tc_run_out   <= tc_run;
 
 
 
 -----------------------------  Monitoring  -----------------------------
 -----------------------------------------------------------------------------
+
+  raw_lct_cnt_proc : process (clk40, raw_lct, reset)
+    variable raw_lct_cnt_data : l1a_match_cnt_type;
+  begin
+    for index in 1 to NFEB loop
+      if (reset = '1') then
+        raw_lct_cnt_data(index) := (others => '0');
+      elsif (rising_edge(clk40)) then
+        if (raw_lct(index) = '1') then
+          raw_lct_cnt_data(index) := raw_lct_cnt_data(index) + 1;
+        end if;
+      end if;
+
+      raw_lct_cnt(index) <= raw_lct_cnt_data(index);
+    end loop;
+  end process;
 
   l1a_match_cnt_proc : process (clk40, int_l1a_match, reset)
     variable l1a_match_cnt_data : l1a_match_cnt_type;
@@ -2349,7 +2370,7 @@ begin
       when x"1E" => odmb_data <= '0' & mbc_instr(47 downto 33);
       when x"1F" => odmb_data <= "00" & mbc_jtag_ir(9 downto 0) & "0000";
 
-      when x"20" => odmb_data <= "000000000" & mbc_leds;  --crate_id
+      when x"20" => odmb_data <= "0000000000" & vme_gap & vme_ga;
 
       when x"21" => odmb_data <= l1a_match_cnt(1);
       when x"22" => odmb_data <= l1a_match_cnt(2);
@@ -2416,32 +2437,49 @@ begin
       when x"66" => odmb_data <= crc_cnt(6);
       when x"67" => odmb_data <= crc_cnt(7);
 
-      when others => odmb_data <= "0000000000000000";
+      when x"71" => odmb_data <= raw_lct_cnt(1);
+      when x"72" => odmb_data <= raw_lct_cnt(2);
+      when x"73" => odmb_data <= raw_lct_cnt(3);
+      when x"74" => odmb_data <= raw_lct_cnt(4);
+      when x"75" => odmb_data <= raw_lct_cnt(5);
+      when x"76" => odmb_data <= raw_lct_cnt(6);
+      when x"77" => odmb_data <= raw_lct_cnt(7);
+
+      when others => odmb_data <= (others => '1');
     end case;
   end process;
   
 
-  tpl(15 downto 6) <= (others => '0');
-  tpl(16)          <= int_l1a_match(1);
-  tpl(17)          <= int_l1a_match(2);
-  tpl(18)          <= int_l1a_match(3);
-  tpl(19)          <= int_l1a_match(4);
-  tpl(20)          <= int_l1a_match(5);
-  tpl(21)          <= int_l1a_match(6);
-  tpl(22)          <= int_l1a_match(7);
-  tpl(23)          <= int_l1a;
+  tpl(6)  <= raw_lct(1);
+  tpl(8)  <= raw_lct(2);
+  tpl(10) <= raw_lct(3);
+  tpl(12) <= raw_lct(4);
+  tpl(14) <= raw_lct(5);
+  tpl(16) <= raw_lct(6);
+  tpl(18) <= raw_lct(7);
+  tpl(7)  <= int_l1a_match(1);
+  tpl(9)  <= int_l1a_match(2);
+  tpl(11) <= int_l1a_match(3);
+  tpl(13) <= int_l1a_match(4);
+  tpl(15) <= int_l1a_match(5);
+  tpl(17) <= int_l1a_match(6);
+  tpl(19) <= int_l1a_match(7);
+  tpl(20) <= int_l1a;
+  tpl(21) <= gtx0_data_valid;
+  tpl(22) <= tmbdav;
+  tpl(23) <= alctdav;
 
   tph(29) <= cafifo_l1a_dav(1);
   tph(30) <= cafifo_l1a_dav(2);
   tph(31) <= gtx0_data_valid;
   tph(32) <= gtx1_data_valid;
-  tph(33) <= raw_lct(1);
-  tph(34) <= raw_lct(2);
-  tph(35) <= raw_lct(3);
-  tph(36) <= raw_lct(4);
-  tph(37) <= raw_lct(5);
-  tph(38) <= raw_lct(6);
-  tph(39) <= raw_lct(7);
+  tph(33) <= rawlct(1);
+  tph(34) <= rawlct(2);
+  tph(35) <= rawlct(3);
+  tph(36) <= rawlct(4);
+  tph(37) <= rawlct(5);
+  tph(38) <= rawlct(6);
+  tph(39) <= rawlct(7);
   tph(40) <= lct_err;
   tph(43) <= '0';
   tph(44) <= '0';
@@ -2451,7 +2489,8 @@ begin
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
                          int_tmb_dav, dcfeb_data, tmb_data, tmb_data_valid, int_alct_dav, alct_data,
                          alct_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
-                         v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo)
+                         v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
+                         otmb_lct_rqst, otmb_ext_trig, raw_l1a)
   begin
     case tp_sel_reg is
       when x"0000" =>
@@ -2544,11 +2583,23 @@ begin
         tph(41) <= int_tdo(7);
         tph(42) <= int_tck(7);
 
+      when x"0014" =>
+        tph(27) <= otmb_lct_rqst;
+        tph(28) <= otmb_ext_trig;
+        tph(41) <= raw_lct(0);
+        tph(42) <= raw_lct(1);
+
+      when x"0015" =>
+        tph(27) <= int_l1a;
+        tph(28) <= raw_l1a;
+        tph(41) <= raw_lct(0);
+        tph(42) <= raw_lct(1);
+
       when others =>
-        tph(27) <= gtx0_data_valid;
-        tph(28) <= cafifo_l1a_dav(1);
-        tph(41) <= int_l1a_match(1);
-        tph(42) <= v6_jtag_sel_inner;
+        tph(27) <= int_l1a;
+        tph(28) <= raw_lct(1);
+        tph(41) <= rawlct(1);
+        tph(42) <= int_l1a_match(1);
     end case;
   end process;
 

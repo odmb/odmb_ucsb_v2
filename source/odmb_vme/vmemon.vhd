@@ -23,12 +23,14 @@ entity VMEMON is
 
     DTACK : out std_logic;
 
-    FW_RESET : out std_logic;
-    RESYNC   : out std_logic;
-    REPROG_B : out std_logic;
-    TEST_INJ : out std_logic;
-    TEST_PLS : out std_logic;
-    TEST_LCT : out std_logic;
+    FW_RESET      : out std_logic;
+    RESYNC        : out std_logic;
+    REPROG_B      : out std_logic;
+    TEST_INJ      : out std_logic;
+    TEST_PLS      : out std_logic;
+    TEST_LCT      : out std_logic;
+    OTMB_LCT_RQST : out std_logic;
+    OTMB_EXT_TRIG : out std_logic;
 
     TP_SEL        : out std_logic_vector(15 downto 0);
     ODMB_CTRL     : out std_logic_vector(15 downto 0);
@@ -71,6 +73,7 @@ architecture VMEMON_Arch of VMEMON is
 
   signal ODMB_RST, DCFEB_RST                                : std_logic_vector(15 downto 0) := (others => '0');
   signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST : std_logic                     := '0';
+  signal LCT_RQST_RST, EXT_TRIG_RST                         : std_logic                     := '0';
   signal REPROG, DO_RESYNC, TEST_LCT_RST, RESET_RST         : std_logic                     := '0';
 
   signal OUT_LOOPBACK                           : std_logic_vector(15 downto 0) := (others => '0');
@@ -139,6 +142,8 @@ begin
                     TEST_INJ_RST when K = 2 else
                     TEST_PLS_RST when K = 3 else
                     TEST_LCT_RST when K = 4 else
+                    LCT_RQST_RST when K = 5 else
+                    EXT_TRIG_RST when K = 6 else
                     RST;
     ODMB_DCFEB_K : FDCE port map (DCFEB_CTRL_INNER(K), STROBE, W_DCFEB_CTRL, DCFEB_RST(K), INDATA(K));
   end generate GEN_DCFEB_CTRL;
@@ -148,6 +153,8 @@ begin
   PULSE_INJ    : PULSE_EDGE port map(test_inj, test_inj_rst, slowclk, rst, 2, dcfeb_ctrl_inner(2));
   PULSE_PLS    : PULSE_EDGE port map(test_pls, test_pls_rst, slowclk, rst, 2, dcfeb_ctrl_inner(3));
   PULSE_L1A    : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1, dcfeb_ctrl_inner(4));
+  PULSE_LCT    : PULSE_EDGE port map(otmb_lct_rqst, lct_rqst_rst, clk40, rst, 1, dcfeb_ctrl_inner(5));
+  PULSE_EXT    : PULSE_EDGE port map(otmb_ext_trig, ext_trig_rst, clk40, rst, 1, dcfeb_ctrl_inner(6));
   REPROG_B   <= not REPROG;
   DCFEB_CTRL <= DCFEB_CTRL_INNER;
 

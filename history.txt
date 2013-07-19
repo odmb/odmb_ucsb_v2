@@ -3,8 +3,14 @@
 =  ODMB_UCSB_V2: Official software for the ODMB.V2                   =
 =                                                                    =
 =  AUTHORS: Guido Magazzu, Frank Golf, Manuel Franco Sevilla         =
+=           Tom Danielson, Adam Dishaw, Jack Bradmiller-Feld         =
 =                                                                    =
 ======================================================================
+
+V00-07: 18 July 2013, Manuel
+--------------------------------
+Added commands to send pulses to OTMB_LCT_RQST and OTMB_EXT_TRIG.
+Changed signals sent to test points to include RAW_LCT.
 
 V00-06: 15 July 2013, Manuel
 --------------------------------
