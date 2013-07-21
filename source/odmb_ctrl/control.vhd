@@ -1,14 +1,22 @@
-library IEEE;
+library ieee;
 library work;
-use IEEE.STD_LOGIC_1164.all;
-use ieee.std_logic_misc.all;
+library unisim;
+library hdlmacro;
+use hdlmacro.hdlmacro.CB16CE;
+use hdlmacro.hdlmacro.IFD_1;
+use unisim.vcomponents.FD;
+use unisim.vcomponents.FD_1;
+use unisim.vcomponents.FDC;
+use unisim.vcomponents.FDCE;
+use unisim.vcomponents.FDCE_1;
+use unisim.vcomponents.FDP;
+use unisim.vcomponents.FDP_1;
+use unisim.vcomponents.FDE;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_misc.and_reduce;
+use ieee.std_logic_misc.or_reduce;
+--use work.Latches_Flipflops.IFD_1;
 
---Library UNISIM;
---use UNISIM.all;
-
---use UNISIM.vcomponents.all;
---use UNISIM.vpck.all;
-use work.Latches_Flipflops.all;
 
 entity CONTROL is
   generic (
@@ -40,8 +48,8 @@ entity CONTROL is
 -- to FIFOs
     OEFIFO_B  : out std_logic_vector(NFEB+2 downto 1);
     RENFIFO_B : out std_logic_vector(NFEB+2 downto 1);
-    OEFFMON_B  : out std_logic_vector(NFEB+2 downto 1);
-    RENFFMON_B : out std_logic_vector(NFEB+2 downto 1);
+    OEFFMON_B  : out std_logic_vector(NFEB+2 downto 1); --Adam NEVER ASSIGNED!!!
+    RENFFMON_B : out std_logic_vector(NFEB+2 downto 1); --Adam NEVER ASSIGNED!!!
 
 -- from FIFOs
     FFOR_B : in std_logic_vector(NFEB+2 downto 1);
@@ -49,7 +57,7 @@ entity CONTROL is
     DATAIN_LAST : in std_logic;
 
 -- From CONFREGS
-    KILLINPUT : in std_logic_vector(NFEB+2 downto 1);
+    KILLINPUT : in std_logic_vector(NFEB+2 downto 1); --Adam NEVER USED!!! (except to assign unused KILL)
 
 -- From JTAGCOM
     SETLOOPBACK : in std_logic;
@@ -58,7 +66,7 @@ entity CONTROL is
 -- to ???
     DAQMBID : in std_logic_vector(11 downto 0); -- From CRATEID in SETFEBDLY, and GA
     LOOPBACK : out std_logic;
-    OEOVLP  : out std_logic;
+    OEOVLP  : out std_logic; --Adam NEVER ASSIGNED
 
 -- FROM SW1
     GIGAEN : in std_logic;
@@ -79,10 +87,12 @@ end CONTROL;
 
 architecture CONTROL_arch of CONTROL is
   signal LOGICL : std_logic := '0';
-  signal LOGICH : std_logic := '1';
+  --Adam signal LOGICH : std_logic := '1'; --signal is now a constant
+  constant LOGICH : std_logic := '1';
   signal ZERO7 : std_logic_vector(6 downto 0) := (others => '0');
   signal ZERO8 : std_logic_vector(7 downto 0) := (others => '0');
-  signal ZERO9 : std_logic_vector(8 downto 0) := (others => '0');
+  --Adam signal ZERO9 : std_logic_vector(8 downto 0) := (others => '0'); --signal is now a constant
+  constant ZERO9 : std_logic_vector(8 downto 0) := (others => '0');
   signal ZERO10 : std_logic_vector(9 downto 0) := (others => '0');
   
 -- PAGE 1
@@ -93,7 +103,8 @@ architecture CONTROL_arch of CONTROL is
   signal OEHDR : std_logic_vector(8 downto 1) := (others => '0');
   signal OEHDRA, OEHDRB : std_logic := '0';
   signal DOHDR : std_logic := '0';
-  signal TAIL_RST, DDCNT_EN_RST, DDCNT_CEO, DDCNT_TC, OKDATA, DODAT : std_logic := '0';
+  signal TAIL_RST, DDCNT_EN_RST, DDCNT_TC, OKDATA, DODAT : std_logic := '0';
+  --Adam signal TAIL_RST, DDCNT_EN_RST, DDCNT_CEO, DDCNT_TC, OKDATA, DODAT : std_logic := '0'; --remove DDCNT_CEO (not used)
   signal DDCNT_EN : std_logic_vector(1 downto 0);
   signal DDCNT : std_logic_vector(15 downto 0);
 
@@ -112,19 +123,20 @@ architecture CONTROL_arch of CONTROL is
   
 -- PAGE 2
   signal OEHDTL, OEHDTL_D : std_logic;
-  signal FENDAV : std_logic_vector(NFEB+2 downto 1);
-  signal FENDAVERR : std_logic;
+  --Adam signal FENDAV : std_logic_vector(NFEB+2 downto 1); --used only to assign unused fendaverr
+  --Adam signal FENDAVERR : std_logic; --not used
 
   signal DATA_HDR, DATA_TAIL : std_logic_vector(15 downto 0);
   
-  signal HEAD_D12 :  std_logic;
-  signal HDR_W1, HDR_W2, HDR_W3, HDR_W4, HDR_W5, HDR_W6, HDR_W7, HDR_W8 : std_logic_vector(15 downto 0);
-  signal TAIL_W1, TAIL_W2, TAIL_W3, TAIL_W4, TAIL_W5, TAIL_W6, TAIL_W7, TAIL_W8 : std_logic_vector(15 downto 0);
+  signal HEAD_D12 :  std_logic := '0';
+  signal HDR_W1, HDR_W2, HDR_W3, HDR_W4, HDR_W5, HDR_W6, HDR_W7, HDR_W8 : std_logic_vector(15 downto 0);--Adam Add initialization
+  --Adam signal TAIL_W1, TAIL_W2, TAIL_W3, TAIL_W4, TAIL_W5, TAIL_W6, TAIL_W7, TAIL_W8 : std_logic_vector(15 downto 0); --TAIL_W7 and TAIL_W8 not used
+  signal TAIL_W1, TAIL_W2, TAIL_W3, TAIL_W4, TAIL_W5, TAIL_W6 : std_logic_vector(15 downto 0);--Adam Add Initialization
 
 -- PAGE 3 
   signal GLRFD : std_logic;
-  signal L1CNT_RST, L1CNT_CEO_L, L1CNT_TC_L, L1CNT_CEO_H, L1CNT_TC_H : std_logic;
-  signal L1CNT : std_logic_vector(23 downto 0);
+  --Adam signal L1CNT_RST, L1CNT_CEO_L, L1CNT_TC_L, L1CNT_CEO_H, L1CNT_TC_H : std_logic; -- not used
+  --Adam signal L1CNT : std_logic_vector(23 downto 0); --not used
   
   signal RDY_CE, RDY, FIFORDY : std_logic_vector(NFEB+2 downto 1);
   
@@ -140,7 +152,7 @@ architecture CONTROL_arch of CONTROL is
   signal DOEALL, OEALL, OEALL_D, OEDATA, OEDATA_D, OEDATA_DD, POPLAST : std_logic;
   signal OEDATA_DAV : std_logic_vector(2 downto 0);
   signal JRDFF, JRDFF_D : std_logic;
-  signal EODATA, DATAON : std_logic;
+  --Adam signal EODATA, DATAON : std_logic; --not used
     
 -- PAGE 5
   signal DONE_VEC, OE_Q : std_logic_vector(NFEB+2 downto 1);
@@ -166,25 +178,39 @@ architecture CONTROL_arch of CONTROL is
   signal JREF : std_logic_vector(NFEB+2 downto 1);
 
 -- PAGE 10
-  signal KILL : std_logic_vector(NFEB+2 downto 1);
-  signal NSTAT : std_logic_vector(40 downto 20);
-  signal STATUS_Q : std_logic_vector(33 downto 27);
+  --Adam signal KILL : std_logic_vector(NFEB+2 downto 1); --used only for unused nstat
+  --Adam signal NSTAT : std_logic_vector(40 downto 20); --not used
+  --Adam signal STATUS_Q : std_logic_vector(33 downto 27); --not used
 
-  signal ver : std_logic_vector(1 downto 0) := "00";
-  signal l1a_dav_mismatch : std_logic := '0';
-  signal ovlp : std_logic_vector(5 downto 1) := "00000";
-  signal sync : std_logic_vector(3 downto 0) := "0000";
-  signal alct_to_end : std_logic := '0';
-  signal alct_to_start : std_logic := '0';
-  signal tmb_to_end : std_logic := '0';
-  signal tmb_to_start : std_logic := '0';
-  signal dcfeb_to_end : std_logic_vector(NFEB downto 1) := (OTHERS => '0');
-  signal dcfeb_to_start : std_logic_vector(NFEB downto 1) := (OTHERS => '0');
-  signal data_fifo_full : std_logic_vector(NFEB+2 downto 1) := (OTHERS => '0');
-  signal data_fifo_half : std_logic_vector(NFEB+2 downto 1) := (OTHERS => '0');
-  signal dmb_l1pipe : std_logic_vector(7 downto 0) := (OTHERS => '0');
-  signal GEMPTY_TMP : std_logic;
-  signal DATAIN_LAST_TMP : std_logic;
+  constant ver : std_logic_vector(1 downto 0) := "00";
+  constant l1a_dav_mismatch : std_logic := '0';
+  constant ovlp : std_logic_vector(5 downto 1) := "00000";
+  constant sync : std_logic_vector(3 downto 0) := "0000";
+  constant alct_to_end : std_logic := '0';
+  constant alct_to_start : std_logic := '0';
+  constant tmb_to_end : std_logic := '0';
+  constant tmb_to_start : std_logic := '0';
+  constant dcfeb_to_end : std_logic_vector(NFEB downto 1) := (OTHERS => '0');
+  constant dcfeb_to_start : std_logic_vector(NFEB downto 1) := (OTHERS => '0');
+  constant data_fifo_full : std_logic_vector(NFEB+2 downto 1) := (OTHERS => '0');
+  constant data_fifo_half : std_logic_vector(NFEB+2 downto 1) := (OTHERS => '0');
+  constant dmb_l1pipe : std_logic_vector(7 downto 0) := (OTHERS => '0');
+  --Adam signal ver : std_logic_vector(1 downto 0) := "00"; --signal is now a constant
+  --Adam signal l1a_dav_mismatch : std_logic := '0'; --signal is now a constant
+  --Adam signal ovlp : std_logic_vector(5 downto 1) := "00000"; --signal is now a constant
+  --Adam signal sync : std_logic_vector(3 downto 0) := "0000"; --signal is now a constant
+  --Adam signal alct_to_end : std_logic := '0'; --signal is now a constant
+  --Adam signal alct_to_start : std_logic := '0'; --signal is now a constant
+  --Adam signal tmb_to_end : std_logic := '0'; --signal is now a constant
+  --Adam signal tmb_to_start : std_logic := '0'; --signal is now a constant
+  --Adam signal dcfeb_to_end : std_logic_vector(NFEB downto 1) := (OTHERS => '0'); --signal is now a constant
+  --Adam signal dcfeb_to_start : std_logic_vector(NFEB downto 1) := (OTHERS => '0'); --signal is now a constant
+  --Adam signal data_fifo_full : std_logic_vector(NFEB+2 downto 1) := (OTHERS => '0'); --signal is now a constant
+  --Adam signal data_fifo_half : std_logic_vector(NFEB+2 downto 1) := (OTHERS => '0'); --signal is now a constant
+  --Adam signal dmb_l1pipe : std_logic_vector(7 downto 0) := (OTHERS => '0'); --signal is now a constant
+
+  signal GEMPTY_TMP : std_logic;  --Adam Add initialization
+  --Adam signal DATAIN_LAST_TMP : std_logic; --not used
 
 
 begin
@@ -198,26 +224,25 @@ begin
                 --or_reduce(cafifo_l1a_dav(NFEB downto 1));
                 or_reduce(not ffor_b(NFEB downto 1));  -- Ignores the L1A_CNT sent by the DCFEBs
   
-  DATAIN_LAST_TMP <= '1' when (DATAIN(11 downto 0) = "000000001000") else '0';
+  --Adam DATAIN_LAST_TMP <= '1' when (DATAIN(11 downto 0) = x"008") else '0'; --DATAIN_LAST_TMP unused
   
 --  Generate BUSY (page 1)
 --  FDC(GEMPTY, CLKCMS, POP, GEMPTY_D(1));
-  FDC(GEMPTY_TMP, CLKCMS, POP, GEMPTY_D(1));
-  FDCE(GEMPTY_D(1), CLK, GLRFD, POP, GEMPTY_D(2));
-  FDC(GEMPTY_D(2), CLK, POP, GEMPTY_D(3));
-  FDC(GEMPTY_D(3), CLK, POP, BUSY);
+  FDC_GEN_BUSY1 : FDC port map (GEMPTY_D(1), CLKCMS, POP, GEMPTY_TMP);
+  FDCE_GEN_BUSY : FDCE port map (GEMPTY_D(2), CLK, GLRFD, POP, GEMPTY_D(1));
+  FDC_GEN_BUSY2 : FDC port map (GEMPTY_D(3), CLK, POP, GEMPTY_D(2));
+  FDC_GEN_BUSY3 : FDC port map (BUSY, CLK, POP, GEMPTY_D(3));
 
 -- Generate OEHDR (page 1)
   STARTREAD_RST <= RST or OEHDR(1);
-  FDC(LOGICH, BUSY, STARTREAD_RST, STARTREAD);
-  FDC(STARTREAD, CLK, RST, OEHDR(1));
-  FDC(OEHDR(1), CLK, RST, OEHDR(2));
-  FDC(OEHDR(2), CLK, RST, OEHDR(3));
-  FDC(OEHDR(3), CLK, POP, OEHDR(4));
-  FDC(OEHDR(4), CLK, POP, OEHDR(5));
-  FDC(OEHDR(5), CLK, POP, OEHDR(6));
-  FDC(OEHDR(6), CLK, POP, OEHDR(7));
-  FDC(OEHDR(7), CLK, POP, OEHDR(8));
+  FDC_OEHDR_LOGICH : FDC port map (STARTREAD, BUSY, STARTREAD_RST, LOGICH);
+  FDC_OEHDR_START : FDC port map (OEHDR(1), CLK, RST, STARTREAD);
+  FDC_OEHDR1 : FDC port map (OEHDR(2),CLK,RST,OEHDR(1));
+  FDC_OEHDR2 : FDC port map (OEHDR(3),CLK,RST,OEHDR(2));
+  FDC_OEHDR_GEN : for i in 3 to 7 generate
+  begin
+    FDC_OEHDR : FDC port map (OEHDR(i+1),CLK,POP,OEHDR(i));
+  end generate FDC_OEHDR_GEN;
 
 -- Generate OEHDRA / Generata OEHDRB (page 1)
   OEHDRA <= OEHDR(1) or OEHDR(2) or OEHDR(3) or OEHDR(4);
@@ -230,27 +255,26 @@ begin
   TAIL_RST <= RST or TAIL(1);
   DDCNT_EN_RST <= RST or OKDATA; -- modified!
 --  DDCNT_EN_RST <= RST or EODATA;
-  FDCE(BUSY, CLK, OEHDR(8), TAIL_RST, DDCNT_EN(0));
-  FDC(LOGICH, DDCNT_EN(0), DDCNT_EN_RST, DDCNT_EN(1));
-  CB16CE(CLK, DDCNT_EN(1), TAIL_RST, DDCNT, DDCNT, DDCNT_CEO, DDCNT_TC);
+  FDCE_OKDATA : FDCE port map (DDCNT_EN(0), CLK, OEHDR(8), TAIL_RST, BUSY);
+  FDC_LOGICH : FDC port map (DDCNT_EN(1), DDCNT_EN(0), DDCNT_EN_RST, LOGICH);
+  --Adam CB16CE_OKDATA : CB16CE port map (DDCNT_CEO, DDCNT, DDCNT_TC, CLK, DDCNT_EN(1), TAIL_RST);
+  CB16CE_OKDATA : CB16CE port map (open, DDCNT, DDCNT_TC, CLK, DDCNT_EN(1), TAIL_RST);
 --  OKDATA <= DDCNT(8) and DDCNT(7) and DDCNT(6); -- modified!
   OKDATA <= '1' when DDCNT(2 downto 0) = "100" else '0'; -- modified by G&M
 --  DATAON <= not (DDCNT(8) and DDCNT(7) and DDCNT(6)); -- modified!
-  FDC(OKDATA, CLK, TAIL(1), DODAT);
+  FDC_OKDATA : FDC port map (DODAT, CLK, TAIL(1), OKDATA);
 --  EODATA <= not DATAON; -- modified!
 --  FDC(DATAON, CLK, TAIL(1), DODAT); -- modified!
   
 -- Generate TAIL (page 1)
   STARTTAIL_CE <= '1' when (BUSY='1' and (R(NFEB+2 downto 1) = ZERO9)) else '0';
-  FDCE(DODAT, CLK, STARTTAIL_CE, TAIL(1), STARTTAIL);
-  FDC(STARTTAIL, CLK, RST, TAIL(1));
-  FDC(TAIL(1), CLK, RST, TAIL(2));
-  FDC(TAIL(2), CLK, POP, TAIL(3));
-  FDC(TAIL(3), CLK, POP, TAIL(4));
-  FDC(TAIL(4), CLK, POP, TAIL(5));
-  FDC(TAIL(5), CLK, POP, TAIL(6));
-  FDC(TAIL(6), CLK, POP, TAIL(7));
-  FDC(TAIL(7), CLK, POP, TAIL(8));
+  FDCE_TAIL: FDCE port map (STARTTAIL, CLK, STARTTAIL_CE, TAIL(1), DODAT);
+  FDC_STARTTAIL : FDC port map (TAIL(1), CLK, RST, STARTTAIL);
+  FDC_TAIL1 : FDC port map (TAIL(2), CLK, RST, TAIL(1));
+  FDC_TAIL_GEN: for i in 2 to 7 generate
+  begin
+      FDC_TAIL : FDC port map (TAIL(i+1), CLK, POP, TAIL(i));
+  end generate FDC_TAIL_GEN;
 
 -- Generate TAILA / Generate TAILB (page 1)
   TAILA <= TAIL(1) or TAIL(2) or TAIL(3) or TAIL(4);
@@ -261,24 +285,25 @@ begin
   
 -- Generate DAV (page 1)
   DAV_D <= (OEDATA_DAV(2) or OEHDTL) and not DISDAV;
-  FDC(DAV_D, CLK, POP, DAV);
+  FDC_DAV : FDC port map (DAV, CLK, POP, DAV_D);
 --  FDC(DAV_D2, CLK, POP, DAV_D3);
 --  DAV <= DAV_D1 and DAV_D2 and DAV_D3;
     
 -- Generate POP (page 1)
-  FDC(TAIL(8), CLK, POP, TAILDONE);
+  FDC_TAILDONE : FDC port map (TAILDONE, CLK, POP, TAIL(8));
   L1ONLY <= '1' when (OEHDR(4)='1' and cafifo_l1a_match = ZERO9) else '0';
   STPOP <= TAILDONE or L1ONLY;
-  FDC(LOGICH, STPOP, POP, POP_D(1));
-  FDC(POP_D(1), CLK, RST, POP_D(2));
-  FDC(POP_D(2), CLK, RST, POP_D(3));
-  FDC(POP_D(3), CLK, RST, POP_D(4));
+  FDC_POP : FDC port map (POP_D(1), STPOP, POP, LOGICH);
+  FDC_POP_GEN: for i in 1 to 3 generate
+  begin
+    FDC_POP_D : FDC port map (POP_D(i+1), CLK, RST, POP_D(i));
+  end generate FDC_POP_GEN;
   POP <= RST or POP_D(4);
   
 -- Generate FIFO_POP (page 1)
   FIFO_POP_RST <= FIFO_POP_INNER or RST;
-  FDC(LOGICH, STPOP, FIFO_POP_RST, FIFO_POP_D);
-  FDC(FIFO_POP_D, CLKCMS, RST, FIFO_POP_INNER);
+  FDC_FIFO_POP_D : FDC port map (FIFO_POP_D, STPOP, FIFO_POP_RST, LOGICH);
+  FDC_FIFO_POP_INNER : FDC port map (FIFO_POP_INNER, CLKCMS, RST, FIFO_POP_D);
   FIFO_POP <= FIFO_POP_INNER;
   
   
@@ -286,15 +311,15 @@ begin
 
 -- Generate OEHDTL (page 2)
   OEHDTL_D <= DOHDR or DOTAIL;
-  FDC(OEHDTL_D, CLK, RST, OEHDTL);   
+  FDC_OEHDTL : FDC port map (OEHDTL, CLK, RST, OEHDTL_D);   
 
 -- Generate HEAD_D12 (page 2)
   HEAD_D12 <= or_reduce(cafifo_l1a_match);
 
 -- Generate FENDAVERR (page 2)
 --  FENDAV <= not KILLINPUT(NFEB+2 downto 1) and FIFO_L1A_MATCH(NFEB+2 downto 1);
-  FENDAV <= not KILL and cafifo_l1a_match;
-  FENDAVERR <= or_reduce(FENDAV);
+  --Adam FENDAV <= not KILL and cafifo_l1a_match; --used only to assigned unused fendaverr
+  --Adam FENDAVERR <= or_reduce(FENDAV); --not used
 
 -- Generate HDR_W (new, page 2)
 --  HDR_W1 <= "100" & HEAD_D12 & L1CNT(11 downto 0);
@@ -360,19 +385,18 @@ begin
 
 
 -- Generate GLRFD (page 3)
-  FDCE(LOGICH, CLK, GIGAEN, RST, GLRFD);
+  FDCE_GLRFD : FDCE port map (GLRFD, CLK, GIGAEN, RST, LOGICH);
 
 -- Generate L1CNT (page 3)
-  L1CNT_RST <= RST or L1ARST;
-  CB16CE(STARTREAD, LOGICH, L1CNT_RST, L1CNT(15 downto 0), L1CNT(15 downto 0), L1CNT_CEO_L, L1CNT_TC_L);
-  CB8CE(STARTREAD, L1CNT_CEO_L, L1CNT_RST, L1CNT(23 downto 16), L1CNT(23 downto 16), L1CNT_CEO_H, L1CNT_TC_H);
-
+  --Adam L1CNT_RST <= RST or L1ARST; --only used for CB16CE_L1CNT and CB8CE_L1CNT whose outputs aren't used
+  --Adam CB16CE_L1CNT: CB16CE port map (L1CNT_CEO_L, L1CNT(15 downto 0), L1CNT_TC_L, STARTREAD, LOGICH, L1CNT_RST); -- outputs never used (L1CNT_CEO_L is input to CB8CE_L1CNT whose outputs aren't used
+  --Adam CB8CE_L1CNT : CB8CE port map(L1CNT_CEO_H, L1CNT(23 downto 16), L1CNT_TC_H, STARTREAD, L1CNT_CEO_L, L1CNT_RST); -- outputs never used
 -- Generate RDY (page 3)
   RDY_CE <= not FIFORDY;
   GEN_RDY : for K in 1 to NFEB+2 generate
   begin
-    FD_1(FFOR_B(K), CLK, FIFORDY(K));
-    FDCE(DODAT, CLK, RDY_CE(K), POP, RDY(K));
+    FD_1_RDY : FD_1 port map (FIFORDY(K), CLK, FFOR_B(K));
+    FDCE_RDY : FDCE port map (RDY(K), CLK, RDY_CE(K), POP, DODAT);
   end generate GEN_RDY;
   
 -- Generate DISDAV (page 3)
@@ -381,19 +405,19 @@ begin
   DISDAV_D <= or_reduce(P_AND_FIFORDY);
 -- One extra clock cycle to align DAV with DOUT
 --  FD(DISDAV_D, CLK, DISDAV);
-  FD(DISDAV_D, CLK, DISDAV_DD);
-  FD(DISDAV_DD, CLK, DISDAV);
+  FD_DISDAV_D : FD port map (DISDAV_DD, CLK, DISDAV_D);
+  FD_DISDAV_DD : FD port map (DISDAV, CLK, DISDAV_DD);
   
   -- Generate LOOPBACK (page 3)
   LOOPBACK_Q_B <= not LOOPBACK_Q;
-  FDC(LOOPBACK_Q_B, SETLOOPBACK, RST, LOOPBACK_Q);
+  FDC_LOOPBACK : FDC port map (LOOPBACK_Q, SETLOOPBACK, RST, LOOPBACK_Q_B);
   LOOPBACK <= LOOPBACK_Q and not BUSY;
 
 -- Generate R (page 4)
   R_RST <= DONE_VEC or ERRORD;   
   GEN_R : for K in 1 to NFEB+2 generate
   begin
-    FDC(cafifo_l1a_match(K), BUSY, R_RST(K), R(K));
+    FDC_R : FDC port map (R(K), BUSY, R_RST(K), cafifo_l1a_match(K));
   end generate GEN_R;
   
 -- Generate P (page 4, LUT)
@@ -421,29 +445,29 @@ begin
 --  OEALL_D <= OE(1) or OE(2) or OE(3) or OE(4) or OE(5) or OE(6) or OE(7);
   OEALL_D <= or_reduce(OE);
   POPLAST <= POP or LAST;
-  FDC(OEALL_D, CLK, POPLAST, OEALL);
-  FDC(OEALL, CLK, POP, OEDATA_D);
-  FDC(OEALL, CLK, POPLAST, DOEALL);
+  FDC_OEALL : FDC port map (OEALL, CLK, POPLAST, OEALL_D);
+  FDC_OEDATA : FDC port map(OEDATA_D, CLK, POP, OEALL);
+  FDC_DOEALL : FDC port map(DOEALL, CLK, POPLAST, OEALL);
 -- One extra clock cycle to align DAV with DOUT
 --  FDC(OEDATA_D, CLK, POP, OEDATA);
-  FDC(OEDATA_D, CLK, POP, OEDATA_DD); 
-  FDC(OEDATA_DD, CLK, POP, OEDATA);
+  FDC_OEDATA_D : FDC port map (OEDATA_DD, CLK, POP, OEDATA_D); 
+  FDC_OEDATA_DD : FDC port map (OEDATA, CLK, POP, OEDATA_DD);
   
   -- Generate OEDATA_DAV (removes two clock cycles and shifts another)
-   FDC(OEDATA, CLK, POP, OEDATA_DAV(0));
-   FDC(OEDATA_DAV(0), CLK, POP, OEDATA_DAV(1));
+   FDC_OEDATA_DAV0 : FDC port map (OEDATA_DAV(0), CLK, POP, OEDATA);
+   FDC_OEDATA_DAV1 : FDC port map (OEDATA_DAV(1), CLK, POP, OEDATA_DAV(0));
    OEDATA_DAV(2) <= OEDATA_DAV(1) and OEDATA_DAV(0) and OEDATA and OEDATA_DD;
  
   
 -- Generate JRDFF (page 4)
-  FDC(LOGICH, RDFFNXT, JRDFF, JRDFF_D);
-  FDC(JRDFF_D, CLK, RST, JRDFF);
+  FDC_JRDFF : FDC port map (JRDFF_D, RDFFNXT, JRDFF, LOGICH);
+  FDC_JRDFFD : FDC port map (JRDFF, CLK, RST, JRDFF_D);
   
   
 -- Generate DONE_VEC (page 5)
   GEN_DONE_VEC: for K in 1 to NFEB+2 generate
   begin
-    FDC(OE(K), DONE, POP, OE_Q(K));
+    FDC_DONE_VEC : FDC port map (OE_Q(K), DONE, POP, OE(K));
     DONE_VEC(K) <= POP or OE_Q(K);
   end generate GEN_DONE_VEC;
 
@@ -451,9 +475,9 @@ begin
 -- Generate RENFIFO_B (page 5)
   GEN_RENFIFO_B: for K in 1 to NFEB+2 generate
   begin
-    FDC(OE(K), CLK, DONE_VEC(K), OOE(K));
+    FDC_RENFIFO_B : FDC port map (OOE(K), CLK, DONE_VEC(K), OE(K));
     RENFIFO_B_D(K) <= '0' when (JREF(K)='1' or (OOE(K)='1' and LAST='0')) else '1';
-    FDP(RENFIFO_B_D(K), CLK, POP, RENFIFO_B(K));
+    FDP_RENFIFO_B : FDP port map (RENFIFO_B(K),CLK,RENFIFO_B_D(K), POP);
 --    FDC(OE(K), CLK, DONE_VEC(K), OOE(K));
 --    RENFIFO_B(K) <= '0' when (JREF(K)='1' or (OOE(K)='1' and LAST='0')) else '1';
 ----    FDP(RENFIFO_B_D(K), CLK, POP, RENFIFO_B(K));
@@ -466,10 +490,10 @@ begin
 --    OEFIFO_B_D(K) <= '0' when (JOEF(K)='1' or OOE(K)='1') else '1'; -- In original design
     OEFIFO_B_D_D_D(K) <= '0' when (JOEF(K)='1' or OOE(K)='1') else '1'; -- Delayed 1.5 clock cycles to fix problem with last
     OEFIFO_B_PRE(K) <= POP or DONE_VEC(K);
---    FDP_1(OEFIFO_B_D(K), CLK, OEFIFO_B_PRE(K), OEFIFO_B(K));  -- In original design 
-    FDP_1(OEFIFO_B_D_D_D(K), CLK, OEFIFO_B_PRE(K), OEFIFO_B_D_D(K));  -- Delayed 1.5 clock cycles to fix problem with last
-    FDP_1(OEFIFO_B_D_D(K), CLK, OEFIFO_B_PRE(K), OEFIFO_B_D(K));  -- Delayed 1.5 clock cycles to fix problem with last
-    FDP(OEFIFO_B_D(K), CLK, OEFIFO_B_PRE(K), OEFIFO_B(K));      --- Delayed 1.5 clock cycles to fix problem with last
+--    FDP_1(OEFIFO_B_D(K), CLK, OEFIFO_B_PRE(K), OEFIFO_B(K));  -- In original design
+    FDP_1_OEFIFO_B_D_D : FDP_1 port map(OEFIFO_B_D_D(K), CLK, OEFIFO_B_D_D_D(K), OEFIFO_B_PRE(K));
+    FDP_1_OEFIFO_B_D : FDP_1 port map(OEFIFO_B_D(K), CLK, OEFIFO_B_D_D(K), OEFIFO_B_PRE(K));
+    FDP_OEFIFO_B : FDP port map (OEFIFO_B(K), CLK, OEFIFO_B_D(K), OEFIFO_B_PRE(K));
 --    OEFIFO_B_D(K) <= '0' when (JOEF(K)='1' or OE(K)='1') else '1';
 --    OEFIFO_B_PRE(K) <= POP or DONE_VEC(K);
 --    FDP_1(OEFIFO_B_D(K), CLK, OEFIFO_B_PRE(K), OEFIFO_B(K));
@@ -478,9 +502,10 @@ begin
   -- Generate DOUT (page 6)
   GEN_DOUT : for K in 0 to 15 generate
   begin
-    IFD_1(DATAIN(K), CLK, DATA_A(K));
-    FD(DATA_B(K), CLK, DATA_C(K));    
-    FDC(DATA_D(K), CLK, RST, DOUT(K));
+    IFD_1_DATA_A : IFD_1 port map(DATA_A(K), CLK, DATAIN(K));
+    --IFD_1(DATAIN(K), CLK, DATA_A(K));
+    FD_DOUT : FD port map (DATA_C(K), CLK, DATA_B(K));    
+    FDC_DOUT : FDC port map (DOUT(K), CLK, RST, DATA_D(K));
   end generate GEN_DOUT;
   DATA_B <= DATA_A    when (DODAT='1') else 
             DATA_HDR  when (DOHDR='1') else
@@ -489,24 +514,23 @@ begin
 
 
 -- Generate DONE / Generate LAST (new, page 6)
-  FDCE_1(DATAIN_LAST, CLK, DOEALL, LAST_RST, LAST);
+  FDCE_1_DONE : FDCE_1 port map (LAST, CLK, DOEALL, LAST_RST, DATAIN_LAST);
 --  FDCE_1(DATAIN_LAST_TMP, CLK, DOEALL, LAST_RST, LAST);
-  FD(LAST, CLK, DONE);
-  FD_1(LAST, CLK, LAST_RST);
+  FD_DONE : FD port map (DONE, CLK, LAST);
+  FD_1_DONE : FD_1 port map (LAST_RST, CLK, LAST);
 
-  
   
 -- Generate DAVNODATA / Generate DATANOEND / Generate ERRORD (page 7)
   DAVNODATA_D <= R and FIFORDY;
   GEN_ERRORD : for K in 1 to NFEB+2 generate
   begin
-    FDC(DAVNODATA_D(K), DODAT, POP, DAVNODATA(K));
-    FDCE(OE(K), CLKCMS, RSTCNT, POP, DATANOEND(K));
+    FDC_DAVNODATA : FDC port map (DAVNODATA(K), DODAT, POP, DAVNODATA_D(K));
+    FDCE_DATANOEND : FDCE port map (DATANOEND(K), CLKCMS, RSTCNT, POP, OE(K));
   end generate GEN_ERRORD;
   ERRORD <= DAVNODATA or DATANOEND;
   NOEND_RST <= DONE or STARTREAD or RSTCNT;    
-  CB16CE(CLKCMS, OEALL, NOEND_RST, NOEND, NOEND, NOEND_CEO, NOEND_TC);
-  FD(NOEND(11), CLKCMS, RSTCNT);
+  CB16CE_DATANOEND : CB16CE port map(NOEND_CEO, NOEND, NOEND_TC, CLKCMS, OEALL, NOEND_RST);
+  FD_NOEND : FD port map (RSTCNT, CLKCMS, NOEND(11));
   
   
 -- Generate REG_CRC (page 7)
@@ -533,15 +557,15 @@ begin
 
   GEN_REG_CRC : for K in 0 to 23 generate
   begin
-    FDCE(CRC(K), CLK, CRCEN, OEHDR(1), REG_CRC(K));
+    FDCE_REG_CRC : FDCE port map (REG_CRC(K), CLK, CRCEN, OEHDR(1), CRC(K));
   end generate GEN_REG_CRC;
 
   TAIL78 <= TAIL(7) or TAIL(8);
-  FD(TAIL78, CLK, DTAIL78);
-  FD(TAIL(7), CLK, DTAIL7);
-  FD(DTAIL7, CLK, DTAIL8);
+  FD_DTAIL78 : FD port map (DTAIL78, CLK, TAIL78);
+  FD_DTAIL7 : FD port map (DTAIL7, CLK, TAIL(7));
+  FD_DTAIL8 : FD port map (DTAIL8, CLK, DTAIL7);
   CRCEN_D <= OEHDRA or OEHDRB or TAILA;
-  FDC(CRCEN_D, CLK, RST, CRCEN_Q);
+  FDC_CRCEN : FDC port map (CRCEN_Q, CLK, RST, CRCEN_D);
   CRCEN <= '1' when (((CRCEN_Q or OEDATA_DD) = '1') and DISDAV_DD='0') else '0';
   DATA_CRC(10 downto 0) <= REG_CRC(10 downto 0) when (DTAIL7='1') else 
                            REG_CRC(21 downto 11) when (DTAIL8='1') else
@@ -552,12 +576,12 @@ begin
   DATA_CRC(15 downto 12) <= "1110";
 
 -- End Of Frame to DDUFIFO
-  FD(DTAIL8, CLK, EOF);
+  FD_EOF : FD port map (EOF, CLK, DTAIL8);
   
 -- Generate JREF (page 8)
   GEN_JREF : for K in 1 to NFEB+2 generate
   begin
-    FDE(JRDFF, CLK, JOEF(K), JREF(K));
+    FDE_JREF : FDE port map (JREF(K), CLK, JOEF(K), JRDFF);
   end generate GEN_JREF;
 
 
@@ -570,34 +594,25 @@ begin
 --  KILL(5) <= '1' when (KILLINPUT(2 downto 0)="101") else '0'; -- KILLCFEB3
 --  KILL(6) <= '1' when (KILLINPUT(2 downto 0)="110") else '0'; -- KILLCFEB4
 --  KILL(7) <= '1' when (KILLINPUT(2 downto 0)="111") else '0'; -- KILLCFEB5
-  KILL <= KILLINPUT;
+  --Adam KILL <= KILLINPUT; --used only for unused nstat
 
 -- Generate NSTAT(40 downto 34) - Half full KILL logic (page 10)
-  NSTAT(40) <= KILL(1) or STATUS(40);
-  NSTAT(39) <= KILL(2) or STATUS(39);
-  NSTAT(38 downto 34) <= KILL(7 downto 3) or STATUS(38 downto 34);
+  --Adam NSTAT(40) <= KILL(1) or STATUS(40); --not used
+  --Adam NSTAT(39) <= KILL(2) or STATUS(39); --not used
+  --Adam NSTAT(38 downto 34) <= KILL(7 downto 3) or STATUS(38 downto 34); --not used
 
 -- Generate NSTAT(26 downto 20) - Empty KILL logic (page 10)
-  NSTAT(26) <= KILL(1) or STATUS(26);
-  NSTAT(25) <= KILL(2) or STATUS(25);
-  NSTAT(24 downto 20) <= KILL(7 downto 3) or STATUS(24 downto 20);
+  --Adam NSTAT(26) <= KILL(1) or STATUS(26); --not used
+  --Adam NSTAT(25) <= KILL(2) or STATUS(25); --not used
+  --Adam NSTAT(24 downto 20) <= KILL(7 downto 3) or STATUS(24 downto 20); --not used
 
 -- Generate NSTAT(33 downto 27) - Full KILL logic (page 10)
-  FDCE(STATUS(33), CLK, STATUS(33), STATUS(40), STATUS_Q(33));
-  FDCE(STATUS(32), CLK, STATUS(32), STATUS(39), STATUS_Q(32));
-  FDCE(STATUS(31), CLK, STATUS(31), STATUS(38), STATUS_Q(31));
-  FDCE(STATUS(30), CLK, STATUS(30), STATUS(37), STATUS_Q(30));
-  FDCE(STATUS(29), CLK, STATUS(29), STATUS(36), STATUS_Q(29));
-  FDCE(STATUS(28), CLK, STATUS(28), STATUS(35), STATUS_Q(28));
-  FDCE(STATUS(27), CLK, STATUS(27), STATUS(34), STATUS_Q(27));
-  NSTAT(33) <= not KILL(1) and STATUS_Q(33);
-  NSTAT(32) <= not KILL(2) and STATUS_Q(32);
-  NSTAT(31 downto 27) <= not KILL(7 downto 3) and STATUS(31 downto 27);
-
-
-
-
-
-
+  --Adam FDCE_STATUS_GEN: for i in 27 to 33 generate --not used
+  --Adam begin --not used
+  --Adam FDCE_STATUS : FDCE port map (STATUS_Q(i), CLK, STATUS(i), STATUS(i+7), STATUS(i)); --not used
+  --Adam end generate FDCE_STATUS_GEN; --not used
+  --Adam NSTAT(33) <= not KILL(1) and STATUS_Q(33); --not used
+  --Adam NSTAT(32) <= not KILL(2) and STATUS_Q(32); --not used
+  --Adam NSTAT(31 downto 27) <= not KILL(7 downto 3) and STATUS(31 downto 27); --not used
 
 end CONTROL_arch;
