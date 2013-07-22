@@ -1,0 +1,8 @@
+*.syr            # ISE temporary file
+*.map            # ISE temporary file
+*.mrp            # ISE temporary file
+*.ncd            # ISE temporary file
+*.ngm            # ISE temporary file
+*.log		 # log files
+work/		 # All files in the work directory
+!work/_info	 @ Do track _info though
