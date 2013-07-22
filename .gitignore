@@ -1,11 +1,14 @@
+### ISE ###
+*.syr
+*.map
+*.mrp
+*.ncd
+*.ngm
+*.xrpt
+*.csv
+*.html
+*.log
+
+### ModelSim ###
 work/		 # All files in the work directory
 !work/_info	 # Do track _info though
-*.syr            # ISE temporary file
-*.map            # ISE temporary file
-*.mrp            # ISE temporary file
-*.ncd            # ISE temporary file
-*.ngm            # ISE temporary file
-*.xrpt           # ISE temporary file
-*.csv            # ISE temporary file
-*.html           # ISE temporary file
-*.log		 # log files
