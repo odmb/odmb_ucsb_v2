@@ -8069,10 +8069,11 @@ signal q_tmp : std_logic := TO_X01(INIT);
 
 begin
 
+  Q <= q_tmp;
+
 process(C)
 begin
   
-  Q <= q_tmp;
 
   if (C'event and C = '0') then
       q_tmp <= D;

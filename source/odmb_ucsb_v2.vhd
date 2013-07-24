@@ -287,6 +287,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       REPROG_B : out std_logic;
       TEST_INJ : out std_logic;
       TEST_PLS : out std_logic;
+      TEST_PED : out std_logic;
       TEST_LCT : out std_logic;
     OTMB_LCT_RQST : out std_logic;
     OTMB_EXT_TRIG : out std_logic;
@@ -468,6 +469,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       test_ccbinj : in std_logic;
       test_ccbpls : in std_logic;
+      test_ccbped : in std_logic;
 
       lct_err : out std_logic;          -- To an LED in the original design
       leds    : out std_logic_vector(6 downto 0);
@@ -724,7 +726,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal   PB_PULSE : std_logic := '0';
   signal   PB_B     : std_logic_vector(1 downto 0);
 
-  signal resync, test_inj, test_pls, test_l1a, test_lct : std_logic := '0';
+  signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct : std_logic := '0';
   signal otmb_lct_rqst, otmb_ext_trig : std_logic := '0';
   
 -- VME Signals
@@ -1147,6 +1149,7 @@ begin
       reprog_b => odmb_hardrst_b,
       test_inj => test_inj,
       test_pls => test_pls,
+      test_ped => test_ped,
       test_lct => test_lct,
       OTMB_LCT_RQST => otmb_lct_rqst,
       OTMB_EXT_TRIG => otmb_ext_trig,
@@ -1326,6 +1329,7 @@ begin
 
       test_ccbinj => test_inj,
       test_ccbpls => test_pls,
+      test_ccbped => test_ped,
 
       lct_err => lct_err,
       leds    => mbc_leds,

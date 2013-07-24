@@ -102,6 +102,7 @@ entity ODMB_VME is
     REPROG_B      : out std_logic;
     TEST_INJ      : out std_logic;
     TEST_PLS      : out std_logic;
+    TEST_PED      : out std_logic;
     TEST_LCT      : out std_logic;
     OTMB_LCT_RQST : out std_logic;
     OTMB_EXT_TRIG : out std_logic;
@@ -276,6 +277,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       REPROG_B      : out std_logic;
       TEST_INJ      : out std_logic;
       TEST_PLS      : out std_logic;
+      TEST_PED      : out std_logic;
       TEST_LCT      : out std_logic;
       OTMB_LCT_RQST : out std_logic;
       OTMB_EXT_TRIG : out std_logic;
@@ -608,6 +610,7 @@ begin
       REPROG_B      => reprog_b,
       TEST_INJ      => test_inj,
       TEST_PLS      => test_pls,
+      TEST_PED      => test_ped,
       TEST_LCT      => test_lct,
       OTMB_LCT_RQST => otmb_lct_rqst,
       OTMB_EXT_TRIG => otmb_ext_trig,

@@ -171,6 +171,8 @@ architecture CONTROL_arch of CONTROL is
   signal NOEND : std_logic_vector(15 downto 0);
   signal CRC, REG_CRC : std_logic_vector(23 downto 0) := (others => '0');
   signal CRCEN, CRCEN_D, CRCEN_Q : std_logic;
+-- Guido July 22
+  signal CRCEN_DATA, CRCEN_DATA_D0, CRCEN_DATA_D1, CRCEN_DATA_D2 : std_logic;
   signal DATA_CRC : std_logic_vector(15 downto 0);
   signal TAIL78, DTAIL78, DTAIL7, DTAIL8 : std_logic;
     
@@ -564,9 +566,18 @@ begin
   FD_DTAIL78 : FD port map (DTAIL78, CLK, TAIL78);
   FD_DTAIL7 : FD port map (DTAIL7, CLK, TAIL(7));
   FD_DTAIL8 : FD port map (DTAIL8, CLK, DTAIL7);
-  CRCEN_D <= OEHDRA or OEHDRB or TAILA;
+--  CRCEN_D <= OEHDRA or OEHDRB or TAILA;
+--  FDC_CRCEN : FDC port map (CRCEN_Q, CLK, RST, CRCEN_D);
+--  CRCEN <= '1' when (((CRCEN_Q or OEDATA_DD) = '1') and DISDAV_DD='0') else '0';
+--  Guido July 22
+  CRCEN_DATA_D0 <= '1' when ((OEDATA_DD = '1') and (DISDAV_DD = '0')) else '0';
+  FD_CRCEN_DATA_D1 : FD port map (CRCEN_DATA_D1, CLK, CRCEN_DATA_D0);
+  FD_CRCEN_DATA_D2 : FD port map (CRCEN_DATA_D2, CLK, CRCEN_DATA_D1);
+  CRCEN_DATA <= CRCEN_DATA_D0 and CRCEN_DATA_D2;
+  CRCEN_D <= OEHDRA or OEHDRB or TAILA or CRCEN_DATA;
   FDC_CRCEN : FDC port map (CRCEN_Q, CLK, RST, CRCEN_D);
-  CRCEN <= '1' when (((CRCEN_Q or OEDATA_DD) = '1') and DISDAV_DD='0') else '0';
+  CRCEN <= CRCEN_Q;
+
   DATA_CRC(10 downto 0) <= REG_CRC(10 downto 0) when (DTAIL7='1') else 
                            REG_CRC(21 downto 11) when (DTAIL8='1') else
                            (others => '0');

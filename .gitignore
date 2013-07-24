@@ -1,4 +1,16 @@
+### ModelSim ###
+work/
+!work/_info
+*.mti
+*.wlf
+commands/*out.txt
+
 ### ISE ###
+xlnx_auto_0_xdb/
+iseconfig/
+_xmsgs/
+_ngo/
+xst/
 *.syr
 *.map
 *.mrp
@@ -7,14 +19,34 @@
 *.xrpt
 *.csv
 *.html
-*.log
-_xmsgs/
-iseconfig/
 *.gise
-
-### ModelSim ###
-work/		 # All files in the work directory
-!work/_info	 # Do track _info though
+*.log
+*.bld
+*.cmd_log
+*.lso
+*.ngc
+*.ngd
+*.ngr
+*.prj
+*.stx
+*.xst
+*.ini
+*.xml
+*.pad
+*.par
+*.pcf
+*.ptwx
+*.twr
+*.twx
+*.unroutes
+*.ut
+*.xpi
+*pad.txt
+*.bgn
+*.xwbt
+*.drc
+*.bit
+*.mcs
 
 ### Other ###
 *~

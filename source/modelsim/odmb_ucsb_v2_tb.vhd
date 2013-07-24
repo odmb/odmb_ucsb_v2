@@ -52,6 +52,19 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   end component;
 
+  component file_handler_ccb is
+    port (
+      clk         : in  std_logic;
+      en          : in  std_logic;
+      ccb_cmd_s   : out std_logic;
+      ccb_cmd   : out std_logic_vector(5 downto 0);
+      ccb_data_s  : out std_logic;
+      ccb_data  : out std_logic_vector(7 downto 0);
+      ccb_cal     : out std_logic_vector(2 downto 0)
+      );
+
+  end component;
+
   component test_controller is
 
     port(
@@ -331,7 +344,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- clock and reset signals
 
-  signal go, goevent : std_logic := '0';
+  signal go, goevent,goccb : std_logic := '0';
 
   signal clk  : std_logic := '0';
   signal rst  : std_logic := '0';
@@ -565,6 +578,7 @@ begin
 
   go <= '1' after 10 us;
   --goevent <= '1' after 300 us;
+  --goccb <= '1' after 10 us;
 
   qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 10 ns;
   qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 10 ns;
@@ -672,11 +686,11 @@ begin
 
 -- From/To J6 (J3) connector to ODMB_CTRL
 
-      ccb_cmd     => ccb_cmd,           -- in
-      ccb_cmd_s   => ccb_cmd_s,         -- in
-      ccb_data    => ccb_data,          -- in
-      ccb_data_s  => ccb_data_s,        -- in
-      ccb_cal     => ccb_cal,           -- in
+      ccb_cmd     => ccb_cmd,           -- in - from file_handler_ccb
+      ccb_cmd_s   => ccb_cmd_s,         -- in - from file_handler_ccb
+      ccb_data    => ccb_data,          -- in - from file_handler_ccb
+      ccb_data_s  => ccb_data_s,        -- in - from file_handler_ccb
+      ccb_cal     => ccb_cal,           -- in - from file_handler_ccb
       ccb_crsv    => ccb_crsv,          -- in
       ccb_drsv    => ccb_drsv,          -- in
       ccb_rsvo    => ccb_rsvo,          -- in
@@ -796,6 +810,19 @@ begin
       alct_dav => alct_dav,
       tmb_dav  => tmb_dav,
       lct      => lct
+      );
+
+  PMAP_file_handler_ccb : file_handler_ccb
+
+    port map(
+
+      clk         => clk,
+      en          => goccb,
+      ccb_cmd_s   => ccb_cmd_s,
+      ccb_cmd     => ccb_cmd,
+      ccb_data_s  => ccb_data_s,
+      ccb_data    => ccb_data,
+      ccb_cal     => ccb_cal
       );
 
   l1a_b <= not l1a;

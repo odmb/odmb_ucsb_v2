@@ -28,6 +28,7 @@ entity VMEMON is
     REPROG_B      : out std_logic;
     TEST_INJ      : out std_logic;
     TEST_PLS      : out std_logic;
+    TEST_PED      : out std_logic;
     TEST_LCT      : out std_logic;
     OTMB_LCT_RQST : out std_logic;
     OTMB_EXT_TRIG : out std_logic;
@@ -158,7 +159,8 @@ begin
   REPROG_B   <= not REPROG;
   DCFEB_CTRL <= DCFEB_CTRL_INNER;
 
-
+  test_ped <= dcfeb_ctrl_inner(9);
+  
 -- Write LOOPBACK
   GEN_LOOPBACK : for I in 2 downto 0 generate
   begin

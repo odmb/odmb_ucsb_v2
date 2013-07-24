@@ -27,8 +27,11 @@ module file_handler(clk, start, vme_cmd_reg, vme_dat_reg_in, vme_dat_reg_out, vm
 
    initial
      begin
-	infile=$fopen("commands\\test_pc_loopback.txt","r");       // Test of TESTCTRL
-	outfile=$fopen("commands\\test_pc_loopback_out.txt","w");  // Test of TESTCTRL
+//		infile=$fopen("commands\\test_calpulse.txt","r");       // Test of TESTCTRL
+//		outfile=$fopen("commands\\test_calpulse_out.txt","w");  // Test of TESTCTRL
+
+		infile=$fopen("commands\\test_pc_loopback.txt","r");       // Test of TESTCTRL
+		outfile=$fopen("commands\\test_pc_loopback_out.txt","w");  // Test of TESTCTRL
 
 //	infile=$fopen("commands\\test_lvdbmon.txt","r");       // Test of TESTCTRL
 //	outfile=$fopen("commands\\test_lvdbmon_out.txt","w");  // Test of TESTCTRL
