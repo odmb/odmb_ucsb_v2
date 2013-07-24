@@ -3,6 +3,7 @@ work/
 !work/_info
 *.mti
 *.wlf
+*.bak
 commands/*out.txt
 
 ### ISE ###
