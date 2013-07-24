@@ -8,7 +8,13 @@
 *.csv
 *.html
 *.log
+_xmsgs/
+iseconfig/
+*.gise
 
 ### ModelSim ###
 work/		 # All files in the work directory
 !work/_info	 # Do track _info though
+
+### Other ###
+*~
