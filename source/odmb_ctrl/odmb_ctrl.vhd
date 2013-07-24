@@ -408,8 +408,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- to FIFOs
       OEFIFO_B   : out std_logic_vector(NFEB+2 downto 1);
       RENFIFO_B  : out std_logic_vector(NFEB+2 downto 1);
-      OEFFMON_B  : out std_logic_vector(NFEB+2 downto 1);
-      RENFFMON_B : out std_logic_vector(NFEB+2 downto 1);
 
 -- from FIFOs
       FFOR_B      : in std_logic_vector(NFEB+2 downto 1);
@@ -672,9 +670,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
 -------------------------------------------------------------------------------
 
-  signal mon_fifo_re : std_logic_vector(NFEB+2 downto 1);
-  signal mon_fifo_oe : std_logic_vector(NFEB+2 downto 1);
-
   signal status : std_logic_vector(47 downto 0) := (others => '0');
 
   signal rdffnxt     : std_logic := '0';  -- from MBV
@@ -809,8 +804,6 @@ begin
 -- to Data FIFOs
       OEFIFO_B   => data_fifo_oe,
       RENFIFO_B  => data_fifo_re,
-      OEFFMON_B  => mon_fifo_oe,
-      RENFFMON_B => mon_fifo_re,
 
 -- from Data FIFOs
       FFOR_B      => fifo_empty_b,

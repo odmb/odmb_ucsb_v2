@@ -1,22 +1,15 @@
+-- CONTROL: Monitor state of the nine data FIFOs and creates DDU packet when FIFOs are non-empty.
+
 library ieee;
 library work;
 library unisim;
 library hdlmacro;
 use hdlmacro.hdlmacro.CB16CE;
 use hdlmacro.hdlmacro.IFD_1;
-use unisim.vcomponents.FD;
-use unisim.vcomponents.FD_1;
-use unisim.vcomponents.FDC;
-use unisim.vcomponents.FDCE;
-use unisim.vcomponents.FDCE_1;
-use unisim.vcomponents.FDP;
-use unisim.vcomponents.FDP_1;
-use unisim.vcomponents.FDE;
+use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.and_reduce;
 use ieee.std_logic_misc.or_reduce;
---use work.Latches_Flipflops.IFD_1;
-
 
 entity CONTROL is
   generic (
@@ -33,14 +26,6 @@ entity CONTROL is
 -- From DMB_VME
     RDFFNXT : in std_logic;
 
-
--- from TRGFIFO
---    BXN     : in std_logic_vector(11 downto 0);
---    GEMPTY  : in std_logic;
---    CFEBBX  : in std_logic_vector(3 downto 0);
---    FIFO_L1A_MATCH  : in std_logic_vector(NFEB+2 downto 0);
---    DAVENBL : in std_logic_vector(5 downto 1);
-
 -- to GigaBit Link
     DOUT : out std_logic_vector(15 downto 0);
     DAV  : out std_logic;
@@ -48,8 +33,6 @@ entity CONTROL is
 -- to FIFOs
     OEFIFO_B  : out std_logic_vector(NFEB+2 downto 1);
     RENFIFO_B : out std_logic_vector(NFEB+2 downto 1);
-    OEFFMON_B  : out std_logic_vector(NFEB+2 downto 1); --Adam NEVER ASSIGNED!!!
-    RENFFMON_B : out std_logic_vector(NFEB+2 downto 1); --Adam NEVER ASSIGNED!!!
 
 -- from FIFOs
     FFOR_B : in std_logic_vector(NFEB+2 downto 1);
