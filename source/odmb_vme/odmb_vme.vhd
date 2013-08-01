@@ -97,6 +97,7 @@ entity ODMB_VME is
     diagout_lvdbmon  : out std_logic_vector(17 downto 0);
 
 -- From VMEMON
+    OPT_RESET_PULSE     : out std_logic;
     FW_RESET      : out std_logic;
     RESYNC        : out std_logic;
     REPROG_B      : out std_logic;
@@ -272,6 +273,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
+      OPT_RESET_PULSE     : out std_logic;
       FW_RESET      : out std_logic;
       RESYNC        : out std_logic;
       REPROG_B      : out std_logic;
@@ -605,6 +607,7 @@ begin
 
       DTACK => vme_dtack_b,
 
+      OPT_RESET_PULSE     => opt_reset_pulse,
       FW_RESET      => fw_reset,
       RESYNC        => resync,
       REPROG_B      => reprog_b,
@@ -628,20 +631,20 @@ begin
 
   DEV4_VMECONFREGS : VMECONFREGS
     port map (
-      SLOWCLK => CLK_S2 ,
-      RST     => RST ,
+      SLOWCLK => CLK_S2,
+      RST     => RST,
 
-      DEVICE  => DEVICE(4) ,
-      STROBE  => STROBE ,
-      COMMAND => CMD ,
+      DEVICE  => DEVICE(4),
+      STROBE  => STROBE,
+      COMMAND => CMD,
 
-      INDATA  => VME_DATA_IN ,
-      OUTDATA => OUTDATA_VMECONFREGS ,
+      INDATA  => VME_DATA_IN,
+      OUTDATA => OUTDATA_VMECONFREGS,
 
-      DTACK         => VME_DTACK_B ,
+      DTACK         => VME_DTACK_B,
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      TMB_PUSH_DLY  => TMB_PUSH_DLY ,
-      PUSH_DLY      => PUSH_DLY ,
+      TMB_PUSH_DLY  => TMB_PUSH_DLY,
+      PUSH_DLY      => PUSH_DLY,
       LCT_L1A_DLY   => LCT_L1A_DLY,
 
       INJ_DLY    => INJ_DLY,
@@ -654,17 +657,17 @@ begin
 
   DEV5_TESTFIFOS : TESTFIFOS
     port map (
-      SLOWCLK => CLK_S2 ,
-      RST     => RST ,
+      SLOWCLK => CLK_S2,
+      RST     => RST,
 
-      DEVICE  => DEVICE(5) ,
-      STROBE  => STROBE ,
-      COMMAND => CMD ,
+      DEVICE  => DEVICE(5),
+      STROBE  => STROBE,
+      COMMAND => CMD,
 
-      INDATA  => VME_DATA_IN ,
-      OUTDATA => OUTDATA_TESTFIFOS ,
+      INDATA  => VME_DATA_IN,
+      OUTDATA => OUTDATA_TESTFIFOS,
 
-      DTACK => VME_DTACK_B ,
+      DTACK => VME_DTACK_B,
 
       -- PC FIFO signals
       pc_tx_fifo_rst     => pc_tx_fifo_rst,

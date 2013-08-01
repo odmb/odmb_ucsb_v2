@@ -8,7 +8,8 @@ library UNISIM;
 use UNISIM.vcomponents.all;
 library UNIMACRO;
 use UNIMACRO.vcomponents.all;
-library hdlmacro; use hdlmacro.hdlmacro.all;
+library hdlmacro;
+use hdlmacro.hdlmacro.all;
 
 entity cafifo is
   generic (
@@ -17,10 +18,12 @@ entity cafifo is
     );  
   port(
 
-    clk : in std_logic;
-    dcfebclk : in std_logic;
-    rst : in std_logic;
-    resync : in std_logic;
+    clk        : in std_logic;
+    dcfebclk   : in std_logic;
+    rst        : in std_logic;
+    resync     : in std_logic;
+    l1acnt_rst : in std_logic;
+    bxcnt_rst : in std_logic;
 
     BC0   : in std_logic;
     BXRST : in std_logic;
@@ -58,8 +61,8 @@ entity cafifo is
     cafifo_bx_cnt    : out std_logic_vector(11 downto 0);
 
     ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
-    dcfeb_l1a_dav7  : out std_logic;    
-    
+    dcfeb_l1a_dav7     : out std_logic;
+
     cafifo_wr_addr : out std_logic_vector(3 downto 0);
     cafifo_rd_addr : out std_logic_vector(3 downto 0)
     );
@@ -103,7 +106,7 @@ architecture cafifo_architecture of cafifo is
   signal l1a_dav   : l1a_array_type;
 
   type l1a_b_array_type is array (FIFO_SIZE-1 downto 0) of std_logic;
-  signal l1a_dav_b8 : l1a_b_array_type;
+  signal l1a_dav_b8    : l1a_b_array_type;
   signal l1a_dav_b9_gm : l1a_b_array_type;
 
   signal l1a_cnt_wren, l1a_match_wren : std_logic;
@@ -185,10 +188,10 @@ begin
     
   end process;
 
-  
+
   ext_dcfeb_l1a_cnt7 <= ext_dcfeb_l1a_cnt(7);
-  dcfeb_l1a_dav7 <= dcfeb_l1a_dav(7);
-  
+  dcfeb_l1a_dav7     <= dcfeb_l1a_dav(7);
+
   wren <= l1a;
   rden <= pop;
 
@@ -341,22 +344,17 @@ begin
 
 -- l1a Counter
 
-  l1a_counter : process (clk, l1a, rst, resync)
-
+  l1a_counter : process (clk, l1a, l1acnt_rst, resync)
     variable l1a_cnt_data : std_logic_vector(23 downto 0);
-
   begin
-
-    if (rst = '1' or resync = '1') then
+    if (l1acnt_rst = '1' or resync = '1') then
       l1a_cnt_data := (others => '0');
     elsif (rising_edge(clk)) then
       if (l1a = '1') then
         l1a_cnt_data := l1a_cnt_data + 1;
       end if;
     end if;
-
     l1a_cnt_out <= l1a_cnt_data + 1;
-    
   end process;
 
 -- Memory
@@ -378,10 +376,9 @@ begin
 
   cafifo_l1a_cnt <= l1a_cnt_out-1;
 
-  bx_cnt_fifo : process (l1a_cnt_wren, wr_addr_out, rst, clk, bx_cnt_out)
-
+  bx_cnt_fifo : process (l1a_cnt_wren, wr_addr_out, bxcnt_rst, clk, bx_cnt_out)
   begin
-    if (rst = '1') then
+    if (bxcnt_rst = '1') then
       for index in 0 to FIFO_SIZE-1 loop
         bx_cnt(index) <= (others => '0');
       end loop;
@@ -390,7 +387,6 @@ begin
         bx_cnt(wr_addr_out) <= bx_cnt_out;
       end if;
     end if;
-
   end process;
 
   cafifo_bx_cnt <= bx_cnt(rd_addr_out)(11 downto 0);
@@ -421,7 +417,7 @@ begin
                                             -- too many problems with 0
       end loop;
     elsif (l1a_match_wren = '1') then
-        l1a_dav(wr_addr_out) <= (others => '0');
+      l1a_dav(wr_addr_out) <= (others => '0');
     elsif(rising_edge(dcfebclk)) then
       for index in 0 to FIFO_SIZE-1 loop
         for dcfeb_index in 1 to NFEB loop

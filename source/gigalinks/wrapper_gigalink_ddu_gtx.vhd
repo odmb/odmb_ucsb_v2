@@ -215,7 +215,7 @@ begin
       GEN_TXUSRCLK  => (true),
       TX_DATA_WIDTH => (20),
       TX_USRCLK_CFG => (x"00"),
-      TXOUTCLK_CTRL => ("TXOUTCLKPMA_DIV2"),
+      TXOUTCLK_CTRL => ("TXOUTCLKPMA_DIV1"),
       TXOUTCLK_DLY  => ("0000000000"),
 
       --------------TX Buffering and Phase Alignment----------------
@@ -272,7 +272,7 @@ begin
       -------------------------RX Interface-------------------------
       GEN_RXUSRCLK  => (true),
       RX_DATA_WIDTH => (20),
-      RXRECCLK_CTRL => ("RXRECCLKPMA_DIV2"),
+      RXRECCLK_CTRL => ("RXRECCLKPMA_DIV1"),
       RXRECCLK_DLY  => ("0000000000"),
       RXUSRCLK_DLY  => (x"0000"),
 
@@ -285,8 +285,8 @@ begin
       RCV_TERM_GND        => (false),
       RCV_TERM_VTTRX      => (true),
       RX_EN_IDLE_HOLD_CDR => (false),
-      RX_EN_IDLE_RESET_FR => (false),
-      RX_EN_IDLE_RESET_PH => (false),
+      RX_EN_IDLE_RESET_FR => (true),
+      RX_EN_IDLE_RESET_PH => (true),
       TX_DETECT_RX_CFG    => (x"1832"),
       TERMINATION_CTRL    => ("00000"),
       TERMINATION_OVRD    => (false),
@@ -332,7 +332,7 @@ begin
 
       -------------RX Elastic Buffer and Phase alignment------------
       RX_BUFFER_USE            => (true),
-      RX_EN_IDLE_RESET_BUF     => (false),
+      RX_EN_IDLE_RESET_BUF     => (true),
       RX_EN_MODE_RESET_BUF     => (true),
       RX_EN_RATE_RESET_BUF     => (true),
       RX_EN_REALIGN_RESET_BUF  => (false),

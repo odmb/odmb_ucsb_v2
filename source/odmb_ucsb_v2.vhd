@@ -282,6 +282,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       diagout_lvdbmon  : out std_logic_vector(17 downto 0);
 
       -- From VMEMON
+    OPT_RESET_PULSE     : out std_logic;
       FW_RESET : out std_logic;
       RESYNC   : out std_logic;
       REPROG_B : out std_logic;
@@ -424,11 +425,13 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       cafifo_l1a_dav       : out std_logic_vector(NFEB+2 downto 1);
       cafifo_bx_cnt        : out std_logic_vector(11 downto 0);
 
-      ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
-      dcfeb_l1a_dav7     : out std_logic;
-
       cafifo_wr_addr : out std_logic_vector(3 downto 0);
       cafifo_rd_addr : out std_logic_vector(3 downto 0);
+
+      ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
+      dcfeb_l1a_dav7     : out std_logic;
+      l1acnt_rst         : in  std_logic;
+      bxcnt_rst         : in  std_logic;
 
 -- To PCFIFO
       gl_pc_tx_ack : in std_logic;
@@ -547,6 +550,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       RX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0)
       );
   end component;
+
 
   component gigalink_ddu is
     generic (
@@ -728,6 +732,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct : std_logic := '0';
   signal otmb_lct_rqst, otmb_ext_trig : std_logic := '0';
+  signal l1acnt_rst, bxcnt_rst : std_logic := '0';
   
 -- VME Signals
 
@@ -923,8 +928,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Other signals
 
-  signal reset, int_reset : std_logic := '0';
-
   signal int_dl_jtag_tdo : std_logic_vector(7 downto 1) := "0000000";
 
   signal int_lvmb_pon                                 : std_logic_vector(7 downto 0);
@@ -964,7 +967,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal diagout_cfebjtag : std_logic_vector(17 downto 0);
   signal diagout_lvdbmon  : std_logic_vector(17 downto 0);
 
-  signal por_reg  : std_logic_vector (31 downto 0) := (others => '0');
+  signal pon_rst_reg, fw_rst_reg, opt_rst_reg : std_logic_vector (31 downto 0) := (others => '0');
+  signal reset, opt_reset, fw_reset_q : std_logic := '0';
+  signal opt_reset_pulse, opt_reset_pulse_q : std_logic := '0';
+
+
   signal mbc_leds : std_logic_vector (6 downto 0);
 
   signal select_diagnostic : integer := 0;
@@ -1144,6 +1151,7 @@ begin
       diagout_lvdbmon  => diagout_lvdbmon,
 
 -- From VMEMON    
+      OPT_RESET_PULSE => opt_reset_pulse,
       FW_RESET => fw_reset,
       resync   => resync,
       reprog_b => odmb_hardrst_b,
@@ -1288,6 +1296,9 @@ begin
       ext_dcfeb_l1a_cnt7   => ext_dcfeb_l1a_cnt7,
       dcfeb_l1a_dav7       => dcfeb_l1a_dav7,
 
+      l1acnt_rst => l1acnt_rst,
+      bxcnt_rst  => bxcnt_rst,
+      
 -- To PCFIFO
       gl_pc_tx_ack => gl_pc_tx_ack,
       dduclk       => dduclk,
@@ -1354,12 +1365,13 @@ begin
 
 ---------------------------  Optical tranceivers  ---------------------------
 -----------------------------------------------------------------------------
-  
+
+
   GIGALINK_DDU_PM : gigalink_ddu
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
       REF_CLK_80 => gl0_clk,            -- 80 MHz for DDU data rate
-      RST        => reset,
+      RST        => opt_reset,
       -- Transmitter signals
       TXD        => gtx0_data,          -- Data to be transmitted
       TXD_VLD    => gtx0_data_valid,    -- Flag for valid data;
@@ -1391,7 +1403,7 @@ begin
   GIGALINK_PC_PM : gigalink_pc
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
-      RST     => reset,
+      RST     => opt_reset,
       REFCLK  => gl1_clk,
       -- Transmitter signals
       TXD     => gtx1_data,             -- Data to be transmitted
@@ -1776,13 +1788,24 @@ begin
 
 
 -- Power ON reset [The FD is to avoid an event on an array]
-  FD_RESET : FD port map(int_reset, clk2p5, fw_reset);
-  por_reg <= x"0FFFFFFF" when (pll1_locked = '0' or (int_reset = '0' and odmb_ctrl_reg(8) = '1')) else
-             por_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
-             por_reg;
-  reset <= por_reg(31) or not pb(0);
+  FD_FW_RESET  : FD port map(fw_reset_q, clk2p5, fw_reset);
+  FD_OPT_RESET : FD port map(opt_reset_pulse_q, clk2p5, opt_reset_pulse);
+  pon_rst_reg <= x"0FFFFFFF" when (pll1_locked = '0' or (fw_reset_q = '0' and odmb_ctrl_reg(8) = '1')) else
+                 pon_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
+                 pon_rst_reg;
+  fw_rst_reg <= x"0FFFFFFF" when (fw_reset_q = '0' and fw_reset = '1') else
+                fw_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
+                fw_rst_reg;
+  opt_rst_reg <= x"0FFFFFFF" when (opt_reset_pulse_q = '0' and opt_reset_pulse = '1') else
+                 opt_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
+                 opt_rst_reg;
+  reset     <= fw_rst_reg(31) or pon_rst_reg(31) or not pb(0);  -- Firmware reset
+  opt_reset <= opt_rst_reg(31) or pon_rst_reg(31);  -- Optical reset
 
-
+  -- Threw the kitchen sink here. This needs to be checked
+  l1acnt_rst <= not ccb_evcntres or not ccb_l1arst or not ccb_softrst or reset; 
+  bxcnt_rst <= not ccb_bxrst or reset;
+  
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
   PULLDOWN_DCFEB_TMS : PULLDOWN port map (int_tms);
   PULLDOWN_ODMB_TMS  : PULLDOWN port map (v6_tms);

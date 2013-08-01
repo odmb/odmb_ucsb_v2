@@ -23,6 +23,7 @@ entity VMEMON is
 
     DTACK : out std_logic;
 
+    OPT_RESET_PULSE     : out std_logic;
     FW_RESET      : out std_logic;
     RESYNC        : out std_logic;
     REPROG_B      : out std_logic;
@@ -74,7 +75,7 @@ architecture VMEMON_Arch of VMEMON is
 
   signal ODMB_RST, DCFEB_RST                                : std_logic_vector(15 downto 0) := (others => '0');
   signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST : std_logic                     := '0';
-  signal LCT_RQST_RST, EXT_TRIG_RST                         : std_logic                     := '0';
+  signal LCT_RQST_RST, EXT_TRIG_RST, OPT_RESET_PULSE_RST          : std_logic                     := '0';
   signal REPROG, DO_RESYNC, TEST_LCT_RST, RESET_RST         : std_logic                     := '0';
 
   signal OUT_LOOPBACK                           : std_logic_vector(15 downto 0) := (others => '0');
@@ -139,12 +140,13 @@ begin
   GEN_DCFEB_CTRL : for K in 0 to 15 generate
   begin
     DCFEB_RST(K) <= REPROG_RST when K = 0 else
-                    RESYNC_RST   when K = 1 else
-                    TEST_INJ_RST when K = 2 else
-                    TEST_PLS_RST when K = 3 else
-                    TEST_LCT_RST when K = 4 else
-                    LCT_RQST_RST when K = 5 else
-                    EXT_TRIG_RST when K = 6 else
+                    RESYNC_RST    when K = 1 else
+                    TEST_INJ_RST  when K = 2 else
+                    TEST_PLS_RST  when K = 3 else
+                    TEST_LCT_RST  when K = 4 else
+                    LCT_RQST_RST  when K = 5 else
+                    EXT_TRIG_RST  when K = 6 else
+                    OPT_RESET_PULSE_RST when K = 7 else
                     RST;
     ODMB_DCFEB_K : FDCE port map (DCFEB_CTRL_INNER(K), STROBE, W_DCFEB_CTRL, DCFEB_RST(K), INDATA(K));
   end generate GEN_DCFEB_CTRL;
@@ -156,11 +158,12 @@ begin
   PULSE_L1A    : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1, dcfeb_ctrl_inner(4));
   PULSE_LCT    : PULSE_EDGE port map(otmb_lct_rqst, lct_rqst_rst, clk40, rst, 1, dcfeb_ctrl_inner(5));
   PULSE_EXT    : PULSE_EDGE port map(otmb_ext_trig, ext_trig_rst, clk40, rst, 1, dcfeb_ctrl_inner(6));
+  PULSE_OPT    : PULSE_EDGE port map(opt_reset_pulse, opt_reset_pulse_rst, clk40, rst, 1, dcfeb_ctrl_inner(7));
   REPROG_B   <= not REPROG;
   DCFEB_CTRL <= DCFEB_CTRL_INNER;
 
   test_ped <= dcfeb_ctrl_inner(9);
-  
+
 -- Write LOOPBACK
   GEN_LOOPBACK : for I in 2 downto 0 generate
   begin
@@ -202,10 +205,10 @@ begin
 
   OUTDATA(15 downto 0) <= ODMB_CTRL_INNER(15 downto 0) when (STROBE = '1' and R_ODMB_CTRL = '1') else
                           DCFEB_CTRL_INNER(15 downto 0) when (STROBE = '1' and R_DCFEB_CTRL = '1') else
-                          OUT_TP_SEL(15 downto 0)       when (STROBE = '1' and R_TP_SEL = '1')     else
-                          OUT_LOOPBACK(15 downto 0)     when (STROBE = '1' and R_LOOPBACK = '1')   else
+                          OUT_TP_SEL(15 downto 0)       when (STROBE = '1' and R_TP_SEL = '1') else
+                          OUT_LOOPBACK(15 downto 0)     when (STROBE = '1' and R_LOOPBACK = '1') else
                           OUT_TXDIFFCTRL(15 downto 0)   when (STROBE = '1' and R_TXDIFFCTRL = '1') else
-                          ODMB_DATA(15 downto 0)        when (STROBE = '1' and R_ODMB_DATA = '1')  else
+                          ODMB_DATA(15 downto 0)        when (STROBE = '1' and R_ODMB_DATA = '1') else
                           (others => 'L');
 
 -- bug in uncleaned version?

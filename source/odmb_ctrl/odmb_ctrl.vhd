@@ -86,6 +86,8 @@ entity ODMB_CTRL is
 
     ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
     dcfeb_l1a_dav7     : out std_logic;
+    l1acnt_rst         : in  std_logic;
+    bxcnt_rst         : in  std_logic;
 
 
 -- To PCFIFO
@@ -210,10 +212,10 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CLKCMS : in std_logic;
       CLK    : in std_logic;
 
-      DOUT   : in std_logic_vector(15 downto 0);
-      DAV    : in std_logic;
+      DOUT : in std_logic_vector(15 downto 0);
+      DAV  : in std_logic;
 
-      CRC_ERROR  : out std_logic
+      CRC_ERROR : out std_logic
       );
 
   end component;
@@ -406,8 +408,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       DAV  : out std_logic;
 
 -- to FIFOs
-      OEFIFO_B   : out std_logic_vector(NFEB+2 downto 1);
-      RENFIFO_B  : out std_logic_vector(NFEB+2 downto 1);
+      OEFIFO_B  : out std_logic_vector(NFEB+2 downto 1);
+      RENFIFO_B : out std_logic_vector(NFEB+2 downto 1);
 
 -- from FIFOs
       FFOR_B      : in std_logic_vector(NFEB+2 downto 1);
@@ -450,10 +452,12 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       );  
     port(
 
-      clk      : in std_logic;
-      dcfebclk : in std_logic;
-      rst      : in std_logic;
-      resync   : in std_logic;
+      clk        : in std_logic;
+      dcfebclk   : in std_logic;
+      rst        : in std_logic;
+      resync     : in std_logic;
+      l1acnt_rst : in std_logic;
+      bxcnt_rst : in std_logic;
 
       BC0   : in std_logic;
       BXRST : in std_logic;
@@ -690,17 +694,17 @@ begin
 --  status(40 downto 34) <= fifo_hfull(7 downto 1);   -- from Data FIFOs
 --  status(47 downto 41) <= fifo_aempty(7 downto 1);  -- from Data FIFOs
   
-  CRC_CHECKER_PM : CRC_CHECKER 
+  CRC_CHECKER_PM : CRC_CHECKER
     port map (
 
-      RST           => reset,
-      CLK           => dduclk,
-      CLKCMS        => clk40,
+      RST    => reset,
+      CLK    => dduclk,
+      CLKCMS => clk40,
 
-      DOUT          => ddu_data,
-      DAV           => ddu_data_valid_inner,
+      DOUT => ddu_data,
+      DAV  => ddu_data_valid_inner,
 
-      CRC_ERROR     => open
+      CRC_ERROR => open
       );
 
 
@@ -735,10 +739,12 @@ begin
   CAFIFO_PM : cafifo
     generic map (NFEB => NFEB, FIFO_SIZE => FIFO_SIZE)
     port map(
-      clk      => clk40,
-      dcfebclk => clk160,
-      rst      => reset,
-      resync   => resync,
+      clk        => clk40,
+      dcfebclk   => clk160,
+      rst        => reset,
+      resync     => resync,
+      l1acnt_rst => l1acnt_rst,
+      bxcnt_rst => bxcnt_rst,
 
       BC0   => bc0,
       BXRST => ccb_bxrst,               -- SHOULD BE bxrst,
@@ -802,8 +808,8 @@ begin
       DAV  => ddu_data_valid_inner,
 
 -- to Data FIFOs
-      OEFIFO_B   => data_fifo_oe,
-      RENFIFO_B  => data_fifo_re,
+      OEFIFO_B  => data_fifo_oe,
+      RENFIFO_B => data_fifo_re,
 
 -- from Data FIFOs
       FFOR_B      => fifo_empty_b,

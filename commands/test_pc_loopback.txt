@@ -1,4 +1,12 @@
 W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  3000  280	Select dummy DCFEBs and internally generated triggers
 
 == ============ Dummy DCFEBs packet 1 ============ ==
 W  401C  3FE	Set KILL

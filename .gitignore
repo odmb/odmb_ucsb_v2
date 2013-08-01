@@ -4,6 +4,7 @@ work/
 *.mti
 *.wlf
 *.bak
+*.do
 commands/*out.txt
 
 ### ISE ###

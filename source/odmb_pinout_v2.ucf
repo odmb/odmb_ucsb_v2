@@ -18,6 +18,9 @@ NET  "alct[8]"  		LOC = "AD30"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "alct[9]"  		LOC = "AF30"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "ccb_bx0"  		LOC = "AA34"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "ccb_bxrst"		LOC = "W34"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
+NET: "ccb_evcntres"		LOC = "R34"     | IOSTANDARD = LVCMOS25 | PULLUP; #STAT2
+NET  "ccb_l1arst"		LOC = "AA33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
+NET  "ccb_softrst"		LOC = "AC34"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_cal[0]"		LOC = "V27"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_cal[1]"		LOC = "U25"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_cal[2]"		LOC = "V30"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
@@ -45,7 +48,6 @@ NET  "ccb_data_s"		LOC = "R33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_drsv[0]"		LOC = "U31"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_drsv[1]"		LOC = "AP32"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_l1acc"		LOC = "AB33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
-NET  "ccb_l1arst"		LOC = "AA33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_l1rls"		LOC = "AG28"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok	 #STAT0 (out) 
 NET  "ccb_rsvi[0]"		LOC = "AD25"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0 (out) 
 NET  "ccb_rsvi[1]"		LOC = "AF28"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0 (out) 
@@ -55,7 +57,6 @@ NET  "ccb_rsvo[1]"		LOC = "AP33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STA
 NET  "ccb_rsvo[2]"		LOC = "AN33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_rsvo[3]"		LOC = "AN34"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_rsvo[4]"		LOC = "AM33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
-NET  "ccb_softrst"		LOC = "AC34"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "d[0]"			LOC = "AL19"  	| IOSTANDARD = LVCMOS25;  # ok test_vme_ga[5] #STAT0
 NET  "d[10]"			LOC = "AN18"  	| IOSTANDARD = LVCMOS25;  # ok test_vme_addr(19) #STAT0
 NET  "d[11]"			LOC = "AP19"  	| IOSTANDARD = LVCMOS25;  # ok test_vme_addr(18) #STAT0
@@ -416,7 +417,6 @@ NET: "qpll_clk160mhz_n"		LOC = "P5" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #
 NET: "qpll_clk160mhz_p"		LOC = "P6" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
 NET: "alctdav"			LOC = "AE26" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "bc0"			LOC = "L16" | IOSTANDARD = LVCMOS25; #STAT2
-NET: "ccb_evcntres"		LOC = "R34" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "ccb_hardrst_b"		LOC = "T30" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "done_p_1"		LOC = "AP17" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "done_p_2"		LOC = "AJ16" | IOSTANDARD = LVCMOS25; #STAT2

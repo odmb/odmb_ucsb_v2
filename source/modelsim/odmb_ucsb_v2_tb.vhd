@@ -598,8 +598,8 @@ begin
   orx_p(1) <= gl1_tx_p;                 -- Test of the PC TX
   orx_n(1) <= gl1_tx_n;                 -- Test of the PC TX
 
-  orx_p(2) <= gl1_tx_p;                 -- Test of the DCFEB RX
-  orx_n(2) <= gl1_tx_n;                 -- Test of the DCFEB RX
+  orx_p(2) <= gl0_tx_p;                 -- Test of the DCFEB RX
+  orx_n(2) <= gl0_tx_n;                 -- Test of the DCFEB RX
   orx_p(3) <= gl1_tx_p;                 -- Test of the DCFEB RX
   orx_n(3) <= gl1_tx_n;                 -- Test of the DCFEB RX
   orx_p(4) <= gl1_tx_p;                 -- Test of the DCFEB RX
