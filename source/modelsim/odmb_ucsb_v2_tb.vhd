@@ -468,13 +468,15 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal ccb_rsvo    : std_logic_vector(4 downto 0) := "00000";          -- in
   signal ccb_rsvi    : std_logic_vector(2 downto 0);                     -- out
   signal ccb_bx0     : std_logic                    := '1';              -- in
-  signal ccb_bxrst   : std_logic                    := '1';              -- in
-  signal ccb_l1arst  : std_logic                    := '1';              -- in
   signal ccb_l1acc   : std_logic                    := '1';              -- in
   signal ccb_l1rls   : std_logic;                                        -- out
   signal ccb_clken   : std_logic                    := '1';              -- in
   signal ccb_hardrst : std_logic                    := '1';              -- in
   signal ccb_softrst : std_logic                    := '1';              -- in
+  signal ccb_evcntres : std_logic := '1';
+  signal ccb_bxrst   : std_logic                    := '1';              -- in
+  signal ccb_l1arst  : std_logic                    := '1';              -- in
+  
 
 -- From J6/J7 (J3/J4) to FIFOs
 
@@ -569,8 +571,6 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   signal reset : std_logic := '1';
 
-  signal ccb_evcntres : std_logic := '0';
-  
 
 begin
 

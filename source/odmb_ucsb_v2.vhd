@@ -403,6 +403,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       gtx0_data_valid : out std_logic;
       gtx1_data       : out std_logic_vector(15 downto 0);                                                     
       gtx1_data_valid : out std_logic;
+      ddu_eof         : out std_logic;
 
 -- From/To FIFOs
 
@@ -489,9 +490,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       EXT_DLY       : in std_logic_vector(4 downto 0);
       CALLCT_DLY    : in std_logic_vector(3 downto 0);
       KILL          : in std_logic_vector(NFEB+2 downto 1);
-      CRATEID       : in std_logic_vector(6 downto 0);
-
-      ddu_data_valid : out std_logic
+      CRATEID       : in std_logic_vector(6 downto 0)
       ); 
   end component;  -- ODMB_CTRL
 
@@ -901,12 +900,12 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal grx1_data       : std_logic_vector(15 downto 0) := "0000000000000000";
   signal grx1_data_valid : std_logic                     := '0';
 
-  signal gtx0_data                               : std_logic_vector(15 downto 0);
-  signal gtx0_data_valid                         : std_logic;
-  signal gtx1_data                               : std_logic_vector(15 downto 0);
-  signal gtx1_data_valid                         : std_logic;
-  signal gtx0_data_valid_cnt, ddu_data_valid_cnt : std_logic_vector(15 downto 0);
-  signal int_l1a_cnt                             : std_logic_vector(15 downto 0);
+  signal gtx0_data                        : std_logic_vector(15 downto 0);
+  signal gtx0_data_valid, ddu_eof         : std_logic;
+  signal gtx1_data                        : std_logic_vector(15 downto 0);
+  signal gtx1_data_valid                  : std_logic;
+  signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
+  signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
 
   signal gl1_clk, gl1_clk_2_buf          : std_logic;
   signal gl0_clk, gl0_clk_2, gl0_clk_buf : std_logic;
@@ -1270,7 +1269,8 @@ begin
       gtx0_data_valid => gtx0_data_valid,
       gtx1_data       => gtx1_data,
       gtx1_data_valid => gtx1_data_valid,
-
+      ddu_eof         => ddu_eof,
+      
 -- From/To FIFOs
 
       data_fifo_re => data_fifo_re_b,
@@ -1357,9 +1357,7 @@ begin
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
       KILL          => KILL,
-      CRATEID       => CRATEID,
-
-      ddu_data_valid => ddu_data_valid
+      CRATEID       => CRATEID
       );                                -- MBC : ODMB_CTRL
 
 
@@ -2215,14 +2213,13 @@ begin
   end process;
 
 
-  -- gtx0_data_valid is high when tx from pcfifo to testctrl
-  -- count rising edge of gtx0_data_valid
-  gtx0_dv_cnt_proc : process (gtx0_data_valid, reset)
+  -- PC packets counter
+  gtx0_dv_cnt_proc : process (gtx1_data_valid, reset)
   begin
     if (reset = '1') then
-      gtx0_data_valid_cnt <= (others => '0');
-    elsif (rising_edge(gtx0_data_valid)) then
-      gtx0_data_valid_cnt <= gtx0_data_valid_cnt + 1;
+      gtx1_data_valid_cnt <= (others => '0');
+    elsif (rising_edge(gtx1_data_valid)) then
+      gtx1_data_valid_cnt <= gtx1_data_valid_cnt + 1;
     end if;
   end process;
 
@@ -2235,15 +2232,13 @@ begin
     end if;
   end process;
 
-  -- count rising edge of ddu_data_valid (from control to pcfifo)
-  -- expect high on start of transmission of header, tailer
-  -- and each data packet
-  gtx_dv_cnt_proc : process (ddu_data_valid, reset)
+  -- DDU packet counter
+  gtx_dv_cnt_proc : process (ddu_eof, reset)
   begin
     if (reset = '1') then
-      ddu_data_valid_cnt <= (others => '0');
-    elsif (rising_edge(ddu_data_valid)) then
-      ddu_data_valid_cnt <= ddu_data_valid_cnt + 1;
+      ddu_eof_cnt <= (others => '0');
+    elsif (rising_edge(ddu_eof)) then
+      ddu_eof_cnt <= ddu_eof_cnt + 1;
     end if;
   end process;
 
@@ -2352,7 +2347,7 @@ begin
 
   odmb_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, mbc_instr, mbc_jtag_ir, odmb_data_sel,
                          l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
-                         data_fifo_re_cnt, gtx0_data_valid_cnt, ddu_data_valid_cnt, data_fifo_oe_cnt, crc_cnt)
+                         data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, crc_cnt)
   begin
     
     case odmb_data_sel is
@@ -2442,9 +2437,9 @@ begin
       when x"48" => odmb_data <= into_cafifo_dav_cnt(8);
       when x"49" => odmb_data <= into_cafifo_dav_cnt(9);
 
-      when x"4A" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
-      when x"4B" => odmb_data <= ddu_data_valid_cnt;  -- from control to pcfifo        
-      when x"4C" => odmb_data <= gtx0_data_valid_cnt;  -- from pcfifo to testctrl
+      when x"4A" => odmb_data <= ddu_eof_cnt;          -- Number of packets sent to DDU
+      when x"4B" => odmb_data <= gtx1_data_valid_cnt;  -- Number of packets sent to PC
+      when x"4C" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
 
       when x"51" => odmb_data <= data_fifo_re_cnt(1);  -- from control to FIFOs in top
       when x"52" => odmb_data <= data_fifo_re_cnt(2);  -- from control to FIFOs in top

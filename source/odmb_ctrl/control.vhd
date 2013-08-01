@@ -203,11 +203,13 @@ begin
 --  DAV <= 'L';
 
   
-  GEMPTY_TMP <= and_reduce(cafifo_l1a_dav(9 downto 8)) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '1') else
-                cafifo_l1a_dav(9) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '0') else
-                cafifo_l1a_dav(8) when (cafifo_l1a_match(9) = '0' and cafifo_l1a_match(8) = '1') else
-                --or_reduce(cafifo_l1a_dav(NFEB downto 1));
-                or_reduce(not ffor_b(NFEB downto 1));  -- Ignores the L1A_CNT sent by the DCFEBs
+  --GEMPTY_TMP <= and_reduce(cafifo_l1a_dav(9 downto 8)) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '1') else
+  --              cafifo_l1a_dav(9) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '0') else
+  --              cafifo_l1a_dav(8) when (cafifo_l1a_match(9) = '0' and cafifo_l1a_match(8) = '1') else
+  --              --or_reduce(cafifo_l1a_dav(NFEB downto 1));
+  --              or_reduce(not ffor_b(NFEB downto 1));  -- Ignores the L1A_CNT sent by the DCFEBs
+  
+  GEMPTY_TMP <= or_reduce(not ffor_b(NFEB downto 1));  -- Ignores the L1A_CNT sent by the DCFEBs
   
   --Adam DATAIN_LAST_TMP <= '1' when (DATAIN(11 downto 0) = x"008") else '0'; --DATAIN_LAST_TMP unused
   

@@ -7,7 +7,7 @@ use ieee.std_logic_1164.all;
 
 entity ODMB_CTRL is
   generic (
-    NFIFO     : integer range 1 to 16 := 8;  -- Number of FIFOs in PCFIFO
+    NFIFO     : integer range 1 to 16 := 16;  -- Number of FIFOs in PCFIFO
     NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
     FIFO_SIZE : integer range 1 to 64 := 16  -- Number FIFO words in CAFIFO
     );  
@@ -60,6 +60,7 @@ entity ODMB_CTRL is
     gtx0_data_valid : out std_logic;
     gtx1_data       : out std_logic_vector(15 downto 0);
     gtx1_data_valid : out std_logic;
+    ddu_eof         : out std_logic;
 
 -- From/To Data FIFOs
 
@@ -87,7 +88,7 @@ entity ODMB_CTRL is
     ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
     dcfeb_l1a_dav7     : out std_logic;
     l1acnt_rst         : in  std_logic;
-    bxcnt_rst         : in  std_logic;
+    bxcnt_rst          : in  std_logic;
 
 
 -- To PCFIFO
@@ -145,9 +146,7 @@ entity ODMB_CTRL is
     EXT_DLY       : in std_logic_vector(4 downto 0);
     CALLCT_DLY    : in std_logic_vector(3 downto 0);
     KILL          : in std_logic_vector(NFEB+2 downto 1);
-    CRATEID       : in std_logic_vector(6 downto 0);
-
-    ddu_data_valid : out std_logic
+    CRATEID       : in std_logic_vector(6 downto 0)
     );
 
 end ODMB_CTRL;
@@ -457,7 +456,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       rst        : in std_logic;
       resync     : in std_logic;
       l1acnt_rst : in std_logic;
-      bxcnt_rst : in std_logic;
+      bxcnt_rst  : in std_logic;
 
       BC0   : in std_logic;
       BXRST : in std_logic;
@@ -744,7 +743,7 @@ begin
       rst        => reset,
       resync     => resync,
       l1acnt_rst => l1acnt_rst,
-      bxcnt_rst => bxcnt_rst,
+      bxcnt_rst  => bxcnt_rst,
 
       BC0   => bc0,
       BXRST => ccb_bxrst,               -- SHOULD BE bxrst,
@@ -867,7 +866,7 @@ begin
 
 
 
-  
+  ddu_eof   <= eof;  -- This counts the number of packets sent to the DDU
   mbc_instr <= instr;
 
   leds <= crateid;
@@ -1041,8 +1040,6 @@ begin
   gtx0_data_valid <= ddu_data_valid_inner;
   gtx1_data       <= pc_data;
   gtx1_data_valid <= pc_data_valid;
-
-  ddu_data_valid <= ddu_data_valid_inner;
 
   cafifo_l1a_match_in  <= cafifo_l1a_match_in_inner(NFEB+2 downto 1);
   cafifo_l1a_match_out <= cafifo_l1a_match_out_inner;

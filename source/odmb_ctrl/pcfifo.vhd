@@ -9,7 +9,7 @@ library hdlmacro; use hdlmacro.hdlmacro.all;
 
 entity pcfifo is
   generic (
-    NFIFO : integer range 1 to 16 := 8);  -- Number of FIFOs in PCFIFO
+    NFIFO : integer range 1 to 16 := 16);  -- Number of FIFOs in PCFIFO
   port(
 
     clk_in  : in std_logic;
@@ -51,7 +51,7 @@ architecture pcfifo_architecture of pcfifo is
   signal f0_out                                 : std_logic_vector(15 downto 0);
   signal f0_ld                                  : std_logic;
 
-  signal ld_in_q              : std_logic                    := '0';
+  signal ld_in_q, ld_in_pulse : std_logic                    := '0';
   signal ld_out, ld_out_pulse : std_logic                    := '0';
   signal tx_ack_q             : std_logic_vector(2 downto 0) := (others => '0');
   signal tx_ack_q_b           : std_logic                    := '1';
@@ -192,18 +192,19 @@ begin
 
 -- FSMs 
 
-  LD_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_in, rst, 1, ld_out);
+  LDOUT_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_in, rst, 1, ld_out);
+  LDIN_PULSE_EDGE : pulse_edge port map(ld_in_pulse, open, clk_in, rst, 1, fifo_in(1)(17));
 
-  pck_cnt : process (ld_in, ld_out, rst, clk_in, ld_out_pulse)
+  pck_cnt : process (ld_in_pulse, ld_out_pulse, rst, clk_in)
     variable pck_cnt_data : std_logic_vector(7 downto 0) := (others => '0');
   begin
 
     if (rst = '1') then
       pck_cnt_data := (others => '0');
     elsif (rising_edge(clk_in)) then
-      if (ld_in = '1') and (ld_out = '0') then
+      if (ld_in_pulse = '1') and (ld_out_pulse = '0') then
         pck_cnt_data := pck_cnt_data + 1;
-      elsif (ld_in = '0') and (ld_out_pulse = '1') then
+      elsif (ld_in_pulse = '0') and (ld_out_pulse = '1') then
         pck_cnt_data := pck_cnt_data - 1;
       end if;
     end if;
