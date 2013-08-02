@@ -5,7 +5,8 @@ library UNISIM;
 use UNISIM.vcomponents.all;
 library UNIMACRO;
 use UNIMACRO.vcomponents.all;
-library hdlmacro; use hdlmacro.hdlmacro.all;
+library hdlmacro;
+use hdlmacro.hdlmacro.all;
 
 entity pcfifo is
   generic (
@@ -42,21 +43,21 @@ architecture pcfifo_architecture of pcfifo is
       );
   end component;
 
-  type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER);
+  type fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, IDLE_ETH);
   signal f0_current_state : fsm_state_type := IDLE;
-  signal f0_next_state : fsm_state_type := IDLE;
+  signal f0_next_state    : fsm_state_type := IDLE;
 
-  signal f0_rden                                : std_logic;
+  signal f0_rden  : std_logic;
   signal f0_empty : std_logic;
-  signal f0_out                                 : std_logic_vector(15 downto 0);
-  signal f0_ld                                  : std_logic;
+  signal f0_out   : std_logic_vector(15 downto 0);
+  signal f0_ld    : std_logic;
 
   signal ld_in_q, ld_in_pulse : std_logic                    := '0';
   signal ld_out, ld_out_pulse : std_logic                    := '0';
   signal tx_ack_q             : std_logic_vector(2 downto 0) := (others => '0');
   signal tx_ack_q_b           : std_logic                    := '1';
 
-  type   fifo_data_type is array (NFIFO downto 1) of std_logic_vector(17 downto 0);
+  type fifo_data_type is array (NFIFO downto 1) of std_logic_vector(17 downto 0);
   signal fifo_in, fifo_out        : fifo_data_type;
   signal fifo_aempty              : std_logic_vector(NFIFO downto 1);
   signal fifo_afull               : std_logic_vector(NFIFO downto 1);
@@ -64,11 +65,16 @@ architecture pcfifo_architecture of pcfifo is
   signal fifo_full                : std_logic_vector(NFIFO downto 1);
   signal fifo_wren, fifo_wrck     : std_logic_vector(NFIFO downto 1);
   signal fifo_rden, fifo_rdck     : std_logic_vector(NFIFO downto 1);
-  type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
+  type fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
   signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
 
   signal pck_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
-  signal int_clk     : std_logic := '0';
+  signal int_clk     : std_logic                    := '0';
+
+  -- IDLE_ETH ensures the interframe gap of 96 bits between packets
+  signal idle_cnt_en, idle_cnt_rst : std_logic            := '0';
+  signal idle_cnt                  : integer range 0 to 9 := 0; 
+  
   
 begin
 
@@ -181,9 +187,9 @@ begin
       WREN        => fifo_wren(1)       -- Input write enable
       );
 
-  f0_out    <= fifo_out(1)(15 downto 0);
-  f0_ld     <= fifo_out(1)(17);
-  f0_empty  <= fifo_empty(1);
+  f0_out   <= fifo_out(1)(15 downto 0);
+  f0_ld    <= fifo_out(1)(17);
+  f0_empty <= fifo_empty(1);
 
   FDCACK   : FDC port map(tx_ack_q(0), tx_ack, tx_ack_q(2), tx_ack_q_b);
   FDACK_Q  : FD port map(tx_ack_q(1), clk_out, tx_ack_q(0));
@@ -192,16 +198,15 @@ begin
 
 -- FSMs 
 
-  LDOUT_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_in, rst, 1, ld_out);
-  LDIN_PULSE_EDGE : pulse_edge port map(ld_in_pulse, open, clk_in, rst, 1, fifo_in(1)(17));
+  LDOUT_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_out, rst, 1, ld_out);
+  LDIN_PULSE_EDGE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, fifo_in(1)(17));
 
-  pck_cnt : process (ld_in_pulse, ld_out_pulse, rst, clk_in)
+  pck_cnt : process (ld_in_pulse, ld_out_pulse, rst, clk_out)
     variable pck_cnt_data : std_logic_vector(7 downto 0) := (others => '0');
   begin
-
     if (rst = '1') then
       pck_cnt_data := (others => '0');
-    elsif (rising_edge(clk_in)) then
+    elsif (rising_edge(clk_out)) then
       if (ld_in_pulse = '1') and (ld_out_pulse = '0') then
         pck_cnt_data := pck_cnt_data + 1;
       elsif (ld_in_pulse = '0') and (ld_out_pulse = '1') then
@@ -213,33 +218,30 @@ begin
     
   end process;
 
-  f0_fsm_regs : process (f0_next_state, rst, clk_out)
-
+  f0_fsm_regs : process (f0_next_state, rst, clk_out, idle_cnt)
   begin
     if (rst = '1') then
       f0_current_state <= IDLE;
     elsif rising_edge(clk_out) then
       f0_current_state <= f0_next_state;
+      if(idle_cnt_rst = '1') then
+        idle_cnt <= 0;
+      elsif(idle_cnt_en = '1') then
+        idle_cnt <= idle_cnt + 1;
+      end if;
     end if;
     
   end process;
 
-  f0_fsm_logic : process (f0_current_state, f0_out, f0_empty, f0_ld, pck_cnt_out, tx_ack_q)
+  f0_fsm_logic : process (f0_current_state, f0_out, f0_empty, f0_ld, pck_cnt_out, tx_ack_q, idle_cnt)
   begin
-    
     case f0_current_state is
-      
       when IDLE =>
-        dv_out   <= '0';
-        data_out <= (others => '0');
---        if (ld_in_q = '1') then
---          f0_rden       <= '1';
---          f0_next_state <= FIFO_TX_HEADER;
---        else
---          f0_rden       <= '0';
---          f0_next_state <= IDLE;
---        end if;
-        ld_out   <= '0';
+        dv_out       <= '0';
+        data_out     <= (others => '0');
+        ld_out       <= '0';
+        idle_cnt_rst <= '0';
+        idle_cnt_en  <= '0';
         if (pck_cnt_out = "00000000") then
           f0_rden       <= '0';
           f0_next_state <= IDLE;
@@ -249,9 +251,11 @@ begin
         end if;
         
       when FIFO_TX_HEADER =>
-        dv_out   <= '1';
-        data_out <= f0_out;
-        ld_out   <= '0';
+        dv_out       <= '1';
+        data_out     <= f0_out;
+        ld_out       <= '0';
+        idle_cnt_rst <= '0';
+        idle_cnt_en  <= '0';
         if (tx_ack_q(0) = '1') then
           f0_rden       <= '1';
           f0_next_state <= FIFO_TX;
@@ -261,24 +265,42 @@ begin
         end if;
 
       when FIFO_TX =>
-        dv_out   <= '1';
-        data_out <= f0_out;
-        f0_rden  <= '1';
+        dv_out       <= '1';
+        data_out     <= f0_out;
+        idle_cnt_rst <= '0';
+        idle_cnt_en  <= '0';
 --        if (f0_empty = '1') then
         if (f0_empty = '1') or (f0_ld = '1') then
           ld_out        <= '1';
-          f0_next_state <= IDLE;
+          f0_rden       <= '0';
+          f0_next_state <= IDLE_ETH;
         else
           ld_out        <= '0';
+          f0_rden       <= '1';
           f0_next_state <= FIFO_TX;
         end if;
 
+      when IDLE_ETH =>
+        dv_out      <= '0';
+        data_out    <= (others => '0');
+        ld_out      <= '0';
+        f0_rden     <= '0';
+        idle_cnt_en <= '1';
+        if (idle_cnt > 7) then
+          f0_next_state <= IDLE;
+          idle_cnt_rst  <= '1';
+        else
+          f0_next_state <= IDLE_ETH;
+          idle_cnt_rst  <= '0';
+        end if;
+        
       when others =>
-
         dv_out        <= '0';
         data_out      <= (others => '0');
         f0_rden       <= '0';
         ld_out        <= '0';
+        idle_cnt_rst  <= '0';
+        idle_cnt_en   <= '0';
         f0_next_state <= IDLE;
         
     end case;

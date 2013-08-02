@@ -49,6 +49,8 @@ xst/
 *.drc
 *.bit
 *.mcs
+*.cfi
+*.prm
 
 ### Other ###
 *~

@@ -13,6 +13,8 @@ R  2C   0       Read current write address
 R  3C   0       Read current read address
 W  8 	40	Write FIFO
 W  8 	41	Write FIFO
+W  8 	45	Write FIFO
+W  8 	46	Write FIFO
 W  8 	50	Write FIFO
 W  8 	51	Write FIFO
 W  8 	60	Write FIFO
@@ -23,6 +25,8 @@ W  8 	80	Write FIFO
 W  8 	81	Write FIFO
 W  8 	b0	Write FIFO
 W  8 	b1	Write FIFO
+W  8 	b5	Write FIFO
+W  8 	b6	Write FIFO
 W  8 	c0	Write FIFO
 W  8 	c1	Write FIFO
 W  8 	d0	Write FIFO
@@ -53,6 +57,10 @@ W  8 	0	Write FIFO
 W  8 	0	Write FIFO
 W  8 	0	Write FIFO
 W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
+W  8 	0	Write FIFO
 
 W  20	4	Select FIFO 3 [Triggers]  
 W  8   	11	Write FIFO [LCT on DCFEB 4]			    
@@ -63,8 +71,12 @@ W  8   	ff	Write FIFO [LCTs on DCFEBs 1,2,3,4,5,6,7]
 W  8   	0	Write FIFO			    
 W  8   	ff	Write FIFO [LCTs on DCFEBs 1,2,3,4,5,6,7]			    
 W  8   	0	Write FIFO			    
+W  8   	ff	Write FIFO [LCTs on DCFEBs 1,2,3,4,5,6,7]			    
+W  8   	0	Write FIFO			    
 W  8   	c1	Write FIFO [LCTs on DCFEBs 6,7]			    
 W  8   	0	Write FIFO			    
+W  8   	400	Write FIFO [L1A]			    
+W  8   	0	Write FIFO
 W  8   	400	Write FIFO [L1A]			    
 W  8   	0	Write FIFO
 W  8   	700	Write FIFO [L1A, ALCT]			    
@@ -77,6 +89,9 @@ W  8   	700	Write FIFO [L1A, ALCT]
 W  8   	0	Write FIFO
 
 == =========== Start run & Check status ============= ==
+R  1C   0       Read state of FIFOs
+R  2C   0       Read current write address
+R  3C   0       Read current read address
 W  20	18	Select FIFO 4 [DDU data] and start run
 
 R  329C 0	Read Time stamp MSB
@@ -103,6 +118,11 @@ R  328C 0	Read Time stamp LSB
 
 R  34AC 0	Read Number of packets sent to DDU
 R  34BC 0	Read Number of packets sent to PC
+
+R  1C   0       Read state of FIFOs
+W  20	11	Select FIFO 1 and keep running
+R  2C   0       Read current write address
+R  3C   0       Read current read address
 
 == ============ Reading PC RX FIFO ================ ==
 R 520C 0 Read number of words in PC RX FIFO
