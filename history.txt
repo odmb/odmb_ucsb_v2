@@ -7,6 +7,17 @@
 =                                                                    =
 ======================================================================
 
+V00-09: 8 August 2013, Manuel
+--------------------------------
+Synchronized PCFIFO with the output clock, added an interframe gap,
+and fixed a problem with packets that were too short.
+Packets to the PC are fairly reliable now.
+
+V00-08: 1 August 2013, Manuel
+--------------------------------
+Separated the FW and optical resets.
+Included L1A_CNT and BX_CNT resets coming from the CCB.
+
 V00-07: 18 July 2013, Manuel
 --------------------------------
 Added commands to send pulses to OTMB_LCT_RQST and OTMB_EXT_TRIG.
