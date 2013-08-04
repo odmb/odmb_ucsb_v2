@@ -3,7 +3,9 @@
 library ieee;
 library work;
 library unisim;
+library unimacro;
 use unisim.vcomponents.all;
+use unimacro.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
@@ -15,6 +17,7 @@ entity TESTFIFOS is
 
     SLOWCLK : in std_logic;
     RST     : in std_logic;
+    CLK40   : in std_logic;
 
     DEVICE  : in std_logic;
     STROBE  : in std_logic;
@@ -24,6 +27,12 @@ entity TESTFIFOS is
     OUTDATA : out std_logic_vector(15 downto 0);
 
     DTACK : out std_logic;
+
+    -- ALCT/OTMB FIFO signals
+    alct_fifo_data_in    : in std_logic_vector(17 downto 0);
+    alct_fifo_data_valid : in std_logic;
+    otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
+    otmb_fifo_data_valid : in std_logic;
 
     -- PC_TX FIFO signals
     PC_TX_FIFO_DOUT    : in  std_logic_vector(15 downto 0);
@@ -59,7 +68,6 @@ entity TESTFIFOS is
 end TESTFIFOS;
 
 
-
 architecture TESTFIFOS_Arch of TESTFIFOS is
 
   component PULSE_EDGE is
@@ -73,10 +81,23 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
       );
   end component;
 
+  component FIFOWORDS is
+    generic (WIDTH : integer := 16);
+    port (
+      RST   : in  std_logic;
+      WRCLK : in  std_logic;
+      WREN  : in  std_logic;
+      FULL  : in  std_logic;
+      RDCLK : in  std_logic;
+      RDEN  : in  std_logic;
+      COUNT : out std_logic_vector(WIDTH-1 downto 0)
+      );
+  end component;
+
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : std_logic_vector(15 downto 0);
 
-  type   FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
+  type FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
   signal FIFO_RD                                : FIFO_RD_TYPE;
   signal C_FIFO_RD                              : std_logic_vector(NFEB downto 1) := (others => '0');
   signal OUT_TFF_READ                           : std_logic_vector(15 downto 0)   := (others => '0');
@@ -101,8 +122,9 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal R_PC_TX_FF_READ, C_PC_TX_FF_RD       : std_logic                     := '0';
   signal D_R_PC_TX_FF_READ, Q_R_PC_TX_FF_READ : std_logic                     := '0';
 
-  signal OUT_PC_TX_FF_WRD_CNT                                           : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_PC_TX_FF_WRD_CNT, D_R_PC_TX_FF_WRD_CNT, Q_R_PC_TX_FF_WRD_CNT : std_logic                     := '0';
+  signal OUT_PC_TX_FF_WRD_CNT                     : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_TX_FF_WRD_CNT, D_R_PC_TX_FF_WRD_CNT : std_logic                     := '0';
+  signal Q_R_PC_TX_FF_WRD_CNT                     : std_logic                     := '0';
 
   signal W_PC_TX_FF_RST, D_W_PC_TX_FF_RST, Q_W_PC_TX_FF_RST : std_logic := '0';
   signal PULSE_PC_TX_FF_RST, IN_PC_TX_FF_RST                : std_logic := '0';
@@ -113,8 +135,9 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal R_PC_RX_FF_READ, C_PC_RX_FF_RD       : std_logic                     := '0';
   signal D_R_PC_RX_FF_READ, Q_R_PC_RX_FF_READ : std_logic                     := '0';
 
-  signal OUT_PC_RX_FF_WRD_CNT                                           : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_PC_RX_FF_WRD_CNT, D_R_PC_RX_FF_WRD_CNT, Q_R_PC_RX_FF_WRD_CNT : std_logic                     := '0';
+  signal OUT_PC_RX_FF_WRD_CNT                     : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_RX_FF_WRD_CNT, D_R_PC_RX_FF_WRD_CNT : std_logic                     := '0';
+  signal Q_R_PC_RX_FF_WRD_CNT                     : std_logic                     := '0';
 
   signal W_PC_RX_FF_RST, D_W_PC_RX_FF_RST, Q_W_PC_RX_FF_RST : std_logic := '0';
   signal PULSE_PC_RX_FF_RST, IN_PC_RX_FF_RST                : std_logic := '0';
@@ -125,8 +148,9 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal R_DDU_TX_FF_READ, C_DDU_TX_FF_RD       : std_logic                     := '0';
   signal D_R_DDU_TX_FF_READ, Q_R_DDU_TX_FF_READ : std_logic                     := '0';
 
-  signal OUT_DDU_TX_FF_WRD_CNT                                             : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_DDU_TX_FF_WRD_CNT, D_R_DDU_TX_FF_WRD_CNT, Q_R_DDU_TX_FF_WRD_CNT : std_logic                     := '0';
+  signal OUT_DDU_TX_FF_WRD_CNT                      : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_DDU_TX_FF_WRD_CNT, D_R_DDU_TX_FF_WRD_CNT : std_logic                     := '0';
+  signal Q_R_DDU_TX_FF_WRD_CNT                      : std_logic                     := '0';
 
   signal W_DDU_TX_FF_RST, D_W_DDU_TX_FF_RST, Q_W_DDU_TX_FF_RST : std_logic := '0';
   signal PULSE_DDU_TX_FF_RST, IN_DDU_TX_FF_RST                 : std_logic := '0';
@@ -137,12 +161,57 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal R_DDU_RX_FF_READ, C_DDU_RX_FF_RD       : std_logic                     := '0';
   signal D_R_DDU_RX_FF_READ, Q_R_DDU_RX_FF_READ : std_logic                     := '0';
 
-  signal OUT_DDU_RX_FF_WRD_CNT                                             : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_DDU_RX_FF_WRD_CNT, D_R_DDU_RX_FF_WRD_CNT, Q_R_DDU_RX_FF_WRD_CNT : std_logic                     := '0';
+  signal OUT_DDU_RX_FF_WRD_CNT                      : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_DDU_RX_FF_WRD_CNT, D_R_DDU_RX_FF_WRD_CNT : std_logic                     := '0';
+  signal Q_R_DDU_RX_FF_WRD_CNT                      : std_logic                     := '0';
 
   signal W_DDU_RX_FF_RST, D_W_DDU_RX_FF_RST, Q_W_DDU_RX_FF_RST : std_logic := '0';
   signal PULSE_DDU_RX_FF_RST, IN_DDU_RX_FF_RST                 : std_logic := '0';
   signal DDU_RX_FF_RST_INNER                                   : std_logic := '0';
+
+  -- OTMB FIFO
+  signal OTMB_FF_RD                         : std_logic_vector(3 downto 0);
+  signal OTMB_FIFO_DOUT                     : std_logic_vector(17 downto 0) := (others => '0');
+  signal OUT_OTMB_FF_READ                   : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_OTMB_FF_READ, C_OTMB_FF_RD       : std_logic                     := '0';
+  signal D_R_OTMB_FF_READ, Q_R_OTMB_FF_READ : std_logic                     := '0';
+  signal OTMB_FIFO_RDEN                     : std_logic                     := '0';
+
+  signal OTMB_FIFO_WRD_CNT                      : std_logic_vector(11 downto 0) := (others => '0');
+  signal OUT_OTMB_FF_WRD_CNT                    : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_OTMB_FF_WRD_CNT, D_R_OTMB_FF_WRD_CNT : std_logic                     := '0';
+  signal Q_R_OTMB_FF_WRD_CNT                    : std_logic                     := '0';
+
+  signal W_OTMB_FF_RST, D_W_OTMB_FF_RST, Q_W_OTMB_FF_RST : std_logic := '0';
+  signal PULSE_OTMB_FF_RST, IN_OTMB_FF_RST               : std_logic := '0';
+  signal OTMB_FF_RST_INNER                               : std_logic := '0';
+
+  signal otmb_fifo_rd_cnt, otmb_fifo_wr_cnt : std_logic_vector(10 downto 0);
+  signal otmb_fifo_empty, otmb_fifo_full    : std_logic;
+  signal otmb_fifo_rst, otmb_fifo_reset     : std_logic;
+
+  -- ALCT FIFO
+  signal ALCT_FF_RD                         : std_logic_vector(3 downto 0);
+  signal ALCT_FIFO_DOUT                     : std_logic_vector(17 downto 0) := (others => '0');
+  signal OUT_ALCT_FF_READ                   : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_ALCT_FF_READ, C_ALCT_FF_RD       : std_logic                     := '0';
+  signal D_R_ALCT_FF_READ, Q_R_ALCT_FF_READ : std_logic                     := '0';
+  signal ALCT_FIFO_RDEN                     : std_logic                     := '0';
+
+  signal ALCT_FIFO_WRD_CNT                      : std_logic_vector(11 downto 0) := (others => '0');
+  signal OUT_ALCT_FF_WRD_CNT                    : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_ALCT_FF_WRD_CNT, D_R_ALCT_FF_WRD_CNT : std_logic                     := '0';
+  signal Q_R_ALCT_FF_WRD_CNT                    : std_logic                     := '0';
+
+  signal W_ALCT_FF_RST, D_W_ALCT_FF_RST, Q_W_ALCT_FF_RST : std_logic := '0';
+  signal PULSE_ALCT_FF_RST, IN_ALCT_FF_RST               : std_logic := '0';
+  signal ALCT_FF_RST_INNER                               : std_logic := '0';
+
+  signal alct_fifo_rd_cnt, alct_fifo_wr_cnt : std_logic_vector(10 downto 0);
+  signal alct_fifo_empty, alct_fifo_full    : std_logic;
+  signal alct_fifo_rst, alct_fifo_reset     : std_logic;
+
+  
   
 begin  --Architecture
 
@@ -176,6 +245,16 @@ begin  --Architecture
   R_DDU_RX_FF_WRD_CNT <= '1' when (CMDDEV = x"140C") else '0';
   W_DDU_RX_FF_RST     <= '1' when (CMDDEV = x"1420") else '0';
 
+  -- OTMB: 500 series
+  R_OTMB_FF_READ    <= '1' when (CMDDEV = x"1500") else '0';
+  R_OTMB_FF_WRD_CNT <= '1' when (CMDDEV = x"150C") else '0';
+  W_OTMB_FF_RST     <= '1' when (CMDDEV = x"1520") else '0';
+
+  -- ALCT: 600 series
+  R_ALCT_FF_READ    <= '1' when (CMDDEV = x"1600") else '0';
+  R_ALCT_FF_WRD_CNT <= '1' when (CMDDEV = x"160C") else '0';
+  W_ALCT_FF_RST     <= '1' when (CMDDEV = x"1620") else '0';
+
 -- Read TFF_READ
   GEN_TFF_READ : for I in 1 to NFEB generate
   begin
@@ -196,8 +275,8 @@ begin  --Architecture
 
 -- Read TFF_WRD_CNT
   OUT_TFF_WRD_CNT(15 downto 12) <= (others => '0');
-  OUT_TFF_WRD_CNT(11 downto 0) <= TFF_WRD_CNT when (STROBE = '1' and R_TFF_WRD_CNT = '1') else
-                                  (others => 'Z');
+  OUT_TFF_WRD_CNT(11 downto 0)  <= TFF_WRD_CNT when (STROBE = '1' and R_TFF_WRD_CNT = '1') else
+                                   (others => 'Z');
 
   D_R_TFF_WRD_CNT <= '1' when (STROBE = '1' and R_TFF_WRD_CNT = '1') else '0';
   FD_R_TFF_WRD_CNT : FD port map(Q_R_TFF_WRD_CNT, SLOWCLK, D_R_TFF_WRD_CNT);
@@ -223,8 +302,8 @@ begin  --Architecture
 
 -- Read TFF_SEL
   OUT_TFF_SEL(15 downto 3) <= (others => '0');
-  OUT_TFF_SEL(2 downto 0) <= TFF_SEL_CODE when (STROBE = '1' and R_TFF_SEL = '1') else
-                             (others => 'Z');
+  OUT_TFF_SEL(2 downto 0)  <= TFF_SEL_CODE when (STROBE = '1' and R_TFF_SEL = '1') else
+                              (others => 'Z');
 
   D_R_TFF_SEL <= '1' when (STROBE = '1' and R_TFF_SEL = '1') else '0';
   FD_R_TFF_SEL : FD port map(Q_R_TFF_SEL, SLOWCLK, D_R_TFF_SEL);
@@ -258,8 +337,8 @@ begin  --Architecture
 
 -- Read PC_TX_FF_WRD_CNT
   OUT_PC_TX_FF_WRD_CNT(15 downto 12) <= (others => '0');
-  OUT_PC_TX_FF_WRD_CNT(11 downto 0) <= PC_TX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_TX_FF_WRD_CNT = '1') else
-                                       (others => 'Z');
+  OUT_PC_TX_FF_WRD_CNT(11 downto 0)  <= PC_TX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_TX_FF_WRD_CNT = '1') else
+                                        (others => 'Z');
 
   D_R_PC_TX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_PC_TX_FF_WRD_CNT = '1') else '0';
   FD_R_PC_TX_FF_WRD_CNT : FD port map(Q_R_PC_TX_FF_WRD_CNT, SLOWCLK, D_R_PC_TX_FF_WRD_CNT);
@@ -289,8 +368,8 @@ begin  --Architecture
 
 -- Read PC_RX_FF_WRD_CNT
   OUT_PC_RX_FF_WRD_CNT(15 downto 12) <= (others => '0');
-  OUT_PC_RX_FF_WRD_CNT(11 downto 0) <= PC_RX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else
-                                       (others => 'Z');
+  OUT_PC_RX_FF_WRD_CNT(11 downto 0)  <= PC_RX_FIFO_WRD_CNT when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else
+                                        (others => 'Z');
 
   D_R_PC_RX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else '0';
   FD_R_PC_RX_FF_WRD_CNT : FD port map(Q_R_PC_RX_FF_WRD_CNT, SLOWCLK, D_R_PC_RX_FF_WRD_CNT);
@@ -320,8 +399,8 @@ begin  --Architecture
 
 -- Read DDU_TX_FF_WRD_CNT
   OUT_DDU_TX_FF_WRD_CNT(15 downto 12) <= (others => '0');
-  OUT_DDU_TX_FF_WRD_CNT(11 downto 0) <= DDU_TX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_TX_FF_WRD_CNT = '1') else
-                                        (others => 'Z');
+  OUT_DDU_TX_FF_WRD_CNT(11 downto 0)  <= DDU_TX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_TX_FF_WRD_CNT = '1') else
+                                         (others => 'Z');
 
   D_R_DDU_TX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_DDU_TX_FF_WRD_CNT = '1') else '0';
   FD_R_DDU_TX_FF_WRD_CNT : FD port map(Q_R_DDU_TX_FF_WRD_CNT, SLOWCLK, D_R_DDU_TX_FF_WRD_CNT);
@@ -351,8 +430,8 @@ begin  --Architecture
 
 -- Read DDU_RX_FF_WRD_CNT
   OUT_DDU_RX_FF_WRD_CNT(15 downto 12) <= (others => '0');
-  OUT_DDU_RX_FF_WRD_CNT(11 downto 0) <= DDU_RX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_RX_FF_WRD_CNT = '1') else
-                                        (others => 'Z');
+  OUT_DDU_RX_FF_WRD_CNT(11 downto 0)  <= DDU_RX_FIFO_WRD_CNT when (STROBE = '1' and R_DDU_RX_FF_WRD_CNT = '1') else
+                                         (others => 'Z');
 
   D_R_DDU_RX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_DDU_RX_FF_WRD_CNT = '1') else '0';
   FD_R_DDU_RX_FF_WRD_CNT : FD port map(Q_R_DDU_RX_FF_WRD_CNT, SLOWCLK, D_R_DDU_RX_FF_WRD_CNT);
@@ -366,18 +445,152 @@ begin  --Architecture
   FD_DTACK_DDU_RX_FF_RST : FD port map(Q_W_DDU_RX_FF_RST, SLOWCLK, D_W_DDU_RX_FF_RST);
   DTACK_INNER       <= '0' when (Q_W_DDU_RX_FF_RST = '1')                else 'Z';
 
+-- Read OTMB_FF_READ
+  OTMB_FF_RD(0)  <= R_OTMB_FF_READ;
+  FDC_OTMB_RD_EN1 : FDC port map(OTMB_FF_RD(1), STROBE, C_OTMB_FF_RD, OTMB_FF_RD(0));
+  FDC_OTMB_RD_EN2 : FDC port map(OTMB_FF_RD(2), SLOWCLK, C_OTMB_FF_RD, OTMB_FF_RD(1));
+  FDC_OTMB_RD_EN3 : FDC port map(OTMB_FF_RD(3), SLOWCLK, C_OTMB_FF_RD, OTMB_FF_RD(2));
+  C_OTMB_FF_RD   <= RST or OTMB_FF_RD(3);
+  OTMB_FIFO_RDEN <= OTMB_FF_RD(2);
+
+  OUT_OTMB_FF_READ <= OTMB_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_OTMB_FF_READ = '1') else (others => 'Z');
+
+  D_R_OTMB_FF_READ <= '1' when (STROBE = '1' and R_OTMB_FF_READ = '1') else '0';
+  FD_R_OTMB_FF_READ : FD port map(Q_R_OTMB_FF_READ, SLOWCLK, D_R_OTMB_FF_READ);
+  DTACK_INNER      <= '0' when (Q_R_OTMB_FF_READ = '1')                else 'Z';
+
+-- Read OTMB_FF_WRD_CNT
+  OUT_OTMB_FF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_OTMB_FF_WRD_CNT(11 downto 0)  <= OTMB_FIFO_WRD_CNT when (STROBE = '1' and R_OTMB_FF_WRD_CNT = '1') else
+                                       (others => 'Z');
+
+  D_R_OTMB_FF_WRD_CNT <= '1' when (STROBE = '1' and R_OTMB_FF_WRD_CNT = '1') else '0';
+  FD_R_OTMB_FF_WRD_CNT : FD port map(Q_R_OTMB_FF_WRD_CNT, SLOWCLK, D_R_OTMB_FF_WRD_CNT);
+  DTACK_INNER         <= '0' when (Q_R_OTMB_FF_WRD_CNT = '1')                else 'Z';
+
+-- Write OTMB_FF_RST (Reset OTMB FIFO)
+  IN_OTMB_FF_RST  <= PULSE_OTMB_FF_RST or RST;
+  FD_W_OTMB_FF_RST     : FDCE port map(OTMB_FF_RST_INNER, STROBE, W_OTMB_FF_RST, IN_OTMB_FF_RST, W_OTMB_FF_RST);
+  PULSE_RESET_OTMB     : PULSE_EDGE port map(otmb_fifo_rst, pulse_otmb_ff_rst, slowclk, rst, 1, otmb_ff_rst_inner);
+  D_W_OTMB_FF_RST <= '1' when (STROBE = '1' and W_OTMB_FF_RST = '1') else '0';
+  FD_DTACK_OTMB_FF_RST : FD port map(Q_W_OTMB_FF_RST, SLOWCLK, D_W_OTMB_FF_RST);
+  DTACK_INNER     <= '0' when (Q_W_OTMB_FF_RST = '1')                else 'Z';
+
+  otmb_fifo_reset <= otmb_fifo_rst or RST;
+
+  OTMB_FIFO : FIFO_DUALCLOCK_MACRO
+    generic map (
+      DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
+      ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
+      ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
+      DATA_WIDTH              => 18,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
+
+    port map (
+      EMPTY       => otmb_fifo_empty,       -- Output empty
+      ALMOSTEMPTY => open,                  -- Output almost empty 
+      ALMOSTFULL  => open,                  -- Output almost full
+      FULL        => otmb_fifo_full,        -- Output full
+      WRCOUNT     => otmb_fifo_wr_cnt,      -- Output write count
+      RDCOUNT     => otmb_fifo_rd_cnt,      -- Output read count
+      WRERR       => open,                  -- Output write error
+      RDERR       => open,                  -- Output read error
+      RST         => otmb_fifo_reset,       -- Input reset
+      WRCLK       => clk40,                 -- Input write clock
+      WREN        => otmb_fifo_data_valid,  -- Input write enable
+      DI          => otmb_fifo_data_in,     -- Input data
+      RDCLK       => slowclk,               -- Input read clock
+      RDEN        => otmb_fifo_rden,        -- Input read enable
+      DO          => otmb_fifo_dout         -- Output data
+      );
+
+  OTMB_WRD_COUNT : FIFOWORDS
+    generic map(12)
+    port map(RST   => otmb_fifo_reset, WRCLK => clk40, WREN => otmb_fifo_data_valid, FULL => otmb_fifo_full,
+             RDCLK => slowclk, RDEN => otmb_fifo_rden, COUNT => otmb_fifo_wrd_cnt);
+
+-- Read ALCT_FF_READ
+  ALCT_FF_RD(0)  <= R_ALCT_FF_READ;
+  FDC_ALCT_RD_EN1 : FDC port map(ALCT_FF_RD(1), STROBE, C_ALCT_FF_RD, ALCT_FF_RD(0));
+  FDC_ALCT_RD_EN2 : FDC port map(ALCT_FF_RD(2), SLOWCLK, C_ALCT_FF_RD, ALCT_FF_RD(1));
+  FDC_ALCT_RD_EN3 : FDC port map(ALCT_FF_RD(3), SLOWCLK, C_ALCT_FF_RD, ALCT_FF_RD(2));
+  C_ALCT_FF_RD   <= RST or ALCT_FF_RD(3);
+  ALCT_FIFO_RDEN <= ALCT_FF_RD(2);
+
+  OUT_ALCT_FF_READ <= ALCT_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_ALCT_FF_READ = '1') else (others => 'Z');
+
+  D_R_ALCT_FF_READ <= '1' when (STROBE = '1' and R_ALCT_FF_READ = '1') else '0';
+  FD_R_ALCT_FF_READ : FD port map(Q_R_ALCT_FF_READ, SLOWCLK, D_R_ALCT_FF_READ);
+  DTACK_INNER      <= '0' when (Q_R_ALCT_FF_READ = '1')                else 'Z';
+
+-- Read ALCT_FF_WRD_CNT
+  OUT_ALCT_FF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_ALCT_FF_WRD_CNT(11 downto 0)  <= ALCT_FIFO_WRD_CNT when (STROBE = '1' and R_ALCT_FF_WRD_CNT = '1') else
+                                       (others => 'Z');
+
+  D_R_ALCT_FF_WRD_CNT <= '1' when (STROBE = '1' and R_ALCT_FF_WRD_CNT = '1') else '0';
+  FD_R_ALCT_FF_WRD_CNT : FD port map(Q_R_ALCT_FF_WRD_CNT, SLOWCLK, D_R_ALCT_FF_WRD_CNT);
+  DTACK_INNER         <= '0' when (Q_R_ALCT_FF_WRD_CNT = '1')                else 'Z';
+
+-- Write ALCT_FF_RST (Reset ALCT FIFO)
+  IN_ALCT_FF_RST  <= PULSE_ALCT_FF_RST or RST;
+  FD_W_ALCT_FF_RST     : FDCE port map(ALCT_FF_RST_INNER, STROBE, W_ALCT_FF_RST, IN_ALCT_FF_RST, W_ALCT_FF_RST);
+  PULSE_RESET_ALCT     : PULSE_EDGE port map(alct_fifo_rst, pulse_alct_ff_rst, slowclk, rst, 1, alct_ff_rst_inner);
+  D_W_ALCT_FF_RST <= '1' when (STROBE = '1' and W_ALCT_FF_RST = '1') else '0';
+  FD_DTACK_ALCT_FF_RST : FD port map(Q_W_ALCT_FF_RST, SLOWCLK, D_W_ALCT_FF_RST);
+  DTACK_INNER     <= '0' when (Q_W_ALCT_FF_RST = '1')                else 'Z';
+
+  alct_fifo_reset <= alct_fifo_rst or RST;
+
+  ALCT_FIFO : FIFO_DUALCLOCK_MACRO
+    generic map (
+      DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
+      ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
+      ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
+      DATA_WIDTH              => 18,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
+
+    port map (
+      EMPTY       => alct_fifo_empty,       -- Output empty
+      ALMOSTEMPTY => open,                  -- Output almost empty 
+      ALMOSTFULL  => open,                  -- Output almost full
+      FULL        => alct_fifo_full,        -- Output full
+      WRCOUNT     => alct_fifo_wr_cnt,      -- Output write count
+      RDCOUNT     => alct_fifo_rd_cnt,      -- Output read count
+      WRERR       => open,                  -- Output write error
+      RDERR       => open,                  -- Output read error
+      RST         => alct_fifo_reset,       -- Input reset
+      WRCLK       => clk40,                 -- Input write clock
+      WREN        => alct_fifo_data_valid,  -- Input write enable
+      DI          => alct_fifo_data_in,     -- Input data
+      RDCLK       => slowclk,               -- Input read clock
+      RDEN        => alct_fifo_rden,        -- Input read enable
+      DO          => alct_fifo_dout         -- Output data
+      );
+
+  ALCT_WRD_COUNT : FIFOWORDS
+    generic map(12)
+    port map(RST   => alct_fifo_reset, WRCLK => clk40, WREN => alct_fifo_data_valid, FULL => alct_fifo_full,
+             RDCLK => slowclk, RDEN => alct_fifo_rden, COUNT => alct_fifo_wrd_cnt);
+
 -- General assignments
   OUTDATA <= OUT_TFF_READ when R_TFF_READ = '1' else
-             OUT_TFF_SEL           when R_TFF_SEL = '1'           else
-             OUT_TFF_WRD_CNT       when R_TFF_WRD_CNT = '1'       else
-             OUT_PC_TX_FF_READ     when R_PC_TX_FF_READ = '1'     else
-             OUT_PC_TX_FF_WRD_CNT  when R_PC_TX_FF_WRD_CNT = '1'  else
-             OUT_PC_RX_FF_READ     when R_PC_RX_FF_READ = '1'     else
-             OUT_PC_RX_FF_WRD_CNT  when R_PC_RX_FF_WRD_CNT = '1'  else
-             OUT_DDU_TX_FF_READ    when R_DDU_TX_FF_READ = '1'    else
+             OUT_TFF_SEL           when R_TFF_SEL = '1' else
+             OUT_TFF_WRD_CNT       when R_TFF_WRD_CNT = '1' else
+             OUT_PC_TX_FF_READ     when R_PC_TX_FF_READ = '1' else
+             OUT_PC_TX_FF_WRD_CNT  when R_PC_TX_FF_WRD_CNT = '1' else
+             OUT_PC_RX_FF_READ     when R_PC_RX_FF_READ = '1' else
+             OUT_PC_RX_FF_WRD_CNT  when R_PC_RX_FF_WRD_CNT = '1' else
+             OUT_DDU_TX_FF_READ    when R_DDU_TX_FF_READ = '1' else
              OUT_DDU_TX_FF_WRD_CNT when R_DDU_TX_FF_WRD_CNT = '1' else
-             OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1'    else
+             OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1' else
              OUT_DDU_RX_FF_WRD_CNT when R_DDU_RX_FF_WRD_CNT = '1' else
+             OUT_OTMB_FF_READ      when R_OTMB_FF_READ = '1' else
+             OUT_OTMB_FF_WRD_CNT   when R_OTMB_FF_WRD_CNT = '1' else
+             OUT_ALCT_FF_READ      when R_ALCT_FF_READ = '1' else
+             OUT_ALCT_FF_WRD_CNT   when R_ALCT_FF_WRD_CNT = '1' else
              (others => 'L');
   DTACK <= DTACK_INNER;
   

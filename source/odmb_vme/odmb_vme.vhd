@@ -138,6 +138,12 @@ entity ODMB_VME is
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(6 downto 0);
 
+    -- ALCT/OTMB FIFO signals
+    alct_fifo_data_in    : in std_logic_vector(17 downto 0);
+    alct_fifo_data_valid : in std_logic;
+    otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
+    otmb_fifo_data_valid : in std_logic;
+
     -- PC FIFO signals
     pc_tx_fifo_rst     : out std_logic;
     pc_tx_fifo_rden    : out std_logic;
@@ -331,6 +337,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       SLOWCLK : in std_logic;
       RST     : in std_logic;
+      CLK40   : in std_logic;
 
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
@@ -340,6 +347,12 @@ architecture ODMB_VME_architecture of ODMB_VME is
       OUTDATA : out std_logic_vector(15 downto 0);
 
       DTACK : out std_logic;
+
+      -- ALCT/OTMB FIFO signals
+      alct_fifo_data_in    : in std_logic_vector(17 downto 0);
+      alct_fifo_data_valid : in std_logic;
+      otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
+      otmb_fifo_data_valid : in std_logic;
 
       -- PC FIFO signals
       pc_tx_fifo_rst     : out std_logic;
@@ -659,6 +672,7 @@ begin
     port map (
       SLOWCLK => CLK_S2,
       RST     => RST,
+      CLK40   => CLK,
 
       DEVICE  => DEVICE(5),
       STROBE  => STROBE,
@@ -668,6 +682,12 @@ begin
       OUTDATA => OUTDATA_TESTFIFOS,
 
       DTACK => VME_DTACK_B,
+
+      -- ALCT/OTMB FIFO signals
+      alct_fifo_data_in    => alct_fifo_data_in,
+      alct_fifo_data_valid => alct_fifo_data_valid,
+      otmb_fifo_data_in    => otmb_fifo_data_in,
+      otmb_fifo_data_valid => otmb_fifo_data_valid,
 
       -- PC FIFO signals
       pc_tx_fifo_rst     => pc_tx_fifo_rst,

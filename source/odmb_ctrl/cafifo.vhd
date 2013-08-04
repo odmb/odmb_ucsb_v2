@@ -1,13 +1,14 @@
+-- CAFIFO: Handles which data packets are expected and which have arrived
 
-library IEEE;
-use IEEE.STD_LOGIC_UNSIGNED.all;
-use ieee.numeric_std.all;
-use IEEE.STD_LOGIC_1164.all;
-library UNISIM;
-use UNISIM.vcomponents.all;
-library UNIMACRO;
-use UNIMACRO.vcomponents.all;
+library ieee;
+library unisim;
+library unimacro;
 library hdlmacro;
+use ieee.numeric_std.all;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+use unisim.vcomponents.all;
+use unimacro.vcomponents.all;
 use hdlmacro.hdlmacro.all;
 
 entity cafifo is
@@ -174,7 +175,6 @@ begin
   dcfeb_l1a_cnt(7) <= dcfeb6_data(11 downto 0) when (dcfeb6_dv = '1') else (others => '0');
 
   l1a_cnt_regs : process (dcfeb_l1a_cnt, rst, dcfebclk, reg_dcfeb_l1a_cnt)
-
   begin
     for index_dcfeb in 1 to NFEB loop
       if (rst = '1') then
@@ -197,7 +197,6 @@ begin
 -- RX FSMs 
 
   rx_fsm_regs : process (rx_next_state, rst, dcfebclk)
-
   begin
     for dcfeb_index in 1 to NFEB loop
       if (rst = '1') then
@@ -206,19 +205,13 @@ begin
         rx_current_state(dcfeb_index) <= rx_next_state(dcfeb_index);
       end if;
     end loop;
-
   end process;
 
   rx_fsm_logic : process (rx_current_state, dcfeb_dv)
-
   begin
-    
     for dcfeb_index in 1 to NFEB loop
-
       case rx_current_state(dcfeb_index) is
-        
         when RX_IDLE =>
-          
           dcfeb_fifo_wren(dcfeb_index) <= '0';
           dcfeb_l1a_dav(dcfeb_index)   <= '0';
           if (dcfeb_dv(dcfeb_index) = '1') then
@@ -228,20 +221,17 @@ begin
           end if;
           
         when RX_HEADER1 =>
-          
           dcfeb_fifo_wren(dcfeb_index) <= '0';
           dcfeb_l1a_dav(dcfeb_index)   <= '1';  -- mfs: Set 2 cc high to make it more robust (only problem
                                                 -- is if we store 2^16 L1A_CNT in cafifo)
           rx_next_state(dcfeb_index)   <= RX_HEADER2;
           
         when RX_HEADER2 =>
-          
           dcfeb_fifo_wren(dcfeb_index) <= '0';
           dcfeb_l1a_dav(dcfeb_index)   <= '1';
           rx_next_state(dcfeb_index)   <= RX_DW;
           
         when RX_DW =>
-          
           dcfeb_l1a_dav(dcfeb_index) <= '0';
           if (dcfeb_dv(dcfeb_index) = '1') then
             dcfeb_fifo_wren(dcfeb_index) <= '1';
@@ -252,25 +242,18 @@ begin
           end if;
 
         when others =>
-
           dcfeb_l1a_dav(dcfeb_index)   <= '0';
           dcfeb_fifo_wren(dcfeb_index) <= '0';
           rx_next_state(dcfeb_index)   <= RX_IDLE;
           
       end case;
-      
     end loop;
-
   end process;
 
   alct_rx_fsm_logic : process (alct_rx_current_state, alct_dv)
-
   begin
-    
     case alct_rx_current_state is
-      
       when RX_IDLE =>
-        
         if (alct_dv = '1') then
           alct_l1a_dav       <= '1';
           alct_fifo_wren     <= '1';
@@ -282,7 +265,6 @@ begin
         end if;
         
       when RX_DW =>
-        
         alct_l1a_dav <= '0';
         if (alct_dv = '1') then
           alct_fifo_wren     <= '1';
@@ -293,23 +275,17 @@ begin
         end if;
 
       when others =>
-
         alct_l1a_dav       <= '0';
         alct_fifo_wren     <= '0';
         alct_rx_next_state <= RX_IDLE;
         
     end case;
-
   end process;
 
   otmb_rx_fsm_logic : process (otmb_rx_current_state, otmb_dv)
-
   begin
-    
     case otmb_rx_current_state is
-      
       when RX_IDLE =>
-        
         if (otmb_dv = '1') then
           otmb_l1a_dav       <= '1';
           otmb_fifo_wren     <= '1';
@@ -321,7 +297,6 @@ begin
         end if;
         
       when RX_DW =>
-        
         otmb_l1a_dav <= '0';
         if (otmb_dv = '1') then
           otmb_fifo_wren     <= '1';
@@ -332,13 +307,11 @@ begin
         end if;
 
       when others =>
-
         otmb_l1a_dav       <= '0';
         otmb_fifo_wren     <= '0';
         otmb_rx_next_state <= RX_IDLE;
         
     end case;
-
   end process;
 
 -- l1a Counter
@@ -359,7 +332,6 @@ begin
 -- Memory
 
   l1a_cnt_fifo : process (l1a_cnt_wren, wr_addr_out, rst, clk, l1a_cnt_out)
-
   begin
     if (rst = '1') then
       for index in 0 to FIFO_SIZE-1 loop
@@ -370,7 +342,6 @@ begin
         l1a_cnt(wr_addr_out) <= l1a_cnt_out;
       end if;
     end if;
-
   end process;
 
   cafifo_l1a_cnt <= l1a_cnt_out-1;
@@ -391,7 +362,6 @@ begin
   cafifo_bx_cnt <= bx_cnt(rd_addr_out)(11 downto 0);
 
   l1a_match_fifo : process (l1a_match_wren, wr_addr_out, rst, clk, l1a_match_in)
-
   begin
     if (rst = '1') then
       for index in 0 to FIFO_SIZE-1 loop
@@ -402,18 +372,15 @@ begin
         l1a_match(wr_addr_out) <= l1a_match_in;
       end if;
     end if;
-
   end process;
 
   cafifo_l1a_match <= l1a_match(rd_addr_out);
 
   l1a_dav_fifo : process (l1a_cnt, ext_dcfeb_l1a_cnt, dcfeb_l1a_dav, rst, dcfebclk, l1a_match_wren)
-
   begin
     if (rst = '1') then
       for index in 0 to FIFO_SIZE-1 loop
-        l1a_dav(index) <= (others => '0');  -- mfs: Set to 1 because there are
-                                            -- too many problems with 0
+        l1a_dav(index) <= (others => '0');  
       end loop;
     elsif (l1a_match_wren = '1') then
       l1a_dav(wr_addr_out) <= (others => '0');
@@ -426,7 +393,6 @@ begin
         end loop;
       end loop;
     end if;
-
   end process;
 
   cafifo_l1a_dav(NFEB downto 1) <= l1a_dav(rd_addr_out)(NFEB downto 1);
@@ -471,7 +437,6 @@ begin
       );
 
   alct_dv_fifo_gm : process (l1a_cnt, alct_fifo_out, reg_alct_l1a_dav, rst, clk)
-
   begin
     if (rst = '1') then
       for index in 0 to FIFO_SIZE-1 loop
@@ -491,14 +456,12 @@ begin
   cafifo_l1a_dav(NFEB+2) <= l1a_dav_b9_gm(rd_addr_out);
 
   otmb_reg : process (otmb_l1a_dav, rst, clk)
-
   begin
     if (rst = '1') then
       reg_otmb_l1a_dav <= '0';
     elsif rising_edge(clk) then
       reg_otmb_l1a_dav <= otmb_l1a_dav;
     end if;
-    
   end process;
 
   otmb_fifo_wr_en <= l1a_match_in(8);

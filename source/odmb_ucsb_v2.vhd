@@ -322,6 +322,12 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       KILL          : out std_logic_vector(NFEB+2 downto 1);
       CRATEID       : out std_logic_vector(6 downto 0);
 
+      -- ALCT/OTMB FIFO signals
+      alct_fifo_data_in    : in std_logic_vector(17 downto 0);
+      alct_fifo_data_valid : in std_logic;
+      otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
+      otmb_fifo_data_valid : in std_logic;
+
       -- PC_TX FIFO signals
       pc_tx_fifo_rst     : out std_logic;
       pc_tx_fifo_rden    : out std_logic;
@@ -701,6 +707,19 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   end component;
 
+component COUNT_EDGES is
+  generic (
+    WIDTH : integer := 16
+    );
+  port (
+    COUNT : out std_logic_vector(WIDTH-1 downto 0);
+    
+    CLK : in std_logic;
+    RST : in std_logic;
+    CE : in std_logic
+    );
+end component;
+
   component PULSE_EDGE is
     port (
       DOUT   : out std_logic;
@@ -797,16 +816,15 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_l1a       : std_logic;     -- To be sent out to pins in V2
   signal int_l1a_match : std_logic_vector (NFEB downto 1);  -- To be sent out to pins in V2
 
+-- Monitoring signals
+
   type   l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
-  signal l1a_match_cnt, raw_lct_cnt, crc_cnt : l1a_match_cnt_type;
+  signal l1a_match_cnt, raw_lct_cnt, goodcrc_cnt : l1a_match_cnt_type;
 
   type   dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
   signal into_cafifo_dav_cnt                : dav_cnt_type;
   signal data_fifo_re_cnt, data_fifo_oe_cnt : dav_cnt_type;
   signal dav_cnt_en, into_cafifo_dav        : std_logic_vector(NFEB+2 downto 1);
-  type   dav_state_type is (DAV_IDLE, DAV_HIGH);
-  type   dav_state_array_type is array (NFEB+2 downto 1) of dav_state_type;
-  signal dav_next_state, dav_current_state  : dav_state_array_type;
 
   signal ext_dcfeb_l1a_cnt7 : std_logic_vector(23 downto 0);
   signal dcfeb_l1a_dav7     : std_logic;
@@ -819,7 +837,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gap_next_state, gap_current_state : gap_state_array_type;
 
 
--- Monitoring signals
+  signal alct_dav_cnt, otmb_dav_cnt : std_logic_vector(15 downto 0);
+  signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
+  signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
+
 
   signal tp_sel_reg               : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg            : std_logic_vector(15 downto 0) := (others => '0');
@@ -899,8 +920,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gtx0_data_valid, ddu_eof         : std_logic;
   signal gtx1_data                        : std_logic_vector(15 downto 0);
   signal gtx1_data_valid                  : std_logic;
-  signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
-  signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
 
   signal gl1_clk, gl1_clk_2_buf          : std_logic;
   signal gl0_clk, gl0_clk_2, gl0_clk_buf : std_logic;
@@ -1185,6 +1204,12 @@ begin
       CALLCT_DLY    => CALLCT_DLY,
       KILL          => KILL,
       CRATEID       => CRATEID,
+
+      -- ALCT/OTMB FIFO signals
+      alct_fifo_data_in    => alct_fifo_data_in,
+      alct_fifo_data_valid => alct_fifo_data_valid,
+      otmb_fifo_data_in    => otmb_fifo_data_in,
+      otmb_fifo_data_valid => otmb_fifo_data_valid, 
 
       -- PC_TX FIFO signals
       pc_tx_fifo_rst     => pc_tx_fifo_rst,
@@ -1610,23 +1635,22 @@ begin
       FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      ALMOSTEMPTY => alct_fifo_aempty,       -- Output almost empty 
-      ALMOSTFULL  => alct_fifo_afull,        -- Output almost full
-      DO          => alct_fifo_data_out,          -- Output data
-      EMPTY       => alct_fifo_empty,        -- Output empty
-      FULL        => alct_fifo_full,         -- Output full
-      RDCOUNT     => alct_fifo_rd_cnt,       -- Output read count
-      RDERR       => open,                   -- Output read error
-      WRCOUNT     => alct_fifo_wr_cnt,       -- Output write count
-      WRERR       => open,                   -- Output write error
-      DI          => alct_fifo_data_in,    -- Input data
-      RDCLK       => dduclk,                 -- Input read clock
-      RDEN        => data_fifo_re(NFEB+2),   -- Input read enable
-      RST         => reset,                  -- Input reset
-      WRCLK       => clk40,                  -- Input write clock
-      WREN        => alct_fifo_data_valid  -- Input write enable
+      EMPTY       => alct_fifo_empty,       -- Output empty
+      ALMOSTEMPTY => alct_fifo_aempty,      -- Output almost empty 
+      ALMOSTFULL  => alct_fifo_afull,       -- Output almost full
+      FULL        => alct_fifo_full,        -- Output full
+      WRCOUNT     => alct_fifo_wr_cnt,      -- Output write count
+      RDCOUNT     => alct_fifo_rd_cnt,      -- Output read count
+      WRERR       => open,                  -- Output write error
+      RDERR       => open,                  -- Output read error
+      RST         => reset,                 -- Input reset
+      WRCLK       => clk40,                 -- Input write clock
+      WREN        => alct_fifo_data_valid,  -- Input write enable
+      DI          => alct_fifo_data_in,     -- Input data
+      RDCLK       => dduclk,                -- Input read clock
+      RDEN        => data_fifo_re(NFEB+2),  -- Input read enable
+      DO          => alct_fifo_data_out     -- Output data
       );
-
 
   OTMB_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -1638,22 +1662,23 @@ begin
       FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      ALMOSTEMPTY => otmb_fifo_aempty,       -- Output almost empty 
-      ALMOSTFULL  => otmb_fifo_afull,        -- Output almost full
-      DO          => otmb_fifo_data_out,          -- Output data
-      EMPTY       => otmb_fifo_empty,        -- Output empty
-      FULL        => otmb_fifo_full,         -- Output full
-      RDCOUNT     => otmb_fifo_rd_cnt,       -- Output read count
-      RDERR       => open,                  -- Output read error
-      WRCOUNT     => otmb_fifo_wr_cnt,       -- Output write count
+      EMPTY       => otmb_fifo_empty,       -- Output empty
+      ALMOSTEMPTY => otmb_fifo_aempty,      -- Output almost empty 
+      ALMOSTFULL  => otmb_fifo_afull,       -- Output almost full
+      FULL        => otmb_fifo_full,        -- Output full
+      WRCOUNT     => otmb_fifo_wr_cnt,      -- Output write count
+      RDCOUNT     => otmb_fifo_rd_cnt,      -- Output read count
       WRERR       => open,                  -- Output write error
-      DI          => otmb_fifo_data_in,    -- Input data
-      RDCLK       => dduclk,                -- Input read clock
-      RDEN        => data_fifo_re(NFEB+1),  -- Input read enable
+      RDERR       => open,                  -- Output read error
       RST         => reset,                 -- Input reset
       WRCLK       => clk40,                 -- Input write clock
-      WREN        => otmb_fifo_data_valid  -- Input write enable
+      WREN        => otmb_fifo_data_valid,  -- Input write enable
+      DI          => otmb_fifo_data_in,     -- Input data
+      RDCLK       => dduclk,                -- Input read clock
+      RDEN        => data_fifo_re(NFEB+2),  -- Input read enable
+      DO          => otmb_fifo_data_out     -- Output data
       );
+
 
 -- FIFO MUX
   fifo_out <= dcfeb_fifo_out(1)(15 downto 0) when data_fifo_oe = "111111110" else
@@ -1697,14 +1722,35 @@ begin
   rx_otmb_data_valid <= not otmb(17);
   rx_otmb_data       <= otmb(16) & otmb(16 downto 0);  -- For now, we send EOF in 16 and 17
 
+
+  int_alct_dav <= tc_alct_dav when (testctrl_sel = '1') else alctdav;  -- lctdav2
+  int_otmb_dav <= tc_otmb_dav when (testctrl_sel = '1') else otmbdav;  -- lctdav1
+
+
   data_fifo_re      <= not data_fifo_re_b;
   data_fifo_empty_b <= alct_fifo_empty & otmb_fifo_empty & dcfeb_fifo_empty;
 
-  eof_data(8) <= alct_fifo_data_in(16);
-  eof_data(9) <= otmb_fifo_data_in(16);
+  ------------------------ TRIGGERS  -------------------------
+  -- Raw signals come unsynced from outside
+  LCTDLY_GTRG : LCTDLY port map(test_lct, clk40, LCT_L1A_DLY, test_l1a);
+
+  testctrl_sel <= odmb_ctrl_reg(9);
+
+  raw_l1a <= '1' when test_l1a = '1' else
+             tc_l1a when (testctrl_sel = '1') else
+             not ccb_l1acc;
+  raw_lct <= (others => '1') when test_lct = '1' else
+             tc_lct when (testctrl_sel = '1') else
+             rawlct;
+
+  tc_run_out   <= tc_run;
+
   alct_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+2);
   otmb_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+1);
-                  
+
+  eof_data(8) <= alct_fifo_data_in(16);
+  eof_data(9) <= otmb_fifo_data_in(16);
+
 
   ALCT_EOFGEN_PM : EOFGEN
     port map (
@@ -1777,6 +1823,8 @@ begin
   d <= (others => '0');
 
 
+---------------------------------  RESETS  ---------------------------------
+-----------------------------------------------------------------------------
 -- Power ON reset [The FD is to avoid an event on an array]
   FD_FW_RESET  : FD port map(fw_reset_q, clk2p5, fw_reset);
   FD_OPT_RESET : FD port map(opt_reset_pulse_q, clk2p5, opt_reset_pulse);
@@ -1995,142 +2043,35 @@ begin
 
   vme_dtack_v6_b <= int_vme_dtack_v6_b;
 
-  -- Raw signals come unsynced from outside
-  LCTDLY_GTRG : LCTDLY port map(test_lct, clk40, LCT_L1A_DLY, test_l1a);
-
-  testctrl_sel <= odmb_ctrl_reg(9);
-
-  raw_l1a <= '1' when test_l1a = '1' else
-             tc_l1a when (testctrl_sel = '1') else
-             not ccb_l1acc;
-  raw_lct(0) <= '1' when test_lct = '1' else
-                tc_lct(0) when (testctrl_sel = '1') else
-                rawlct(0);
-  
-  raw_lct(NFEB downto 1) <= (others => '1') when test_lct = '1' else
-                            tc_lct(NFEB downto 1) when (testctrl_sel = '1') else
-                            rawlct(NFEB downto 1);
 
 
-  int_alct_dav           <= tc_alct_dav           when (testctrl_sel = '1') else alctdav;  -- lctdav2
-  int_otmb_dav            <= tc_otmb_dav            when (testctrl_sel = '1') else otmbdav;  -- lctdav1
-  --int_alct_dav <= tc_alct_dav;          -- lctdav2
-  --int_otmb_dav  <= tc_otmb_dav;           -- lctdav1
-  tc_run_out   <= tc_run;
+------------------------------------  Monitoring  ------------------------------------
+---------------------------------------------------------------------------------------
 
+  INTL1A_CNT : COUNT_EDGES port map(int_l1a_cnt, int_l1a, reset, logich);
+  ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, int_alct_dav, reset, logich);
+  OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, int_otmb_dav, reset, logich);
+  DDUEOF_CNT : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
+  PCOF_CNT   : COUNT_EDGES port map(gtx1_data_valid_cnt, gtx1_data_valid, reset, logich);
 
-
------------------------------  Monitoring  -----------------------------
------------------------------------------------------------------------------
-
-  raw_lct_cnt_proc : process (clk40, raw_lct, reset)
-    variable raw_lct_cnt_data : l1a_match_cnt_type;
+  NFEB_CNT : for index in 1 to NFEB generate
   begin
-    for index in 1 to NFEB loop
-      if (reset = '1') then
-        raw_lct_cnt_data(index) := (others => '0');
-      elsif (rising_edge(clk40)) then
-        if (raw_lct(index) = '1') then
-          raw_lct_cnt_data(index) := raw_lct_cnt_data(index) + 1;
-        end if;
-      end if;
+    RAWLCT_CNT   : COUNT_EDGES port map(raw_lct_cnt(index), clk40, reset, raw_lct(index));
+    L1AMATCH_CNT : COUNT_EDGES port map(l1a_match_cnt(index), clk40, reset, int_l1a_match(index));
+    CRC_CNT      : COUNT_EDGES port map(goodcrc_cnt(index), clk160, reset, crc_valid(index));
+  end generate NFEB_CNT;
 
-      raw_lct_cnt(index) <= raw_lct_cnt_data(index);
-    end loop;
-  end process;
-
-  l1a_match_cnt_proc : process (clk40, int_l1a_match, reset)
-    variable l1a_match_cnt_data : l1a_match_cnt_type;
+  NFEB2_CNT : for index in 1 to NFEB+2 generate
   begin
-    for index in 1 to NFEB loop
-      if (reset = '1') then
-        l1a_match_cnt_data(index) := (others => '0');
-      elsif (rising_edge(clk40)) then
-        if (int_l1a_match(index) = '1') then
-          l1a_match_cnt_data(index) := l1a_match_cnt_data(index) + 1;
-        end if;
-      end if;
-
-      l1a_match_cnt(index) <= l1a_match_cnt_data(index);
-    end loop;
-  end process;
-
-  --crc_cnt_proc : process (crc_valid, reset, gl1_clk_2_buf)
-  crc_cnt_proc : process (crc_valid, reset, clk160)
-    variable crc_cnt_data : l1a_match_cnt_type;
-  begin
-    for index in 1 to NFEB loop
-      if (reset = '1') then
-        crc_cnt_data(index) := (others => '0');
-      elsif (rising_edge(clk160)) then
-        if (crc_valid(index) = '1') then
-          crc_cnt_data(index) := crc_cnt_data(index) + 1;
-        end if;
-      end if;
-
-      crc_cnt(index) <= crc_cnt_data(index);
-    end loop;
-  end process;
+    FIFOOE_CNT    : COUNT_EDGES port map(data_fifo_oe_cnt(index), data_fifo_oe(index), reset, logich);
+    FIFORE_CNT    : COUNT_EDGES port map(data_fifo_re_cnt(index), data_fifo_re(index), reset, logich);
+    CAFIFODAV_CNT : COUNT_EDGES port map(into_cafifo_dav_cnt(index), clk40, reset, into_cafifo_dav(index));
+  end generate NFEB2_CNT;
 
   -- Defined to count the ALCT and OTMB davs as well 
   into_cafifo_dav(NFEB downto 1) <= dcfeb_data_valid(NFEB downto 1);  -- MUXed from gen and real
   into_cafifo_dav(8)             <= otmb_fifo_data_valid;
   into_cafifo_dav(9)             <= alct_fifo_data_valid;
-
-  into_cafifo_dav_cnt_pro : process (clk40, reset, dav_cnt_en)
-    variable dav_cnt_data : dav_cnt_type;
-  begin
-    for index in 1 to NFEB+2 loop
-      if (reset = '1') then
-        dav_cnt_data(index) := (others => '0');
-      elsif (rising_edge(clk40) and dav_cnt_en(index) = '1') then
-        dav_cnt_data(index) := dav_cnt_data(index) + 1;
-      end if;
-
-      into_cafifo_dav_cnt(index) <= dav_cnt_data(index);
-    end loop;
-    
-  end process;
-
-  dav_fsm_regs : process (dav_next_state, reset, clk40)
-  begin
-    for index in 1 to NFEB+2 loop
-      if (reset = '1') then
-        dav_current_state(index) <= DAV_IDLE;
-      elsif rising_edge(clk40) then
-        dav_current_state(index) <= dav_next_state(index);
-      end if;
-    end loop;
-  end process;
-
-  dav_fsm_logic : process (dav_current_state, into_cafifo_dav)
-  begin
-    for index in 1 to NFEB+2 loop
-      case dav_current_state(index) is
-        when DAV_IDLE =>
-          if (into_cafifo_dav(index) = '1') then
-            dav_next_state(index) <= DAV_HIGH;
-            dav_cnt_en(index)     <= '1';
-          else
-            dav_next_state(index) <= DAV_IDLE;
-            dav_cnt_en(index)     <= '0';
-          end if;
-          
-        when DAV_HIGH =>
-          dav_cnt_en(index) <= '0';
-          if (into_cafifo_dav(index) = '0') then
-            dav_next_state(index) <= DAV_IDLE;
-          else
-            dav_next_state(index) <= DAV_HIGH;
-          end if;
-
-        when others =>
-          dav_next_state(index) <= DAV_IDLE;
-          dav_cnt_en(index)     <= '0';
-          
-      end case;
-    end loop;
-  end process;
 
 
   gap_cnt : process (clk40, reset, gap_cnt_rst, gap_cnt_en)
@@ -2165,14 +2106,10 @@ begin
 
   gap_fsm_logic : process (gap_current_state, raw_lct, raw_l1a)
   begin
-    
     for dcfeb_index in 1 to NFEB loop
-
       case gap_current_state(dcfeb_index) is
-        
         when GAP_IDLE =>
-          
-          if (raw_lct(dcfeb_index) = '1') then
+           if (raw_lct(dcfeb_index) = '1') then
             gap_next_state(dcfeb_index) <= GAP_COUNTING;
             gap_cnt_rst(dcfeb_index)    <= '1';
             gap_cnt_en(dcfeb_index)     <= '0';
@@ -2199,54 +2136,9 @@ begin
           gap_cnt_en(dcfeb_index)     <= '0';
           
       end case;
-      
     end loop;
-
   end process;
 
-
-  -- PC packets counter
-  gtx0_dv_cnt_proc : process (gtx1_data_valid, reset)
-  begin
-    if (reset = '1') then
-      gtx1_data_valid_cnt <= (others => '0');
-    elsif (rising_edge(gtx1_data_valid)) then
-      gtx1_data_valid_cnt <= gtx1_data_valid_cnt + 1;
-    end if;
-  end process;
-
-  int_l1a_cnt_proc : process (int_l1a, reset)
-  begin
-    if (reset = '1') then
-      int_l1a_cnt <= (others => '0');
-    elsif (rising_edge(int_l1a)) then
-      int_l1a_cnt <= int_l1a_cnt + 1;
-    end if;
-  end process;
-
-  -- DDU packet counter
-  gtx_dv_cnt_proc : process (ddu_eof, reset)
-  begin
-    if (reset = '1') then
-      ddu_eof_cnt <= (others => '0');
-    elsif (rising_edge(ddu_eof)) then
-      ddu_eof_cnt <= ddu_eof_cnt + 1;
-    end if;
-  end process;
-
-  gen_data_fifo_re_cnt : for index in 1 to NFEB+2 generate
-  begin
-    data_fifo_re_cnt(index) <= (others => '0') when (reset = '1') else
-                               data_fifo_re_cnt(index) + 1 when rising_edge(data_fifo_re(index)) else
-                               data_fifo_re_cnt(index);
-  end generate gen_data_fifo_re_cnt;
-
-  gen_data_fifo_oe_cnt : for index in 1 to NFEB+2 generate
-  begin
-    data_fifo_oe_cnt(index) <= (others => '0') when (reset = '1') else
-                               data_fifo_oe_cnt(index) + 1 when rising_edge(data_fifo_oe(index)) else
-                               data_fifo_oe_cnt(index);
-  end generate gen_data_fifo_oe_cnt;
 
   clk_led <= clk2p5;
   FDRESET : FD port map(reset_q, clk_led, reset);
@@ -2339,7 +2231,8 @@ begin
 
   odmb_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, mbc_instr, mbc_jtag_ir, odmb_data_sel,
                          l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
-                         data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, crc_cnt)
+                         data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, goodcrc_cnt,
+                       alct_dav_cnt, otmb_dav_cnt)
   begin
     
     case odmb_data_sel is
@@ -2443,13 +2336,13 @@ begin
       when x"58" => odmb_data <= data_fifo_re_cnt(8);  -- from control to FIFOs in top
       when x"59" => odmb_data <= data_fifo_re_cnt(9);  -- from control to FIFOs in top
 
-      when x"61" => odmb_data <= crc_cnt(1);
-      when x"62" => odmb_data <= crc_cnt(2);
-      when x"63" => odmb_data <= crc_cnt(3);
-      when x"64" => odmb_data <= crc_cnt(4);
-      when x"65" => odmb_data <= crc_cnt(5);
-      when x"66" => odmb_data <= crc_cnt(6);
-      when x"67" => odmb_data <= crc_cnt(7);
+      when x"61" => odmb_data <= goodcrc_cnt(1);
+      when x"62" => odmb_data <= goodcrc_cnt(2);
+      when x"63" => odmb_data <= goodcrc_cnt(3);
+      when x"64" => odmb_data <= goodcrc_cnt(4);
+      when x"65" => odmb_data <= goodcrc_cnt(5);
+      when x"66" => odmb_data <= goodcrc_cnt(6);
+      when x"67" => odmb_data <= goodcrc_cnt(7);
 
       when x"71" => odmb_data <= raw_lct_cnt(1);
       when x"72" => odmb_data <= raw_lct_cnt(2);
@@ -2458,6 +2351,8 @@ begin
       when x"75" => odmb_data <= raw_lct_cnt(5);
       when x"76" => odmb_data <= raw_lct_cnt(6);
       when x"77" => odmb_data <= raw_lct_cnt(7);
+      when x"78" => odmb_data <= otmb_dav_cnt;
+      when x"79" => odmb_data <= alct_dav_cnt;
 
       when others => odmb_data <= (others => '1');
     end case;
