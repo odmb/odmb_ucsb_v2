@@ -1675,7 +1675,7 @@ begin
       WREN        => otmb_fifo_data_valid,  -- Input write enable
       DI          => otmb_fifo_data_in,     -- Input data
       RDCLK       => dduclk,                -- Input read clock
-      RDEN        => data_fifo_re(NFEB+2),  -- Input read enable
+      RDEN        => data_fifo_re(NFEB+1),  -- Input read enable
       DO          => otmb_fifo_data_out     -- Output data
       );
 
@@ -1712,7 +1712,7 @@ begin
   rx_alct_data_valid <= not alct(17);
   rx_alct_data       <= alct(16) & alct(16 downto 0);  -- For now, we send EOF in 16 and 17
  
-  otmb_fifo_data_valid <= '0' when kill(9) = '1' else
+  otmb_fifo_data_valid <= '0' when kill(8) = '1' else
                           rx_otmb_data_valid when (gen_dcfeb_sel = '0') else
                           eofgen_otmb_data_valid;
 
@@ -1748,8 +1748,8 @@ begin
   alct_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+2);
   otmb_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+1);
 
-  eof_data(8) <= alct_fifo_data_in(16);
-  eof_data(9) <= otmb_fifo_data_in(16);
+  eof_data(9) <= alct_fifo_data_in(16);
+  eof_data(8) <= otmb_fifo_data_in(16);
 
 
   ALCT_EOFGEN_PM : EOFGEN

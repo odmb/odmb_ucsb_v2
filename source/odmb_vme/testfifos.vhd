@@ -471,7 +471,7 @@ begin  --Architecture
 -- Write OTMB_FF_RST (Reset OTMB FIFO)
   IN_OTMB_FF_RST  <= PULSE_OTMB_FF_RST or RST;
   FD_W_OTMB_FF_RST     : FDCE port map(OTMB_FF_RST_INNER, STROBE, W_OTMB_FF_RST, IN_OTMB_FF_RST, W_OTMB_FF_RST);
-  PULSE_RESET_OTMB     : PULSE_EDGE port map(otmb_fifo_rst, pulse_otmb_ff_rst, slowclk, rst, 1, otmb_ff_rst_inner);
+  PULSE_RESET_OTMB     : PULSE_EDGE port map(otmb_fifo_rst, pulse_otmb_ff_rst, clk40, rst, 1, otmb_ff_rst_inner);
   D_W_OTMB_FF_RST <= '1' when (STROBE = '1' and W_OTMB_FF_RST = '1') else '0';
   FD_DTACK_OTMB_FF_RST : FD port map(Q_W_OTMB_FF_RST, SLOWCLK, D_W_OTMB_FF_RST);
   DTACK_INNER     <= '0' when (Q_W_OTMB_FF_RST = '1')                else 'Z';
@@ -536,7 +536,7 @@ begin  --Architecture
 -- Write ALCT_FF_RST (Reset ALCT FIFO)
   IN_ALCT_FF_RST  <= PULSE_ALCT_FF_RST or RST;
   FD_W_ALCT_FF_RST     : FDCE port map(ALCT_FF_RST_INNER, STROBE, W_ALCT_FF_RST, IN_ALCT_FF_RST, W_ALCT_FF_RST);
-  PULSE_RESET_ALCT     : PULSE_EDGE port map(alct_fifo_rst, pulse_alct_ff_rst, slowclk, rst, 1, alct_ff_rst_inner);
+  PULSE_RESET_ALCT     : PULSE_EDGE port map(alct_fifo_rst, pulse_alct_ff_rst, clk40, rst, 1, alct_ff_rst_inner);
   D_W_ALCT_FF_RST <= '1' when (STROBE = '1' and W_ALCT_FF_RST = '1') else '0';
   FD_DTACK_ALCT_FF_RST : FD port map(Q_W_ALCT_FF_RST, SLOWCLK, D_W_ALCT_FF_RST);
   DTACK_INNER     <= '0' when (Q_W_ALCT_FF_RST = '1')                else 'Z';
