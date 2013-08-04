@@ -97,16 +97,16 @@ entity ODMB_VME is
     diagout_lvdbmon  : out std_logic_vector(17 downto 0);
 
 -- From VMEMON
-    OPT_RESET_PULSE     : out std_logic;
-    FW_RESET      : out std_logic;
-    RESYNC        : out std_logic;
-    REPROG_B      : out std_logic;
-    TEST_INJ      : out std_logic;
-    TEST_PLS      : out std_logic;
-    TEST_PED      : out std_logic;
-    TEST_LCT      : out std_logic;
-    OTMB_LCT_RQST : out std_logic;
-    OTMB_EXT_TRIG : out std_logic;
+    OPT_RESET_PULSE : out std_logic;
+    FW_RESET        : out std_logic;
+    RESYNC          : out std_logic;
+    REPROG_B        : out std_logic;
+    TEST_INJ        : out std_logic;
+    TEST_PLS        : out std_logic;
+    TEST_PED        : out std_logic;
+    TEST_LCT        : out std_logic;
+    OTMB_LCT_RQST   : out std_logic;
+    OTMB_EXT_TRIG   : out std_logic;
 
     tp_sel        : out std_logic_vector(15 downto 0);
     odmb_ctrl     : out std_logic_vector(15 downto 0);
@@ -119,7 +119,7 @@ entity ODMB_VME is
     -- TESTCTRL
     tc_l1a         : out std_logic;
     tc_alct_dav    : out std_logic;
-    tc_tmb_dav     : out std_logic;
+    tc_otmb_dav    : out std_logic;
     tc_lct         : out std_logic_vector(NFEB downto 0);
     ddu_data       : in  std_logic_vector(15 downto 0);
     ddu_data_valid : in  std_logic;
@@ -129,7 +129,7 @@ entity ODMB_VME is
 
     -- VMECONFREGS outputs
     ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-    TMB_PUSH_DLY  : out std_logic_vector(4 downto 0);
+    OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
     PUSH_DLY      : out std_logic_vector(4 downto 0);
     LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
     INJ_DLY       : out std_logic_vector(4 downto 0);
@@ -194,7 +194,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       L1A            : out std_logic;
       ALCT_DAV       : out std_logic;
-      TMB_DAV        : out std_logic;
+      OTMB_DAV       : out std_logic;
       LCT            : out std_logic_vector(NFEB downto 0);
       DDU_DATA       : in  std_logic_vector(15 downto 0);
       DDU_DATA_VALID : in  std_logic;
@@ -273,16 +273,16 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
-      OPT_RESET_PULSE     : out std_logic;
-      FW_RESET      : out std_logic;
-      RESYNC        : out std_logic;
-      REPROG_B      : out std_logic;
-      TEST_INJ      : out std_logic;
-      TEST_PLS      : out std_logic;
-      TEST_PED      : out std_logic;
-      TEST_LCT      : out std_logic;
-      OTMB_LCT_RQST : out std_logic;
-      OTMB_EXT_TRIG : out std_logic;
+      OPT_RESET_PULSE : out std_logic;
+      FW_RESET        : out std_logic;
+      RESYNC          : out std_logic;
+      REPROG_B        : out std_logic;
+      TEST_INJ        : out std_logic;
+      TEST_PLS        : out std_logic;
+      TEST_PED        : out std_logic;
+      TEST_LCT        : out std_logic;
+      OTMB_LCT_RQST   : out std_logic;
+      OTMB_EXT_TRIG   : out std_logic;
 
       TP_SEL        : out std_logic_vector(15 downto 0);
       ODMB_CTRL     : out std_logic_vector(15 downto 0);
@@ -310,7 +310,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DTACK : out std_logic;
 
       ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-      TMB_PUSH_DLY  : out std_logic_vector(4 downto 0);
+      OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
       PUSH_DLY      : out std_logic_vector(4 downto 0);
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
 
@@ -531,7 +531,7 @@ begin
 
       L1A            => TC_L1A,
       ALCT_DAV       => TC_ALCT_DAV,
-      TMB_DAV        => TC_TMB_DAV,
+      OTMB_DAV       => TC_OTMB_DAV,
       LCT            => TC_LCT,
       DDU_DATA       => DDU_DATA,
       DDU_DATA_VALID => DDU_DATA_VALID,
@@ -607,16 +607,16 @@ begin
 
       DTACK => vme_dtack_b,
 
-      OPT_RESET_PULSE     => opt_reset_pulse,
-      FW_RESET      => fw_reset,
-      RESYNC        => resync,
-      REPROG_B      => reprog_b,
-      TEST_INJ      => test_inj,
-      TEST_PLS      => test_pls,
-      TEST_PED      => test_ped,
-      TEST_LCT      => test_lct,
-      OTMB_LCT_RQST => otmb_lct_rqst,
-      OTMB_EXT_TRIG => otmb_ext_trig,
+      OPT_RESET_PULSE => opt_reset_pulse,
+      FW_RESET        => fw_reset,
+      RESYNC          => resync,
+      REPROG_B        => reprog_b,
+      TEST_INJ        => test_inj,
+      TEST_PLS        => test_pls,
+      TEST_PED        => test_ped,
+      TEST_LCT        => test_lct,
+      OTMB_LCT_RQST   => otmb_lct_rqst,
+      OTMB_EXT_TRIG   => otmb_ext_trig,
 
       TP_SEL        => tp_sel,
       ODMB_CTRL     => odmb_ctrl,
@@ -643,7 +643,7 @@ begin
 
       DTACK         => VME_DTACK_B,
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      TMB_PUSH_DLY  => TMB_PUSH_DLY,
+      OTMB_PUSH_DLY => OTMB_PUSH_DLY,
       PUSH_DLY      => PUSH_DLY,
       LCT_L1A_DLY   => LCT_L1A_DLY,
 

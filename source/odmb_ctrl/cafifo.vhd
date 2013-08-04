@@ -1,7 +1,6 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_UNSIGNED.all;
---use IEEE.STD_LOGIC_INTEGER.all;
 use ieee.numeric_std.all;
 use IEEE.STD_LOGIC_1164.all;
 library UNISIM;
@@ -23,7 +22,7 @@ entity cafifo is
     rst        : in std_logic;
     resync     : in std_logic;
     l1acnt_rst : in std_logic;
-    bxcnt_rst : in std_logic;
+    bxcnt_rst  : in std_logic;
 
     BC0   : in std_logic;
     BXRST : in std_logic;
@@ -35,7 +34,7 @@ entity cafifo is
 
     eof_data    : in std_logic_vector(NFEB+2 downto 1);
     alct_dv     : in std_logic;
-    tmb_dv      : in std_logic;
+    otmb_dv     : in std_logic;
     dcfeb0_dv   : in std_logic;
     dcfeb0_data : in std_logic_vector(15 downto 0);
     dcfeb1_dv   : in std_logic;
@@ -53,7 +52,7 @@ entity cafifo is
 
     dcfeb_fifo_wren : out std_logic_vector(NFEB downto 1);  -- Not used
     alct_fifo_wren  : out std_logic;                        -- Not used
-    tmb_fifo_wren   : out std_logic;                        -- Not used
+    otmb_fifo_wren  : out std_logic;                        -- Not used
 
     cafifo_l1a_match : out std_logic_vector(NFEB+2 downto 1);
     cafifo_l1a_cnt   : out std_logic_vector(23 downto 0);
@@ -72,14 +71,14 @@ end cafifo;
 
 architecture cafifo_architecture of cafifo is
 
-  signal alct_l1a_dav, tmb_l1a_dav : std_logic;
-  signal dcfeb_dv                  : std_logic_vector(NFEB downto 1);
+  signal alct_l1a_dav, otmb_l1a_dav : std_logic;
+  signal dcfeb_dv                   : std_logic_vector(NFEB downto 1);
 
   type rx_state_type is (RX_IDLE, RX_HEADER1, RX_HEADER2, RX_DW);
   type rx_state_array_type is array (NFEB+2 downto 1) of rx_state_type;
   signal rx_next_state, rx_current_state           : rx_state_array_type;
   signal alct_rx_next_state, alct_rx_current_state : rx_state_type;
-  signal tmb_rx_next_state, tmb_rx_current_state   : rx_state_type;
+  signal otmb_rx_next_state, otmb_rx_current_state : rx_state_type;
 
   signal dcfeb_l1a_dav : std_logic_vector(NFEB downto 1);
 
@@ -123,11 +122,11 @@ architecture cafifo_architecture of cafifo is
   signal alct_fifo_wr_cnt, alct_fifo_rd_cnt : std_logic_vector(8 downto 0);
   signal alct_fifo_in, alct_fifo_out        : std_logic_vector(23 downto 0);
 
-  signal reg_tmb_l1a_dav                  : std_logic;
-  signal tmb_fifo_empty, tmb_fifo_full    : std_logic;
-  signal tmb_fifo_wr_en, tmb_fifo_rd_en   : std_logic;
-  signal tmb_fifo_wr_cnt, tmb_fifo_rd_cnt : std_logic_vector(8 downto 0);
-  signal tmb_fifo_in, tmb_fifo_out        : std_logic_vector(23 downto 0);
+  signal reg_otmb_l1a_dav                   : std_logic;
+  signal otmb_fifo_empty, otmb_fifo_full    : std_logic;
+  signal otmb_fifo_wr_en, otmb_fifo_rd_en   : std_logic;
+  signal otmb_fifo_wr_cnt, otmb_fifo_rd_cnt : std_logic_vector(8 downto 0);
+  signal otmb_fifo_in, otmb_fifo_out        : std_logic_vector(23 downto 0);
 
   signal LOGICH                                                           : std_logic := '1';
   signal BX_CNT_CLR, BX_CNT_A_TC, BX_CNT_B_TC, BX_CNT_A_CEO, BX_CNT_B_CEO : std_logic;
@@ -303,40 +302,40 @@ begin
 
   end process;
 
-  tmb_rx_fsm_logic : process (tmb_rx_current_state, tmb_dv)
+  otmb_rx_fsm_logic : process (otmb_rx_current_state, otmb_dv)
 
   begin
     
-    case tmb_rx_current_state is
+    case otmb_rx_current_state is
       
       when RX_IDLE =>
         
-        if (tmb_dv = '1') then
-          tmb_l1a_dav       <= '1';
-          tmb_fifo_wren     <= '1';
-          tmb_rx_next_state <= RX_DW;
+        if (otmb_dv = '1') then
+          otmb_l1a_dav       <= '1';
+          otmb_fifo_wren     <= '1';
+          otmb_rx_next_state <= RX_DW;
         else
-          tmb_l1a_dav       <= '0';
-          tmb_fifo_wren     <= '0';
-          tmb_rx_next_state <= RX_IDLE;
+          otmb_l1a_dav       <= '0';
+          otmb_fifo_wren     <= '0';
+          otmb_rx_next_state <= RX_IDLE;
         end if;
         
       when RX_DW =>
         
-        tmb_l1a_dav <= '0';
-        if (tmb_dv = '1') then
-          tmb_fifo_wren     <= '1';
-          tmb_rx_next_state <= RX_DW;
+        otmb_l1a_dav <= '0';
+        if (otmb_dv = '1') then
+          otmb_fifo_wren     <= '1';
+          otmb_rx_next_state <= RX_DW;
         else
-          tmb_fifo_wren     <= '0';
-          tmb_rx_next_state <= RX_IDLE;
+          otmb_fifo_wren     <= '0';
+          otmb_rx_next_state <= RX_IDLE;
         end if;
 
       when others =>
 
-        tmb_l1a_dav       <= '0';
-        tmb_fifo_wren     <= '0';
-        tmb_rx_next_state <= RX_IDLE;
+        otmb_l1a_dav       <= '0';
+        otmb_fifo_wren     <= '0';
+        otmb_rx_next_state <= RX_IDLE;
         
     end case;
 
@@ -491,22 +490,22 @@ begin
 
   cafifo_l1a_dav(NFEB+2) <= l1a_dav_b9_gm(rd_addr_out);
 
-  tmb_reg : process (tmb_l1a_dav, rst, clk)
+  otmb_reg : process (otmb_l1a_dav, rst, clk)
 
   begin
     if (rst = '1') then
-      reg_tmb_l1a_dav <= '0';
+      reg_otmb_l1a_dav <= '0';
     elsif rising_edge(clk) then
-      reg_tmb_l1a_dav <= tmb_l1a_dav;
+      reg_otmb_l1a_dav <= otmb_l1a_dav;
     end if;
     
   end process;
 
-  tmb_fifo_wr_en <= l1a_match_in(8);
-  tmb_fifo_rd_en <= tmb_l1a_dav;
-  tmb_fifo_in    <= l1a_cnt_out;
+  otmb_fifo_wr_en <= l1a_match_in(8);
+  otmb_fifo_rd_en <= otmb_l1a_dav;
+  otmb_fifo_in    <= l1a_cnt_out;
 
-  tmb_fifo : FIFO_SYNC_MACRO
+  otmb_fifo : FIFO_SYNC_MACRO
     generic map (
       DEVICE              => "VIRTEX6",  -- Target Device: "VIRTEX5, "VIRTEX6" 
       ALMOST_FULL_OFFSET  => X"0080",   -- Sets almost full threshold
@@ -516,21 +515,21 @@ begin
     port map (
       ALMOSTEMPTY => open,              -- Output almost empty 
       ALMOSTFULL  => open,              -- Output almost full
-      DO          => tmb_fifo_out,      -- Output data
-      EMPTY       => tmb_fifo_empty,    -- Output empty
-      FULL        => tmb_fifo_full,     -- Output full
-      RDCOUNT     => tmb_fifo_rd_cnt,   -- Output read count
+      DO          => otmb_fifo_out,     -- Output data
+      EMPTY       => otmb_fifo_empty,   -- Output empty
+      FULL        => otmb_fifo_full,    -- Output full
+      RDCOUNT     => otmb_fifo_rd_cnt,  -- Output read count
       RDERR       => open,              -- Output read error
-      WRCOUNT     => tmb_fifo_wr_cnt,   -- Output write count
+      WRCOUNT     => otmb_fifo_wr_cnt,  -- Output write count
       WRERR       => open,              -- Output write error
       CLK         => clk,               -- Input clock
-      DI          => tmb_fifo_in,       -- Input data
-      RDEN        => tmb_fifo_rd_en,    -- Input read enable
+      DI          => otmb_fifo_in,      -- Input data
+      RDEN        => otmb_fifo_rd_en,   -- Input read enable
       RST         => rst,               -- Input reset
-      WREN        => tmb_fifo_wr_en     -- Input write enable
+      WREN        => otmb_fifo_wr_en    -- Input write enable
       );
 
-  tmb_dv_fifo_gm : process (l1a_cnt, tmb_fifo_out, reg_tmb_l1a_dav, rst, clk)
+  otmb_dv_fifo_gm : process (l1a_cnt, otmb_fifo_out, reg_otmb_l1a_dav, rst, clk)
 
   begin
     if (rst = '1') then
@@ -539,8 +538,8 @@ begin
       end loop;
     elsif rising_edge(clk) then
       for index in 0 to FIFO_SIZE-1 loop
-        --if (tmb_fifo_out(11 downto 0) = l1a_cnt(index)) and (reg_tmb_l1a_dav = '1') then
-        if (tmb_fifo_out(11 downto 0) = l1a_cnt(index)) and (eof_data(8) = '1') then
+        --if (otmb_fifo_out(11 downto 0) = l1a_cnt(index)) and (reg_otmb_l1a_dav = '1') then
+        if (otmb_fifo_out(11 downto 0) = l1a_cnt(index)) and (eof_data(8) = '1') then
           l1a_dav_b8(index) <= '1';
         end if;
       end loop;

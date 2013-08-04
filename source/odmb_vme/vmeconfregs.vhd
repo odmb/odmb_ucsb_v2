@@ -26,7 +26,7 @@ entity VMECONFREGS is
     DTACK : out std_logic;
 
     ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-    TMB_PUSH_DLY  : out std_logic_vector(4 downto 0);
+    OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
     PUSH_DLY      : out std_logic_vector(4 downto 0);
     LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
 
@@ -46,19 +46,19 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : unsigned(12 downto 0);
 
-  constant FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0009";
-  signal   OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
-  signal   R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
+  constant FW_VERSION                                 : std_logic_vector(15 downto 0) := x"000A";
+  signal OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
 
   signal OUT_LCT_L1A                         : std_logic_vector(15 downto 0) := (others => '0');
   signal LCT_L1A_DLY_INNER                   : std_logic_vector(5 downto 0);
   signal W_LCT_L1A, D_W_LCT_L1A, Q_W_LCT_L1A : std_logic                     := '0';
   signal R_LCT_L1A, D_R_LCT_L1A, Q_R_LCT_L1A : std_logic                     := '0';
 
-  signal OUT_TMB_PUSH                           : std_logic_vector(15 downto 0) := (others => '0');
-  signal TMB_PUSH_DLY_INNER                     : std_logic_vector(4 downto 0);
-  signal W_TMB_PUSH, D_W_TMB_PUSH, Q_W_TMB_PUSH : std_logic                     := '0';
-  signal R_TMB_PUSH, D_R_TMB_PUSH, Q_R_TMB_PUSH : std_logic                     := '0';
+  signal OUT_OTMB_PUSH                             : std_logic_vector(15 downto 0) := (others => '0');
+  signal OTMB_PUSH_DLY_INNER                       : std_logic_vector(4 downto 0);
+  signal W_OTMB_PUSH, D_W_OTMB_PUSH, Q_W_OTMB_PUSH : std_logic                     := '0';
+  signal R_OTMB_PUSH, D_R_OTMB_PUSH, Q_R_OTMB_PUSH : std_logic                     := '0';
 
   signal OUT_PUSH                   : std_logic_vector(15 downto 0) := (others => '0');
   signal PUSH_DLY_INNER             : std_logic_vector(4 downto 0);
@@ -101,7 +101,7 @@ begin  --Architecture
   CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input  
 
   W_LCT_L1A    <= '1' when (CMDDEV = x"1000") else '0';
-  W_TMB_PUSH   <= '1' when (CMDDEV = x"1004") else '0';
+  W_OTMB_PUSH  <= '1' when (CMDDEV = x"1004") else '0';
   W_PUSH       <= '1' when (CMDDEV = x"1008") else '0';
   W_ALCT_PUSH  <= '1' when (CMDDEV = x"100C") else '0';
   W_INJ_DLY    <= '1' when (CMDDEV = x"1010") else '0';
@@ -111,7 +111,7 @@ begin  --Architecture
   W_CRATEID    <= '1' when (CMDDEV = x"1020") else '0';
 
   R_LCT_L1A    <= '1' when (CMDDEV = x"1400") else '0';
-  R_TMB_PUSH   <= '1' when (CMDDEV = x"1404") else '0';
+  R_OTMB_PUSH  <= '1' when (CMDDEV = x"1404") else '0';
   R_PUSH       <= '1' when (CMDDEV = x"1408") else '0';
   R_ALCT_PUSH  <= '1' when (CMDDEV = x"140C") else '0';
   R_INJ_DLY    <= '1' when (CMDDEV = x"1410") else '0';
@@ -134,30 +134,30 @@ begin  --Architecture
 -- Read LCT_L1A_DLY
   OUT_LCT_L1A(15 downto 6) <= (others => '0');
   OUT_LCT_L1A(5 downto 0)  <= LCT_L1A_DLY_INNER when (STROBE = '1' and R_LCT_L1A = '1') else
-                             (others => 'Z');
+                              (others => 'Z');
 
   D_R_LCT_L1A <= '1' when (STROBE = '1' and R_LCT_L1A = '1') else '0';
   FD_R_LCT_L1A : FD port map(Q_R_LCT_L1A, SLOWCLK, D_R_LCT_L1A);
   DTACK_INNER <= '0' when (Q_R_LCT_L1A = '1')                else 'Z';
 
--- Write TMB_PUSH_DLY
-  GEN_TMB_PUSH_DLY : for I in 4 downto 0 generate
+-- Write OTMB_PUSH_DLY
+  GEN_OTMB_PUSH_DLY : for I in 4 downto 0 generate
   begin
-    FD_W_TMB_PUSH : FDCE port map(TMB_PUSH_DLY_INNER(I), STROBE, W_TMB_PUSH, RST, INDATA(I));
-  end generate GEN_TMB_PUSH_DLY;
-  TMB_PUSH_DLY <= TMB_PUSH_DLY_INNER;
-  D_W_TMB_PUSH <= '1' when (STROBE = '1' and W_TMB_PUSH = '1') else '0';
-  FD_DTACK_TMB_PUSH : FD port map(Q_W_TMB_PUSH, SLOWCLK, D_W_TMB_PUSH);
-  DTACK_INNER  <= '0' when (Q_W_TMB_PUSH = '1')                else 'Z';
+    FD_W_OTMB_PUSH : FDCE port map(OTMB_PUSH_DLY_INNER(I), STROBE, W_OTMB_PUSH, RST, INDATA(I));
+  end generate GEN_OTMB_PUSH_DLY;
+  OTMB_PUSH_DLY <= OTMB_PUSH_DLY_INNER;
+  D_W_OTMB_PUSH <= '1' when (STROBE = '1' and W_OTMB_PUSH = '1') else '0';
+  FD_DTACK_OTMB_PUSH : FD port map(Q_W_OTMB_PUSH, SLOWCLK, D_W_OTMB_PUSH);
+  DTACK_INNER   <= '0' when (Q_W_OTMB_PUSH = '1')                else 'Z';
 
--- Read TMB_PUSH_DLY
-  OUT_TMB_PUSH(15 downto 5) <= (others => '0');
-  OUT_TMB_PUSH(4 downto 0)  <= TMB_PUSH_DLY_INNER when (STROBE = '1' and R_TMB_PUSH = '1') else
-                              (others => 'Z');
+-- Read OTMB_PUSH_DLY
+  OUT_OTMB_PUSH(15 downto 5) <= (others => '0');
+  OUT_OTMB_PUSH(4 downto 0)  <= OTMB_PUSH_DLY_INNER when (STROBE = '1' and R_OTMB_PUSH = '1') else
+                                (others => 'Z');
 
-  D_R_TMB_PUSH <= '1' when (STROBE = '1' and R_TMB_PUSH = '1') else '0';
-  FD_R_TMB_PUSH : FD port map(Q_R_TMB_PUSH, SLOWCLK, D_R_TMB_PUSH);
-  DTACK_INNER  <= '0' when (Q_R_TMB_PUSH = '1')                else 'Z';
+  D_R_OTMB_PUSH <= '1' when (STROBE = '1' and R_OTMB_PUSH = '1') else '0';
+  FD_R_OTMB_PUSH : FD port map(Q_R_OTMB_PUSH, SLOWCLK, D_R_OTMB_PUSH);
+  DTACK_INNER   <= '0' when (Q_R_OTMB_PUSH = '1')                else 'Z';
 
 -- Write PUSH_DLY
   GEN_PUSH_DLY : for I in 4 downto 0 generate
@@ -171,7 +171,7 @@ begin  --Architecture
 
 -- Read PUSH_DLY
   OUT_PUSH(15 downto 5) <= (others => '0');
-  OUT_PUSH(4 downto 0) <= PUSH_DLY_INNER when (STROBE = '1' and R_PUSH = '1') else
+  OUT_PUSH(4 downto 0)  <= PUSH_DLY_INNER when (STROBE = '1' and R_PUSH = '1') else
                           (others => 'Z');
 
   D_R_PUSH    <= '1' when (STROBE = '1' and R_PUSH = '1') else '0';
@@ -190,7 +190,7 @@ begin  --Architecture
 
 -- Read ALCT_PUSH_DLY
   OUT_ALCT_PUSH(15 downto 5) <= (others => '0');
-  OUT_ALCT_PUSH(4 downto 0) <= ALCT_PUSH_DLY_INNER when (STROBE = '1' and R_ALCT_PUSH = '1') else
+  OUT_ALCT_PUSH(4 downto 0)  <= ALCT_PUSH_DLY_INNER when (STROBE = '1' and R_ALCT_PUSH = '1') else
                                (others => 'Z');
 
   D_R_ALCT_PUSH <= '1' when (STROBE = '1' and R_ALCT_PUSH = '1') else '0';
@@ -209,7 +209,7 @@ begin  --Architecture
 
 -- Read INJ_DLY
   OUT_INJ_DLY(15 downto 5) <= (others => '0');
-  OUT_INJ_DLY(4 downto 0) <= INJ_DLY_INNER when (STROBE = '1' and R_INJ_DLY = '1') else
+  OUT_INJ_DLY(4 downto 0)  <= INJ_DLY_INNER when (STROBE = '1' and R_INJ_DLY = '1') else
                              (others => 'Z');
 
   D_R_INJ_DLY <= '1' when (STROBE = '1' and R_INJ_DLY = '1') else '0';
@@ -228,7 +228,7 @@ begin  --Architecture
 
 -- Read EXT_DLY
   OUT_EXT_DLY(15 downto 5) <= (others => '0');
-  OUT_EXT_DLY(4 downto 0) <= EXT_DLY_INNER when (STROBE = '1' and R_EXT_DLY = '1') else
+  OUT_EXT_DLY(4 downto 0)  <= EXT_DLY_INNER when (STROBE = '1' and R_EXT_DLY = '1') else
                              (others => 'Z');
 
   D_R_EXT_DLY <= '1' when (STROBE = '1' and R_EXT_DLY = '1') else '0';
@@ -247,7 +247,7 @@ begin  --Architecture
 
 -- Read CALLCT_DLY
   OUT_CALLCT_DLY(15 downto 4) <= (others => '0');
-  OUT_CALLCT_DLY(3 downto 0) <= CALLCT_DLY_INNER when (STROBE = '1' and R_CALLCT_DLY = '1') else
+  OUT_CALLCT_DLY(3 downto 0)  <= CALLCT_DLY_INNER when (STROBE = '1' and R_CALLCT_DLY = '1') else
                                 (others => 'Z');
 
   D_R_CALLCT_DLY <= '1' when (STROBE = '1' and R_CALLCT_DLY = '1') else '0';
@@ -266,7 +266,7 @@ begin  --Architecture
 
 -- Read KILL
   OUT_KILL(15 downto NFEB+2) <= (others => '0');
-  OUT_KILL(NFEB+1 downto 0) <= KILL_INNER when (STROBE = '1' and R_KILL = '1') else
+  OUT_KILL(NFEB+1 downto 0)  <= KILL_INNER when (STROBE = '1' and R_KILL = '1') else
                                (others => 'Z');
 
   D_R_KILL    <= '1' when (STROBE = '1' and R_KILL = '1') else '0';
@@ -285,7 +285,7 @@ begin  --Architecture
 
 -- Read CRATEID
   OUT_CRATEID(15 downto 7) <= (others => '0');
-  OUT_CRATEID(6 downto 0) <= CRATEID_INNER when (STROBE = '1' and R_CRATEID = '1') else
+  OUT_CRATEID(6 downto 0)  <= CRATEID_INNER when (STROBE = '1' and R_CRATEID = '1') else
                              (others => 'Z');
 
   D_R_CRATEID <= '1' when (STROBE = '1' and R_CRATEID = '1') else '0';
@@ -301,15 +301,15 @@ begin  --Architecture
 
 -- General assignments
   OUTDATA <= OUT_LCT_L1A when R_LCT_L1A = '1' else
-             OUT_TMB_PUSH   when R_TMB_PUSH = '1'   else
-             OUT_PUSH       when R_PUSH = '1'       else
-             OUT_ALCT_PUSH  when R_ALCT_PUSH = '1'  else
-             OUT_INJ_DLY    when R_INJ_DLY = '1'    else
-             OUT_EXT_DLY    when R_EXT_DLY = '1'    else
+             OUT_OTMB_PUSH  when R_OTMB_PUSH = '1' else
+             OUT_PUSH       when R_PUSH = '1' else
+             OUT_ALCT_PUSH  when R_ALCT_PUSH = '1' else
+             OUT_INJ_DLY    when R_INJ_DLY = '1' else
+             OUT_EXT_DLY    when R_EXT_DLY = '1' else
              OUT_CALLCT_DLY when R_CALLCT_DLY = '1' else
-             OUT_KILL       when R_KILL = '1'       else
+             OUT_KILL       when R_KILL = '1' else
              OUT_FW_VERSION when R_FW_VERSION = '1' else
-             OUT_CRATEID    when R_CRATEID = '1'    else
+             OUT_CRATEID    when R_CRATEID = '1' else
              (others => 'L');
   DTACK <= DTACK_INNER;
   

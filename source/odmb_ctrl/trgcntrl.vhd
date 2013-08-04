@@ -13,17 +13,17 @@ entity TRGCNTRL is
     NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
     );  
   port (
-    CLK         : in std_logic;
-    RAW_L1A     : in std_logic;
-    RAW_LCT     : in std_logic_vector(NFEB downto 0);
-    CAL_LCT     : in std_logic_vector(NFEB downto 0);
-    CAL_L1A     : in std_logic;
-    LCT_L1A_DLY : in std_logic_vector(5 downto 0);
-    PUSH_DLY    : in std_logic_vector(4 downto 0);
-    ALCT_DAV    : in std_logic;
-    TMB_DAV     : in std_logic;
+    CLK           : in std_logic;
+    RAW_L1A       : in std_logic;
+    RAW_LCT       : in std_logic_vector(NFEB downto 0);
+    CAL_LCT       : in std_logic_vector(NFEB downto 0);
+    CAL_L1A       : in std_logic;
+    LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
+    PUSH_DLY      : in std_logic_vector(4 downto 0);
+    ALCT_DAV      : in std_logic;
+    OTMB_DAV      : in std_logic;
     ALCT_PUSH_DLY : in std_logic_vector(4 downto 0);
-    TMB_PUSH_DLY : in std_logic_vector(4 downto 0);
+    OTMB_PUSH_DLY : in std_logic_vector(4 downto 0);
 
     JTRGEN    : in std_logic_vector(3 downto 0);
     EAFEB     : in std_logic;
@@ -51,14 +51,14 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
       );
   end component;
 
-  signal JCALSEL, CAL_MODE : std_logic;
-  signal DLY_LCT, LCT, LCT_IN      : std_logic_vector(NFEB downto 0);
-  signal RAW_L1A_Q, L1A_IN         : std_logic;
-  signal L1A               : std_logic;
+  signal JCALSEL, CAL_MODE    : std_logic;
+  signal DLY_LCT, LCT, LCT_IN : std_logic_vector(NFEB downto 0);
+  signal RAW_L1A_Q, L1A_IN    : std_logic;
+  signal L1A                  : std_logic;
   type LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
-  signal LCT_Q             : LCT_TYPE;
-  signal LCT_ERR_D         : std_logic;
-  signal L1A_MATCH         : std_logic_vector(NFEB downto 0);
+  signal LCT_Q                : LCT_TYPE;
+  signal LCT_ERR_D            : std_logic;
+  signal L1A_MATCH            : std_logic_vector(NFEB downto 0);
 
 begin  --Architecture
 
@@ -78,11 +78,10 @@ begin  --Architecture
   LCT(0) <= DLY_LCT(0);
   GEN_LCT : for K in 1 to nfeb generate
   begin
-    LCT(K) <= 
--- '0' when (KILLCFEB(K) = '1') else
+    LCT(K) <= '0' when (KILLCFEB(K) = '1') else
 --              LCT(0)     when (EAFEB = '1' and CAL_MODE = '0') else
 --              CAL_LCT(K) when (JCALSEL = '1') else
-              DLY_LCT(K);
+      DLY_LCT(K);
   end generate GEN_LCT;
 
 -- Generate LCT_ERR
@@ -90,8 +89,8 @@ begin  --Architecture
   FDLCTERR : FD port map(LCT_ERR, CLK, LCT_ERR_D);
 
 -- Generate L1A / Generate DCFEB_L1A
-  L1A_IN    <= CAL_L1A when (JTRGEN(1) = '1' and CAL_MODE = '1') else RAW_L1A;
-  
+  L1A_IN <= CAL_L1A when (JTRGEN(1) = '1' and CAL_MODE = '1') else RAW_L1A;
+
   FDL1A : FD port map(RAW_L1A_Q, CLK, L1A_IN);
 --  L1A       <= CAL_L1A when (JTRGEN(1) = '1' and CAL_MODE = '1') else RAW_L1A_Q;
   L1A       <= RAW_L1A_Q;
@@ -109,7 +108,7 @@ begin  --Architecture
   end generate GEN_L1A_MATCH;
   L1A_MATCH(0)    <= or_reduce(L1A_MATCH(NFEB downto 1));
   DCFEB_L1A_MATCH <= L1A_MATCH(NFEB downto 1);
-  
+
 
 -- Generate FIFO_PUSH
 --  FDPUSH : FD port map(FIFO_PUSH, CLK, L1A);
@@ -119,12 +118,12 @@ begin  --Architecture
 
 -- Generate PUSH_DLY
   GEN_L1A_MATCH_PUSH_DLY : for K in 0 to NFEB generate
-    begin
-      SRL16_K : SRL16 port map(FIFO_L1A_MATCH(K), PUSH_DLY(0), PUSH_DLY(1), PUSH_DLY(2), PUSH_DLY(3), CLK, L1A_MATCH(K));
-    end generate GEN_L1A_MATCH_PUSH_DLY;
+  begin
+    SRL16_K : SRL16 port map(FIFO_L1A_MATCH(K), PUSH_DLY(0), PUSH_DLY(1), PUSH_DLY(2), PUSH_DLY(3), CLK, L1A_MATCH(K));
+  end generate GEN_L1A_MATCH_PUSH_DLY;
 
--- Generate TMB_PUSH_DLY
-  SRL16_TMB : SRL16 port map(FIFO_L1A_MATCH(NFEB+1), TMB_PUSH_DLY(0), TMB_PUSH_DLY(1), TMB_PUSH_DLY(2), TMB_PUSH_DLY(3), CLK, TMB_DAV);
+-- Generate OTMB_PUSH_DLY
+  SRL16_OTMB : SRL16 port map(FIFO_L1A_MATCH(NFEB+1), OTMB_PUSH_DLY(0), OTMB_PUSH_DLY(1), OTMB_PUSH_DLY(2), OTMB_PUSH_DLY(3), CLK, OTMB_DAV);
 
 -- Generate ALCT_PUSH_DLY
   SRL16_ALCT : SRL16 port map(FIFO_L1A_MATCH(NFEB+2), ALCT_PUSH_DLY(0), ALCT_PUSH_DLY(1), ALCT_PUSH_DLY(2), ALCT_PUSH_DLY(3), CLK, ALCT_DAV);

@@ -108,14 +108,14 @@ entity ODMB_UCSB_V2 is
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-    tmb      : in std_logic_vector(17 downto 0);
+    otmb      : in std_logic_vector(17 downto 0);
     alct     : in std_logic_vector(17 downto 0);
     rawlct   : in std_logic_vector(NFEB downto 0);
-    tmbffclk : in std_logic;
+    otmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
-    tmbdav    : in  std_logic;          --  lctdav1
+    otmbdav    : in  std_logic;          --  lctdav1
     alctdav   : in  std_logic;          --  lctdav2
 --    rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);     
     rsvtd_in  : in  std_logic_vector(4 downto 0);  -- rsvt_in(1:2) are rawlct(6:7) 
@@ -303,7 +303,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       tc_l1a         : out std_logic;
       tc_alct_dav    : out std_logic;
-      tc_tmb_dav     : out std_logic;
+      tc_otmb_dav     : out std_logic;
       tc_lct         : out std_logic_vector(NFEB downto 0);
       ddu_data       : in  std_logic_vector(15 downto 0);
       ddu_data_valid : in  std_logic;
@@ -313,7 +313,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       -- VMECONFREGS outputs
       ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-      TMB_PUSH_DLY  : out std_logic_vector(4 downto 0);
+      OTMB_PUSH_DLY  : out std_logic_vector(4 downto 0);
       PUSH_DLY      : out std_logic_vector(4 downto 0);
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
       INJ_DLY       : out std_logic_vector(4 downto 0);
@@ -386,7 +386,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       rawlct    : in  std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
       alct_dav  : in  std_logic;        -- lctdav1 - from J4
-      tmb_dav   : in  std_logic;        -- lctdav2 - from J4
+      otmb_dav   : in  std_logic;        -- lctdav2 - from J4
       rsvtd_in  : in  std_logic_vector(4 downto 0);  -- spare(7 DOWNTO 3) - to J4
       rsvtd_out : out std_logic_vector(2 downto 0);  -- spare(2 DOWNTO 0) - from J4
 
@@ -419,7 +419,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 -- From CAFIFO to Data FIFOs
       dcfeb_fifo_wr_en     : out std_logic_vector(NFEB downto 1);
       alct_fifo_wr_en      : out std_logic;
-      tmb_fifo_wr_en       : out std_logic;
+      otmb_fifo_wr_en       : out std_logic;
       cafifo_l1a_match_in  : out std_logic_vector(NFEB+2 downto 1);  -- From TRGCNTRL to CAFIFO to generate Data  
       cafifo_l1a_match_out : out std_logic_vector(NFEB+2 downto 1);  -- From CAFIFO to CONTROL  
       cafifo_l1a_cnt       : out std_logic_vector(23 downto 0);
@@ -441,9 +441,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       dduclk       : in std_logic;
       eof_data     : in std_logic_vector(NFEB+2 downto 1);
 
--- From ALCT,TMB,DCFEBs to CAFIFO
+-- From ALCT,OTMB,DCFEBs to CAFIFO
       alct_dv     : in std_logic;
-      tmb_dv      : in std_logic;
+      otmb_dv      : in std_logic;
       dcfeb0_dv   : in std_logic;
       dcfeb0_data : in std_logic_vector(15 downto 0);
       dcfeb1_dv   : in std_logic;
@@ -483,7 +483,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       cal_trgen  : in std_logic_vector(3 downto 0);
 
       ALCT_PUSH_DLY : in std_logic_vector(4 downto 0);
-      TMB_PUSH_DLY  : in std_logic_vector(4 downto 0);
+      OTMB_PUSH_DLY  : in std_logic_vector(4 downto 0);
       PUSH_DLY      : in std_logic_vector(4 downto 0);
       LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
       INJ_DLY       : in std_logic_vector(4 downto 0);
@@ -494,17 +494,17 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       ); 
   end component;  -- ODMB_CTRL
 
-  component alct_tmb_data_gen is
+  component alct_otmb_data_gen is
     port(
       clk            : in  std_logic;
       rst            : in  std_logic;
       l1a            : in  std_logic;
       alct_l1a_match : in  std_logic;
-      tmb_l1a_match  : in  std_logic;
+      otmb_l1a_match  : in  std_logic;
       alct_dv        : out std_logic;
       alct_data      : out std_logic_vector(15 downto 0);
-      tmb_dv         : out std_logic;
-      tmb_data       : out std_logic_vector(15 downto 0));
+      otmb_dv         : out std_logic;
+      otmb_data       : out std_logic_vector(15 downto 0));
   end component;
 
 
@@ -745,41 +745,36 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   signal eof_data : std_logic_vector (NFEB+2 downto 1);
 
--- ALCT
-
-  signal alct_data : std_logic_vector (15 downto 0);
-
-  signal gen_alct_data       : std_logic_vector(15 downto 0);
-  signal gen_alct_data_valid : std_logic;
-
-  signal rx_alct_data       : std_logic_vector(15 downto 0);
-  signal rx_alct_data_valid : std_logic;
-
-  signal alct_fifo_in    : std_logic_vector(15 downto 0);
-  signal alct_data_valid : std_logic;
-
-  signal eofgen_alct_fifo_in    : std_logic_vector(17 downto 0);
+-- ALCT ----------------------
+  signal gen_alct_data_valid    : std_logic;
+  signal gen_alct_data          : std_logic_vector(15 downto 0);
   signal eofgen_alct_data_valid : std_logic;
+  signal eofgen_alct_data    : std_logic_vector(17 downto 0);
 
-  signal alct_fifo_out : std_logic_vector (17 downto 0);
+  signal rx_alct_data_valid : std_logic;
+  signal rx_alct_data       : std_logic_vector(17 downto 0);
 
--- TMB ----------------------
+  signal alct_fifo_data_valid : std_logic;
+  signal alct_fifo_data_in    : std_logic_vector(17 downto 0);
+  signal alct_fifo_data_out   : std_logic_vector (17 downto 0);
 
-  signal tmb_data : std_logic_vector (15 downto 0);
+  signal alct_request : std_logic;
 
-  signal gen_tmb_data       : std_logic_vector(15 downto 0);
-  signal gen_tmb_data_valid : std_logic;
+-- OTMB ----------------------
+  signal gen_otmb_data_valid    : std_logic;
+  signal gen_otmb_data          : std_logic_vector(15 downto 0);
+  signal eofgen_otmb_data_valid : std_logic;
+  signal eofgen_otmb_data    : std_logic_vector(17 downto 0);
 
-  signal rx_tmb_data       : std_logic_vector(15 downto 0);
-  signal rx_tmb_data_valid : std_logic;
+  signal rx_otmb_data_valid : std_logic;
+  signal rx_otmb_data       : std_logic_vector(17 downto 0);
 
-  signal tmb_fifo_in    : std_logic_vector(15 downto 0);
-  signal tmb_data_valid : std_logic;
+  signal otmb_fifo_data_valid : std_logic;
+  signal otmb_fifo_data_in    : std_logic_vector(17 downto 0);
+  signal otmb_fifo_data_out   : std_logic_vector (17 downto 0);
 
-  signal eofgen_tmb_fifo_in    : std_logic_vector(17 downto 0);
-  signal eofgen_tmb_data_valid : std_logic;
+  signal otmb_request : std_logic;
 
-  signal tmb_fifo_out : std_logic_vector (17 downto 0);
 
 ------------------------------
 
@@ -892,7 +887,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   type     dcfeb_addr_type is array (1 to NFEB) of std_logic_vector(3 downto 0);
   constant dcfeb_addr    : dcfeb_addr_type := ("0001", "0010", "0011", "0100", "0101", "0110", "0111");
 
-  signal gen_alct_sel, gen_tmb_sel : std_logic;
+  signal gen_alct_sel, gen_otmb_sel : std_logic;
 
 -- From/To Gigalinks
   signal grx0_data       : std_logic_vector(15 downto 0) := "0000000000000000";
@@ -983,7 +978,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal data_fifo_re_b   : std_logic_vector(NFEB+2 downto 1) := (others => '1');
   signal dcfeb_fifo_wr_en : std_logic_vector(NFEB downto 1)   := (others => '0');
   signal alct_fifo_wr_en  : std_logic                         := '0';
-  signal tmb_fifo_wr_en   : std_logic                         := '0';
+  signal otmb_fifo_wr_en   : std_logic                         := '0';
 
   signal cafifo_l1a_match_in  : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_l1a_match_out : std_logic_vector(NFEB+2 downto 1);
@@ -1010,8 +1005,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_wr_cnt : dcfeb_fifo_cnt_type;
   signal dcfeb_fifo_rd_cnt : dcfeb_fifo_cnt_type;
 
-  signal alct_fifo_wr_cnt, tmb_fifo_wr_cnt : std_logic_vector(10 downto 0);
-  signal alct_fifo_rd_cnt, tmb_fifo_rd_cnt : std_logic_vector(10 downto 0);
+  signal alct_fifo_wr_cnt, otmb_fifo_wr_cnt : std_logic_vector(10 downto 0);
+  signal alct_fifo_rd_cnt, otmb_fifo_rd_cnt : std_logic_vector(10 downto 0);
 
   signal dcfeb_fifo_empty  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_aempty : std_logic_vector(NFEB downto 1);
@@ -1019,15 +1014,15 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_full   : std_logic_vector(NFEB downto 1);
 
   signal data_fifo_empty_b                 : std_logic_vector(NFEB+2 downto 1);
-  signal alct_fifo_empty, tmb_fifo_empty   : std_logic;
-  signal alct_fifo_aempty, tmb_fifo_aempty : std_logic;
-  signal alct_fifo_afull, tmb_fifo_afull   : std_logic;
-  signal alct_fifo_full, tmb_fifo_full     : std_logic;
+  signal alct_fifo_empty, otmb_fifo_empty   : std_logic;
+  signal alct_fifo_aempty, otmb_fifo_aempty : std_logic;
+  signal alct_fifo_afull, otmb_fifo_afull   : std_logic;
+  signal alct_fifo_full, otmb_fifo_full     : std_logic;
 
   signal raw_l1a, tc_l1a           : std_logic;
   signal raw_lct                   : std_logic_vector(NFEB downto 0);
   signal int_alct_dav, tc_alct_dav : std_logic;
-  signal int_tmb_dav, tc_tmb_dav   : std_logic;
+  signal int_otmb_dav, tc_otmb_dav   : std_logic;
   signal tc_lct                    : std_logic_vector(NFEB downto 0);
 
   signal tc_run                                                   : std_logic;
@@ -1047,7 +1042,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
   signal ALCT_PUSH_DLY : std_logic_vector(4 downto 0);
-  signal TMB_PUSH_DLY  : std_logic_vector(4 downto 0);
+  signal OTMB_PUSH_DLY  : std_logic_vector(4 downto 0);
   signal PUSH_DLY      : std_logic_vector(4 downto 0);
   signal LCT_L1A_DLY   : std_logic_vector(5 downto 0);
   signal INJ_DLY       : std_logic_vector(4 downto 0);
@@ -1172,7 +1167,7 @@ begin
       -- TESTCTRL
       tc_l1a         => tc_l1a,
       tc_alct_dav    => tc_alct_dav,
-      tc_tmb_dav     => tc_tmb_dav,
+      tc_otmb_dav     => tc_otmb_dav,
       tc_lct         => tc_lct,
       ddu_data       => gtx0_data,
       ddu_data_valid => gtx0_data_valid,
@@ -1182,7 +1177,7 @@ begin
 
       -- VMECONFREGS outputs
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      TMB_PUSH_DLY  => TMB_PUSH_DLY,
+      OTMB_PUSH_DLY  => OTMB_PUSH_DLY,
       PUSH_DLY      => PUSH_DLY,
       LCT_L1A_DLY   => LCT_L1A_DLY,
       INJ_DLY       => INJ_DLY,
@@ -1251,7 +1246,7 @@ begin
       ccb_clken  => ccb_clken,          -- clken - from J3
 
       rawlct    => raw_lct,  -- rawlct(NFEB downto 0) - from -- from testctrl
-      tmb_dav   => int_tmb_dav,         -- lctdav1 - from J4
+      otmb_dav   => int_otmb_dav,         -- lctdav1 - from J4
       alct_dav  => int_alct_dav,        -- lctdav2 - from J4
       rsvtd_in  => rsvtd_in,            -- spare(7 DOWNTO 3) - to J4
       rsvtd_out => rsvtd_out,           -- spare(2 DOWNTO 0) - from J4
@@ -1284,7 +1279,7 @@ begin
 -- From CAFIFO to Data FIFOs
       dcfeb_fifo_wr_en => dcfeb_fifo_wr_en,
       alct_fifo_wr_en  => alct_fifo_wr_en,
-      tmb_fifo_wr_en   => tmb_fifo_wr_en,
+      otmb_fifo_wr_en   => otmb_fifo_wr_en,
 
       cafifo_l1a_match_in  => cafifo_l1a_match_in,
       cafifo_l1a_match_out => cafifo_l1a_match_out,
@@ -1305,9 +1300,9 @@ begin
       pcclk        => pcclk,
       eof_data     => eof_data,
 
--- From ALCT,TMB,DCFEBs to CAFIFO
-      alct_dv     => alct_data_valid,
-      tmb_dv      => tmb_data_valid,
+-- From ALCT,OTMB,DCFEBs to CAFIFO
+      alct_dv     => alct_fifo_data_valid,
+      otmb_dv      => otmb_fifo_data_valid,
       dcfeb0_dv   => dcfeb_data_valid(1),
       dcfeb0_data => dcfeb_data(1),
       dcfeb1_dv   => dcfeb_data_valid(2),
@@ -1350,7 +1345,7 @@ begin
       cal_trgen  => odmb_ctrl_reg(3 downto 0),
 
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      TMB_PUSH_DLY  => TMB_PUSH_DLY,
+      OTMB_PUSH_DLY  => OTMB_PUSH_DLY,
       PUSH_DLY      => PUSH_DLY,
       LCT_L1A_DLY   => LCT_L1A_DLY,
       INJ_DLY       => INJ_DLY,
@@ -1589,20 +1584,20 @@ begin
 
   end generate GEN_DCFEB;
 
-----------------------------  ALCT and TMB data  ----------------------------
+----------------------------  ALCT and OTMB data  ----------------------------
 -----------------------------------------------------------------------------
 
-  ALCT_TMB_DATA_GEN_PM : alct_tmb_data_gen
+  ALCT_OTMB_DATA_GEN_PM : alct_otmb_data_gen
     port map(
       clk            => clk40,
       rst            => reset,
       l1a            => int_l1a,
-      alct_l1a_match => cafifo_l1a_match_in(NFEB+2),
-      tmb_l1a_match  => cafifo_l1a_match_in(NFEB+1),
+      alct_l1a_match => alct_request,
+      otmb_l1a_match  => otmb_request,
       alct_dv        => gen_alct_data_valid,
       alct_data      => gen_alct_data,
-      tmb_dv         => gen_tmb_data_valid,
-      tmb_data       => gen_tmb_data
+      otmb_dv         => gen_otmb_data_valid,
+      otmb_data       => gen_otmb_data
       );
 
   ALCT_FIFO : FIFO_DUALCLOCK_MACRO
@@ -1617,23 +1612,23 @@ begin
     port map (
       ALMOSTEMPTY => alct_fifo_aempty,       -- Output almost empty 
       ALMOSTFULL  => alct_fifo_afull,        -- Output almost full
-      DO          => alct_fifo_out,          -- Output data
+      DO          => alct_fifo_data_out,          -- Output data
       EMPTY       => alct_fifo_empty,        -- Output empty
       FULL        => alct_fifo_full,         -- Output full
       RDCOUNT     => alct_fifo_rd_cnt,       -- Output read count
       RDERR       => open,                   -- Output read error
       WRCOUNT     => alct_fifo_wr_cnt,       -- Output write count
       WRERR       => open,                   -- Output write error
-      DI          => eofgen_alct_fifo_in,    -- Input data
+      DI          => alct_fifo_data_in,    -- Input data
       RDCLK       => dduclk,                 -- Input read clock
       RDEN        => data_fifo_re(NFEB+2),   -- Input read enable
       RST         => reset,                  -- Input reset
       WRCLK       => clk40,                  -- Input write clock
-      WREN        => eofgen_alct_data_valid  -- Input write enable
+      WREN        => alct_fifo_data_valid  -- Input write enable
       );
 
 
-  TMB_FIFO : FIFO_DUALCLOCK_MACRO
+  OTMB_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
       DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
       ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
@@ -1643,21 +1638,21 @@ begin
       FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      ALMOSTEMPTY => tmb_fifo_aempty,       -- Output almost empty 
-      ALMOSTFULL  => tmb_fifo_afull,        -- Output almost full
-      DO          => tmb_fifo_out,          -- Output data
-      EMPTY       => tmb_fifo_empty,        -- Output empty
-      FULL        => tmb_fifo_full,         -- Output full
-      RDCOUNT     => tmb_fifo_rd_cnt,       -- Output read count
+      ALMOSTEMPTY => otmb_fifo_aempty,       -- Output almost empty 
+      ALMOSTFULL  => otmb_fifo_afull,        -- Output almost full
+      DO          => otmb_fifo_data_out,          -- Output data
+      EMPTY       => otmb_fifo_empty,        -- Output empty
+      FULL        => otmb_fifo_full,         -- Output full
+      RDCOUNT     => otmb_fifo_rd_cnt,       -- Output read count
       RDERR       => open,                  -- Output read error
-      WRCOUNT     => tmb_fifo_wr_cnt,       -- Output write count
+      WRCOUNT     => otmb_fifo_wr_cnt,       -- Output write count
       WRERR       => open,                  -- Output write error
-      DI          => eofgen_tmb_fifo_in,    -- Input data
+      DI          => otmb_fifo_data_in,    -- Input data
       RDCLK       => dduclk,                -- Input read clock
       RDEN        => data_fifo_re(NFEB+1),  -- Input read enable
       RST         => reset,                 -- Input reset
       WRCLK       => clk40,                 -- Input write clock
-      WREN        => eofgen_tmb_data_valid  -- Input write enable
+      WREN        => otmb_fifo_data_valid  -- Input write enable
       );
 
 -- FIFO MUX
@@ -1668,8 +1663,8 @@ begin
               dcfeb_fifo_out(5)(15 downto 0) when data_fifo_oe = "111101111" else
               dcfeb_fifo_out(6)(15 downto 0) when data_fifo_oe = "111011111" else
               dcfeb_fifo_out(7)(15 downto 0) when data_fifo_oe = "110111111" else
-              tmb_fifo_out(15 downto 0)      when data_fifo_oe = "101111111" else
-              alct_fifo_out(15 downto 0)     when data_fifo_oe = "011111111" else
+              otmb_fifo_data_out(15 downto 0)      when data_fifo_oe = "101111111" else
+              alct_fifo_data_out(15 downto 0)     when data_fifo_oe = "011111111" else
               (others => 'Z');
   eof <= dcfeb_fifo_out(1)(17) when data_fifo_oe = "111111110" else
          dcfeb_fifo_out(2)(17) when data_fifo_oe = "111111101" else
@@ -1678,64 +1673,61 @@ begin
          dcfeb_fifo_out(5)(17) when data_fifo_oe = "111101111" else
          dcfeb_fifo_out(6)(17) when data_fifo_oe = "111011111" else
          dcfeb_fifo_out(7)(17) when data_fifo_oe = "110111111" else
-         tmb_fifo_out(17)      when data_fifo_oe = "101111111" else  -- eof still to be implemented for alct and tmb data
-         alct_fifo_out(17)     when data_fifo_oe = "011111111" else  -- eof still to be implemented for alct and tmb data
+         otmb_fifo_data_out(17)      when data_fifo_oe = "101111111" else  -- eof still to be implemented for alct and otmb data
+         alct_fifo_data_out(17)     when data_fifo_oe = "011111111" else  -- eof still to be implemented for alct and otmb data
          '0';
 
-  rx_alct_data_valid <= alct(17);
-  rx_alct_data       <= alct(15 downto 0);
+  alct_fifo_data_valid <= '0' when kill(9) = '1' else
+                          rx_alct_data_valid when (gen_dcfeb_sel = '0') else
+                          eofgen_alct_data_valid;
 
-  --alct_data_valid <= '0' when kill(9) = '1' else
-  --                   rx_alct_data_valid when (gen_alct_sel = '0') else
-  --                   gen_alct_data_valid;
-  --alct_fifo_in <= rx_alct_data when (gen_alct_sel = '0') else gen_alct_data;
-  alct_data_valid <= '0' when kill(9) = '1' else
-                     gen_alct_data_valid;
-  alct_fifo_in <= gen_alct_data;
+  alct_fifo_data_in <= rx_alct_data when (gen_dcfeb_sel = '0') else
+                       eofgen_alct_data;
 
-  rx_tmb_data_valid <= tmb(17);
-  rx_tmb_data       <= tmb(15 downto 0);
+  rx_alct_data_valid <= not alct(17);
+  rx_alct_data       <= alct(16) & alct(16 downto 0);  -- For now, we send EOF in 16 and 17
+ 
+  otmb_fifo_data_valid <= '0' when kill(9) = '1' else
+                          rx_otmb_data_valid when (gen_dcfeb_sel = '0') else
+                          eofgen_otmb_data_valid;
 
-  --tmb_data_valid <= '0' when kill(8) = '1' else
-  --                  rx_tmb_data_valid when (gen_tmb_sel = '0') else
-  --                  gen_tmb_data_valid;
-  --tmb_fifo_in <= rx_tmb_data when (gen_tmb_sel = '0') else gen_tmb_data;  
-  tmb_data_valid <= '0' when kill(8) = '1' else
-                    gen_tmb_data_valid;
-  tmb_fifo_in <= gen_tmb_data;
+  otmb_fifo_data_in <= rx_otmb_data when (gen_dcfeb_sel = '0') else
+                       eofgen_otmb_data;
 
+  rx_otmb_data_valid <= not otmb(17);
+  rx_otmb_data       <= otmb(16) & otmb(16 downto 0);  -- For now, we send EOF in 16 and 17
 
   data_fifo_re      <= not data_fifo_re_b;
-  data_fifo_empty_b <= alct_fifo_empty & tmb_fifo_empty & dcfeb_fifo_empty;
+  data_fifo_empty_b <= alct_fifo_empty & otmb_fifo_empty & dcfeb_fifo_empty;
 
-  eof_data(9) <= eofgen_alct_fifo_in(17);
-  eof_data(8) <= eofgen_tmb_fifo_in(17);
-
-  tmb_data  <= tmb(15 downto 0);
-  alct_data <= alct(15 downto 0);
+  eof_data(8) <= alct_fifo_data_in(16);
+  eof_data(9) <= otmb_fifo_data_in(16);
+  alct_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+2);
+  otmb_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+1);
+                  
 
   ALCT_EOFGEN_PM : EOFGEN
     port map (
       clk => clk40,
       rst => reset,
 
-      dv_in   => alct_data_valid,
-      data_in => alct_fifo_in,
+      dv_in   => gen_alct_data_valid,
+      data_in => gen_alct_data,
 
       dv_out   => eofgen_alct_data_valid,
-      data_out => eofgen_alct_fifo_in
+      data_out => eofgen_alct_data
       );
 
-  TMB_EOFGEN_PM : EOFGEN
+  OTMB_EOFGEN_PM : EOFGEN
     port map (
       clk => clk40,
       rst => reset,
 
-      dv_in   => tmb_data_valid,
-      data_in => tmb_fifo_in,
+      dv_in   => gen_otmb_data_valid,
+      data_in => gen_otmb_data,
 
-      dv_out   => eofgen_tmb_data_valid,
-      data_out => eofgen_tmb_fifo_in
+      dv_out   => eofgen_otmb_data_valid,
+      data_out => eofgen_otmb_data
       );
 
   LVMB_MUX_PM : LVMB_MUX
@@ -1760,7 +1752,7 @@ begin
   lctrqst(2) <= otmb_ext_trig;    
   
   gen_alct_sel  <= odmb_ctrl_reg(7);
-  gen_tmb_sel   <= odmb_ctrl_reg(7);
+  gen_otmb_sel   <= odmb_ctrl_reg(7);
   gen_dcfeb_sel <= odmb_ctrl_reg(7);
 
   pb_b <= not pb;
@@ -2021,9 +2013,9 @@ begin
 
 
   int_alct_dav           <= tc_alct_dav           when (testctrl_sel = '1') else alctdav;  -- lctdav2
-  int_tmb_dav            <= tc_tmb_dav            when (testctrl_sel = '1') else tmbdav;  -- lctdav1
+  int_otmb_dav            <= tc_otmb_dav            when (testctrl_sel = '1') else otmbdav;  -- lctdav1
   --int_alct_dav <= tc_alct_dav;          -- lctdav2
-  --int_tmb_dav  <= tc_tmb_dav;           -- lctdav1
+  --int_otmb_dav  <= tc_otmb_dav;           -- lctdav1
   tc_run_out   <= tc_run;
 
 
@@ -2080,10 +2072,10 @@ begin
     end loop;
   end process;
 
-  -- Defined to count the ALCT and TMB davs as well 
+  -- Defined to count the ALCT and OTMB davs as well 
   into_cafifo_dav(NFEB downto 1) <= dcfeb_data_valid(NFEB downto 1);  -- MUXed from gen and real
-  into_cafifo_dav(8)             <= tmb_data_valid;
-  into_cafifo_dav(9)             <= alct_data_valid;
+  into_cafifo_dav(8)             <= otmb_fifo_data_valid;
+  into_cafifo_dav(9)             <= alct_fifo_data_valid;
 
   into_cafifo_dav_cnt_pro : process (clk40, reset, dav_cnt_en)
     variable dav_cnt_data : dav_cnt_type;
@@ -2406,7 +2398,7 @@ begin
       when x"29" => odmb_data <= ts_out (31 downto 16);
 
       when x"2A" => odmb_data <= "00000000000" & alct_push_dly;
-      when x"2B" => odmb_data <= "00000000000" & tmb_push_dly;
+      when x"2B" => odmb_data <= "00000000000" & otmb_push_dly;
       when x"2C" => odmb_data <= "00000000000" & push_dly;
       when x"2D" => odmb_data <= "0000000000" & lct_l1a_dly;
 
@@ -2488,7 +2480,7 @@ begin
   tpl(19) <= int_l1a_match(7);
   tpl(20) <= int_l1a;
   tpl(21) <= gtx0_data_valid;
-  tpl(22) <= tmbdav;
+  tpl(22) <= otmbdav;
   tpl(23) <= alctdav;
 
   tph(29) <= cafifo_l1a_dav(1);
@@ -2509,8 +2501,9 @@ begin
   tph(46) <= '0';
 
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
-                         int_tmb_dav, dcfeb_data, tmb_data, tmb_data_valid, int_alct_dav, alct_data,
-                         alct_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
+                         int_otmb_dav, dcfeb_data, otmb_fifo_data_in, otmb_fifo_data_valid, int_alct_dav,
+                         alct_fifo_data_in,
+                         alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
                          v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
                          otmb_lct_rqst, otmb_ext_trig, raw_l1a)
   begin
@@ -2564,16 +2557,16 @@ begin
         tph(42) <= dcfeb_data_valid(7);
 
       when x"0008" =>
-        tph(27) <= int_tmb_dav;
+        tph(27) <= int_otmb_dav;
         tph(28) <= cafifo_l1a_dav(8);
-        tph(41) <= tmb_data(0);
-        tph(42) <= tmb_data_valid;
+        tph(41) <= otmb_fifo_data_in(0);
+        tph(42) <= otmb_fifo_data_valid;
 
       when x"0009" =>
         tph(27) <= int_alct_dav;
         tph(28) <= cafifo_l1a_dav(9);
-        tph(41) <= alct_data(0);
-        tph(42) <= alct_data_valid;
+        tph(41) <= alct_fifo_data_in(0);
+        tph(42) <= alct_fifo_data_valid;
 
       when x"000A" =>
         tph(27) <= ext_dcfeb_l1a_cnt7(0);
@@ -2616,6 +2609,24 @@ begin
         tph(28) <= raw_l1a;
         tph(41) <= raw_lct(0);
         tph(42) <= raw_lct(1);
+
+      when x"0016" =>
+        tph(27) <= int_l1a;
+        tph(28) <= raw_l1a;
+        tph(41) <= alctdav;
+        tph(42) <= otmbdav;
+
+      when x"0017" =>
+        tph(27) <= int_l1a;
+        tph(28) <= raw_l1a;
+        tph(41) <= alct(16);
+        tph(42) <= alct(17);
+
+      when x"0018" =>
+        tph(27) <= int_l1a;
+        tph(28) <= raw_l1a;
+        tph(41) <= otmb(16);
+        tph(42) <= otmb(17);
 
       when others =>
         tph(27) <= int_l1a;

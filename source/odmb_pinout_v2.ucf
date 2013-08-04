@@ -6,7 +6,7 @@ NET  "alct[13]"  		LOC = "AF29"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "alct[14]"  		LOC = "AE29"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "alct[15]"  		LOC = "AD29"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "alct[16]"  		LOC = "Y26"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
-NET  "alct[17]"  		LOC = "AA26"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
+NET  "alct[17]"  		LOC = "AA26"  	| IOSTANDARD = LVCMOS25 | PULLUP;#ALCT data valid
 NET  "alct[1]"  		LOC = "AA29"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "alct[2]"  		LOC = "AB28"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "alct[3]"  		LOC = "AA30"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
@@ -258,25 +258,25 @@ NET  "rsvtd_in[0]"  		LOC = "AK31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 # NET  "rsvtd_in[1]"  		LOC = "AL31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 # NET  "rsvtd_in[2]"  		LOC = "AM32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "rsvtd_in[3]"  		LOC = "AM31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[0]"			LOC = "AA31"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
-NET  "tmb[10]"  		LOC = "AG32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[11]"  		LOC = "AH30"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[12]"  		LOC = "AH32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[13]"  		LOC = "AJ31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[14]"  		LOC = "AJ32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[15]"  		LOC = "AJ30"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[16]"  		LOC = "AA25"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[17]"  		LOC = "AB25"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[1]"			LOC = "AB32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[2]"			LOC = "AB31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[3]"			LOC = "AC32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[4]"			LOC = "AD31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[5]"			LOC = "AD32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[6]"			LOC = "AE31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[7]"			LOC = "AE32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[8]"			LOC = "AF31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmb[9]"			LOC = "AG31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "tmbffclk"  		LOC = "AD26"  	| IOSTANDARD = LVCMOS25; # ok #STAT0
+NET  "otmb[0]"			LOC = "AA31"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
+NET  "otmb[10]"  		LOC = "AG32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[11]"  		LOC = "AH30"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[12]"  		LOC = "AH32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[13]"  		LOC = "AJ31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[14]"  		LOC = "AJ32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[15]"  		LOC = "AJ30"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[16]"  		LOC = "AA25"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[17]"  		LOC = "AB25"  	| IOSTANDARD = LVCMOS25 | PULLUP; # OOTMB data valid
+NET  "otmb[1]"			LOC = "AB32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[2]"			LOC = "AB31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[3]"			LOC = "AC32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[4]"			LOC = "AD31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[5]"			LOC = "AD32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[6]"			LOC = "AE31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[7]"			LOC = "AE32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[8]"			LOC = "AF31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmb[9]"			LOC = "AG31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "otmbffclk"  		LOC = "AD26"  	| IOSTANDARD = LVCMOS25; # ok #STAT0
 NET  "vme_addr[10]"		LOC = "C32"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_addr[11]"		LOC = "D32"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_addr[12]"		LOC = "E31"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
@@ -468,7 +468,7 @@ NET: "dcfeb_tdo[7]"		LOC = "J11" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "therm1_p"		LOC = "H12" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
 #NET: "therm2_n"		LOC = "E14" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
 #NET: "therm2_p"		LOC = "F14" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
-NET: "tmbdav"			LOC = "AG27" | IOSTANDARD = LVCMOS25; #STAT2
+NET: "otmbdav"			LOC = "AG27" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "tpl[6]"			LOC = "W26" | IOSTANDARD = LVCMOS25; #STAT2 tp23
 NET: "tpl[7]"			LOC = "U26" | IOSTANDARD = LVCMOS25; #STAT2	tp24
 NET: "tpl[8]"			LOC = "U27" | IOSTANDARD = LVCMOS25; #STAT2	tp25

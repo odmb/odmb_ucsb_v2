@@ -46,7 +46,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
       en       : in  std_logic;
       l1a      : out std_logic;
       alct_dav : out std_logic;
-      tmb_dav  : out std_logic;
+      otmb_dav  : out std_logic;
       lct      : out std_logic_vector(7 downto 0)
       );
 
@@ -250,14 +250,14 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-        tmb      : in std_logic_vector(17 downto 0);
+        otmb      : in std_logic_vector(17 downto 0);
         alct     : in std_logic_vector(17 downto 0);
         rawlct   : in std_logic_vector(NFEB downto 0);
-        tmbffclk : in std_logic;
+        otmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
-        tmbdav    : in  std_logic;      --  lctdav1
+        otmbdav    : in  std_logic;      --  lctdav1
         alctdav   : in  std_logic;      --  lctdav2
 --    rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);     
         rsvtd_in  : in  std_logic_vector(4 downto 0);
@@ -361,7 +361,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal l1a      : std_logic;
   signal l1a_b    : std_logic := '1';
   signal alct_dav : std_logic;
-  signal tmb_dav  : std_logic;
+  signal otmb_dav  : std_logic;
   signal lct      : std_logic_vector(NFEB downto 0);
 
 -- signals to/from test_controller (from/to slv_mgt module)
@@ -480,13 +480,13 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-  signal tmb      : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
+  signal otmb      : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
   signal alct     : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
-  signal tmbffclk : std_logic                     := '0';  -- in
+  signal otmbffclk : std_logic                     := '0';  -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
-  signal tmbdav    : std_logic                    := '0';      -- in
+  signal otmbdav    : std_logic                    := '0';      -- in
   signal alctdav   : std_logic                    := '0';      -- in
   signal rsvtd_in  : std_logic_vector(4 downto 0) := "00000";  -- in
   signal rsvtd_out : std_logic_vector(2 downto 0);             -- out
@@ -707,14 +707,14 @@ begin
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-      tmb      => tmb,                  -- in
+      otmb      => otmb,                  -- in
       alct     => alct,                 -- in
       rawlct   => lct,                  -- from file_handler_event
-      tmbffclk => tmbffclk,             -- in
+      otmbffclk => otmbffclk,             -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
-      tmbdav    => tmb_dav,             -- from file_handler_event
+      otmbdav    => otmb_dav,             -- from file_handler_event
       alctdav   => alct_dav,            -- from file_handler_event
 --              rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);                     
       rsvtd_in  => rsvtd_in,            -- in
@@ -808,7 +808,7 @@ begin
       en       => goevent,
       l1a      => l1a,
       alct_dav => alct_dav,
-      tmb_dav  => tmb_dav,
+      otmb_dav  => otmb_dav,
       lct      => lct
       );
 
