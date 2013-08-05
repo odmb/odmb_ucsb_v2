@@ -117,6 +117,9 @@ entity ODMB_CTRL is
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
+    L1A_OTMB_PUSHED_OUT : out std_logic;
+    OTMB_DAV_SYNC_OUT   : out std_logic;
+
     dcfeb_injpulse  : out std_logic;    -- inject - to DCFEBs
     dcfeb_extpulse  : out std_logic;    -- extpulse - to DCFEBs
     dcfeb_l1a       : out std_logic;
@@ -358,6 +361,9 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CALTRGSEL : in std_logic;
       KILLCFEB  : in std_logic_vector(NFEB downto 1);
 
+    L1A_OTMB_PUSHED_OUT : out std_logic;
+    OTMB_DAV_SYNC_OUT   : out std_logic;
+
       DCFEB_L1A       : out std_logic;
       DCFEB_L1A_MATCH : out std_logic_vector(NFEB downto 1);
       FIFO_PUSH       : out std_logic;
@@ -415,14 +421,11 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       DATAIN      : in std_logic_vector(15 downto 0);
       DATAIN_LAST : in std_logic;
 
-      SETLOOPBACK : in std_logic;
 -- From LOADFIFO
-      JOEF        : in std_logic_vector(NFEB+2 downto 1);
+      JOEF : in std_logic_vector(NFEB+2 downto 1);
 
 -- to ???
-      DAQMBID  : in  std_logic_vector(11 downto 0);  -- From CRATEID in SETFEBDLY, and GA
-      LOOPBACK : out std_logic;
-      OEOVLP   : out std_logic;
+      DAQMBID : in std_logic_vector(11 downto 0);  -- From CRATEID in SETFEBDLY, and GA
 
 -- FROM SW1
       GIGAEN : in std_logic;
@@ -672,9 +675,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
   signal status : std_logic_vector(47 downto 0) := (others => '0');
 
-  signal rdffnxt     : std_logic := '0';  -- from MBV
-  signal setloopback : std_logic := '0';  -- from JTAGCOM
-  signal daqmbid     : std_logic_vector(11 downto 0);
+  signal rdffnxt : std_logic := '0';    -- from MBV
+  signal daqmbid : std_logic_vector(11 downto 0);
 
 begin
 
@@ -748,7 +750,10 @@ begin
       CALTRGSEL => cal_trgsel,
       KILLCFEB  => kill(NFEB downto 1),
 
-      DCFEB_L1A       => dcfeb_l1a,
+     L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
+     OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT  ,
+
+     DCFEB_L1A       => dcfeb_l1a,
       DCFEB_L1A_MATCH => dcfeb_l1a_match,
       FIFO_PUSH       => cafifo_push,
       FIFO_L1A_MATCH  => cafifo_l1a_match_in_inner,
@@ -766,16 +771,14 @@ begin
       bxcnt_rst  => bxcnt_rst,
 
       BC0   => bc0,
-      BXRST => ccb_bxrst,               -- SHOULD BE bxrst,
+      BXRST => ccb_bxrst,
 
---       l1a => dcfeb_l1a,
+      pop          => cafifo_pop,
       l1a          => cafifo_push,
---       l1a_match_in => dcfeb_l1a_match,
       l1a_match_in => cafifo_l1a_match_in_inner(NFEB+2 downto 1),
 
       eof_data => eof_data,
 
-      pop => cafifo_pop,
 
       alct_dv     => alct_dv,
       otmb_dv     => otmb_dv,
@@ -833,17 +836,13 @@ begin
 -- from Data FIFOs
       FFOR_B      => fifo_empty_b,
       DATAIN      => fifo_out(15 downto 0),
---      DATAIN_LAST => LOGICL,  -- Logic 1 when the last DW (800?) is received ????
       DATAIN_LAST => fifo_eof,
 
 -- From JTAGCOM
-      SETLOOPBACK => setloopback,       -- from JTAGCOM
-      JOEF        => joef,              -- from LOADFIFO
+      JOEF => joef,                     -- from LOADFIFO
 
 -- From CONFREG and GA
-      DAQMBID  => daqmbid,
-      LOOPBACK => open,
-      OEOVLP   => open,
+      DAQMBID => daqmbid,
 
 -- FROM SW1
       GIGAEN => LOGICH,

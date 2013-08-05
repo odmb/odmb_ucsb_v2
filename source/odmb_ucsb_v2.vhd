@@ -467,6 +467,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
+      L1A_OTMB_PUSHED_OUT : out std_logic;
+      OTMB_DAV_SYNC_OUT   : out std_logic;
+
       dcfeb_injpulse  : out std_logic;  -- inject - to DCFEBs
       dcfeb_extpulse  : out std_logic;  -- extpls - to DCFEBs
       dcfeb_l1a       : out std_logic;
@@ -794,6 +797,8 @@ end component;
 
   signal otmb_request : std_logic;
 
+   signal L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT : std_logic; 
+
 
 ------------------------------
 
@@ -819,10 +824,10 @@ end component;
 -- Monitoring signals
 
   type   l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
-  signal l1a_match_cnt, raw_lct_cnt, goodcrc_cnt : l1a_match_cnt_type;
+  signal raw_lct_cnt, goodcrc_cnt : l1a_match_cnt_type;
 
   type   dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
-  signal into_cafifo_dav_cnt                : dav_cnt_type;
+  signal l1a_match_cnt, into_cafifo_dav_cnt  : dav_cnt_type;
   signal data_fifo_re_cnt, data_fifo_oe_cnt : dav_cnt_type;
   signal dav_cnt_en, into_cafifo_dav        : std_logic_vector(NFEB+2 downto 1);
 
@@ -1345,6 +1350,9 @@ begin
 
 
 -- From/To DCFEBs (FF-EMU-MOD)
+
+     L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
+     OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT  ,
 
       dcfeb_l1a_match => int_l1a_match,  -- lctf(5 DOWNTO 1) - to DCFEBs
       dcfeb_l1a       => int_l1a,        -- febrst - to DCFEBs
@@ -2057,7 +2065,6 @@ begin
   NFEB_CNT : for index in 1 to NFEB generate
   begin
     RAWLCT_CNT   : COUNT_EDGES port map(raw_lct_cnt(index), clk40, reset, raw_lct(index));
-    L1AMATCH_CNT : COUNT_EDGES port map(l1a_match_cnt(index), clk40, reset, int_l1a_match(index));
     CRC_CNT      : COUNT_EDGES port map(goodcrc_cnt(index), clk160, reset, crc_valid(index));
   end generate NFEB_CNT;
 
@@ -2065,6 +2072,7 @@ begin
   begin
     FIFOOE_CNT    : COUNT_EDGES port map(data_fifo_oe_cnt(index), data_fifo_oe(index), reset, logich);
     FIFORE_CNT    : COUNT_EDGES port map(data_fifo_re_cnt(index), data_fifo_re(index), reset, logich);
+    L1AMATCH_CNT : COUNT_EDGES port map(l1a_match_cnt(index), cafifo_l1a_match_in(index), reset, logich);
     CAFIFODAV_CNT : COUNT_EDGES port map(into_cafifo_dav_cnt(index), clk40, reset, into_cafifo_dav(index));
   end generate NFEB2_CNT;
 
@@ -2286,14 +2294,16 @@ begin
       when x"25" => odmb_data <= l1a_match_cnt(5);
       when x"26" => odmb_data <= l1a_match_cnt(6);
       when x"27" => odmb_data <= l1a_match_cnt(7);
+      when x"28" => odmb_data <= l1a_match_cnt(8);
+      when x"29" => odmb_data <= l1a_match_cnt(9);
 
-      when x"28" => odmb_data <= ts_out(15 downto 0);
-      when x"29" => odmb_data <= ts_out (31 downto 16);
-
+ 
       when x"2A" => odmb_data <= "00000000000" & alct_push_dly;
       when x"2B" => odmb_data <= "00000000000" & otmb_push_dly;
       when x"2C" => odmb_data <= "00000000000" & push_dly;
       when x"2D" => odmb_data <= "0000000000" & lct_l1a_dly;
+      when x"2E" => odmb_data <= ts_out(15 downto 0);
+      when x"2F" => odmb_data <= ts_out(31 downto 16);
 
       when x"31" => odmb_data <= lct_l1a_gap(1);
       when x"32" => odmb_data <= lct_l1a_gap(2);
@@ -2400,7 +2410,7 @@ begin
                          alct_fifo_data_in,
                          alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
                          v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
-                         otmb_lct_rqst, otmb_ext_trig, raw_l1a)
+                         otmb_lct_rqst, otmb_ext_trig, raw_l1a, L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT)
   begin
     case tp_sel_reg is
       when x"0000" =>
@@ -2522,6 +2532,12 @@ begin
         tph(28) <= raw_l1a;
         tph(41) <= otmb(16);
         tph(42) <= otmb(17);
+
+      when x"0019" =>
+        tph(27) <= L1A_OTMB_PUSHED_OUT;
+        tph(28) <= raw_l1a;
+        tph(41) <= otmbdav;
+        tph(42) <= OTMB_DAV_SYNC_OUT;
 
       when others =>
         tph(27) <= int_l1a;

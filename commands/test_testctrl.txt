@@ -1,51 +1,29 @@
 == ================ Global setting ================ ==
 W  3000 280 	Set dummy data and triggers
-W  3100 1 	Set internal loopback
 W  401C 0 	Set KILL
 W  4000  C 	Set LCT_L1A_DLY   
-W  4004  1  	Set TMB_PUSH_DLY
-W  400C  1  	Set ALCT_PUSH_DLY
+W  4004  2  	Set TMB_PUSH_DLY
+W  400C  3  	Set ALCT_PUSH_DLY
 
 == ========== Writing Event/Trigger FIFOs ========== ==
-R  1C   0       Read state of FIFOs
 W  20	1	Select FIFO 1 [LSB bunch crossing]
-R  2C   0       Read current write address
-R  3C   0       Read current read address
 W  8 	40	Write FIFO
 W  8 	41	Write FIFO
 W  8 	45	Write FIFO
 W  8 	46	Write FIFO
-W  8 	50	Write FIFO
-W  8 	51	Write FIFO
-W  8 	60	Write FIFO
-W  8 	61	Write FIFO
 W  8 	70	Write FIFO
 W  8 	71	Write FIFO
-W  8 	80	Write FIFO
-W  8 	81	Write FIFO
 W  8 	b0	Write FIFO
 W  8 	b1	Write FIFO
 W  8 	b5	Write FIFO
 W  8 	b6	Write FIFO
-W  8 	c0	Write FIFO
-W  8 	c1	Write FIFO
-W  8 	d0	Write FIFO
-W  8 	d1	Write FIFO
 W  8 	e0	Write FIFO
 W  8 	e1	Write FIFO
-W  8 	f0	Write FIFO
-W  8 	f1	Write FIFO
+W  8 	e4	Write FIFO
+W  8 	e5	Write FIFO
+W  8 	e6	Write FIFO
 
 W  20	2	Select FIFO 2 [MSB bunch crossing]
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
-W  8 	0	Write FIFO
 W  8 	0	Write FIFO
 W  8 	0	Write FIFO
 W  8 	0	Write FIFO
@@ -67,31 +45,19 @@ W  8   	11	Write FIFO [LCT on DCFEB 4]
 W  8   	0	Write FIFO			    
 W  8   	ff	Write FIFO [LCTs on DCFEBs 1,2,3,4,5,6,7]			    
 W  8   	0	Write FIFO			    
-W  8   	ff	Write FIFO [LCTs on DCFEBs 1,2,3,4,5,6,7]			    
-W  8   	0	Write FIFO			    
-W  8   	ff	Write FIFO [LCTs on DCFEBs 1,2,3,4,5,6,7]			    
-W  8   	0	Write FIFO			    
-W  8   	ff	Write FIFO [LCTs on DCFEBs 1,2,3,4,5,6,7]			    
-W  8   	0	Write FIFO			    
 W  8   	c1	Write FIFO [LCTs on DCFEBs 6,7]			    
 W  8   	0	Write FIFO			    
 W  8   	400	Write FIFO [L1A]			    
 W  8   	0	Write FIFO
 W  8   	400	Write FIFO [L1A]			    
 W  8   	0	Write FIFO
-W  8   	700	Write FIFO [L1A, ALCT]			    
-W  8   	0	Write FIFO
-W  8   	700	Write FIFO [L1A, ALCT]			    
-W  8   	0	Write FIFO
 W  8   	400	Write FIFO [L1A]			    
 W  8   	0	Write FIFO
-W  8   	700	Write FIFO [L1A, ALCT]			    
+W  8   	100	Write FIFO [OTMB]			    
+W  8   	200	Write FIFO [ALCT]			    
 W  8   	0	Write FIFO
 
 == =========== Start run & Check status ============= ==
-R  1C   0       Read state of FIFOs
-R  2C   0       Read current write address
-R  3C   0       Read current read address
 W  20	18	Select FIFO 4 [DDU data] and start run
 
 R  329C 0	Read Time stamp MSB
@@ -104,98 +70,10 @@ R  324C 0	Read L1A_MATCH_CNT(4)
 R  325C 0	Read L1A_MATCH_CNT(5)
 R  326C 0	Read L1A_MATCH_CNT(6)
 R  327C 0	Read L1A_MATCH_CNT(7)
-
-R  341C 0	Read packets received from DCFEB(1)
-R  342C 0	Read packets received from DCFEB(2)
-R  343C 0	Read packets received from DCFEB(3)
-R  344C 0	Read packets received from DCFEB(4)
-R  345C 0	Read packets received from DCFEB(5)
-R  346C 0	Read packets received from DCFEB(6)
-R  347C 0	Read packets received from DCFEB(7)
-
-R  329C 0	Read Time stamp MSB
-R  328C 0	Read Time stamp LSB
+R  328C 0	Read L1A_MATCH_CNT(8)
+R  329C 0	Read L1A_MATCH_CNT(9)
 
 R  34AC 0	Read Number of packets sent to DDU
 R  34BC 0	Read Number of packets sent to PC
 
-R  1C   0       Read state of FIFOs
-W  20	11	Select FIFO 1 and keep running
-R  2C   0       Read current write address
-R  3C   0       Read current read address
 
-== ============ Reading OTMB FIFO ================ ==
-R 550C 0 Read number of words in OTMB FIFO
-R 5500 0 Read OTMB FIFO
-R 5500 0 Read OTMB FIFO
-R 5500 0 Read OTMB FIFO
-R 5500 0 Read OTMB FIFO
-
-W 5520 1 Reset OTMB FIFO
-R 550C 0 Read number of words in OTMB FIFO
-R 5500 0 Read OTMB FIFO
-R 5500 0 Read OTMB FIFO
-
-== ============ Reading ALCT FIFO ================ ==
-R 560C 0 Read number of words in ALCT FIFO
-R 5600 0 Read ALCT FIFO
-R 5600 0 Read ALCT FIFO
-R 5600 0 Read ALCT FIFO
-R 5600 0 Read ALCT FIFO
-
-W 5620 1 Reset ALCT FIFO
-R 560C 0 Read number of words in ALCT FIFO
-R 5600 0 Read ALCT FIFO
-R 5600 0 Read ALCT FIFO
-
-== ============ Reading PC RX FIFO ================ ==
-R 520C 0 Read number of words in PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-
-R 5200 0 Read PC RX FIFO [start of header]
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-
-W 5220 1 Reset PC RX FIFO
-
-R 5200 0 Read PC RX FIFO [DCFEB 6 data]
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-
-R 5200 0 Read PC RX FIFO [DCFEB 7 data]
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-
-R 5200 0 Read PC RX FIFO [start of trailer]
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-R 5200 0 Read PC RX FIFO
-
-R 520C 0 Read number of words in PC RX FIFO

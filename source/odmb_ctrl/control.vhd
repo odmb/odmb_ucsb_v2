@@ -40,13 +40,10 @@ entity CONTROL is
     DATAIN_LAST : in std_logic;
 
 -- From JTAGCOM
-    SETLOOPBACK : in std_logic;
     JOEF        : in std_logic_vector(NFEB+2 downto 1);
 
--- to ???
-    DAQMBID  : in  std_logic_vector(11 downto 0);  -- From CRATEID in SETFEBDLY, and GA
-    LOOPBACK : out std_logic;
-    OEOVLP   : out std_logic;           --Adam NEVER ASSIGNED
+-- From CRATEID in SETFEBDLY, and GA
+    DAQMBID  : in  std_logic_vector(11 downto 0);  
 
 -- FROM SW1
     GIGAEN : in std_logic;
@@ -114,15 +111,10 @@ architecture CONTROL_arch of CONTROL is
 
 -- PAGE 3 
   signal GLRFD : std_logic;
-  --Adam signal L1CNT_RST, L1CNT_CEO_L, L1CNT_TC_L, L1CNT_CEO_H, L1CNT_TC_H : std_logic; -- not used
-  --Adam signal L1CNT : std_logic_vector(23 downto 0); --not used
-
   signal RDY_CE, RDY, FIFORDY : std_logic_vector(NFEB+2 downto 1);
 
   signal P_AND_FIFORDY               : std_logic_vector(NFEB+2 downto 1);
   signal DISDAV, DISDAV_D, DISDAV_DD : std_logic;
-
-  signal LOOPBACK_Q, LOOPBACK_Q_B : std_logic;
 
 -- PAGE 4
   signal R, R_RST                                                     : std_logic_vector(NFEB+2 downto 1);
@@ -367,10 +359,6 @@ begin
 -- Generate GLRFD (page 3)
   FDCE_GLRFD : FDCE port map (GLRFD, CLK, GIGAEN, RST, LOGICH);
 
--- Generate L1CNT (page 3)
-  --Adam L1CNT_RST <= RST or L1ARST; --only used for CB16CE_L1CNT and CB8CE_L1CNT whose outputs aren't used
-  --Adam CB16CE_L1CNT: CB16CE port map (L1CNT_CEO_L, L1CNT(15 downto 0), L1CNT_TC_L, STARTREAD, LOGICH, L1CNT_RST); -- outputs never used (L1CNT_CEO_L is input to CB8CE_L1CNT whose outputs aren't used
-  --Adam CB8CE_L1CNT : CB8CE port map(L1CNT_CEO_H, L1CNT(23 downto 16), L1CNT_TC_H, STARTREAD, L1CNT_CEO_L, L1CNT_RST); -- outputs never used
 -- Generate RDY (page 3)
   RDY_CE <= not FIFORDY;
   GEN_RDY : for K in 1 to NFEB+2 generate
@@ -387,11 +375,6 @@ begin
 --  FD(DISDAV_D, CLK, DISDAV);
   FD_DISDAV_D  : FD port map (DISDAV_DD, CLK, DISDAV_D);
   FD_DISDAV_DD : FD port map (DISDAV, CLK, DISDAV_DD);
-
-  -- Generate LOOPBACK (page 3)
-  LOOPBACK_Q_B <= not LOOPBACK_Q;
-  FDC_LOOPBACK : FDC port map (LOOPBACK_Q, SETLOOPBACK, RST, LOOPBACK_Q_B);
-  LOOPBACK     <= LOOPBACK_Q and not BUSY;
 
 -- Generate R (page 4)
   R_RST <= DONE_VEC or ERRORD;

@@ -106,8 +106,8 @@ architecture cafifo_architecture of cafifo is
   signal l1a_dav   : l1a_array_type;
 
   type l1a_b_array_type is array (FIFO_SIZE-1 downto 0) of std_logic;
-  signal l1a_dav_b8    : l1a_b_array_type;
-  signal l1a_dav_b9_gm : l1a_b_array_type;
+  signal l1a_dav_otmb    : l1a_b_array_type;
+  signal l1a_dav_alct : l1a_b_array_type;
 
   signal l1a_cnt_wren, l1a_match_wren : std_logic;
   signal wr_addr_en, rd_addr_en       : std_logic;
@@ -117,13 +117,11 @@ architecture cafifo_architecture of cafifo is
   signal wren, rden  : std_logic;
   signal empty, full : std_logic;
 
-  signal reg_alct_l1a_dav                   : std_logic;
   signal alct_fifo_empty, alct_fifo_full    : std_logic;
   signal alct_fifo_wr_en, alct_fifo_rd_en   : std_logic;
   signal alct_fifo_wr_cnt, alct_fifo_rd_cnt : std_logic_vector(8 downto 0);
   signal alct_fifo_in, alct_fifo_out        : std_logic_vector(23 downto 0);
 
-  signal reg_otmb_l1a_dav                   : std_logic;
   signal otmb_fifo_empty, otmb_fifo_full    : std_logic;
   signal otmb_fifo_wr_en, otmb_fifo_rd_en   : std_logic;
   signal otmb_fifo_wr_cnt, otmb_fifo_rd_cnt : std_logic_vector(8 downto 0);
@@ -344,7 +342,7 @@ begin
     end if;
   end process;
 
-  cafifo_l1a_cnt <= l1a_cnt_out-1;
+  cafifo_l1a_cnt <= l1a_cnt(rd_addr_out);
 
   bx_cnt_fifo : process (l1a_cnt_wren, wr_addr_out, bxcnt_rst, clk, bx_cnt_out)
   begin
@@ -397,17 +395,6 @@ begin
 
   cafifo_l1a_dav(NFEB downto 1) <= l1a_dav(rd_addr_out)(NFEB downto 1);
 
-  alct_reg : process (alct_l1a_dav, rst, clk)
-
-  begin
-    if (rst = '1') then
-      reg_alct_l1a_dav <= '0';
-    elsif rising_edge(clk) then
-      reg_alct_l1a_dav <= alct_l1a_dav;
-    end if;
-    
-  end process;
-
   alct_fifo_wr_en <= l1a_match_in(9);
   alct_fifo_rd_en <= alct_l1a_dav;
   alct_fifo_in    <= l1a_cnt_out;
@@ -436,33 +423,22 @@ begin
       WREN        => alct_fifo_wr_en    -- Input write enable
       );
 
-  alct_dv_fifo_gm : process (l1a_cnt, alct_fifo_out, reg_alct_l1a_dav, rst, clk)
+  alct_dv_fifo : process (l1a_cnt, alct_fifo_out, rst, clk)
   begin
     if (rst = '1') then
       for index in 0 to FIFO_SIZE-1 loop
-        l1a_dav_b9_gm(index) <= '0';
+        l1a_dav_alct(index) <= '0';
       end loop;
     elsif rising_edge(clk) then
       for index in 0 to FIFO_SIZE-1 loop
-        --if (alct_fifo_out(11 downto 0) = l1a_cnt(index)) and (reg_alct_l1a_dav = '1') then
         if (alct_fifo_out(11 downto 0) = l1a_cnt(index)) and (eof_data(9) = '1') then
-          l1a_dav_b9_gm(index) <= '1';
+          l1a_dav_alct(index) <= '1';
         end if;
       end loop;
     end if;
-
   end process;
 
-  cafifo_l1a_dav(NFEB+2) <= l1a_dav_b9_gm(rd_addr_out);
-
-  otmb_reg : process (otmb_l1a_dav, rst, clk)
-  begin
-    if (rst = '1') then
-      reg_otmb_l1a_dav <= '0';
-    elsif rising_edge(clk) then
-      reg_otmb_l1a_dav <= otmb_l1a_dav;
-    end if;
-  end process;
+  cafifo_l1a_dav(NFEB+2) <= l1a_dav_alct(rd_addr_out);
 
   otmb_fifo_wr_en <= l1a_match_in(8);
   otmb_fifo_rd_en <= otmb_l1a_dav;
@@ -492,35 +468,27 @@ begin
       WREN        => otmb_fifo_wr_en    -- Input write enable
       );
 
-  otmb_dv_fifo_gm : process (l1a_cnt, otmb_fifo_out, reg_otmb_l1a_dav, rst, clk)
-
+  otmb_dv_fifo : process (l1a_cnt, otmb_fifo_out, rst, clk)
   begin
     if (rst = '1') then
       for index in 0 to FIFO_SIZE-1 loop
-        l1a_dav_b8(index) <= '0';
+        l1a_dav_otmb(index) <= '0';
       end loop;
     elsif rising_edge(clk) then
       for index in 0 to FIFO_SIZE-1 loop
-        --if (otmb_fifo_out(11 downto 0) = l1a_cnt(index)) and (reg_otmb_l1a_dav = '1') then
         if (otmb_fifo_out(11 downto 0) = l1a_cnt(index)) and (eof_data(8) = '1') then
-          l1a_dav_b8(index) <= '1';
+          l1a_dav_otmb(index) <= '1';
         end if;
       end loop;
     end if;
-
   end process;
 
-  cafifo_l1a_dav(NFEB+1) <= l1a_dav_b8(rd_addr_out);
+  cafifo_l1a_dav(NFEB+1) <= l1a_dav_otmb(rd_addr_out);
 
 -- Address Counters
-
   addr_counter : process (clk, wr_addr_en, rd_addr_en, rst)
-
---variable addr_rd_data, addr_wr_data : std_logic_vector(3 downto 0);
     variable addr_rd_data, addr_wr_data : integer := 0;
-
   begin
-
     if (rst = '1') then
       addr_rd_data := 0;
       addr_wr_data := 0;
@@ -543,30 +511,22 @@ begin
 
     wr_addr_out <= addr_wr_data;
     rd_addr_out <= addr_rd_data;
-    
   end process;
 
 -- FSM 
-
   fsm_regs : process (next_state, rst, clk)
-
   begin
     if (rst = '1') then
       current_state <= FIFO_EMPTY;
     elsif rising_edge(clk) then
       current_state <= next_state;
     end if;
-
   end process;
 
   fsm_logic : process (wren, rden, current_state, wr_addr_out, rd_addr_out)
-
   begin
-    
     case current_state is
-      
       when FIFO_EMPTY =>
-        
         empty <= '1';
         full  <= '0';
         if (wren = '1') then
@@ -584,23 +544,19 @@ begin
         end if;
         
       when FIFO_NOT_EMPTY =>
-        
         empty <= '0';
         full  <= '0';
         if (wren = '1' and rden = '0') then
-          
           if (wr_addr_out = rd_addr_out-1) then
             next_state <= FIFO_FULL;
           else
             next_state <= FIFO_NOT_EMPTY;
           end if;
-
           l1a_cnt_wren   <= '1';
           l1a_match_wren <= '1';
           wr_addr_en     <= '1';
           rd_addr_en     <= '0';
         elsif (rden = '1' and wren = '0') then
-          
           if (rd_addr_out = wr_addr_out-1) then
             next_state <= FIFO_EMPTY;
           else
@@ -625,7 +581,6 @@ begin
         end if;
         
       when FIFO_FULL =>
-
         empty          <= '0';
         full           <= '1';
         l1a_cnt_wren   <= '0';
@@ -640,7 +595,6 @@ begin
         end if;
 
       when others =>
-
         next_state     <= FIFO_EMPTY;
         empty          <= '0';
         full           <= '0';
@@ -650,7 +604,5 @@ begin
         rd_addr_en     <= '0';
         
     end case;
-    
   end process;
-  
 end cafifo_architecture;

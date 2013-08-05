@@ -7,6 +7,7 @@ library work;
 use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
+use ieee.numeric_std.all;
 
 entity TRGCNTRL is
   generic (
@@ -31,6 +32,9 @@ entity TRGCNTRL is
     CALTRGSEL : in std_logic;
     KILLCFEB  : in std_logic_vector(NFEB downto 1);
 
+    L1A_OTMB_PUSHED_OUT : out std_logic;
+    OTMB_DAV_SYNC_OUT   : out std_logic;
+
     DCFEB_L1A       : out std_logic;
     DCFEB_L1A_MATCH : out std_logic_vector(NFEB downto 1);
     FIFO_PUSH       : out std_logic;
@@ -51,6 +55,8 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
       );
   end component;
 
+  constant logich : std_logic := '1';
+
   signal JCALSEL, CAL_MODE    : std_logic;
   signal DLY_LCT, LCT, LCT_IN : std_logic_vector(NFEB downto 0);
   signal RAW_L1A_Q, L1A_IN    : std_logic;
@@ -59,6 +65,13 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
   signal LCT_Q                : LCT_TYPE;
   signal LCT_ERR_D            : std_logic;
   signal L1A_MATCH            : std_logic_vector(NFEB downto 0);
+
+  signal l1a_push                        : std_logic;
+  signal l1a_match_push                  : std_logic_vector(NFEB downto 0);
+  signal OTMB_ALCT_DLY                   : std_logic_vector(4 downto 0);
+  signal otmb_dav_sync, alct_dav_sync    : std_logic;
+  signal l1a_otmb_pushed, l1a_otmb_match : std_logic;
+  signal fifo_push_inner                 : std_logic;
 
 begin  --Architecture
 
@@ -81,7 +94,7 @@ begin  --Architecture
     LCT(K) <= '0' when (KILLCFEB(K) = '1') else
 --              LCT(0)     when (EAFEB = '1' and CAL_MODE = '0') else
 --              CAL_LCT(K) when (JCALSEL = '1') else
-      DLY_LCT(K);
+              DLY_LCT(K);
   end generate GEN_LCT;
 
 -- Generate LCT_ERR
@@ -96,7 +109,7 @@ begin  --Architecture
   L1A       <= RAW_L1A_Q;
   DCFEB_L1A <= L1A;
 
--- Generate DCFEB_L1A_MATCH / Generate FIFO_L1A_MATCH (We might add PUSHDLY to FIFO_L1A_MATCH later)
+-- Generate DCFEB_L1A_MATCH
   GEN_L1A_MATCH : for K in 1 to NFEB generate
   begin
     LCT_Q(K)(0) <= LCT(K);
@@ -110,22 +123,27 @@ begin  --Architecture
   DCFEB_L1A_MATCH <= L1A_MATCH(NFEB downto 1);
 
 
--- Generate FIFO_PUSH
---  FDPUSH : FD port map(FIFO_PUSH, CLK, L1A);
-  SRL16_PUSH : SRL16 port map(FIFO_PUSH, PUSH_DLY(0), PUSH_DLY(1), PUSH_DLY(2), PUSH_DLY(3), CLK, L1A);
+-- Generate FIFO_PUSH, FIFO_L1A_MATCH - All signals are pushed a total of ALCT_PUSH_DLY
+  L1APUSH       : SRLC32E port map(l1a_push, open, push_dly, logich, clk, l1a);
+  L1A_ALCT_PUSH : SRLC32E port map(fifo_push_inner, open, alct_push_dly, logich, clk, l1a_push);
+  FIFO_PUSH <= fifo_push_inner;
 
---  FIFO_L1A_MATCH  <= L1A_MATCH;
-
--- Generate PUSH_DLY
   GEN_L1A_MATCH_PUSH_DLY : for K in 0 to NFEB generate
   begin
-    SRL16_K : SRL16 port map(FIFO_L1A_MATCH(K), PUSH_DLY(0), PUSH_DLY(1), PUSH_DLY(2), PUSH_DLY(3), CLK, L1A_MATCH(K));
+    L1AMATCHPUSH   : SRLC32E port map(l1a_match_push(K), open, push_dly, logich, clk, l1a_match(K));
+    L1A_MATCH_ALCT : SRLC32E port map(fifo_l1a_match(K), open, alct_push_dly, logich, clk, l1a_match_push(K));
   end generate GEN_L1A_MATCH_PUSH_DLY;
 
--- Generate OTMB_PUSH_DLY
-  SRL16_OTMB : SRL16 port map(FIFO_L1A_MATCH(NFEB+1), OTMB_PUSH_DLY(0), OTMB_PUSH_DLY(1), OTMB_PUSH_DLY(2), OTMB_PUSH_DLY(3), CLK, OTMB_DAV);
+  OTMBDAV_FD     : FD port map(otmb_dav_sync, clk, otmb_dav);
+  otmb_alct_dly  <= std_logic_vector(unsigned(alct_push_dly) - unsigned(otmb_push_dly)-1);
+  L1A_OTMB_PUSH  : SRLC32E port map(l1a_otmb_pushed, open, otmb_push_dly, logich, clk, l1a_push);
+  l1a_otmb_match <= otmb_dav_sync and l1a_otmb_pushed;
+  OTMB_ALCT_PUSH : SRLC32E port map(fifo_l1a_match(NFEB+1), open, otmb_alct_dly, logich, clk, l1a_otmb_match);
 
--- Generate ALCT_PUSH_DLY
-  SRL16_ALCT : SRL16 port map(FIFO_L1A_MATCH(NFEB+2), ALCT_PUSH_DLY(0), ALCT_PUSH_DLY(1), ALCT_PUSH_DLY(2), ALCT_PUSH_DLY(3), CLK, ALCT_DAV);
+  ALCTDAV_FD : FD port map(alct_dav_sync, clk, alct_dav);
+  fifo_l1a_match(NFEB+2) <= alct_dav_sync and fifo_push_inner;
+
+  l1a_otmb_pushed_out <= l1a_otmb_pushed;
+  otmb_dav_sync_out   <= otmb_dav_sync;
 
 end TRGCNTRL_Arch;
