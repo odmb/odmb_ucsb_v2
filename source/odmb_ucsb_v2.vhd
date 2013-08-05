@@ -779,8 +779,6 @@ end component;
   signal alct_fifo_data_in    : std_logic_vector(17 downto 0);
   signal alct_fifo_data_out   : std_logic_vector (17 downto 0);
 
-  signal alct_request : std_logic;
-
 -- OTMB ----------------------
   signal gen_otmb_data_valid    : std_logic;
   signal gen_otmb_data          : std_logic_vector(15 downto 0);
@@ -794,9 +792,7 @@ end component;
   signal otmb_fifo_data_in    : std_logic_vector(17 downto 0);
   signal otmb_fifo_data_out   : std_logic_vector (17 downto 0);
 
-  signal otmb_request : std_logic;
-
-   signal L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT : std_logic; 
+  signal l1a_otmb_pushed_out, otmb_dav_sync_out : std_logic; 
 
 
 ------------------------------
@@ -828,6 +824,7 @@ end component;
   type   dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
   signal l1a_match_cnt, into_cafifo_dav_cnt  : dav_cnt_type;
   signal data_fifo_re_cnt, data_fifo_oe_cnt : dav_cnt_type;
+  signal eof_data_cnt, cafifo_l1a_dav_cnt : dav_cnt_type;
   signal dav_cnt_en, into_cafifo_dav        : std_logic_vector(NFEB+2 downto 1);
 
   signal ext_dcfeb_l1a_cnt7 : std_logic_vector(23 downto 0);
@@ -1623,8 +1620,8 @@ begin
       clk            => clk40,
       rst            => reset,
       l1a            => int_l1a,
-      alct_l1a_match => alct_request,
-      otmb_l1a_match  => otmb_request,
+      alct_l1a_match => cafifo_l1a_match_in(NFEB+2),
+      otmb_l1a_match  => cafifo_l1a_match_in(NFEB+1),
       alct_dv        => gen_alct_data_valid,
       alct_data      => gen_alct_data,
       otmb_dv         => gen_otmb_data_valid,
@@ -1745,9 +1742,6 @@ begin
              rawlct;
 
   tc_run_out   <= tc_run;
-
-  alct_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+2);
-  otmb_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+1);
 
   FDL1A    : FD port map(test_l1a_q, clk40, test_l1a);
   L1APUSH  : SRLC32E port map(test_l1a_pushed, open, push_dly, logich, clk40, test_l1a);
@@ -2062,24 +2056,26 @@ begin
 ------------------------------------  Monitoring  ------------------------------------
 ---------------------------------------------------------------------------------------
 
-  INTL1A_CNT : COUNT_EDGES port map(int_l1a_cnt, int_l1a, reset, logich);
+  INTL1A_CNT  : COUNT_EDGES port map(int_l1a_cnt, int_l1a, reset, logich);
   ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, int_alct_dav, reset, logich);
   OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, int_otmb_dav, reset, logich);
-  DDUEOF_CNT : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
-  PCOF_CNT   : COUNT_EDGES port map(gtx1_data_valid_cnt, gtx1_data_valid, reset, logich);
+  DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
+  PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, gtx1_data_valid, reset, logich);
 
-  NFEB_CNT : for index in 1 to NFEB generate
+  NFEB_CNT : for dev in 1 to NFEB generate
   begin
-    RAWLCT_CNT   : COUNT_EDGES port map(raw_lct_cnt(index), clk40, reset, raw_lct(index));
-    CRC_CNT      : COUNT_EDGES port map(goodcrc_cnt(index), clk160, reset, crc_valid(index));
+    RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
+    CRC_CNT    : COUNT_EDGES port map(goodcrc_cnt(dev), clk160, reset, crc_valid(dev));
   end generate NFEB_CNT;
 
-  NFEB2_CNT : for index in 1 to NFEB+2 generate
+  NFEB2_CNT : for dev in 1 to NFEB+2 generate
   begin
-    FIFOOE_CNT    : COUNT_EDGES port map(data_fifo_oe_cnt(index), data_fifo_oe(index), reset, logich);
-    FIFORE_CNT    : COUNT_EDGES port map(data_fifo_re_cnt(index), data_fifo_re(index), reset, logich);
-    L1AMATCH_CNT : COUNT_EDGES port map(l1a_match_cnt(index), cafifo_l1a_match_in(index), reset, logich);
-    CAFIFODAV_CNT : COUNT_EDGES port map(into_cafifo_dav_cnt(index), clk40, reset, into_cafifo_dav(index));
+    FIFOOE_CNT    : COUNT_EDGES port map(data_fifo_oe_cnt(dev), data_fifo_oe(dev), reset, logich);
+    FIFORE_CNT    : COUNT_EDGES port map(data_fifo_re_cnt(dev), data_fifo_re(dev), reset, logich);
+    L1AMATCH_CNT  : COUNT_EDGES port map(l1a_match_cnt(dev), cafifo_l1a_match_in(dev), reset, logich);
+    PACKET_CNT    : COUNT_EDGES port map(into_cafifo_dav_cnt(dev), into_cafifo_dav(dev), reset, logich);
+    DATAEOF_CNT   : COUNT_EDGES port map(eof_data_cnt(dev), eof_data(dev), reset, logich);
+    CAFIFODAV_CNT : COUNT_EDGES port map(cafifo_l1a_dav_cnt(dev), cafifo_l1a_dav(dev), reset, logich);
   end generate NFEB2_CNT;
 
   -- Defined to count the ALCT and OTMB davs as well 
@@ -2370,6 +2366,26 @@ begin
       when x"78" => odmb_data <= otmb_dav_cnt;
       when x"79" => odmb_data <= alct_dav_cnt;
 
+      when x"81" => odmb_data <= eof_data_cnt(1);  -- Number of packets arrived in full
+      when x"82" => odmb_data <= eof_data_cnt(2);  -- Number of packets arrived in full
+      when x"83" => odmb_data <= eof_data_cnt(3);  -- Number of packets arrived in full
+      when x"84" => odmb_data <= eof_data_cnt(4);  -- Number of packets arrived in full
+      when x"85" => odmb_data <= eof_data_cnt(5);  -- Number of packets arrived in full
+      when x"86" => odmb_data <= eof_data_cnt(6);  -- Number of packets arrived in full
+      when x"87" => odmb_data <= eof_data_cnt(7);  -- Number of packets arrived in full
+      when x"88" => odmb_data <= eof_data_cnt(8);  -- Number of packets arrived in full
+      when x"89" => odmb_data <= eof_data_cnt(9);  -- Number of packets arrived in full
+
+      when x"91" => odmb_data <= cafifo_l1a_dav_cnt(1);  -- Times data has been available
+      when x"92" => odmb_data <= cafifo_l1a_dav_cnt(2);  -- Times data has been available
+      when x"93" => odmb_data <= cafifo_l1a_dav_cnt(3);  -- Times data has been available
+      when x"94" => odmb_data <= cafifo_l1a_dav_cnt(4);  -- Times data has been available
+      when x"95" => odmb_data <= cafifo_l1a_dav_cnt(5);  -- Times data has been available
+      when x"96" => odmb_data <= cafifo_l1a_dav_cnt(6);  -- Times data has been available
+      when x"97" => odmb_data <= cafifo_l1a_dav_cnt(7);  -- Times data has been available
+      when x"98" => odmb_data <= cafifo_l1a_dav_cnt(8);  -- Times data has been available
+      when x"99" => odmb_data <= cafifo_l1a_dav_cnt(9);  -- Times data has been available
+
       when others => odmb_data <= (others => '1');
     end case;
   end process;
@@ -2391,8 +2407,8 @@ begin
   tpl(19) <= int_l1a_match(7);
   tpl(20) <= int_l1a;
   tpl(21) <= gtx0_data_valid;
-  tpl(22) <= otmbdav;
-  tpl(23) <= alctdav;
+  tpl(22) <= int_otmb_dav;
+  tpl(23) <= int_alct_dav;
 
   tph(29) <= cafifo_l1a_dav(1);
   tph(30) <= cafifo_l1a_dav(2);
