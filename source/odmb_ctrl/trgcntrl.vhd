@@ -30,7 +30,7 @@ entity TRGCNTRL is
     EAFEB     : in std_logic;
     CMODE     : in std_logic;
     CALTRGSEL : in std_logic;
-    KILLCFEB  : in std_logic_vector(NFEB downto 1);
+    KILL  : in std_logic_vector(NFEB+2 downto 1);
 
     L1A_OTMB_PUSHED_OUT : out std_logic;
     OTMB_DAV_SYNC_OUT   : out std_logic;
@@ -91,7 +91,7 @@ begin  --Architecture
   LCT(0) <= DLY_LCT(0);
   GEN_LCT : for K in 1 to nfeb generate
   begin
-    LCT(K) <= '0' when (KILLCFEB(K) = '1') else
+    LCT(K) <= '0' when (KILL(K) = '1') else
 --              LCT(0)     when (EAFEB = '1' and CAL_MODE = '0') else
 --              CAL_LCT(K) when (JCALSEL = '1') else
               DLY_LCT(K);
@@ -137,11 +137,11 @@ begin  --Architecture
   OTMBDAV_FD     : FD port map(otmb_dav_sync, clk, otmb_dav);
   otmb_alct_dly  <= std_logic_vector(unsigned(alct_push_dly) - unsigned(otmb_push_dly)-1);
   L1A_OTMB_PUSH  : SRLC32E port map(l1a_otmb_pushed, open, otmb_push_dly, logich, clk, l1a_push);
-  l1a_otmb_match <= otmb_dav_sync and l1a_otmb_pushed;
+  l1a_otmb_match <= otmb_dav_sync and l1a_otmb_pushed and not kill(NFEB+1);
   OTMB_ALCT_PUSH : SRLC32E port map(fifo_l1a_match(NFEB+1), open, otmb_alct_dly, logich, clk, l1a_otmb_match);
 
   ALCTDAV_FD : FD port map(alct_dav_sync, clk, alct_dav);
-  fifo_l1a_match(NFEB+2) <= alct_dav_sync and fifo_push_inner;
+  fifo_l1a_match(NFEB+2) <= alct_dav_sync and fifo_push_inner and not kill(NFEB+2);
 
   l1a_otmb_pushed_out <= l1a_otmb_pushed;
   otmb_dav_sync_out   <= otmb_dav_sync;

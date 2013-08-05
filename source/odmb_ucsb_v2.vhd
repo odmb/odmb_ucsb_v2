@@ -423,9 +423,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
 -- From CAFIFO to Data FIFOs
-      dcfeb_fifo_wr_en     : out std_logic_vector(NFEB downto 1);
-      alct_fifo_wr_en      : out std_logic;
-      otmb_fifo_wr_en       : out std_logic;
       cafifo_l1a_match_in  : out std_logic_vector(NFEB+2 downto 1);  -- From TRGCNTRL to CAFIFO to generate Data  
       cafifo_l1a_match_out : out std_logic_vector(NFEB+2 downto 1);  -- From CAFIFO to CONTROL  
       cafifo_l1a_cnt       : out std_logic_vector(23 downto 0);
@@ -754,6 +751,8 @@ end component;
   signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct : std_logic := '0';
   signal otmb_lct_rqst, otmb_ext_trig : std_logic := '0';
   signal l1acnt_rst, bxcnt_rst : std_logic := '0';
+  signal test_l1a_q, test_l1a_pushed : std_logic := '0';
+  signal test_otmb_dav, test_alct_dav : std_logic := '0';
   
 -- VME Signals
 
@@ -1000,9 +999,6 @@ end component;
   signal data_fifo_oe     : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   signal data_fifo_re     : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   signal data_fifo_re_b   : std_logic_vector(NFEB+2 downto 1) := (others => '1');
-  signal dcfeb_fifo_wr_en : std_logic_vector(NFEB downto 1)   := (others => '0');
-  signal alct_fifo_wr_en  : std_logic                         := '0';
-  signal otmb_fifo_wr_en   : std_logic                         := '0';
 
   signal cafifo_l1a_match_in  : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_l1a_match_out : std_logic_vector(NFEB+2 downto 1);
@@ -1023,7 +1019,7 @@ end component;
   signal eofgen_dcfeb_fifo_in    : ext_dcfeb_fifo_data_type;
   signal eofgen_dcfeb_data_valid : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_out          : ext_dcfeb_fifo_data_type;
-
+  signal pulse_eof, pulse_eof40 : std_logic_vector(NFEB downto 1);
 
   type   dcfeb_fifo_cnt_type is array (NFEB downto 1) of std_logic_vector(10 downto 0);
   signal dcfeb_fifo_wr_cnt : dcfeb_fifo_cnt_type;
@@ -1307,10 +1303,6 @@ begin
       fifo_empty_b => data_fifo_empty_b,
 
 -- From CAFIFO to Data FIFOs
-      dcfeb_fifo_wr_en => dcfeb_fifo_wr_en,
-      alct_fifo_wr_en  => alct_fifo_wr_en,
-      otmb_fifo_wr_en   => otmb_fifo_wr_en,
-
       cafifo_l1a_match_in  => cafifo_l1a_match_in,
       cafifo_l1a_match_out => cafifo_l1a_match_out,
       cafifo_l1a_cnt       => cafifo_l1a_cnt,
@@ -1575,7 +1567,13 @@ begin
 
     int_tdo(I) <= dcfeb_tdo(I) when (gen_dcfeb_sel = '0') else gen_tdo(I);
 
-    eof_data(I) <= eofgen_dcfeb_fifo_in(I)(17);
+    -- Make pulse 5 cc long, so that there are 1-2 matches at 40 MHz
+    PULSEEOF : PULSE_EDGE port map(pulse_eof(I), open, clk160, reset, 5,
+                                   eofgen_dcfeb_fifo_in(I)(17));
+    PULSEEOF40 : PULSE_EDGE port map(pulse_eof40(I), open, clk40, reset, 1,
+                                  pulse_eof(I) );
+   EOF_ALCT_PUSH : SRLC32E port map(eof_data(I), open, alct_push_dly, logich, clk40,
+                                     pulse_eof40(I));
     EOFGEN_PM : EOFGEN
       port map (
         clk => clk160,
@@ -1730,11 +1728,6 @@ begin
   rx_otmb_data_valid <= not otmb(17);
   rx_otmb_data       <= otmb(16) & otmb(16 downto 0);  -- For now, we send EOF in 16 and 17
 
-
-  int_alct_dav <= tc_alct_dav when (testctrl_sel = '1') else alctdav;  -- lctdav2
-  int_otmb_dav <= tc_otmb_dav when (testctrl_sel = '1') else otmbdav;  -- lctdav1
-
-
   data_fifo_re      <= not data_fifo_re_b;
   data_fifo_empty_b <= alct_fifo_empty & otmb_fifo_empty & dcfeb_fifo_empty;
 
@@ -1755,6 +1748,19 @@ begin
 
   alct_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+2);
   otmb_request <= '1' when test_l1a = '1' else cafifo_l1a_match_in(NFEB+1);
+
+  FDL1A    : FD port map(test_l1a_q, clk40, test_l1a);
+  L1APUSH  : SRLC32E port map(test_l1a_pushed, open, push_dly, logich, clk40, test_l1a);
+  OTMBPUSH : SRLC32E port map(test_otmb_dav, open, otmb_push_dly, logich, clk40, test_l1a_pushed);
+  ALCTPUSH : SRLC32E port map(test_alct_dav, open, alct_push_dly, logich, clk40, test_l1a_pushed);
+
+
+  int_alct_dav <= '1' when test_alct_dav = '1' else
+                  tc_alct_dav when (testctrl_sel = '1') else
+                  alctdav;              -- lctdav2
+  int_otmb_dav <= '1' when test_otmb_dav = '1' else
+                  tc_otmb_dav when (testctrl_sel = '1') else
+                  otmbdav;              -- lctdav1
 
   eof_data(9) <= alct_fifo_data_in(16);
   eof_data(8) <= otmb_fifo_data_in(16);

@@ -73,9 +73,6 @@ entity ODMB_CTRL is
     fifo_empty_b : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs 
 
 -- From CAFIFO to Data FIFOs
-    dcfeb_fifo_wr_en     : out std_logic_vector(NFEB downto 1);
-    alct_fifo_wr_en      : out std_logic;
-    otmb_fifo_wr_en      : out std_logic;
     cafifo_l1a_match_in  : out std_logic_vector(NFEB+2 downto 1);  -- From TRGCNTRL to CAFIFO to generate Data  
     cafifo_l1a_match_out : out std_logic_vector(NFEB+2 downto 1);  -- From CAFIFO to CONTROL  
     cafifo_l1a_cnt       : out std_logic_vector(23 downto 0);
@@ -359,10 +356,10 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       EAFEB     : in std_logic;
       CMODE     : in std_logic;
       CALTRGSEL : in std_logic;
-      KILLCFEB  : in std_logic_vector(NFEB downto 1);
+      KILL      : in std_logic_vector(NFEB+2 downto 1);
 
-    L1A_OTMB_PUSHED_OUT : out std_logic;
-    OTMB_DAV_SYNC_OUT   : out std_logic;
+      L1A_OTMB_PUSHED_OUT : out std_logic;
+      OTMB_DAV_SYNC_OUT   : out std_logic;
 
       DCFEB_L1A       : out std_logic;
       DCFEB_L1A_MATCH : out std_logic_vector(NFEB downto 1);
@@ -483,10 +480,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       dcfeb5_data : in std_logic_vector(15 downto 0);
       dcfeb6_dv   : in std_logic;
       dcfeb6_data : in std_logic_vector(15 downto 0);
-
-      dcfeb_fifo_wren : out std_logic_vector(NFEB downto 1);
-      alct_fifo_wren  : out std_logic;
-      otmb_fifo_wren  : out std_logic;
 
       cafifo_l1a_match : out std_logic_vector(NFEB+2 downto 1);
       cafifo_l1a_cnt   : out std_logic_vector(23 downto 0);
@@ -748,12 +741,12 @@ begin
       EAFEB     => enacfeb,
       CMODE     => cal_mode,
       CALTRGSEL => cal_trgsel,
-      KILLCFEB  => kill(NFEB downto 1),
+      KILL      => kill(NFEB+2 downto 1),
 
-     L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
-     OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT  ,
+      L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
+      OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT,
 
-     DCFEB_L1A       => dcfeb_l1a,
+      DCFEB_L1A       => dcfeb_l1a,
       DCFEB_L1A_MATCH => dcfeb_l1a_match,
       FIFO_PUSH       => cafifo_push,
       FIFO_L1A_MATCH  => cafifo_l1a_match_in_inner,
@@ -796,10 +789,6 @@ begin
       dcfeb5_data => dcfeb5_data,
       dcfeb6_dv   => dcfeb6_dv,
       dcfeb6_data => dcfeb6_data,
-
-      dcfeb_fifo_wren => dcfeb_fifo_wr_en,
-      alct_fifo_wren  => alct_fifo_wr_en,
-      otmb_fifo_wren  => otmb_fifo_wr_en,
 
       cafifo_l1a_match => cafifo_l1a_match_out_inner,
       cafifo_l1a_cnt   => cafifo_l1a_cnt_out,

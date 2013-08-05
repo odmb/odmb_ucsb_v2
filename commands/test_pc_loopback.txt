@@ -1,23 +1,38 @@
 W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
+W  400C  F      Set ALCT_PUSH_DLY
+W  401C  1F	Set KILL
 
-== ============ Dummy DCFEBs packet 1 ============ ==
-W  401C  FE	Set KILL
-W  3010  10	Send test L1A(_MATCH) to all DCFEBs
-W  3010  10	Send test L1A(_MATCH) to all DCFEBs
-R  321C  0	Read L1A_MATCH_CNT(1)
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+
+W  401C  70	Set KILL
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+W  3010  10	Request packet
+
+R  326C  0	Read L1A_MATCH_CNT(6)
 R  327C  0	Read L1A_MATCH_CNT(7)
-R  331C  0	Read LCT_L1A_GAP(1)
-R  337C  0	Read LCT_L1A_GAP(7)
+R  328C  0	Read L1A_MATCH_CNT(8)
+R  329C  0	Read L1A_MATCH_CNT(9)
 
-R  341C  0	Read Number of received packets (1)
-R  347C  0	Read Number of received packets (7)
-R  351C	 0	Number of packets sent out to DDU/PC [DCFEB 1]
-R  357C	 0	Number of packets sent out to DDU/PC [DCFEB 7]
+R  34AC	 0	Number of packets sent out to DDU
+R  34BC	 0	Number of packets sent out to PC
