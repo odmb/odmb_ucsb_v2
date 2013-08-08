@@ -7,7 +7,7 @@
 =                                                                    =
 ======================================================================
 
-V00-09: 8 August 2013, Manuel
+V00-09: 3 August 2013, Manuel
 --------------------------------
 Synchronized PCFIFO with the output clock, added an interframe gap,
 and fixed a problem with packets that were too short.

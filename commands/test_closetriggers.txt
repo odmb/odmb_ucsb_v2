@@ -1,0 +1,251 @@
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+
+W  4000  C	Set LCT_L1A_DLY   
+W  4004  1	Set TMB_PUSH_DLY
+W  400C  1	Set ALCT_PUSH_DLY
+W  401C  187	Do not Kill DCFEB7, DCFEB6, DCFEB5 and DCFEB4
+
+R  4400  00	Read LCT_L1A_DLY   
+R  4404  00	Read TMB_PUSH_DLY  
+R  440C  00	Read ALCT_PUSH_DLY 
+R  441C  00	Read Kill Register 
+
+== ============ Dummy DCFEBs packet 1 ============ ==
+
+W  3100  1	Set Internal loopback
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+
+W  3010  10	Send test L1A(_MATCH) to all DCFEBs
+
+R  520C  00	Read # of words in PC RX FIFO 
+
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+
+R  520C  00	Read # of words in PC RX FIFO 
+
+W  3010  10	Send test L1A(_MATCH) to all DCFEBs
+
+R  520C  00	Read # of words in PC RX FIFO 
+
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+R  5200  00	Read PC RX FIFO 
+
+R  520C  00	Read # of words in PC RX FIFO 
+
+R  520C  00	Read # of words in PC RX FIFO 
+W  0020  00e0 Reset TC_TS_CNT, TC_FIFOs and TC_TRG_CNTs 
+
+W  0020  0001 Select TC_FIFO_TS_L
+
+W  0008  003f Write TC_FIFO_TS_L  
+W  0008  0040 Write TC_FIFO_TS_L        TA
+W  0008  0041 Write TC_FIFO_TS_L
+
+W  0008  004f Write TC_FIFO_TS_L
+W  0008  0050 Write TC_FIFO_TS_L        TB
+W  0008  0051 Write TC_FIFO_TS_L
+
+W  0008  005f Write TC_FIFO_TS_L
+W  0008  0060 Write TC_FIFO_TS_L        TC
+W  0008  0061 Write TC_FIFO_TS_L
+
+W  0008  006f Write TC_FIFO_TS_L
+W  0008  0070 Write TC_FIFO_TS_L        TD
+W  0008  0071 Write TC_FIFO_TS_L
+
+W  0008  007f Write TC_FIFO_TS_L
+W  0008  0080 Write TC_FIFO_TS_L        TE
+W  0008  0081 Write TC_FIFO_TS_L
+
+W  0008  008f Write TC_FIFO_TS_L
+W  0008  0090 Write TC_FIFO_TS_L        TF
+W  0008  0091 Write TC_FIFO_TS_L
+
+W  0008  00b0 Write TC_FIFO_TS_L
+W  0008  00b1 Write TC_FIFO_TS_L        TA
+
+W  0008  00c0 Write TC_FIFO_TS_L
+W  0008  00c1 Write TC_FIFO_TS_L        TB
+
+W  0008  00d0 Write TC_FIFO_TS_L
+W  0008  00d1 Write TC_FIFO_TS_L        TC
+
+W  0008  00e0 Write TC_FIFO_TS_L
+W  0008  00e1 Write TC_FIFO_TS_L        TD
+
+W  0008  00f0 Write TC_FIFO_TS_L
+W  0008  00f1 Write TC_FIFO_TS_L        TE
+
+W  0008  0100 Write TC_FIFO_TS_L
+W  0008  0101 Write TC_FIFO_TS_L        TF
+
+W  0020  0002 Select TC_FIFO_TS_H
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TA
+W  0008  0000 Write TC_FIFO_TS_H
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TB
+W  0008  0000 Write TC_FIFO_TS_H
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TC
+W  0008  0000 Write TC_FIFO_TS_H
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TD
+W  0008  0000 Write TC_FIFO_TS_H
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TE
+W  0008  0000 Write TC_FIFO_TS_H
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TF
+W  0008  0000 Write TC_FIFO_TS_H
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TA
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TB
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TC
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TD
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TE
+
+W  0008  0000 Write TC_FIFO_TS_H
+W  0008  0000 Write TC_FIFO_TS_H        TF
+
+W  0020  0004 Select TC_FIFO_EVENT
+
+W  0008  000f Write TC_FIFO_EVENT
+W  0008  0011 Write TC_FIFO_EVENT       TA
+W  0008  00e1 Write TC_FIFO_EVENT
+
+W  0008  000f Write TC_FIFO_EVENT
+W  0008  0081 Write TC_FIFO_EVENT       TB
+W  0008  000f Write TC_FIFO_EVENT
+
+W  0008  000f Write TC_FIFO_EVENT
+W  0008  00cf Write TC_FIFO_EVENT       TC
+W  0008  000f Write TC_FIFO_EVENT
+
+W  0008  000f Write TC_FIFO_EVENT
+W  0008  00af Write TC_FIFO_EVENT       TD
+W  0008  000f Write TC_FIFO_EVENT
+
+W  0008  000f Write TC_FIFO_EVENT
+W  0008  009f Write TC_FIFO_EVENT       TE
+W  0008  000f Write TC_FIFO_EVENT
+
+W  0008  000f Write TC_FIFO_EVENT
+W  0008  0011 Write TC_FIFO_EVENT       TF
+W  0008  00e1 Write TC_FIFO_EVENT
+
+W  0008  0000 Write TC_FIFO_EVENT        
+W  0008  0400 Write TC_FIFO_EVENT       TA
+
+W  0008  0000 Write TC_FIFO_EVENT
+W  0008  0400 Write TC_FIFO_EVENT       TB
+
+W  0008  0000 Write TC_FIFO_EVENT
+W  0008  0400 Write TC_FIFO_EVENT       TC
+
+W  0008  0000 Write TC_FIFO_EVENT
+W  0008  0400 Write TC_FIFO_EVENT       TD
+
+W  0008  0000 Write TC_FIFO_EVENT
+W  0008  0400 Write TC_FIFO_EVENT       TE
+
+W  0008  0000 Write TC_FIFO_EVENT
+W  0008  0400 Write TC_FIFO_EVENT       TF
+
+R  001C  0	Read FIFO Status Register
+W  0020  0010	Start Test Run
+ 
+
+0  0  0	 	End of file

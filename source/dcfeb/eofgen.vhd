@@ -27,8 +27,11 @@ end eofgen;
 
 architecture eofgen_architecture of eofgen is
 
-  signal reg_data : std_logic_vector(15 downto 0);
-  signal reg_dv : std_logic;
+-- Guido - Aug 6
+--  signal reg_data : std_logic_vector(15 downto 0);
+--  signal reg_dv : std_logic;
+  signal reg1_data, reg2_data : std_logic_vector(15 downto 0);
+  signal reg1_dv, reg2_dv : std_logic;
   
   type fsm_state_type is (IDLE, RX);
   signal next_state, current_state : fsm_state_type;
@@ -36,17 +39,35 @@ architecture eofgen_architecture of eofgen is
 
 begin
 
+-- Guido - Aug 6
+--  data_dv_regs : process (data_in, dv_in, rst, clk)
+
+--  begin
+--    if (rst = '1') then
+--      reg_data <= (others => '0');
+--      reg_dv <= '0';
+--    elsif rising_edge(clk) then
+--      reg_data <= data_in;
+--      reg_dv <= dv_in;
+--    end if;
+    
+--  end process;
+
   data_dv_regs : process (data_in, dv_in, rst, clk)
 
   begin
     if (rst = '1') then
-      reg_data <= (others => '0');
-      reg_dv <= '0';
+      reg1_data <= (others => '0');
+      reg1_dv <= '0';
+      reg2_data <= (others => '0');
+      reg2_dv <= '0';
     elsif rising_edge(clk) then
-      reg_data <= data_in;
-      reg_dv <= dv_in;
+      reg1_data <= data_in;
+      reg1_dv <= dv_in;
+      reg2_data <= reg1_data;
+      reg2_dv <= reg1_dv;
     end if;
-    
+  
   end process;
 
   fsm_regs : process (next_state, rst, clk)
@@ -90,7 +111,10 @@ begin
     
   end process;
 
-  data_out <= eof & eof & reg_data ;
-  dv_out <= reg_dv;
+-- Guido - Aug 6
+--  data_out <= eof & eof & reg_data ;
+--  dv_out <= reg_dv;
+  data_out <= eof & eof & reg2_data ;
+  dv_out <= reg2_dv;
   
 end eofgen_architecture;

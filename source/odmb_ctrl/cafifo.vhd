@@ -105,7 +105,7 @@ architecture cafifo_architecture of cafifo is
 
   type l1a_array_type is array (FIFO_SIZE-1 downto 0) of std_logic_vector(NFEB+2 downto 1);
   signal l1a_match : l1a_array_type;
-  signal l1a_dav   : l1a_array_type;
+  signal l1a_dav, reg_l1a_dav   : l1a_array_type;
 
   type wrd_cnt_array_type is array (NFEB+2 downto 1) of std_logic_vector(8 downto 0);
   signal l1acnt_dav_fifo_rd_cnt, l1acnt_dav_fifo_wr_cnt : wrd_cnt_array_type;
@@ -207,12 +207,11 @@ begin
           end if;
           
         when RX_HEADER1 =>
-          dcfeb_l1a_dav(dcfeb_index) <= '1';  -- mfs: Set 2 cc high to make it more robust (only problem
-                                              -- is if we store 2^16 L1A_CNT in cafifo)
+          dcfeb_l1a_dav(dcfeb_index) <= '1';  
           rx_next_state(dcfeb_index) <= RX_HEADER2;
           
         when RX_HEADER2 =>
-          dcfeb_l1a_dav(dcfeb_index) <= '1';
+          dcfeb_l1a_dav(dcfeb_index) <= '0';
           rx_next_state(dcfeb_index) <= RX_DW;
           
         when RX_DW =>
@@ -328,9 +327,10 @@ begin
         );
 
     GEN_L1A_DAV : for index in 0 to FIFO_SIZE-1 generate
+      FDDAV : FD port map(reg_l1a_dav(index)(dev), dcfebclk, l1a_dav(index)(dev));
       l1a_dav(index)(dev) <= '0' when (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) else
                              '1' when (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and eof_data(dev) = '1') else
-                             l1a_dav(index)(dev);
+                             reg_l1a_dav(index)(dev);
     end generate GEN_L1A_DAV;
 
     cafifo_l1a_dav(dev) <= l1a_dav(rd_addr_out)(dev);

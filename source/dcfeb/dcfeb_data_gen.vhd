@@ -52,6 +52,7 @@ architecture dcfeb_data_gen_architecture of dcfeb_data_gen is
   signal l1a_cnt_out           : std_logic_vector(23 downto 0);
   signal dw_cnt_out            : std_logic_vector(11 downto 0);
   constant dw_n                : std_logic_vector(11 downto 0) := x"008"; -- x"320" -> 800
+
   signal tx_start              : std_logic;
 
   signal l1a_cnt_l_fifo_in     : std_logic_vector(17 downto 0);
@@ -253,7 +254,9 @@ l1a_cnt_h_fifo : FIFO_DUALCLOCK_MACRO
         
       when TX_DATA =>
         l1a_cnt_fifo_rd_en <= '0';
-        dcfeb_data <= dcfeb_addr & dw_cnt_out;
+-- Guido, Aug 2 
+--        dcfeb_data <= dcfeb_addr & dw_cnt_out;
+        dcfeb_data <= dcfeb_addr & l1a_cnt_l_fifo_out(7 downto 0) & dw_cnt_out(3 downto 0);
         dcfeb_dv   <= '1';
         if (dw_cnt_out = dw_n) then
           dw_cnt_en  <= '0';

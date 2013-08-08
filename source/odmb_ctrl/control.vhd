@@ -72,6 +72,7 @@ architecture CONTROL_arch of CONTROL is
   constant ZERO9  : std_logic_vector(8 downto 0) := (others => '0');
   signal ZERO10   : std_logic_vector(9 downto 0) := (others => '0');
 
+  signal cafifo_l1a_dav_corr : std_logic_vector(NFEB downto 1);
 -- PAGE 1
   signal BUSY     : std_logic;
   signal GEMPTY_D : std_logic_vector(3 downto 1);
@@ -135,6 +136,8 @@ architecture CONTROL_arch of CONTROL is
   signal DATA_A, DATA_B, DATA_C, DATA_D : std_logic_vector(15 downto 0) := (others => '0');
   signal DONE, LAST_RST                 : std_logic;
   signal LAST                           : std_logic                     := '0';
+  signal LAST_TMP : std_logic := '0';
+  signal LAST_TMP_1 : std_logic := '0';
 
 -- PAGE 7
   signal DATANOEND, DAVNODATA, DAVNODATA_D, ERRORD               : std_logic_vector(NFEB+2 downto 1);
@@ -188,18 +191,12 @@ architecture CONTROL_arch of CONTROL is
 
 begin
 
---  DAV <= 'L';
-
+  cafifo_l1a_dav_corr(NFEB downto 1) <= cafifo_l1a_dav(NFEB downto 1) xnor cafifo_l1a_match(NFEB downto 1);  
 
   GEMPTY_TMP <= and_reduce(cafifo_l1a_dav(9 downto 8)) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '1') else
                 cafifo_l1a_dav(9) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '0') else
                 cafifo_l1a_dav(8) when (cafifo_l1a_match(9) = '0' and cafifo_l1a_match(8) = '1') else
-                or_reduce(cafifo_l1a_dav(NFEB downto 1));
-                --or_reduce(not ffor_b(NFEB downto 1));  -- Ignores the L1A_CNT sent by the DCFEBs
-  
-  --GEMPTY_TMP <= or_reduce(not ffor_b(NFEB downto 1));  -- Ignores the L1A_CNT sent by the DCFEBs
-
-  --Adam DATAIN_LAST_TMP <= '1' when (DATAIN(11 downto 0) = x"008") else '0'; --DATAIN_LAST_TMP unused
+                and_reduce(cafifo_l1a_dav_corr(NFEB downto 1)) and or_reduce(cafifo_l1a_match(NFEB downto 1));
 
 --  Generate BUSY (page 1)
 --  FDC(GEMPTY, CLKCMS, POP, GEMPTY_D(1));
@@ -410,7 +407,8 @@ begin
   -- Generate OEDATA_DAV (removes two clock cycles and shifts another)
   FDC_OEDATA_DAV0 : FDC port map (OEDATA_DAV(0), CLK, POP, OEDATA);
   FDC_OEDATA_DAV1 : FDC port map (OEDATA_DAV(1), CLK, POP, OEDATA_DAV(0));
-  OEDATA_DAV(2) <= OEDATA_DAV(1) and OEDATA_DAV(0) and OEDATA and OEDATA_DD;
+  --OEDATA_DAV(2) <= OEDATA_DAV(1) and OEDATA_DAV(0) and OEDATA and OEDATA_DD;
+  OEDATA_DAV(2) <= OEDATA_DAV(1) and OEDATA_DAV(0) and OEDATA;
 
 
 -- Generate JRDFF (page 4)
@@ -470,8 +468,12 @@ begin
 -- Generate DONE / Generate LAST (new, page 6)
   FDCE_1_DONE : FDCE_1 port map (LAST, CLK, DOEALL, LAST_RST, DATAIN_LAST);
 --  FDCE_1(DATAIN_LAST_TMP, CLK, DOEALL, LAST_RST, LAST);
-  FD_DONE     : FD port map (DONE, CLK, LAST);
-  FD_1_DONE   : FD_1 port map (LAST_RST, CLK, LAST);
+  --FD_DONE     : FD port map (DONE, CLK, LAST);
+  --FD_1_DONE   : FD_1 port map (LAST_RST, CLK, LAST);
+  FD_LAST : FD port map (LAST_TMP, CLK, LAST);
+  FD_1_LAST : FD_1 port map (LAST_TMP_1, CLK, LAST);
+  FD_DONE : FD port map (DONE, CLK, LAST_TMP);
+  FD_1_DONE : FD_1 port map (LAST_RST, CLK, LAST_TMP_1);
 
 
 -- Generate DAVNODATA / Generate DATANOEND / Generate ERRORD (page 7)
