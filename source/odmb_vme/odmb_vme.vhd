@@ -273,6 +273,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
       COMMAND : in std_logic_vector(9 downto 0);
+      WRITER  : in std_logic;
 
       INDATA  : in  std_logic_vector(15 downto 0);
       OUTDATA : out std_logic_vector(15 downto 0);
@@ -309,6 +310,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
       COMMAND : in std_logic_vector(9 downto 0);
+      WRITER  : in std_logic;
 
       INDATA  : in  std_logic_vector(15 downto 0);
       OUTDATA : out std_logic_vector(15 downto 0);
@@ -342,6 +344,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
       COMMAND : in std_logic_vector(9 downto 0);
+      WRITER  : in std_logic;
 
       INDATA  : in  std_logic_vector(15 downto 0);
       OUTDATA : out std_logic_vector(15 downto 0);
@@ -614,6 +617,7 @@ begin
       DEVICE  => device(3),
       STROBE  => strobe,
       COMMAND => cmd,
+      WRITER  => vme_write_b,
 
       INDATA  => vme_data_in,
       OUTDATA => outdata_vmemon,
@@ -650,6 +654,7 @@ begin
       DEVICE  => DEVICE(4),
       STROBE  => STROBE,
       COMMAND => CMD,
+      WRITER  => VME_WRITE_B,
 
       INDATA  => VME_DATA_IN,
       OUTDATA => OUTDATA_VMECONFREGS,
@@ -677,6 +682,7 @@ begin
       DEVICE  => DEVICE(5),
       STROBE  => STROBE,
       COMMAND => CMD,
+      WRITER  => VME_WRITE_B,
 
       INDATA  => VME_DATA_IN,
       OUTDATA => OUTDATA_TESTFIFOS,

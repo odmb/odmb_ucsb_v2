@@ -22,6 +22,7 @@ entity TESTFIFOS is
     DEVICE  : in std_logic;
     STROBE  : in std_logic;
     COMMAND : in std_logic_vector(9 downto 0);
+    WRITER  : in std_logic;
 
     INDATA  : in  std_logic_vector(15 downto 0);
     OUTDATA : out std_logic_vector(15 downto 0);
@@ -97,7 +98,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : std_logic_vector(15 downto 0);
 
-  type FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
+  type   FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
   signal FIFO_RD                                : FIFO_RD_TYPE;
   signal C_FIFO_RD                              : std_logic_vector(NFEB downto 1) := (others => '0');
   signal OUT_TFF_READ                           : std_logic_vector(15 downto 0)   := (others => '0');
@@ -219,11 +220,11 @@ begin  --Architecture
 -- Decode instruction
   CMDDEV <= "000" & DEVICE & COMMAND & "00";  -- Variable that looks like the VME commands we input  
 
-  R_TFF_READ    <= '1' when (CMDDEV = x"1000") else '0';
-  R_TFF_WRD_CNT <= '1' when (CMDDEV = x"100C") else '0';
-  W_TFF_SEL     <= '1' when (CMDDEV = x"1010") else '0';
-  R_TFF_SEL     <= '1' when (CMDDEV = x"1014") else '0';
-  W_TFF_RST     <= '1' when (CMDDEV = x"1020") else '0';
+  R_TFF_READ    <= '1' when (CMDDEV = x"1000")                  else '0';
+  R_TFF_WRD_CNT <= '1' when (CMDDEV = x"100C")                  else '0';
+  W_TFF_SEL     <= '1' when (CMDDEV = x"1010" and WRITER = '0') else '0';
+  R_TFF_SEL     <= '1' when (CMDDEV = x"1010" and WRITER = '1') else '0';
+  W_TFF_RST     <= '1' when (CMDDEV = x"1020")                  else '0';
 
   -- PC_TX: 100 series
   R_PC_TX_FF_READ    <= '1' when (CMDDEV = x"1100") else '0';
@@ -577,20 +578,20 @@ begin  --Architecture
 
 -- General assignments
   OUTDATA <= OUT_TFF_READ when R_TFF_READ = '1' else
-             OUT_TFF_SEL           when R_TFF_SEL = '1' else
-             OUT_TFF_WRD_CNT       when R_TFF_WRD_CNT = '1' else
-             OUT_PC_TX_FF_READ     when R_PC_TX_FF_READ = '1' else
-             OUT_PC_TX_FF_WRD_CNT  when R_PC_TX_FF_WRD_CNT = '1' else
-             OUT_PC_RX_FF_READ     when R_PC_RX_FF_READ = '1' else
-             OUT_PC_RX_FF_WRD_CNT  when R_PC_RX_FF_WRD_CNT = '1' else
-             OUT_DDU_TX_FF_READ    when R_DDU_TX_FF_READ = '1' else
+             OUT_TFF_SEL           when R_TFF_SEL = '1'           else
+             OUT_TFF_WRD_CNT       when R_TFF_WRD_CNT = '1'       else
+             OUT_PC_TX_FF_READ     when R_PC_TX_FF_READ = '1'     else
+             OUT_PC_TX_FF_WRD_CNT  when R_PC_TX_FF_WRD_CNT = '1'  else
+             OUT_PC_RX_FF_READ     when R_PC_RX_FF_READ = '1'     else
+             OUT_PC_RX_FF_WRD_CNT  when R_PC_RX_FF_WRD_CNT = '1'  else
+             OUT_DDU_TX_FF_READ    when R_DDU_TX_FF_READ = '1'    else
              OUT_DDU_TX_FF_WRD_CNT when R_DDU_TX_FF_WRD_CNT = '1' else
-             OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1' else
+             OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1'    else
              OUT_DDU_RX_FF_WRD_CNT when R_DDU_RX_FF_WRD_CNT = '1' else
-             OUT_OTMB_FF_READ      when R_OTMB_FF_READ = '1' else
-             OUT_OTMB_FF_WRD_CNT   when R_OTMB_FF_WRD_CNT = '1' else
-             OUT_ALCT_FF_READ      when R_ALCT_FF_READ = '1' else
-             OUT_ALCT_FF_WRD_CNT   when R_ALCT_FF_WRD_CNT = '1' else
+             OUT_OTMB_FF_READ      when R_OTMB_FF_READ = '1'      else
+             OUT_OTMB_FF_WRD_CNT   when R_OTMB_FF_WRD_CNT = '1'   else
+             OUT_ALCT_FF_READ      when R_ALCT_FF_READ = '1'      else
+             OUT_ALCT_FF_WRD_CNT   when R_ALCT_FF_WRD_CNT = '1'   else
              (others => 'L');
   DTACK <= DTACK_INNER;
   

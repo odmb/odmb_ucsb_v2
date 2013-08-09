@@ -1,7 +1,7 @@
 library ieee;
 library work;
-library hdlmacro; use hdlmacro.hdlmacro.all;
---use work.Latches_Flipflops.all;
+library hdlmacro;
+use hdlmacro.hdlmacro.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 use ieee.std_logic_1164.all;
@@ -45,12 +45,10 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   constant LOGICH : std_logic := '1';
   constant LOGICL : std_logic := '0';
 
-  signal CMDDEV                                                    : std_logic_vector(15 downto 0);
-  signal DATASHFT, INSTSHFT, READTDO, WRITEJSEL, READJSEL, RSTJTAG : std_logic;
+  signal CMDDEV                               : std_logic_vector(15 downto 0);
+  signal DATASHFT, INSTSHFT, READTDO, RSTJTAG : std_logic;
 
-  signal JTAGSEL_INNER                        : std_logic;
-  signal D_DTACK_WRITEJSEL, Q_DTACK_WRITEJSEL : std_logic;
-  signal D_DTACK_READJSEL, Q_DTACK_READJSEL   : std_logic;
+  signal JTAGSEL_INNER : std_logic;
 
   signal D1_LOAD, D2_LOAD, CLR_LOAD, Q_LOAD, LOAD : std_logic;
 
@@ -77,8 +75,7 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
 
   signal CE_TAILEN, CLR_TAILEN, TAILEN                                                : std_logic;
   signal SHTAIL                                                                       : std_logic;
-  signal CE_DONETAIL, CLR_DONETAIL, Q_DONETAIL, CEO_DONETAIL, TC_DONETAIL, C_DONETAIL : std_logic;
-  signal QV_DONETAIL                                                                  : std_logic_vector(3 downto 0);
+  signal CE_DONETAIL, CLR_DONETAIL, Q_DONETAIL, C_DONETAIL : std_logic;
   signal DONETAIL                                                                     : std_logic;
   signal CE_SHTAIL_TMS, Q1_SHTAIL_TMS, Q2_SHTAIL_TMS                                  : std_logic;
 
@@ -108,29 +105,13 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
 begin
 
 -- Decode instruction
-  CMDDEV    <= "000" & DEVICE & "0000" & COMMAND(5 downto 0) & "00";  -- Variable that looks like the VME commands we input  
-  DATASHFT  <= '1' when (CMDDEV(15 downto 4) = x"100") else '0';
-  INSTSHFT  <= '1' when (CMDDEV = x"101C")             else '0';
-  READTDO   <= '1' when (CMDDEV = x"1014")             else '0';
-  WRITEJSEL <= '1' when (CMDDEV = x"1020")             else '0';
-  READJSEL  <= '1' when (CMDDEV = x"1024")             else '0';
-  RSTJTAG   <= '1' when (CMDDEV = x"1018")             else '0';
+  CMDDEV   <= "000" & DEVICE & "0000" & COMMAND(5 downto 0) & "00";  -- Variable that looks like the VME commands we input  
+  DATASHFT <= '1' when (CMDDEV(15 downto 4) = x"100") else '0';
+  INSTSHFT <= '1' when (CMDDEV = x"101C")             else '0';
+  READTDO  <= '1' when (CMDDEV = x"1014")             else '0';
+  RSTJTAG  <= '1' when (CMDDEV = x"1018")             else '0';
 
--- Write JTAGSEL when WRITEJSEL=1
-  FD_JTAGSEL : FDCE port map (JTAGSEL_INNER, STROBE, WRITEJSEL, RST, INDATA(0));
-
--- Generate DTACK when WRITEJSEL=1
-  D_DTACK_WRITEJSEL <= '1' when (STROBE = '1' and WRITEJSEL = '1') else '0';
-  FD_DTACK_WRJSEL : FD port map (Q_DTACK_WRITEJSEL, FASTCLK, D_DTACK_WRITEJSEL);
-  DTACK_INNER       <= '0' when (Q_DTACK_WRITEJSEL = '1')          else 'Z';
-
--- Write SELFEB to OUTDATA when READJSEL=1
-  OUTDATA <= "000000000000000" & JTAGSEL_INNER when (STROBE = '1' and READJSEL = '1') else (others => 'Z');
-
--- Generate DTACK when READJSEL=1
-  D_DTACK_READJSEL <= '1' when (STROBE = '1' and READJSEL = '1') else '0';
-  FD_DTACK_RDJSEL : FD port map (Q_DTACK_READJSEL, FASTCLK, D_DTACK_READJSEL);
-  DTACK_INNER      <= '0' when (Q_DTACK_READJSEL = '1')          else 'Z';
+  JTAGSEL_INNER <= DEVICE and STROBE;
 
 -- Generate LOAD
   D1_LOAD  <= DATASHFT or INSTSHFT;
@@ -156,11 +137,11 @@ begin
   SHIHEAD <= '1' when (BUSY = '1' and IHEADEN = '1') else '0';
 
 -- Generate DONEIHEAD
-  R_DONEIHEAD <= '1' when (LOAD = '1' or RST = '1' or Q_DONEIHEAD = '1')        else '0';
+  R_DONEIHEAD <= '1' when (LOAD = '1' or RST = '1' or Q_DONEIHEAD = '1') else '0';
   -- old: (SLOWCLK, SHIHEAD, R_DONEIHEAD, QV_DONEIHEAD, QV_DONEIHEAD, CEO_DONEIHEAD, TC_DONEIHEAD)
   CB_DONEIHEAD : CB4RE port map (CEO_DONEIHEAD, QV_DONEIHEAD(0), QV_DONEIHEAD(1), QV_DONEIHEAD(2), QV_DONEIHEAD(3),
                                  TC_DONEIHEAD, SLOWCLK, SHIHEAD, R_DONEIHEAD);
-  DONEIHEAD   <= '1' when ((QV_DONEIHEAD(1) = '1') and (QV_DONEIHEAD(3) = '1')) else '0';
+  DONEIHEAD <= '1' when ((QV_DONEIHEAD(1) = '1') and (QV_DONEIHEAD(3) = '1')) else '0';
   FD_DONEIHEAD : FD port map (Q_DONEIHEAD, SLOWCLK, DONEIHEAD);
 
 -- Generate TMS when SHIHEAD=1
@@ -185,7 +166,7 @@ begin
 --old: CB4RE(SLOWCLK, SHDHEAD, R_DONEDHEAD, QV_DONEDHEAD, QV_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD);
   CB_DONEDHEAD : CB4RE port map (CEO_DONEDHEAD, QV_DONEDHEAD(0), QV_DONEDHEAD(1), QV_DONEDHEAD(2), QV_DONEDHEAD(3),
                                  TC_DONEDHEAD, SLOWCLK, SHDHEAD, R_DONEDHEAD);
-  DONEDHEAD   <= QV_DONEDHEAD(1) and QV_DONEDHEAD(3);
+  DONEDHEAD <= QV_DONEDHEAD(1) and QV_DONEDHEAD(3);
   FD_DONEDHEAD : FD port map (Q_DONEDHEAD, SLOWCLK, DONEDHEAD);
 
 -- Generate TMS when SHDHEAD=1
@@ -233,10 +214,10 @@ begin
   CE_DONETAIL  <= '1' when (SHTAIL = '1' and ENABLE = '1') else '0';
   CLR_DONETAIL <= '1' when (RST = '1' or Q_DONETAIL = '1') else '0';
   -- old : CB4CE(SLOWCLK, CE_DONETAIL, CLR_DONETAIL, QV_DONETAIL, QV_DONETAIL, CEO_DONETAIL, TC_DONETAIL);
-  CB_DONETAIL : CB4CE port map (CEO_DONETAIL, QV_DONETAIL(0), QV_DONETAIL(1), QV_DONETAIL(2), QV_DONETAIL(3), TC_DONETAIL,
+  --Adam: Replaced CB4CE with CB2CE
+  CB_DONETAIL : CB4CE port map (open, open, DONETAIL, open, open, open,
                                 SLOWCLK, CE_DONETAIL, CLR_DONETAIL);
-  DONETAIL     <= QV_DONETAIL(1);
-  C_DONETAIL   <= SLOWCLK;
+  C_DONETAIL <= SLOWCLK;
   FD_DONETAIL : FD_1 port map (Q_DONETAIL, C_DONETAIL, DONETAIL);
 
 -- Generate TMS when SHTAIL=1
@@ -251,11 +232,11 @@ begin
   FD_ENABLE : FDCE port map (ENABLE, SLOWCLK, CE_ENABLE, RST, D_ENABLE);
 
 -- Generate RESETJTAG
-  D1_RESETJTAG  <= '1' when ( (STROBE = '1' and RSTJTAG = '1') or INITJTAGS = '1') else '0';
+  D1_RESETJTAG  <= '1' when ((STROBE = '1' and RSTJTAG = '1') or INITJTAGS = '1') else '0';
   FD_Q1_RESETJTAG : FDC port map (Q1_RESETJTAG, FASTCLK, RST, D1_RESETJTAG);
   FD_Q2_RESETJTAG : FDC port map (Q2_RESETJTAG, FASTCLK, RST, Q1_RESETJTAG);
-  OKRST         <= '1' when (Q1_RESETJTAG = '1' and Q2_RESETJTAG = '1')            else '0';
-  CLR_RESETJTAG <= '1' when (RESETDONE = '1' or RST = '1')                         else '0';
+  OKRST         <= '1' when (Q1_RESETJTAG = '1' and Q2_RESETJTAG = '1')           else '0';
+  CLR_RESETJTAG <= '1' when (RESETDONE = '1' or RST = '1')                        else '0';
   FD_Q3_RESETJTAG : FDC port map (Q3_RESETJTAG, OKRST, CLR_RESETJTAG, LOGICH);
   FD_RESETJTAG    : FDC port map (RESETJTAG, SLOWCLK, CLR_RESETJTAG, Q3_RESETJTAG);
 
@@ -264,7 +245,7 @@ begin
 -- old : CB4CE(SLOWCLK, RESETJTAG, CLR_RESETDONE, QV_RESETDONE, QV_RESETDONE, CEO_RESETDONE, TC_RESETDONE);
   CB_RESETDONE : CB4CE port map (CEO_RESETDONE, QV_RESETDONE(0), QV_RESETDONE(1), QV_RESETDONE(2), QV_RESETDONE(3),
                                  TC_RESETDONE, SLOWCLK, RESETJTAG, CLR_RESETDONE);
-  RESETDONE     <= '1' when (QV_RESETDONE(2) = '1' and QV_RESETDONE(3) = '1') else '0';
+  RESETDONE <= '1' when (QV_RESETDONE(2) = '1' and QV_RESETDONE(3) = '1') else '0';
 
 -- Generate DTACK when RESETDONE=1 AND INITJTAGS=0
   DTACK_INNER <= '0' when (RESETDONE = '1' and INITJTAGS = '0') else 'Z';

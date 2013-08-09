@@ -17,22 +17,23 @@ entity VMEMON is
     DEVICE  : in std_logic;
     STROBE  : in std_logic;
     COMMAND : in std_logic_vector(9 downto 0);
+    WRITER  : in std_logic;
 
     INDATA  : in  std_logic_vector(15 downto 0);
     OUTDATA : out std_logic_vector(15 downto 0);
 
     DTACK : out std_logic;
 
-    OPT_RESET_PULSE     : out std_logic;
-    FW_RESET      : out std_logic;
-    RESYNC        : out std_logic;
-    REPROG_B      : out std_logic;
-    TEST_INJ      : out std_logic;
-    TEST_PLS      : out std_logic;
-    TEST_PED      : out std_logic;
-    TEST_LCT      : out std_logic;
-    OTMB_LCT_RQST : out std_logic;
-    OTMB_EXT_TRIG : out std_logic;
+    OPT_RESET_PULSE : out std_logic;
+    FW_RESET        : out std_logic;
+    RESYNC          : out std_logic;
+    REPROG_B        : out std_logic;
+    TEST_INJ        : out std_logic;
+    TEST_PLS        : out std_logic;
+    TEST_PED        : out std_logic;
+    TEST_LCT        : out std_logic;
+    OTMB_LCT_RQST   : out std_logic;
+    OTMB_EXT_TRIG   : out std_logic;
 
     TP_SEL        : out std_logic_vector(15 downto 0);
     ODMB_CTRL     : out std_logic_vector(15 downto 0);
@@ -75,7 +76,7 @@ architecture VMEMON_Arch of VMEMON is
 
   signal ODMB_RST, DCFEB_RST                                : std_logic_vector(15 downto 0) := (others => '0');
   signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST : std_logic                     := '0';
-  signal LCT_RQST_RST, EXT_TRIG_RST, OPT_RESET_PULSE_RST          : std_logic                     := '0';
+  signal LCT_RQST_RST, EXT_TRIG_RST, OPT_RESET_PULSE_RST    : std_logic                     := '0';
   signal REPROG, DO_RESYNC, TEST_LCT_RST, RESET_RST         : std_logic                     := '0';
 
   signal OUT_LOOPBACK                           : std_logic_vector(15 downto 0) := (others => '0');
@@ -93,17 +94,17 @@ begin
 -- generate CMDHIGH / generate WRITECTRL / generate READCTRL / generate READDATA
   CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input  
 
-  W_ODMB_CTRL  <= '1' when (CMDDEV = x"1000") else '0';
-  R_ODMB_CTRL  <= '1' when (CMDDEV = x"1004") else '0';
-  W_DCFEB_CTRL <= '1' when (CMDDEV = x"1010") else '0';
-  R_DCFEB_CTRL <= '1' when (CMDDEV = x"1014") else '0';
-  W_TP_SEL     <= '1' when (CMDDEV = x"1020") else '0';
-  R_TP_SEL     <= '1' when (CMDDEV = x"1024") else '0';
+  W_ODMB_CTRL  <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
+  R_ODMB_CTRL  <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
+  W_DCFEB_CTRL <= '1' when (CMDDEV = x"1010" and WRITER = '0') else '0';
+  R_DCFEB_CTRL <= '1' when (CMDDEV = x"1010" and WRITER = '1') else '0';
+  W_TP_SEL     <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
+  R_TP_SEL     <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
 
-  W_LOOPBACK   <= '1' when (CMDDEV = x"1100") else '0';
-  R_LOOPBACK   <= '1' when (CMDDEV = x"1104") else '0';
-  W_TXDIFFCTRL <= '1' when (CMDDEV = x"1110") else '0';
-  R_TXDIFFCTRL <= '1' when (CMDDEV = x"1114") else '0';
+  W_LOOPBACK   <= '1' when (CMDDEV = x"1100" and WRITER = '0') else '0';
+  R_LOOPBACK   <= '1' when (CMDDEV = x"1100" and WRITER = '1') else '0';
+  W_TXDIFFCTRL <= '1' when (CMDDEV = x"1110" and WRITER = '0') else '0';
+  R_TXDIFFCTRL <= '1' when (CMDDEV = x"1110" and WRITER = '1') else '0';
 
   R_ODMB_DATA               <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
   ODMB_DATA_SEL(7 downto 0) <= COMMAND(9 downto 2);
@@ -140,12 +141,12 @@ begin
   GEN_DCFEB_CTRL : for K in 0 to 15 generate
   begin
     DCFEB_RST(K) <= REPROG_RST when K = 0 else
-                    RESYNC_RST    when K = 1 else
-                    TEST_INJ_RST  when K = 2 else
-                    TEST_PLS_RST  when K = 3 else
-                    TEST_LCT_RST  when K = 4 else
-                    LCT_RQST_RST  when K = 5 else
-                    EXT_TRIG_RST  when K = 6 else
+                    RESYNC_RST          when K = 1 else
+                    TEST_INJ_RST        when K = 2 else
+                    TEST_PLS_RST        when K = 3 else
+                    TEST_LCT_RST        when K = 4 else
+                    LCT_RQST_RST        when K = 5 else
+                    EXT_TRIG_RST        when K = 6 else
                     OPT_RESET_PULSE_RST when K = 7 else
                     RST;
     ODMB_DCFEB_K : FDCE port map (DCFEB_CTRL_INNER(K), STROBE, W_DCFEB_CTRL, DCFEB_RST(K), INDATA(K));
@@ -203,12 +204,12 @@ begin
 
 
 
-  OUTDATA(15 downto 0) <= ODMB_CTRL_INNER(15 downto 0) when (STROBE = '1' and R_ODMB_CTRL = '1') else
-                          DCFEB_CTRL_INNER(15 downto 0) when (STROBE = '1' and R_DCFEB_CTRL = '1') else
-                          OUT_TP_SEL(15 downto 0)       when (STROBE = '1' and R_TP_SEL = '1') else
-                          OUT_LOOPBACK(15 downto 0)     when (STROBE = '1' and R_LOOPBACK = '1') else
-                          OUT_TXDIFFCTRL(15 downto 0)   when (STROBE = '1' and R_TXDIFFCTRL = '1') else
-                          ODMB_DATA(15 downto 0)        when (STROBE = '1' and R_ODMB_DATA = '1') else
+  OUTDATA(15 downto 0) <= ODMB_CTRL_INNER(15 downto 0) when (R_ODMB_CTRL = '1') else
+                          DCFEB_CTRL_INNER(15 downto 0) when (R_DCFEB_CTRL = '1') else
+                          OUT_TP_SEL(15 downto 0)       when (R_TP_SEL = '1')     else
+                          OUT_LOOPBACK(15 downto 0)     when (R_LOOPBACK = '1')   else
+                          OUT_TXDIFFCTRL(15 downto 0)   when (R_TXDIFFCTRL = '1') else
+                          ODMB_DATA(15 downto 0)        when (R_ODMB_DATA = '1')  else
                           (others => 'L');
 
 -- bug in uncleaned version?
