@@ -1,24 +1,13 @@
----------------------------------------------------------------------------------------------------
---
--- Title       : dcfeb data generator
--- Design      : 
--- Author      : Guido Magazzu
---
----------------------------------------------------------------------------------------------------
---
--- Description : tx_ctrl RAM FLF
---
----------------------------------------------------------------------------------------------------
+-- ALCT_OTMB_DATA_GEN: Generates packets of dummy ALCT and OTMB data
 
-library IEEE;
+library ieee;
 library unisim;
-use IEEE.STD_LOGIC_UNSIGNED.all;
-use IEEE.STD_LOGIC_1164.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_1164.all;
 use unisim.vcomponents.all;
 
 entity alct_otmb_data_gen is
   port(
-
     clk            : in  std_logic;
     rst            : in  std_logic;
     l1a            : in  std_logic;
@@ -28,16 +17,12 @@ entity alct_otmb_data_gen is
     alct_data      : out std_logic_vector(15 downto 0);
     otmb_dv        : out std_logic;
     otmb_data      : out std_logic_vector(15 downto 0)
-
     );
-
 end alct_otmb_data_gen;
-
---}} End of automatically maintained section
 
 architecture alct_otmb_data_gen_architecture of alct_otmb_data_gen is
 
-  type state_type is (IDLE, TX_HEADER1, TX_HEADER2, TX_DATA);
+  type state_type is (IDLE, TX_DATA);
 
   signal alct_next_state, alct_current_state : state_type;
   signal otmb_next_state, otmb_current_state : state_type;
@@ -47,7 +32,7 @@ architecture alct_otmb_data_gen_architecture of alct_otmb_data_gen is
   signal l1a_cnt_out                     : std_logic_vector(23 downto 0);
   signal alct_dw_cnt_out                 : std_logic_vector(11 downto 0);
   signal otmb_dw_cnt_out                 : std_logic_vector(11 downto 0);
-  constant dw_n                          : std_logic_vector(11 downto 0) := "000000001000";
+  constant dw_n                          : std_logic_vector(11 downto 0) := x"008";
   signal alct_tx_start, otmb_tx_start    : std_logic;
 
 begin
@@ -132,42 +117,21 @@ begin
   end process;
 
   alct_fsm_logic : process (alct_tx_start, l1a_cnt_out, alct_dw_cnt_out, alct_current_state)
-
   begin
-    
     case alct_current_state is
-      
       when IDLE =>
-        
         alct_data       <= (others => '0');
         alct_dv         <= '0';
         alct_dw_cnt_en  <= '0';
         alct_dw_cnt_rst <= '1';
         if (alct_tx_start = '1') then
-          alct_next_state <= TX_HEADER1;
+          alct_next_state <= TX_DATA;
         else
           alct_next_state <= IDLE;
         end if;
         
-      when TX_HEADER1 =>
-        
-        alct_data       <= "1101" & l1a_cnt_out(23 downto 12);
-        alct_dv         <= '1';
-        alct_dw_cnt_en  <= '0';
-        alct_dw_cnt_rst <= '0';
-        alct_next_state <= TX_HEADER2;
-        
-      when TX_HEADER2 =>
-        
-        alct_data       <= "1101" & l1a_cnt_out(11 downto 0);
-        alct_dv         <= '1';
-        alct_dw_cnt_en  <= '0';
-        alct_dw_cnt_rst <= '0';
-        alct_next_state <= TX_DATA;
-        
       when TX_DATA =>
-
-        alct_data <= "1101" & alct_dw_cnt_out;
+        alct_data <= x"D" & l1a_cnt_out(7 downto 0) & alct_dw_cnt_out(3 downto 0);
         alct_dv   <= '1';
         if (alct_dw_cnt_out = dw_n) then
           alct_dw_cnt_en  <= '0';
@@ -180,7 +144,6 @@ begin
         end if;
 
       when others =>
-
         alct_data       <= (others => '0');
         alct_dv         <= '0';
         alct_dw_cnt_en  <= '0';
@@ -188,46 +151,24 @@ begin
         alct_next_state <= IDLE;
         
     end case;
-    
   end process;
 
   otmb_fsm_logic : process (otmb_tx_start, l1a_cnt_out, otmb_dw_cnt_out, otmb_current_state)
-
   begin
-    
     case otmb_current_state is
-      
       when IDLE =>
-        
         otmb_data       <= (others => '0');
         otmb_dv         <= '0';
         otmb_dw_cnt_en  <= '0';
         otmb_dw_cnt_rst <= '1';
         if (otmb_tx_start = '1') then
-          otmb_next_state <= TX_HEADER1;
+          otmb_next_state <= TX_DATA;
         else
           otmb_next_state <= IDLE;
         end if;
         
-      when TX_HEADER1 =>
-        
-        otmb_data       <= "1011" & l1a_cnt_out(23 downto 12);
-        otmb_dv         <= '1';
-        otmb_dw_cnt_en  <= '0';
-        otmb_dw_cnt_rst <= '0';
-        otmb_next_state <= TX_HEADER2;
-        
-      when TX_HEADER2 =>
-        
-        otmb_data       <= "1011" & l1a_cnt_out(11 downto 0);
-        otmb_dv         <= '1';
-        otmb_dw_cnt_en  <= '0';
-        otmb_dw_cnt_rst <= '0';
-        otmb_next_state <= TX_DATA;
-        
       when TX_DATA =>
-
-        otmb_data <= "1011" & otmb_dw_cnt_out;
+        otmb_data <= x"B" & l1a_cnt_out(7 downto 0) & otmb_dw_cnt_out(3 downto 0);
         otmb_dv   <= '1';
         if (otmb_dw_cnt_out = dw_n) then
           otmb_dw_cnt_en  <= '0';
@@ -240,7 +181,6 @@ begin
         end if;
 
       when others =>
-
         otmb_data       <= (others => '0');
         otmb_dv         <= '0';
         otmb_dw_cnt_en  <= '0';
@@ -248,7 +188,6 @@ begin
         otmb_next_state <= IDLE;
         
     end case;
-    
   end process;
   
 end alct_otmb_data_gen_architecture;

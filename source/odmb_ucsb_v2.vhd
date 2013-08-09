@@ -748,10 +748,10 @@ end component;
   signal   PB_PULSE : std_logic := '0';
   signal   PB_B     : std_logic_vector(1 downto 0);
 
-  signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct : std_logic := '0';
+  signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct, test_pb_lct : std_logic := '0';
   signal otmb_lct_rqst, otmb_ext_trig : std_logic := '0';
   signal l1acnt_rst, bxcnt_rst : std_logic := '0';
-  signal test_l1a_q, test_l1a_pushed : std_logic := '0';
+  signal test_l1a_pushed : std_logic := '0';
   signal test_otmb_dav, test_alct_dav : std_logic := '0';
   
 -- VME Signals
@@ -1560,7 +1560,7 @@ begin
 
     dcfeb_tck(I) <= int_tck(I);
 
-    dcfeb_l1a_match(I) <= '0' when mask_l1a_match = '1' else int_l1a_match(I) or pb_pulse;
+    dcfeb_l1a_match(I) <= '0' when mask_l1a_match = '1' else int_l1a_match(I);
 
     int_tdo(I) <= dcfeb_tdo(I) when (gen_dcfeb_sel = '0') else gen_tdo(I);
 
@@ -1730,20 +1730,20 @@ begin
 
   ------------------------ TRIGGERS  -------------------------
   -- Raw signals come unsynced from outside
-  LCTDLY_GTRG : LCTDLY port map(test_lct, clk40, LCT_L1A_DLY, test_l1a);
+  test_pb_lct <= test_lct or pb_pulse;
+  LCTDLY_GTRG : LCTDLY port map(test_pb_lct, clk40, LCT_L1A_DLY, test_l1a);
 
   testctrl_sel <= odmb_ctrl_reg(9);
 
   raw_l1a <= '1' when test_l1a = '1' else
              tc_l1a when (testctrl_sel = '1') else
              not ccb_l1acc;
-  raw_lct <= (others => '1') when test_lct = '1' else
+  raw_lct <= (others => '1') when test_pb_lct = '1' else
              tc_lct when (testctrl_sel = '1') else
              rawlct;
 
   tc_run_out   <= tc_run;
 
-  FDL1A    : FD port map(test_l1a_q, clk40, test_l1a);
   L1APUSH  : SRLC32E port map(test_l1a_pushed, open, push_dly, logich, clk40, test_l1a);
   OTMBPUSH : SRLC32E port map(test_otmb_dav, open, otmb_push_dly, logich, clk40, test_l1a_pushed);
   ALCTPUSH : SRLC32E port map(test_alct_dav, open, alct_push_dly, logich, clk40, test_l1a_pushed);
@@ -1817,7 +1817,7 @@ begin
 
   dcfeb_tms       <= int_tms;
   dcfeb_tdi       <= int_tdi;
-  dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a or pb_pulse;
+  dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
 
@@ -2056,7 +2056,7 @@ begin
 ------------------------------------  Monitoring  ------------------------------------
 ---------------------------------------------------------------------------------------
 
-  INTL1A_CNT  : COUNT_EDGES port map(int_l1a_cnt, int_l1a, reset, logich);
+  INTL1A_CNT  : COUNT_EDGES port map(int_l1a_cnt, int_l1a, l1acnt_rst, logich);
   ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, int_alct_dav, reset, logich);
   OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, int_otmb_dav, reset, logich);
   DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
@@ -2191,7 +2191,7 @@ begin
         ledg(5) <= testctrl_sel;
         ledg(6) <= gen_dcfeb_sel;
 
-        ledr(5 downto 1) <= not cafifo_l1a_cnt(4 downto 0);
+        ledr(5 downto 1) <= not int_l1a_cnt(4 downto 0);
         ledr(6)          <= pb(1) and not led_pulse;
 
         if (reset = '0' and reset_q = '1') then
