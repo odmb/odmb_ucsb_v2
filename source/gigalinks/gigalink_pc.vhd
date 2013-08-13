@@ -329,11 +329,9 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
 
   -- FIFO signals
   signal tx_fifo_wren                   : std_logic := '0';
-  signal tx_fifo_reset                  : std_logic := '0';
   signal tx_fifo_empty, tx_fifo_full    : std_logic := '0';
   signal tx_fifo_rderr, tx_fifo_wrerr   : std_logic := '0';
   signal tx_fifo_rdcout, tx_fifo_wrcout : std_logic_vector(10 downto 0);
-  signal rx_fifo_reset                  : std_logic := '0';
   signal rx_fifo_empty, rx_fifo_full    : std_logic := '0';
   signal rx_fifo_rderr, rx_fifo_wrerr   : std_logic := '0';
   signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
@@ -347,7 +345,7 @@ begin
   -- The pulse avoids some false positives during resets
   PULSE_ALIGN   : PULSE_EDGE port map(rxbyterealign_pulse, open, usr_clk, RST, 10, gtx0_rxbyterealign_i);
   PULSE_DISPERR : PULSE_EDGE port map (rxdisperr_pulse, open, usr_clk, RST, 10, gtx0_rxdisperr_i(0));
-  rxd_vld_inner <= '1' when (gtx0_rxvalid_out = '1' and rxd_inner /= IDLE
+  rxd_vld_inner <= '1' when (gtx0_rxvalid_out = '1' and (rxd_inner(7 downto 0) /= x"BC" or gtx0_rxcharisk_i /= "01")
                              and rxbyterealign_pulse = '0' and gtx0_rxnotintable_i = "00"
                              and rxdisperr_pulse = '0' and gtx0_rxdisperr_i = "00") else '0';
   RXD     <= rxd_inner;
@@ -555,7 +553,7 @@ begin
 
   ----------------------------- TX and RX FIFOs ----------------------------
 
-  tx_fifo_reset    <= RST or TX_FIFO_RST;
+
   tx_fifo_wren     <= '1' when txd_frame /= IDLE else '0';
   TX_FIFO_WREN_OUT <= tx_fifo_wren;
   TXD_FRAME_OUT    <= txd_frame;
@@ -569,7 +567,7 @@ begin
       FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      RST         => tx_fifo_reset,     -- Input reset
+      RST         => tx_fifo_rst,       -- Input reset
       ALMOSTEMPTY => open,              -- Output almost empty 
       ALMOSTFULL  => open,              -- Output almost full
       EMPTY       => tx_fifo_empty,     -- Output empty
@@ -588,10 +586,9 @@ begin
 
   TX_WRD_COUNT : FIFOWORDS
     generic map(12)
-    port map(RST   => tx_fifo_reset, WRCLK => usr_clk, WREN => tx_fifo_wren, FULL => tx_fifo_full,
+    port map(RST   => tx_fifo_rst, WRCLK => usr_clk, WREN => tx_fifo_wren, FULL => tx_fifo_full,
              RDCLK => VME_CLK, RDEN => TX_FIFO_RDEN, COUNT => TX_FIFO_WRD_CNT);
 
-  rx_fifo_reset <= RST or RX_FIFO_RST;
 
   RX_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -603,7 +600,7 @@ begin
       FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      RST         => rx_fifo_reset,     -- Input reset
+      RST         => rx_fifo_rst,       -- Input reset
       ALMOSTEMPTY => open,              -- Output almost empty 
       ALMOSTFULL  => open,              -- Output almost full
       EMPTY       => rx_fifo_empty,     -- Output empty
@@ -622,7 +619,7 @@ begin
 
   RX_WRD_COUNT : FIFOWORDS
     generic map(12)
-    port map(RST   => rx_fifo_reset, WRCLK => usr_clk, WREN => rxd_vld_inner, FULL => rx_fifo_full,
+    port map(RST   => rx_fifo_rst, WRCLK => usr_clk, WREN => rxd_vld_inner, FULL => rx_fifo_full,
              RDCLK => VME_CLK, RDEN => RX_FIFO_RDEN, COUNT => RX_FIFO_WRD_CNT);
 
 

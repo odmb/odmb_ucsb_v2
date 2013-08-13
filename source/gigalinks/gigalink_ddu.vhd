@@ -161,11 +161,9 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal rxbyterealign_pulse    : std_logic := '0';
 
   -- FIFO signals
-  signal tx_fifo_reset                  : std_logic := '0';
   signal tx_fifo_empty, tx_fifo_full    : std_logic := '0';
   signal tx_fifo_rderr, tx_fifo_wrerr   : std_logic := '0';
   signal tx_fifo_rdcout, tx_fifo_wrcout : std_logic_vector(10 downto 0);
-  signal rx_fifo_reset                  : std_logic := '0';
   signal rx_fifo_empty, rx_fifo_full    : std_logic := '0';
   signal rx_fifo_rderr, rx_fifo_wrerr   : std_logic := '0';
   signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
@@ -241,7 +239,6 @@ begin
       GTX0_TXRESETDONE_OUT   => open
       );
 
-  tx_fifo_reset <= RST or TX_FIFO_RST;
   -- Double reset required because TXPLL_DIVSEL_OUT = 2
   DOUBLE_RESET_PM : DOUBLE_RESET
     port map (
@@ -261,7 +258,7 @@ begin
       FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      RST         => tx_fifo_reset,     -- Input reset
+      RST         => tx_fifo_rst,       -- Input reset
       ALMOSTEMPTY => open,              -- Output almost empty 
       ALMOSTFULL  => open,              -- Output almost full
       EMPTY       => tx_fifo_empty,     -- Output empty
@@ -280,11 +277,9 @@ begin
 
   TX_WRD_COUNT : FIFOWORDS
     generic map(12)
-    port map(RST   => tx_fifo_reset, WRCLK => usr_clk, WREN => TXD_VLD, FULL => tx_fifo_full,
+    port map(RST   => tx_fifo_rst, WRCLK => usr_clk, WREN => TXD_VLD, FULL => tx_fifo_full,
              RDCLK => VME_CLK, RDEN => TX_FIFO_RDEN, COUNT => TX_FIFO_WRD_CNT);
 
-  
-  rx_fifo_reset <= RST or RX_FIFO_RST;
 
   RX_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -296,7 +291,7 @@ begin
       FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      RST         => rx_fifo_reset,     -- Input reset
+      RST         => rx_fifo_rst,       -- Input reset
       ALMOSTEMPTY => open,              -- Output almost empty 
       ALMOSTFULL  => open,              -- Output almost full
       EMPTY       => rx_fifo_empty,     -- Output empty
@@ -315,7 +310,7 @@ begin
 
   RX_WRD_COUNT : FIFOWORDS
     generic map(12)
-    port map(RST   => rx_fifo_reset, WRCLK => usr_clk, WREN => rxd_vld_inner, FULL => rx_fifo_full,
+    port map(RST   => rx_fifo_rst, WRCLK => usr_clk, WREN => rxd_vld_inner, FULL => rx_fifo_full,
              RDCLK => VME_CLK, RDEN => RX_FIFO_RDEN, COUNT => RX_FIFO_WRD_CNT);
 
 

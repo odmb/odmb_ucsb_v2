@@ -17,6 +17,10 @@ entity PULSE_EDGE is
 end PULSE_EDGE;
 
 architecture PULSE_EDGE_Arch of PULSE_EDGE is
+
+-- Guido - Aug 9
+  constant LOGIC1 : std_logic := '1';
+
   signal PULSE1_INNER, PULSE1_D : std_logic := '0';
   signal PULSE1_B               : std_logic := '1';
 
@@ -28,11 +32,16 @@ architecture PULSE_EDGE_Arch of PULSE_EDGE is
 
 begin  --Architecture
 
-  FDDIN    : FDC port map(PULSE1_D, DIN, PULSE1_INNER, PULSE1_B);
-  FDPULSE1 : FD port map(PULSE1_INNER, CLK, PULSE1_D);
-  PULSE1_B <= not PULSE1_INNER;
-  PULSE1   <= PULSE1_INNER;
+-- Guido - Aug 9
+--  FDDIN    : FDC port map(PULSE1_D, DIN, PULSE1_INNER, PULSE1_B);
+--  FDPULSE1 : FD port map(PULSE1_INNER, CLK, PULSE1_D);
+--  PULSE1_B <= not PULSE1_INNER;
+--  PULSE1   <= PULSE1_INNER;
 
+  FDDIN    : FDC port map(PULSE1_D, DIN, PULSE1_B, LOGIC1);
+  FDPULSE1_A : FDC port map(PULSE1_INNER, CLK, PULSE1_B, PULSE1_D);
+  FDPULSE1_B : FD port map(PULSE1_B, CLK, PULSE1_INNER);
+  PULSE1   <= PULSE1_INNER;
 
   pulse_cnt_proc : process (clk, pulse_cnt_en, rst)
     variable pulse_cnt_data : integer := 0;
