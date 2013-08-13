@@ -1,11 +1,13 @@
-library IEEE;
-use IEEE.STD_LOGIC_UNSIGNED.all;
-use IEEE.STD_LOGIC_1164.all;
-library UNISIM;
-use UNISIM.vcomponents.all;
-library UNIMACRO;
-use UNIMACRO.vcomponents.all;
+-- PCFIFO: Takes the DDU packets, and Produces continuous packets suitable for ethernet
+
+library ieee;
+library unisim;
+library unimacro;
 library hdlmacro;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_1164.all;
+use unisim.vcomponents.all;
+use unimacro.vcomponents.all;
 use hdlmacro.hdlmacro.all;
 
 entity pcfifo is
@@ -43,7 +45,9 @@ architecture pcfifo_architecture of pcfifo is
       );
   end component;
 
-  type fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, IDLE_ETH);
+  constant logich : std_logic := '1';
+
+  type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, IDLE_ETH);
   signal f0_current_state : fsm_state_type := IDLE;
   signal f0_next_state    : fsm_state_type := IDLE;
 
@@ -57,33 +61,53 @@ architecture pcfifo_architecture of pcfifo is
   signal tx_ack_q             : std_logic_vector(2 downto 0) := (others => '0');
   signal tx_ack_q_b           : std_logic                    := '1';
 
-  type fifo_data_type is array (NFIFO downto 1) of std_logic_vector(17 downto 0);
-  signal fifo_in, fifo_out        : fifo_data_type;
-  signal fifo_aempty              : std_logic_vector(NFIFO downto 1);
-  signal fifo_afull               : std_logic_vector(NFIFO downto 1);
-  signal fifo_empty               : std_logic_vector(NFIFO downto 1);
-  signal fifo_full                : std_logic_vector(NFIFO downto 1);
-  signal fifo_wren, fifo_wrck     : std_logic_vector(NFIFO downto 1);
-  signal fifo_rden, fifo_rdck     : std_logic_vector(NFIFO downto 1);
-  type fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
-  signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
+  type   fifo_data_type is array (NFIFO downto 1) of std_logic_vector(17 downto 0);
+  signal fifo_in, fifo_out                 : fifo_data_type;
+  signal fifo_aempty                       : std_logic_vector(NFIFO downto 1);
+  signal fifo_afull                        : std_logic_vector(NFIFO downto 1);
+  signal fifo_empty                        : std_logic_vector(NFIFO downto 1);
+  signal fifo_full                         : std_logic_vector(NFIFO downto 1);
+  signal fifo_wren, fifo_wrck : std_logic_vector(NFIFO downto 1);
+  signal fifo_rden, fifo_rdck              : std_logic_vector(NFIFO downto 1);
+  type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
+  signal fifo_wr_cnt, fifo_rd_cnt          : fifo_cnt_type;
 
   signal pck_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
   signal int_clk     : std_logic                    := '0';
 
   -- IDLE_ETH ensures the interframe gap of 96 bits between packets
   signal idle_cnt_en, idle_cnt_rst : std_logic            := '0';
-  signal idle_cnt                  : integer range 0 to 9 := 0; 
-  
+  signal idle_cnt                  : integer range 0 to 9 := 0;
+
+  signal dv_in_pulse : std_logic := '0';
+  signal first_in, first_dly : std_logic := '1';
+
+  signal pck_cnt_total : std_logic_vector(15 downto 0) := (others => '0');
   
 begin
 
--- FIFOs
+-- Generation of counter for total packets sent
+  DV_PULSE_EDGE : pulse_edge port map(dv_in_pulse, open, clk_in, rst, 1, dv_in);
+  FDLDIN            : FD port map(ld_in_q, clk_in, ld_in);
+  pck_cnt_total_pro : process (ld_in, rst, clk_in)
+  begin
+    if (rst = '1') then
+      pck_cnt_total <= (others => '0');
+    elsif (rising_edge(clk_in)) then
+      if (ld_in = '1') then
+        pck_cnt_total <= pck_cnt_total + 1;
+      end if;
+    end if;
+  end process;
 
+
+-- FIFOs
+  FDFIRST : FDCP port map(first_in, ld_in_q, dv_in_pulse, logich, rst);
+  
   int_clk          <= clk_in;
   fifo_wrck(NFIFO) <= clk_in;
-  fifo_wren(NFIFO) <= dv_in;
-  fifo_in(NFIFO)   <= ld_in & ld_in & data_in;
+  fifo_wren(NFIFO) <= dv_in or ld_in_q;
+  fifo_in(NFIFO)   <= first_in & '0' & data_in when ld_in_q = '0' else "01" & pck_cnt_total;
 
   fifo_rdck(NFIFO) <= int_clk;
   fifo_rden(NFIFO) <= not (fifo_empty(NFIFO) or fifo_full(NFIFO-1));
@@ -188,7 +212,7 @@ begin
       );
 
   f0_out   <= fifo_out(1)(15 downto 0);
-  f0_ld    <= fifo_out(1)(17);
+  f0_ld    <= fifo_out(1)(16);
   f0_empty <= fifo_empty(1);
 
   FDCACK   : FDC port map(tx_ack_q(0), tx_ack, tx_ack_q(2), tx_ack_q_b);
@@ -196,10 +220,11 @@ begin
   FDACK_QQ : FD port map(tx_ack_q(2), clk_out, tx_ack_q(1));
   tx_ack_q_b <= not tx_ack_q(2);
 
--- FSMs 
-
+-- FSMs
+   FIRSTDLY : SRLC32E port map(first_dly, open, "11111", logich, int_clk, fifo_in(1)(17));
+  
   LDOUT_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_out, rst, 1, ld_out);
-  LDIN_PULSE_EDGE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, fifo_in(1)(17));
+  LDIN_PULSE_EDGE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, first_dly);
 
   pck_cnt : process (ld_in_pulse, ld_out_pulse, rst, clk_out)
     variable pck_cnt_data : std_logic_vector(7 downto 0) := (others => '0');
@@ -269,8 +294,7 @@ begin
         data_out     <= f0_out;
         idle_cnt_rst <= '0';
         idle_cnt_en  <= '0';
---        if (f0_empty = '1') then
-        if (f0_empty = '1') or (f0_ld = '1') then
+        if f0_ld = '1' then
           ld_out        <= '1';
           f0_rden       <= '0';
           f0_next_state <= IDLE_ETH;

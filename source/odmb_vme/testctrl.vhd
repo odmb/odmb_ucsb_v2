@@ -282,7 +282,8 @@ begin  --Architecture
   FIFO_STR(15 downto 12) <= tc_fifo_full(3) & tc_fifo_afull(3) & tc_fifo_aempty(3) & tc_fifo_empty(3);
 
 
-  TS_FIFO_OUT    <= tc_fifo_out(1) & tc_fifo_out(0);
+  --TS_FIFO_OUT    <= tc_fifo_out(1) & tc_fifo_out(0);
+  TS_FIFO_OUT    <= x"0000" & tc_fifo_out(0);  -- mfs: For now, I'm tired of filling this one up
   EVENT_FIFO_OUT <= tc_fifo_out(2);
 
   TS_CNT : process (CLK, tc_run_inner, RST, ts_cnt_rst)
