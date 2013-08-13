@@ -7,6 +7,11 @@
 =                                                                    =
 ======================================================================
 
+V01-02: 13 August 2013, Manuel
+--------------------------------
+Separated the optical and FW resets.
+Fixed bugs in PCFIFO.
+
 V01-01: 8 August 2013, Manuel
 --------------------------------
 CONTROL does not remove the first 2 words of ALCT/OTMB packets.
