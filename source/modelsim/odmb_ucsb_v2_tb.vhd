@@ -160,6 +160,24 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   end component;
 
+  component prom is
+    port(
+  
+      clk   : in std_logic;
+      rst   : in std_logic;
+
+      we_b : in std_logic;
+      cs_b : in std_logic;
+      oe_b : in std_logic;
+      le_b : in std_logic;
+
+      addr : in std_logic_vector(22 downto 0);
+	    data : inout std_logic_vector(15 downto 0)
+	    );
+
+  end component;
+
+
 
 -- End of the Test Bench Section
 
@@ -172,6 +190,17 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
       (
         tc_run_out : out std_logic;     -- OK           NEW!
 
+
+-- BPI Prom signals To/From bpi_interface
+
+		    prom_a : INOUT STD_LOGIC_VECTOR(22 DOWNTO 0);	   	
+		    prom_a_21_rs0 : OUT STD_LOGIC;								          -- not connected in v.2
+		    prom_a_22_rs1 : OUT STD_LOGIC;								          -- not connected in v.2
+		    prom_d : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);	  
+		    prom_cs_b : OUT STD_LOGIC;							
+		    prom_oe_b : OUT STD_LOGIC;							
+		    prom_we_b : OUT STD_LOGIC;							
+		    prom_le_b : OUT STD_LOGIC;							
 
 -- From/To VME connector To/From MBV
 
@@ -562,6 +591,15 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal gl1_clk_p : std_logic := '1';  -- in
   signal gl1_clk_n : std_logic := '0';  -- in
 
+-- From/To PROM
+
+	signal 	prom_addr : STD_LOGIC_VECTOR(22 DOWNTO 0);	   	
+	signal 	prom_data : STD_LOGIC_VECTOR(15 DOWNTO 0);	  
+  signal  prom_cs_b : STD_LOGIC;              
+  signal  prom_oe_b : STD_LOGIC;              
+  signal  prom_we_b : STD_LOGIC;              
+  signal  prom_le_b : STD_LOGIC;              
+
 -- Others 
 
   signal done_in : std_logic := '0';    -- in
@@ -630,6 +668,17 @@ begin
     port map(
 
       tc_run_out => goevent,
+
+-- BPI Prom signals To/From bpi_interface
+
+		  prom_a => prom_addr, 	
+		  prom_a_21_rs0 => open,								          -- not connected in v.2
+		  prom_a_22_rs1 => open,								          -- not connected in v.2
+		  prom_d => prom_data,	  
+		  prom_cs_b => prom_cs_b,							
+		  prom_oe_b => prom_oe_b,							
+		  prom_we_b => prom_we_b,						
+		  prom_le_b => prom_le_b,						
 
 -- From/To VME connector To/From MBV
 
@@ -887,6 +936,21 @@ begin
       vme_dat_mem_in   => vme_dat_mem_in
 
       );
+
+  PMAP_prom : prom
+    port map (
+  
+      clk     => clk,
+      rst     => rst,
+
+      we_b    => prom_we_b,
+      cs_b    => prom_cs_b,
+      oe_b    => prom_oe_b,
+      le_b    => prom_le_b,
+
+      addr    => prom_addr,
+	    data    => prom_data);
+
 
   PMAP_VME_Master : vme_master
     port map (

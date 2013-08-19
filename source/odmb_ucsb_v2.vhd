@@ -29,6 +29,18 @@ entity ODMB_UCSB_V2 is
     NFEB          : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );  
   port (
+
+-- BPI Prom signals To/From bpi_interface
+
+		prom_a : INOUT STD_LOGIC_VECTOR(22 DOWNTO 0);	   	
+		prom_a_21_rs0 : OUT STD_LOGIC;								          -- not connected in v.2
+		prom_a_22_rs1 : OUT STD_LOGIC;								          -- not connected in v.2
+		prom_d : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);	  
+		prom_cs_b : OUT STD_LOGIC;							
+		prom_oe_b : OUT STD_LOGIC;							
+		prom_we_b : OUT STD_LOGIC;							
+		prom_le_b : OUT STD_LOGIC;							
+
 -- From/To VME connector To/From MBV
 
     vme_data        : inout std_logic_vector(15 downto 0);
@@ -201,6 +213,59 @@ end ODMB_UCSB_V2;
 
 architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
+component bpi_ctrl
+	port(
+	CLK           : in std_logic; -- 40 MHz clock
+	CLK1MHZ       : in std_logic; --  1 MHz clock for timers
+	RST           : IN STD_LOGIC;
+--	Interface Signals to/from VME interface
+	BPI_CMD_FIFO_DATA : in std_logic_vector(15 downto 0);  -- Data for command FIFO
+	BPI_WE            : in std_logic;                      -- Command FIFO write enable  (pulse one clock cycle for one write)
+	BPI_RE            : in std_logic;                      -- Read back FIFO read enable  (pulse one clock cycle for one read)
+	BPI_DSBL          : in std_logic;                      -- Disable parsing of BPI commands in the command FIFO (while being filled)
+	BPI_ENBL          : in std_logic;                      -- Enable  parsing of BPI commands in the command FIFO
+	BPI_RBK_FIFO_DATA : out std_logic_vector(15 downto 0); -- Data on output of the Read back FIFO
+	BPI_RBK_WRD_CNT   : out std_logic_vector(10 downto 0); -- Word count of the Read back FIFO (number of available reads)
+	BPI_STATUS        : out std_logic_vector(15 downto 0); -- FIFO status bits and latest value of the PROM status register. 
+	BPI_TIMER         : out std_logic_vector(31 downto 0); -- General timer
+-- Signals to/from low level BPI interface
+	BPI_BUSY          : in std_logic;                      --  
+	BPI_DATA_FROM     : in std_logic_vector(15 downto 0);  -- 
+	BPI_LOAD_DATA     : in std_logic;                      --  
+	BPI_ACTIVE        : out std_logic;                     --  
+	BPI_OP            : out std_logic_vector(1 downto 0);  -- 
+	BPI_ADDR          : out std_logic_vector(22 downto 0); -- 
+	BPI_DATA_TO       : out std_logic_vector(15 downto 0); -- 
+	BPI_EXECUTE       : out std_logic                      --  
+);
+end component;
+component bpi_interface
+	port(
+	CLK           : in std_logic; -- 40 MHz clock
+	RST           : in std_logic;
+	ADDR          : in std_logic_vector(22 downto 0);    -- Bank/Array Address 
+	CMD_DATA_OUT  : in std_logic_vector(15 downto 0);    -- Command or Data being written to FLASH device
+	OP            : in std_logic_vector(1 downto 0);     -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
+	EXECUTE       : in std_logic;                        -- 
+	DATA_IN       : out std_logic_vector(15 downto 0);   -- Data read from FLASH device
+	LOAD_DATA     : out std_logic;                       -- Clock enable signal for capturing Data read from FLASH device
+	BUSY          : out std_logic;                       -- Operation in progress signal (not ready)
+-- signals for Dual purpose data lines
+	BPI_ACTIVE    : in std_logic;                        -- set to 1 when data lines are for BPI communications.
+	DUAL_DATA     : in std_logic_vector(15 downto 0);    -- Data provided for non BPI communications
+-- external connections cooresponding to I/O pins
+	BPI_AD        : inout std_logic_vector(22 downto 0); -- 
+	CFG_DAT       : inout std_logic_vector(15 downto 0); -- 
+	RS0           : out std_logic;                       -- 
+	RS1           : out std_logic;                       -- 
+	FCS_B         : out std_logic;                       -- 
+	FOE_B         : out std_logic;                       -- 
+	FWE_B         : out std_logic;                       -- 
+	FLATCH_B      : out std_logic                        -- 
+);
+end component;
+
+
   component ODMB_VME is
     port (
 
@@ -353,7 +418,21 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       TFF_WRD_CNT : in  std_logic_vector(11 downto 0);
       TFF_RST     : out std_logic_vector(NFEB downto 1);
       TFF_SEL     : out std_logic_vector(NFEB downto 1);
-      TFF_RDEN    : out std_logic_vector(NFEB downto 1)
+      TFF_RDEN    : out std_logic_vector(NFEB downto 1);
+
+-- To/From BPI_PORT 
+
+	BPI_RST           : out std_logic;                      -- Resets BPI interface state machines
+	BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
+	BPI_WE            : out std_logic;                      -- Command FIFO write enable  (pulse one clock cycle for one write)
+	BPI_RE            : out std_logic;                      -- Read back FIFO read enable  (pulse one clock cycle for one read)
+	BPI_DSBL          : out std_logic;                      -- Disable parsing of BPI commands in the command FIFO (while being filled)
+	BPI_ENBL          : out std_logic;                      -- Enable  parsing of BPI commands in the command FIFO
+	BPI_RBK_FIFO_DATA : in std_logic_vector(15 downto 0); -- Data on output of the Read back FIFO
+	BPI_RBK_WRD_CNT   : in std_logic_vector(10 downto 0); -- Word count of the Read back FIFO (number of available reads)
+	BPI_STATUS        : in std_logic_vector(15 downto 0); -- FIFO status bits and latest value of the PROM status register. 
+	BPI_TIMER         : in std_logic_vector(31 downto 0)  -- General timer
+
 
       );
 
@@ -1114,6 +1193,30 @@ end component;
 
   signal ddu_tx_fifo_rst2, ddu_rx_fifo_rst2 : std_logic := '0';
   signal pc_tx_fifo_rst2, pc_rx_fifo_rst2 : std_logic := '0';
+
+-- BPI Prom signals
+
+signal  bpi_rst : std_logic;
+signal  vme_bpi_rst : std_logic;
+signal  clk1mhz : std_logic;
+signal  bpi_we : std_logic;
+signal  bpi_re : std_logic;
+signal  bpi_dsbl : std_logic;
+signal  bpi_enbl : std_logic;
+signal  bpi_busy : std_logic;
+signal  bpi_load_data : std_logic;
+signal  bpi_active : std_logic;
+signal  bpi_execute : std_logic;
+signal  bpi_cmd_fifo_data : std_logic_vector(15 downto 0);
+signal  bpi_rbk_fifo_data : std_logic_vector(15 downto 0);
+signal  bpi_rbk_wrd_cnt : std_logic_vector(10 downto 0);
+signal  bpi_status : std_logic_vector(15 downto 0);
+signal  bpi_timer : std_logic_vector(31 downto 0);
+signal  bpi_data_from : std_logic_vector(15 downto 0);
+signal  bpi_op : std_logic_vector(1 downto 0);
+signal  bpi_addr : std_logic_vector(22 downto 0);
+signal  bpi_data_to : std_logic_vector(15 downto 0);
+signal  dual_data_leds : std_logic_vector(15 downto 0);
   
 begin
 
@@ -1268,7 +1371,20 @@ begin
       TFF_WRD_CNT => TFF_WRD_CNT,
       TFF_RST     => TFF_RST,
       TFF_SEL     => TFF_SEL,
-      TFF_RDEN    => TFF_RDEN
+      TFF_RDEN    => TFF_RDEN,
+      
+      -- BPI controls
+	BPI_RST           => vme_bpi_rst,        -- Resets BPI interface state machines
+	BPI_CMD_FIFO_DATA => bpi_cmd_fifo_data,  -- Data for command FIFO
+	BPI_WE            => bpi_we,             -- Command FIFO write enable  (pulse one clock cycle for one write)
+	BPI_RE            => bpi_re,             -- Read back FIFO read enable  (pulse one clock cycle for one read)
+	BPI_DSBL          => bpi_dsbl,           -- Disable parsing of BPI commands in the command FIFO (while being filled)
+	BPI_ENBL          => bpi_enbl,           -- Enable  parsing of BPI commands in the command FIFO
+	BPI_RBK_FIFO_DATA => bpi_rbk_fifo_data,  -- Data on output of the Read back FIFO
+	BPI_RBK_WRD_CNT   => bpi_rbk_wrd_cnt,    -- Word count of the Read back FIFO (number of available reads)
+	BPI_STATUS        => bpi_status,         -- FIFO status bits and latest value of the PROM status register. 
+	BPI_TIMER         => bpi_timer           -- General timer
+
       );                                -- MBV : ODMB_VME
 
   MBC : ODMB_CTRL
@@ -2721,5 +2837,56 @@ begin
         tph(42) <= int_l1a_match(1);
     end case;
   end process;
+
+BPI_ctrl_i : BPI_ctrl 
+	port map (
+  CLK => clk40,                           -- 40 MHz clock
+  CLK1MHZ => clk1mhz,                     --  1 MHz clock for timers
+  RST => reset,
+-- Interface Signals to/from VME interface
+	BPI_CMD_FIFO_DATA => bpi_cmd_fifo_data, -- Data for command FIFO
+	BPI_WE => bpi_we,                       -- Command FIFO write enable  (pulse one clock cycle for one write)
+	BPI_RE => bpi_re,                       -- Read back FIFO read enable  (pulse one clock cycle for one read)
+	BPI_DSBL => bpi_dsbl,                   -- Disable parsing of BPI commands in the command FIFO (while being filled)
+	BPI_ENBL => bpi_enbl,                   -- Enable  parsing of BPI commands in the command FIFO
+	BPI_RBK_FIFO_DATA => bpi_rbk_fifo_data, -- Data on output of the Read back FIFO
+	BPI_RBK_WRD_CNT => bpi_rbk_wrd_cnt,     -- Word count of the Read back FIFO (number of available reads)
+	BPI_STATUS => bpi_status,               -- FIFO status bits and latest value of the PROM status register. 
+	BPI_TIMER => bpi_timer,                 -- General timer
+-- Signals to/from low level BPI interface
+	BPI_BUSY => bpi_busy,                   -- Operation in progress signal (not ready)
+	BPI_DATA_FROM => bpi_data_from,         -- Data read from FLASH device      -- Data read from FLASH device
+	BPI_LOAD_DATA => bpi_load_data,         -- Clock enable signal for capturing Data read from FLASH device
+	BPI_ACTIVE => bpi_active,               -- output set to 1 when data lines are for BPI communications.
+	BPI_OP => bpi_op,                       -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
+	BPI_ADDR => bpi_addr,                   -- Bank/Array Address
+	BPI_DATA_TO => bpi_data_to,             -- Command or Data being written to FLASH device
+	BPI_EXECUTE => bpi_execute
+ );
+ 
+bpi_interface_i : bpi_interface
+	port map (
+  CLK => clk40,                           -- 40 MHz clock
+  RST => reset,
+	ADDR => bpi_addr,                       -- Bank/Array Address 
+	CMD_DATA_OUT => bpi_data_to,            -- Command or Data being written to FLASH device
+	OP => bpi_op,                           -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
+	EXECUTE => bpi_execute,
+	DATA_IN => bpi_data_from,               -- Data read from FLASH device
+	LOAD_DATA => bpi_load_data,             -- Clock enable signal for capturing Data read from FLASH device
+	BUSY => bpi_busy,                       -- Operation in progress signal (not ready)
+-- signals for Dual purpose data lines
+	BPI_ACTIVE => bpi_active,               -- set to 1 when data lines are for BPI communications.
+	DUAL_DATA => dual_data_leds,            -- Data provided for non BPI communications
+-- external connections cooresponding to I/O pins
+	BPI_AD => prom_a,
+	CFG_DAT => prom_d,
+	RS0 => prom_a_21_rs0,
+	RS1 => prom_a_22_rs1,
+	FCS_B => prom_cs_b,
+	FOE_B => prom_oe_b,
+	FWE_B => prom_we_b,
+	FLATCH_B => prom_le_b
+);
 
 end ODMB_UCSB_V2_ARCH;

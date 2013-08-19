@@ -1,0 +1,12 @@
+W  6020  0	   Reset BPI Engine
+
+W  6024  0	   Disable Parser
+
+W  602C  17	  Load Address (command = 0x17) in Command FIFO
+W  602C  2	   Address
+W  602C  0b	  Program 
+W  602C  fede	Data 
+
+W  6028  1	   Enable Parser
+
+
