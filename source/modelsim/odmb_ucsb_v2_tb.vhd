@@ -365,7 +365,27 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From IC31 
 
-        done_in : in std_logic
+        done_in : in std_logic;
+
+-- Adam Aug 15 To SYSMON QQQ
+        --sm_agnd       : in std_logic;
+        p1v0_sm_p     : in std_logic;
+        p1v0_sm_n     : in std_logic;
+        p2v5_sm_p     : in std_logic;
+        p2v5_sm_n     : in std_logic;
+        lv_p3v3_sm_p  : in std_logic;
+        lv_p3v3_sm_n  : in std_logic;
+        p5v_sm_p      : in std_logic;
+        p5v_sm_n      : in std_logic;
+        p5v_lvmb_sm_p : in std_logic;
+        p5v_lvmb_sm_n : in std_logic;
+        p3v3_pp_sm_p  : in std_logic;
+        p3v3_pp_sm_n  : in std_logic;
+        therm1_p      : in std_logic;
+        therm1_n      : in std_logic;
+        therm2_p      : in std_logic;
+        therm2_n      : in std_logic
+
 
         );
   end component;
@@ -591,6 +611,24 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal gl1_clk_p : std_logic := '1';  -- in
   signal gl1_clk_n : std_logic := '0';  -- in
 
+  -- Adam Aug 15 To SYSMON
+  signal p1v0_sm_p     : std_logic := '0';
+  signal p1v0_sm_n     : std_logic := '0';
+  signal p2v5_sm_p     : std_logic := '0';
+  signal p2v5_sm_n     : std_logic := '0';
+  signal lv_p3v3_sm_p  : std_logic := '0';
+  signal lv_p3v3_sm_n  : std_logic := '0';
+  signal p5v_sm_p      : std_logic := '0';
+  signal p5v_sm_n      : std_logic := '0';
+  signal p5v_lvmb_sm_p : std_logic := '0';
+  signal p5v_lvmb_sm_n : std_logic := '0';
+  signal p3v3_pp_sm_p  : std_logic := '0';
+  signal p3v3_pp_sm_n  : std_logic := '0';
+  signal therm1_p      : std_logic := '0';
+  signal therm1_n      : std_logic := '0';
+  signal therm2_p      : std_logic := '0';
+  signal therm2_n      : std_logic := '0';
+
 -- From/To PROM
 
 	signal 	prom_addr : STD_LOGIC_VECTOR(22 DOWNTO 0);	   	
@@ -618,17 +656,17 @@ begin
   --goevent <= '1' after 300 us;
   --goccb <= '1' after 10 us;
 
-  qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 10 ns;
-  qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 10 ns;
-  qpll_clk80MHz_p  <= not qpll_clk80MHz_p  after 5 ns;
-  qpll_clk80MHz_n  <= not qpll_clk80MHz_n  after 5 ns;
-  qpll_clk160MHz_p <= not qpll_clk160MHz_p after 2.5 ns;
-  qpll_clk160MHz_n <= not qpll_clk160MHz_n after 2.5 ns;
-  gl1_clk_p        <= not gl1_clk_p        after 3.2 ns;
-  gl1_clk_n        <= not gl1_clk_n        after 3.2 ns;
-  gl0_clk_p        <= not gl0_clk_p        after 5 ns;
-  gl0_clk_n        <= not gl0_clk_n        after 5 ns;
-  clk              <= not clk              after 10 ns;
+  qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 12.5 ns;
+  qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 12.5 ns;
+  qpll_clk80MHz_p  <= not qpll_clk80MHz_p  after 6.25 ns;
+  qpll_clk80MHz_n  <= not qpll_clk80MHz_n  after 6.25 ns;
+  qpll_clk160MHz_p <= not qpll_clk160MHz_p after 3.125 ns;
+  qpll_clk160MHz_n <= not qpll_clk160MHz_n after 3.125 ns;
+  gl1_clk_p        <= not gl1_clk_p        after 4 ns;
+  gl1_clk_n        <= not gl1_clk_n        after 4 ns;
+  gl0_clk_p        <= not gl0_clk_p        after 6.25 ns;
+  gl0_clk_n        <= not gl0_clk_n        after 6.25 ns;
+  clk              <= not clk              after 12.5 ns;
 
   --orx_p(1) <= gl0_tx_p;  -- Test of the DDU TX
   --orx_n(1) <= gl0_tx_n;  -- Test of the DDU TX
@@ -846,7 +884,25 @@ begin
 
 
       done_in      => done_in,
-      ccb_evcntres => ccb_evcntres
+      ccb_evcntres => ccb_evcntres,
+
+ -- Adam Aug 15 To SYSMON
+      p1v0_sm_p     => p1v0_sm_p,
+      p1v0_sm_n     => p1v0_sm_n,
+      p2v5_sm_p     => p2v5_sm_p,
+      p2v5_sm_n     => p2v5_sm_n,
+      lv_p3v3_sm_p  => lv_p3v3_sm_p,
+      lv_p3v3_sm_n  => lv_p3v3_sm_n,
+      p5v_sm_p      => p5v_sm_p,
+      p5v_sm_n      => p5v_sm_n,
+      p5v_lvmb_sm_p => p5v_lvmb_sm_p,
+      p5v_lvmb_sm_n => p5v_lvmb_sm_n,
+      p3v3_pp_sm_p  => p3v3_pp_sm_p,
+      p3v3_pp_sm_n  => p3v3_pp_sm_n,
+      therm1_p      => therm1_p,
+      therm1_n      => therm1_n,
+      therm2_p      => therm2_p,
+      therm2_n      => therm2_n     
       );
 
   PMAP_file_handler_event : file_handler_event

@@ -6,6 +6,7 @@
 -- Device 3 => VMEMON
 -- Device 4 => VMECONFREGS
 -- Device 5 => TESTFIFOS
+-- Device 7 => SYSMON
 -- Device 8 => LVDBMON
 
 library ieee;
@@ -170,8 +171,14 @@ entity ODMB_VME is
     TFF_RST     : out std_logic_vector(NFEB downto 1);
     TFF_SEL     : out std_logic_vector(NFEB downto 1);
     TFF_RDEN    : out std_logic_vector(NFEB downto 1);
-    
-    -- To/From BPI_PORT 
+
+    -- Adam Aug 15 SYSMON
+    VP    : in std_logic;
+    VN    : in std_logic;
+    VAUXP : in std_logic_vector(15 downto 0);
+    VAUXN : in std_logic_vector(15 downto 0);
+
+-- To/From BPI_PORT 
 
 	BPI_RST           : out std_logic;                      -- Resets BPI interface state machines
 	BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
@@ -401,6 +408,26 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
+ component SYSTEM_MON is
+    port (
+      OUTDATA : out std_logic_vector(15 downto 0);
+      DTACK   : out std_logic;
+
+      FASTCLK : in std_logic;
+      RST     : in std_logic;
+
+      DEVICE  : in std_logic;
+      STROBE  : in std_logic;
+      COMMAND : in std_logic_vector(9 downto 0);
+      WRITER  : in std_logic;
+
+      VP    : in std_logic;
+      VN    : in std_logic;
+      VAUXP : in std_logic_vector(15 downto 0);
+      VAUXN : in std_logic_vector(15 downto 0)
+      );
+  end component;
+  
   component LVDBMON is
     port (
 
@@ -520,6 +547,7 @@ end COMPONENT;
       device3_outdata : in  std_logic_vector(15 downto 0);
       device4_outdata : in  std_logic_vector(15 downto 0);
       device5_outdata : in  std_logic_vector(15 downto 0);
+      device7_outdata : in  std_logic_vector(15 downto 0);
       device8_outdata : in  std_logic_vector(15 downto 0);
       outdata         : out std_logic_vector(15 downto 0)
       );
@@ -565,6 +593,7 @@ end COMPONENT;
   signal outdata_vmemon      : std_logic_vector(15 downto 0);
   signal outdata_vmeconfregs : std_logic_vector(15 downto 0);
   signal outdata_testfifos   : std_logic_vector(15 downto 0);
+  signal outdata_sysmon : std_logic_vector(15 downto 0);
   signal outdata_bpi_port   : std_logic_vector(15 downto 0);
 
   signal outdata_testctrl : std_logic_vector(15 downto 0);
@@ -794,6 +823,24 @@ PORT MAP (
 	BPI_TIMER         => BPI_TIMER           -- General timer
 );
 
+   DEV7_SYSMON : SYSTEM_MON
+    port map(
+      OUTDATA => outdata_sysmon,
+      DTACK   => vme_dtack_b,
+
+      FASTCLK => clk,
+      RST     => rst,
+
+      DEVICE  => device(7),
+      STROBE  => strobe,
+      COMMAND => cmd,
+      WRITER  => vme_write_b,
+
+      VP    => VP,
+      VN    => VN,
+      VAUXP => VAUXP,
+      VAUXN => VAUXN
+      );
 
   DEV8_LVDBMON : LVDBMON
     port map(
@@ -886,6 +933,7 @@ PORT MAP (
       device3_outdata => outdata_vmemon,
       device4_outdata => outdata_vmeconfregs,
       device5_outdata => outdata_testfifos,
+      device7_outdata => outdata_sysmon,
       device8_outdata => outdata_lvdbmon,
       outdata         => vme_data_out
       );
