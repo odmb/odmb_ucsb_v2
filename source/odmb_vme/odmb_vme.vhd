@@ -6,7 +6,8 @@
 -- Device 3 => VMEMON
 -- Device 4 => VMECONFREGS
 -- Device 5 => TESTFIFOS
--- Device 7 => SYSMON
+-- Device 6 => BPI_PORT
+-- Device 7 => SYSTEM_MON
 -- Device 8 => LVDBMON
 
 library ieee;
@@ -172,7 +173,7 @@ entity ODMB_VME is
     TFF_SEL     : out std_logic_vector(NFEB downto 1);
     TFF_RDEN    : out std_logic_vector(NFEB downto 1);
 
-    -- Adam Aug 15 SYSMON
+    -- SYSMON
     VP    : in std_logic;
     VN    : in std_logic;
     VAUXP : in std_logic_vector(15 downto 0);
@@ -180,16 +181,16 @@ entity ODMB_VME is
 
 -- To/From BPI_PORT 
 
-	BPI_RST           : out std_logic;                      -- Resets BPI interface state machines
-	BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
-	BPI_WE            : out std_logic;                      -- Command FIFO write enable  (pulse one clock cycle for one write)
-	BPI_RE            : out std_logic;                      -- Read back FIFO read enable  (pulse one clock cycle for one read)
-	BPI_DSBL          : out std_logic;                      -- Disable parsing of BPI commands in the command FIFO (while being filled)
-	BPI_ENBL          : out std_logic;                      -- Enable  parsing of BPI commands in the command FIFO
-	BPI_RBK_FIFO_DATA : in std_logic_vector(15 downto 0); -- Data on output of the Read back FIFO
-	BPI_RBK_WRD_CNT   : in std_logic_vector(10 downto 0); -- Word count of the Read back FIFO (number of available reads)
-	BPI_STATUS        : in std_logic_vector(15 downto 0); -- FIFO status bits and latest value of the PROM status register. 
-	BPI_TIMER         : in std_logic_vector(31 downto 0)  -- General timer
+    BPI_RST           : out std_logic;  -- Resets BPI interface state machines
+    BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
+    BPI_WE            : out std_logic;  -- Command FIFO write enable  (pulse one clock cycle for one write)
+    BPI_RE            : out std_logic;  -- Read back FIFO read enable  (pulse one clock cycle for one read)
+    BPI_DSBL          : out std_logic;  -- Disable parsing of BPI commands in the command FIFO (while being filled)
+    BPI_ENBL          : out std_logic;  -- Enable  parsing of BPI commands in the command FIFO
+    BPI_RBK_FIFO_DATA : in  std_logic_vector(15 downto 0);  -- Data on output of the Read back FIFO
+    BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
+    BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
+    BPI_TIMER         : in  std_logic_vector(31 downto 0)   -- General timer
 
 
 
@@ -408,7 +409,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
- component SYSTEM_MON is
+  component SYSTEM_MON is
     port (
       OUTDATA : out std_logic_vector(15 downto 0);
       DTACK   : out std_logic;
@@ -427,7 +428,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       VAUXN : in std_logic_vector(15 downto 0)
       );
   end component;
-  
+
   component LVDBMON is
     port (
 
@@ -479,33 +480,33 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
-COMPONENT BPI_PORT is
-  
-  port (
+  component BPI_PORT is
+    
+    port (
 
-    CLK : in std_logic;                          -- 40MHz clock
-    RST : in std_logic;                          -- system reset
-    -- VME selection/control
-    DEVICE : in std_logic;                       -- 1 bit indicating this device has been selected
-    STROBE : in std_logic;                       -- Data strobe synchronized to rising or falling edge of clock and asynchronously cleared
-    COMMAND : in std_logic_vector(9 downto 0);   -- command portion of VME address
-    WRITE_B : in std_logic;                      -- read/write_bar
-    INDATA : in std_logic_vector(15 downto 0);   -- data from VME writes to be provided to BPI interface
-    OUTDATA : out std_logic_vector(15 downto 0); -- data from BPI interface to VME buss for reads
-    DTACK_B : out std_logic;                     -- DTACK bar
-	-- BPI PORT signals
-	BPI_RST           : out std_logic;                      -- Resets BPI interface state machines
-	BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
-	BPI_WE            : out std_logic;                      -- Command FIFO write enable  (pulse one clock cycle for one write)
-	BPI_RE            : out std_logic;                      -- Read back FIFO read enable  (pulse one clock cycle for one read)
-	BPI_DSBL          : out std_logic;                      -- Disable parsing of BPI commands in the command FIFO (while being filled)
-	BPI_ENBL          : out std_logic;                      -- Enable  parsing of BPI commands in the command FIFO
-	BPI_RBK_FIFO_DATA : in std_logic_vector(15 downto 0); -- Data on output of the Read back FIFO
-	BPI_RBK_WRD_CNT   : in std_logic_vector(10 downto 0); -- Word count of the Read back FIFO (number of available reads)
-	BPI_STATUS        : in std_logic_vector(15 downto 0); -- FIFO status bits and latest value of the PROM status register. 
-	BPI_TIMER         : in std_logic_vector(31 downto 0)  -- General timer
-);
-end COMPONENT;
+      CLK               : in  std_logic;  -- 40MHz clock
+      RST               : in  std_logic;  -- system reset
+      -- VME selection/control
+      DEVICE            : in  std_logic;  -- 1 bit indicating this device has been selected
+      STROBE            : in  std_logic;  -- Data strobe synchronized to rising or falling edge of clock and asynchronously cleared
+      COMMAND           : in  std_logic_vector(9 downto 0);  -- command portion of VME address
+      WRITE_B           : in  std_logic;  -- read/write_bar
+      INDATA            : in  std_logic_vector(15 downto 0);  -- data from VME writes to be provided to BPI interface
+      OUTDATA           : out std_logic_vector(15 downto 0);  -- data from BPI interface to VME buss for reads
+      DTACK_B           : out std_logic;  -- DTACK bar
+      -- BPI PORT signals
+      BPI_RST           : out std_logic;  -- Resets BPI interface state machines
+      BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
+      BPI_WE            : out std_logic;  -- Command FIFO write enable  (pulse one clock cycle for one write)
+      BPI_RE            : out std_logic;  -- Read back FIFO read enable  (pulse one clock cycle for one read)
+      BPI_DSBL          : out std_logic;  -- Disable parsing of BPI commands in the command FIFO (while being filled)
+      BPI_ENBL          : out std_logic;  -- Enable  parsing of BPI commands in the command FIFO
+      BPI_RBK_FIFO_DATA : in  std_logic_vector(15 downto 0);  -- Data on output of the Read back FIFO
+      BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
+      BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
+      BPI_TIMER         : in  std_logic_vector(31 downto 0)  -- General timer
+      );
+  end component;
 
   component COMMAND_MODULE is
     port (
@@ -593,8 +594,8 @@ end COMPONENT;
   signal outdata_vmemon      : std_logic_vector(15 downto 0);
   signal outdata_vmeconfregs : std_logic_vector(15 downto 0);
   signal outdata_testfifos   : std_logic_vector(15 downto 0);
-  signal outdata_sysmon : std_logic_vector(15 downto 0);
-  signal outdata_bpi_port   : std_logic_vector(15 downto 0);
+  signal outdata_sysmon      : std_logic_vector(15 downto 0);
+  signal outdata_bpi_port    : std_logic_vector(15 downto 0);
 
   signal outdata_testctrl : std_logic_vector(15 downto 0);
 
@@ -796,34 +797,34 @@ begin
 
       );
 
-DEV6_BPI_PORT : BPI_PORT
+  DEV6_BPI_PORT : BPI_PORT
 
-PORT MAP (
+    port map (
 
-    CLK => clk,                             -- 40MHz clock
-    RST => rst,                             -- system reset
-	 -- VME selection/control
-    DEVICE => device(6),                    -- 1 bit indicating this device has been selected
-    STROBE => strobe,                       -- Data strobe synchronized to rising or falling edge of clock and asynchronously cleared
-    COMMAND => cmd,                         -- command portionn of VME address
-    WRITE_B => vme_write_b,                 -- read/write_bar
-    INDATA => vme_data_in,                  -- data from VME writes to be provided to BPI interface
-    OUTDATA => outdata_bpi_port,            -- data from BPI interface to VME buss for reads
-    DTACK_B => vme_dtack_b,                 -- DTACK bar
-    -- BPI controls
-	BPI_RST           => BPI_RST,            -- Resets BPI interface state machines
-	BPI_CMD_FIFO_DATA => BPI_CMD_FIFO_DATA,  -- Data for command FIFO
-	BPI_WE            => BPI_WE,             -- Command FIFO write enable  (pulse one clock cycle for one write)
-	BPI_RE            => BPI_RE,             -- Read back FIFO read enable  (pulse one clock cycle for one read)
-	BPI_DSBL          => BPI_DSBL,           -- Disable parsing of BPI commands in the command FIFO (while being filled)
-	BPI_ENBL          => BPI_ENBL,           -- Enable  parsing of BPI commands in the command FIFO
-	BPI_RBK_FIFO_DATA => BPI_RBK_FIFO_DATA,  -- Data on output of the Read back FIFO
-	BPI_RBK_WRD_CNT   => BPI_RBK_WRD_CNT,    -- Word count of the Read back FIFO (number of available reads)
-	BPI_STATUS        => BPI_STATUS,         -- FIFO status bits and latest value of the PROM status register. 
-	BPI_TIMER         => BPI_TIMER           -- General timer
-);
+      CLK               => clk,         -- 40MHz clock
+      RST               => rst,         -- system reset
+      -- VME selection/control
+      DEVICE            => device(6),  -- 1 bit indicating this device has been selected
+      STROBE            => strobe,  -- Data strobe synchronized to rising or falling edge of clock and asynchronously cleared
+      COMMAND           => cmd,         -- command portionn of VME address
+      WRITE_B           => vme_write_b,  -- read/write_bar
+      INDATA            => vme_data_in,  -- data from VME writes to be provided to BPI interface
+      OUTDATA           => outdata_bpi_port,  -- data from BPI interface to VME buss for reads
+      DTACK_B           => vme_dtack_b,  -- DTACK bar
+      -- BPI controls
+      BPI_RST           => BPI_RST,     -- Resets BPI interface state machines
+      BPI_CMD_FIFO_DATA => BPI_CMD_FIFO_DATA,  -- Data for command FIFO
+      BPI_WE            => BPI_WE,  -- Command FIFO write enable  (pulse one clock cycle for one write)
+      BPI_RE            => BPI_RE,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
+      BPI_DSBL          => BPI_DSBL,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
+      BPI_ENBL          => BPI_ENBL,  -- Enable  parsing of BPI commands in the command FIFO
+      BPI_RBK_FIFO_DATA => BPI_RBK_FIFO_DATA,  -- Data on output of the Read back FIFO
+      BPI_RBK_WRD_CNT   => BPI_RBK_WRD_CNT,  -- Word count of the Read back FIFO (number of available reads)
+      BPI_STATUS        => BPI_STATUS,  -- FIFO status bits and latest value of the PROM status register. 
+      BPI_TIMER         => BPI_TIMER    -- General timer
+      );
 
-   DEV7_SYSMON : SYSTEM_MON
+  DEV7_SYSMON : SYSTEM_MON
     port map(
       OUTDATA => outdata_sysmon,
       DTACK   => vme_dtack_b,

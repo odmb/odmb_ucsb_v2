@@ -30,7 +30,8 @@ entity TRGCNTRL is
     EAFEB     : in std_logic;
     CMODE     : in std_logic;
     CALTRGSEL : in std_logic;
-    KILL  : in std_logic_vector(NFEB+2 downto 1);
+    KILL      : in std_logic_vector(NFEB+2 downto 1);
+    PEDESTAL  : in std_logic;
 
     L1A_OTMB_PUSHED_OUT : out std_logic;
     OTMB_DAV_SYNC_OUT   : out std_logic;
@@ -61,7 +62,7 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
   signal DLY_LCT, LCT, LCT_IN : std_logic_vector(NFEB downto 0);
   signal RAW_L1A_Q, L1A_IN    : std_logic;
   signal L1A                  : std_logic;
-  type LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
+  type   LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
   signal LCT_Q                : LCT_TYPE;
   signal LCT_ERR_D            : std_logic;
   signal L1A_MATCH            : std_logic_vector(NFEB downto 0);
@@ -117,7 +118,7 @@ begin  --Architecture
     begin
       FD_H : FD port map(LCT_Q(K)(H), CLK, LCT_Q(K)(H-1));
     end generate GEN_LCT_Q;
-    L1A_MATCH(K) <= '1' when (L1A = '1' and LCT_Q(K) /= "00000") else '0';
+    L1A_MATCH(K) <= '1' when (L1A = '1' and (LCT_Q(K) /= "00000" or PEDESTAL = '1'))  else '0';
   end generate GEN_L1A_MATCH;
   L1A_MATCH(0)    <= or_reduce(L1A_MATCH(NFEB downto 1));
   DCFEB_L1A_MATCH <= L1A_MATCH(NFEB downto 1);

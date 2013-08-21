@@ -208,7 +208,7 @@ entity ODMB_UCSB_V2 is
 
     done_in : in std_logic;
 
-    -- Adam Aug 15 To SYSMON
+    -- To SYSMON
     p1v0_sm_p     : in std_logic;
     p1v0_sm_n     : in std_logic;
     p2v5_sm_p     : in std_logic;
@@ -452,7 +452,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
 
-      --Adam Aug 15 To SYSMON
+      --To SYSMON
       VP    : in std_logic;
       VN    : in std_logic;
       VAUXP : in std_logic_vector(15 downto 0);
@@ -574,6 +574,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       dcfeb_extpulse  : out std_logic;  -- extpls - to DCFEBs
       dcfeb_l1a       : out std_logic;
       dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
+
+      pedestal : in std_logic;
 
       tck : in  std_logic;
       tdi : in  std_logic;
@@ -847,11 +849,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   constant NFIFO : integer := 4;
 
 -- Global signals
-  constant LOGICL : std_logic := '0';
-  constant LOGICH : std_logic := '1';
-  signal FW_RESET : std_logic := '0';
-  signal PB_PULSE : std_logic := '0';
-  signal PB_B     : std_logic_vector(1 downto 0);
+  constant LOGICL   : std_logic := '0';
+  constant LOGICH   : std_logic := '1';
+  signal   FW_RESET : std_logic := '0';
+  signal   PB_PULSE : std_logic := '0';
+  signal   PB_B     : std_logic_vector(1 downto 0);
 
   signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct, test_pb_lct : std_logic := '0';
   signal otmb_lct_rqst, otmb_ext_trig                                          : std_logic := '0';
@@ -876,6 +878,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gen_alct_data          : std_logic_vector(15 downto 0);
   signal eofgen_alct_data_valid : std_logic;
   signal eofgen_alct_data       : std_logic_vector(17 downto 0);
+  signal alct_q, alct_qq        : std_logic_vector(17 downto 0);
 
   signal rx_alct_data_valid : std_logic;
   signal rx_alct_data       : std_logic_vector(17 downto 0);
@@ -889,6 +892,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gen_otmb_data          : std_logic_vector(15 downto 0);
   signal eofgen_otmb_data_valid : std_logic;
   signal eofgen_otmb_data       : std_logic_vector(17 downto 0);
+  signal otmb_q, otmb_qq        : std_logic_vector(17 downto 0);
 
   signal rx_otmb_data_valid : std_logic;
   signal rx_otmb_data       : std_logic_vector(17 downto 0);
@@ -923,10 +927,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Monitoring signals
 
-  type l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
+  type   l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
   signal raw_lct_cnt, goodcrc_cnt : l1a_match_cnt_type;
 
-  type dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
+  type   dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
   signal l1a_match_cnt, into_cafifo_dav_cnt : dav_cnt_type;
   signal data_fifo_re_cnt, data_fifo_oe_cnt : dav_cnt_type;
   signal eof_data_cnt, cafifo_l1a_dav_cnt   : dav_cnt_type;
@@ -935,11 +939,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal ext_dcfeb_l1a_cnt7 : std_logic_vector(23 downto 0);
   signal dcfeb_l1a_dav7     : std_logic;
 
-  type gap_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
+  type   gap_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
   signal lct_l1a_gap                       : gap_cnt_type;
   signal gap_cnt_rst, gap_cnt_en           : std_logic_vector(NFEB downto 1);
-  type gap_state_type is (GAP_IDLE, GAP_COUNTING);
-  type gap_state_array_type is array (NFEB downto 1) of gap_state_type;
+  type   gap_state_type is (GAP_IDLE, GAP_COUNTING);
+  type   gap_state_array_type is array (NFEB downto 1) of gap_state_type;
   signal gap_next_state, gap_current_state : gap_state_array_type;
 
 
@@ -954,6 +958,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal odmb_data_sel            : std_logic_vector(7 downto 0);
   signal odmb_data                : std_logic_vector(15 downto 0);
   signal mask_l1a, mask_l1a_match : std_logic                     := '0';
+  signal pedestal                 : std_logic                     := '0';
 
   -- GIGALINK_PC 
   signal gl1_rx_buf_p, gl1_rx_buf_n : std_logic;
@@ -1001,7 +1006,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- DCFEB I/O Signals
 
-  type dcfeb_data_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
+  type   dcfeb_data_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
   signal gen_dcfeb_data       : dcfeb_data_type;
   signal rx_dcfeb_data        : dcfeb_data_type;
   signal dcfeb_data           : dcfeb_data_type;
@@ -1010,9 +1015,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal rx_dcfeb_data_valid  : std_logic_vector(NFEB downto 1);
   signal dcfeb_data_valid     : std_logic_vector(NFEB downto 1);
 
-  signal gen_dcfeb_sel : std_logic       := '0';
-  type dcfeb_addr_type is array (1 to NFEB) of std_logic_vector(3 downto 0);
-  constant dcfeb_addr  : dcfeb_addr_type := ("0001", "0010", "0011", "0100", "0101", "0110", "0111");
+  signal   gen_dcfeb_sel : std_logic       := '0';
+  type     dcfeb_addr_type is array (1 to NFEB) of std_logic_vector(3 downto 0);
+  constant dcfeb_addr    : dcfeb_addr_type := ("0001", "0010", "0011", "0100", "0101", "0110", "0111");
 
   signal gen_alct_sel, gen_otmb_sel : std_logic;
 
@@ -1064,19 +1069,19 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Test FIFOs
 
-  type dcfeb_gbrx_data_type is array (NFEB+1 downto 1) of std_logic_vector(15 downto 0);
+  type   dcfeb_gbrx_data_type is array (NFEB+1 downto 1) of std_logic_vector(15 downto 0);
   signal dcfeb_gbrx_data : dcfeb_gbrx_data_type;
 
   signal dcfeb_gbrx_data_valid : std_logic_vector(NFEB+1 downto 1) := (others => '0');
   signal dcfeb_gbrx_data_clk   : std_logic_vector(NFEB+1 downto 1) := (others => '0');
 
-  type dcfeb_adc_mask_type is array (NFEB downto 1) of std_logic_vector(11 downto 0);
+  type   dcfeb_adc_mask_type is array (NFEB downto 1) of std_logic_vector(11 downto 0);
   signal dcfeb_adc_mask : dcfeb_adc_mask_type;
 
-  type dcfeb_fsel_type is array (NFEB downto 1) of std_logic_vector(32 downto 0);
+  type   dcfeb_fsel_type is array (NFEB downto 1) of std_logic_vector(32 downto 0);
   signal dcfeb_fsel : dcfeb_fsel_type;
 
-  type dcfeb_jtag_ir_type is array (NFEB downto 1) of std_logic_vector(9 downto 0);
+  type   dcfeb_jtag_ir_type is array (NFEB downto 1) of std_logic_vector(9 downto 0);
   signal dcfeb_jtag_ir : dcfeb_jtag_ir_type;
 
   signal mbc_instr : std_logic_vector(47 downto 1);
@@ -1115,28 +1120,28 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_clk : std_logic_vector(NFEB downto 1);
 
 -- Guido - Aug 8 (daisy chain of DCFEB FIFOs)
-  type dcfeb_fifo_array1_data_type is array (NFIFO downto 1) of std_logic_vector(17 downto 0);
-  type dcfeb_fifo_array2_data_type is array (NFEB downto 1) of dcfeb_fifo_array1_data_type;
+  type   dcfeb_fifo_array1_data_type is array (NFIFO downto 1) of std_logic_vector(17 downto 0);
+  type   dcfeb_fifo_array2_data_type is array (NFEB downto 1) of dcfeb_fifo_array1_data_type;
   signal dcfeb_fifo_array_in  : dcfeb_fifo_array2_data_type;
   signal dcfeb_fifo_array_out : dcfeb_fifo_array2_data_type;
 
-  type dcfeb_fifo_data_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
+  type   dcfeb_fifo_data_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
   signal dcfeb_fifo_in : dcfeb_fifo_data_type;
 --  signal dcfeb_fifo_out : dcfeb_fifo_data_type;
 
-  type ext_dcfeb_fifo_data_type is array (NFEB downto 1) of std_logic_vector(17 downto 0);
+  type   ext_dcfeb_fifo_data_type is array (NFEB downto 1) of std_logic_vector(17 downto 0);
   signal eofgen_dcfeb_fifo_in    : ext_dcfeb_fifo_data_type;
   signal eofgen_dcfeb_data_valid : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_out          : ext_dcfeb_fifo_data_type;
   signal pulse_eof, pulse_eof40  : std_logic_vector(NFEB downto 1);
 
 -- Guido - Aug 8 (daisy chain of DCFEB FIFOs)
-  type dcfeb_fifo_array1_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
-  type dcfeb_fifo_array2_cnt_type is array (NFEB downto 1) of dcfeb_fifo_array1_cnt_type;
+  type   dcfeb_fifo_array1_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
+  type   dcfeb_fifo_array2_cnt_type is array (NFEB downto 1) of dcfeb_fifo_array1_cnt_type;
   signal dcfeb_fifo_array_wr_cnt : dcfeb_fifo_array2_cnt_type;
   signal dcfeb_fifo_array_rd_cnt : dcfeb_fifo_array2_cnt_type;
 
-  type dcfeb_fifo_cnt_type is array (NFEB downto 1) of std_logic_vector(10 downto 0);
+  type   dcfeb_fifo_cnt_type is array (NFEB downto 1) of std_logic_vector(10 downto 0);
   signal dcfeb_fifo_wr_cnt : dcfeb_fifo_cnt_type;
   signal dcfeb_fifo_rd_cnt : dcfeb_fifo_cnt_type;
 
@@ -1144,7 +1149,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal alct_fifo_rd_cnt, otmb_fifo_rd_cnt : std_logic_vector(10 downto 0);
 
 -- Guido - Aug 8 (daisy chain of DCFEB FIFOs)
-  type dcfeb_fifo_array_flag_type is array (NFEB downto 1) of std_logic_vector(NFIFO downto 1);
+  type   dcfeb_fifo_array_flag_type is array (NFEB downto 1) of std_logic_vector(NFIFO downto 1);
   signal dcfeb_fifo_array_empty  : dcfeb_fifo_array_flag_type;
   signal dcfeb_fifo_array_aempty : dcfeb_fifo_array_flag_type;
   signal dcfeb_fifo_array_afull  : dcfeb_fifo_array_flag_type;
@@ -1156,7 +1161,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_full   : std_logic_vector(NFEB downto 1);
 
 -- Guido - Aug 8 (daisy chain of DCFEB FIFOs)
-  type dcfeb_fifo_array_enck_type is array (NFEB downto 1) of std_logic_vector(NFIFO downto 1);
+  type   dcfeb_fifo_array_enck_type is array (NFEB downto 1) of std_logic_vector(NFIFO downto 1);
   signal dcfeb_fifo_array_wrck : dcfeb_fifo_array_enck_type;
   signal dcfeb_fifo_array_wren : dcfeb_fifo_array_enck_type;
   signal dcfeb_fifo_array_rdck : dcfeb_fifo_array_enck_type;
@@ -1186,7 +1191,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal led_cnt_rst, led_cnt_en : std_logic := '0';
   signal reset_q, clk_led        : std_logic := '0';
 
-  type led_state_type is (LED_IDLE, LED_COUNTING);
+  type   led_state_type is (LED_IDLE, LED_COUNTING);
   signal led_next_state, led_current_state : led_state_type;
 
 
@@ -1242,7 +1247,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_data_to       : std_logic_vector(15 downto 0);
   signal dual_data_leds    : std_logic_vector(15 downto 0);
 
-  -- Adam Aug 15 SYSMON
+  -- SYSMON
   signal vauxp : std_logic_vector(15 downto 0);
   signal vauxn : std_logic_vector(15 downto 0);
   
@@ -1530,6 +1535,7 @@ begin
       dcfeb_l1a       => int_l1a,        -- febrst - to DCFEBs
       dcfeb_injpulse  => dcfeb_injpls,   -- inject - to DCFEBs
       dcfeb_extpulse  => dcfeb_extpls,   -- extpls - to DCFEBs
+      pedestal        => pedestal,
 
 -- From/To ODMB_VME
 
@@ -2007,6 +2013,15 @@ begin
          alct_fifo_data_out(17) when data_fifo_oe = "011111111" else  -- eof still to be implemented for alct and otmb data
          '0';
 
+  -- Sync alct and otmb to our clock. Probably not needed
+  GENOTMBSYNC : for index in 0 to 17 generate
+    begin
+      FDALCT  : FD port map(alct_q(index), clk40, alct(index));
+      FDALCTQ : FD port map(alct_qq(index), clk40, alct_q(index));
+      FDOTMB  : FD port map(otmb_q(index), clk40, otmb(index));
+      FDOTMBQ : FD port map(otmb_qq(index), clk40, otmb_q(index));
+  end generate GENOTMBSYNC;
+  
   alct_fifo_data_valid <= '0' when kill(9) = '1' else
                           rx_alct_data_valid when (gen_dcfeb_sel = '0') else
                           eofgen_alct_data_valid;
@@ -2014,8 +2029,8 @@ begin
   alct_fifo_data_in <= rx_alct_data when (gen_dcfeb_sel = '0') else
                        eofgen_alct_data;
 
-  rx_alct_data_valid <= not alct(17);
-  rx_alct_data       <= alct(16) & alct(16 downto 0);  -- For now, we send EOF in 16 and 17
+  rx_alct_data_valid <= not alct_qq(17);
+  rx_alct_data       <= alct_qq(16) & alct_qq(16 downto 0);  -- For now, we send EOF in 16 and 17
 
   otmb_fifo_data_valid <= '0' when kill(8) = '1' else
                           rx_otmb_data_valid when (gen_dcfeb_sel = '0') else
@@ -2024,8 +2039,8 @@ begin
   otmb_fifo_data_in <= rx_otmb_data when (gen_dcfeb_sel = '0') else
                        eofgen_otmb_data;
 
-  rx_otmb_data_valid <= not otmb(17);
-  rx_otmb_data       <= otmb(16) & otmb(16 downto 0);  -- For now, we send EOF in 16 and 17
+  rx_otmb_data_valid <= not otmb_qq(17);
+  rx_otmb_data       <= otmb_qq(16) & otmb_qq(16 downto 0);  -- For now, we send EOF in 16 and 17
 
   data_fifo_re      <= not data_fifo_re_b;
   data_fifo_empty_b <= alct_fifo_empty & otmb_fifo_empty & dcfeb_fifo_empty;
@@ -2036,6 +2051,7 @@ begin
   LCTDLY_GTRG : LCTDLY port map(test_pb_lct, clk40, LCT_L1A_DLY, test_l1a);
 
   testctrl_sel <= odmb_ctrl_reg(9);
+  pedestal     <= odmb_ctrl_reg(13);
 
   raw_l1a <= '1' when test_l1a = '1' else
              tc_l1a when (testctrl_sel = '1') else
@@ -2358,6 +2374,13 @@ begin
 ------------------------------------  Monitoring  ------------------------------------
 ---------------------------------------------------------------------------------------
 
+  -- To SYSMON
+  vauxp <= x"00" & p5v_lvmb_sm_p & p1v0_sm_p & therm1_p & p2v5_sm_p
+           & p3v3_pp_sm_p & therm2_p & p5v_sm_p & lv_p3v3_sm_p;
+  vauxn <= x"00" & p5v_lvmb_sm_n & p1v0_sm_n & therm1_n & p2v5_sm_n
+           & p3v3_pp_sm_n & therm2_n & p5v_sm_n & lv_p3v3_sm_n;
+
+
   INTL1A_CNT  : COUNT_EDGES port map(int_l1a_cnt, int_l1a, l1acnt_rst, logich);
   ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, int_alct_dav, reset, logich);
   OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, int_otmb_dav, reset, logich);
@@ -2489,7 +2512,7 @@ begin
         ledg(1) <= gl0_clk_slow;
         ledg(2) <= gl1_clk_2_slow;
         ledg(3) <= clk1;
-        ledg(4) <= not pll1_locked;
+        ledg(4) <= pedestal;
         ledg(5) <= testctrl_sel;
         ledg(6) <= gen_dcfeb_sel;
 
@@ -2538,13 +2561,6 @@ begin
         
     end case;
   end process;
-
-  -- Adam Aug 15 To SYSMON
-  vauxp <= x"00" & p5v_lvmb_sm_p & p1v0_sm_p & therm1_p & p2v5_sm_p
-           & p3v3_pp_sm_p & therm2_p & p5v_sm_p & lv_p3v3_sm_p;
-  vauxn <= x"00" & p5v_lvmb_sm_n & p1v0_sm_n & therm1_n & p2v5_sm_n
-           & p3v3_pp_sm_n & therm2_n & p5v_sm_n & lv_p3v3_sm_n;
-
 
   odmb_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, mbc_instr, mbc_jtag_ir, odmb_data_sel,
                          l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
