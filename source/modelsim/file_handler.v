@@ -36,8 +36,8 @@ module file_handler(clk, start, vme_cmd_reg, vme_dat_reg_in, vme_dat_reg_out, vm
 		infile= $fopen("commands\\test_closetriggers.txt","r");       // Test of TESTCTRL
 		outfile=$fopen("commands\\test_closetriggers_out.txt","w");  // Test of TESTCTRL
 
-		infile= $fopen("commands\\test_bpi.txt","r");       // Test of BPI INTERFACE
-		outfile=$fopen("commands\\test_bpi_out.txt","w");  // Test of BPI INTERFACE
+//		infile= $fopen("commands\\test_bpi.txt","r");       // Test of BPI INTERFACE
+//		outfile=$fopen("commands\\test_bpi_out.txt","w");  // Test of BPI INTERFACE
 
 //	infile=$fopen("commands\\test_lvdbmon.txt","r");       // Test of TESTCTRL
 //	outfile=$fopen("commands\\test_lvdbmon_out.txt","w");  // Test of TESTCTRL

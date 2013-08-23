@@ -22,7 +22,6 @@ entity dcfeb_data_gen is
 
     dcfeb_dv   : out std_logic;
     dcfeb_data : out std_logic_vector(15 downto 0)
-
     );
 end dcfeb_data_gen;
 
@@ -37,7 +36,7 @@ architecture dcfeb_data_gen_architecture of dcfeb_data_gen is
   signal   dw_cnt_out            : std_logic_vector(11 downto 0);
   constant dw_n                  : std_logic_vector(11 downto 0) := x"008";  -- x"320" -> 800
 
-  signal tx_start : std_logic;
+  signal tx_start, tx_start_d : std_logic;
 
   signal l1a_cnt_l_fifo_in    : std_logic_vector(17 downto 0);
   signal l1a_cnt_l_fifo_out   : std_logic_vector(17 downto 0);
@@ -56,19 +55,12 @@ architecture dcfeb_data_gen_architecture of dcfeb_data_gen is
   signal l1a_cnt_fifo_wr_en : std_logic;
   signal l1a_cnt_fifo_rd_en : std_logic;
 
-
-  signal tx_start_d : std_logic;
-
 begin
 
--- l1a_counter
-  
+  -- L1A counter
   l1a_cnt : process (clk, l1a, rst)
-
     variable l1a_cnt_data : std_logic_vector(23 downto 0);
-
   begin
-
     if (rst = '1') then
       l1a_cnt_data := (others => '0');
     elsif (rising_edge(clk)) then
@@ -78,16 +70,13 @@ begin
     end if;
 
     l1a_cnt_out <= l1a_cnt_data;
-    
   end process;
 
   l1a_cnt_l_fifo_in <= "000000" & l1a_cnt_out(11 downto 0);
   l1a_cnt_h_fifo_in <= "000000" & l1a_cnt_out(23 downto 12);
 
-  l1a_cnt_fifo_ctrl : process (clk, l1a, rst)
-
+  l1a_cnt_fifo_ctrl : process (clk, l1a_match, rst)
   begin
-
     if (rst = '1') then
       l1a_cnt_fifo_wr_en <= '0';
     elsif (rising_edge(clk)) then
@@ -97,17 +86,12 @@ begin
         l1a_cnt_fifo_wr_en <= '0';
       end if;
     end if;
-
   end process;
 
--- dw_counter
-
+  -- Data word counter
   dw_cnt : process (dcfebclk, dw_cnt_en, dw_cnt_rst)
-
     variable dw_cnt_data : std_logic_vector(11 downto 0);
-
   begin
-
     if (rst = '1') then
       dw_cnt_data := (others => '0');
     elsif (rising_edge(dcfebclk)) then
@@ -119,7 +103,6 @@ begin
     end if;
 
     dw_cnt_out <= dw_cnt_data + 1;
-    
   end process;
 
   l1a_cnt_l_fifo : FIFO_DUALCLOCK_MACRO
@@ -178,29 +161,21 @@ begin
 
 
 -- FSM 
-
---  SRL16_TX_START : SRL16 port map(tx_start, '1', '1', '1', '1', clk, l1a_match);
-
   tx_start_d <= not l1a_cnt_h_fifo_empty;
-  --SRL16_TX_START : SRL16 port map(tx_start, '0', '0', '0', '1', clk, tx_start_d);
   FD_TX : FD port map(tx_start, clk, tx_start_d);
 
   fsm_regs : process (next_state, rst, dcfebclk)
-
   begin
     if (rst = '1') then
       current_state <= IDLE;
     elsif rising_edge(dcfebclk) then
       current_state <= next_state;
     end if;
-
   end process;
 
   fsm_logic : process (tx_ack, tx_start, l1a_cnt_out, dw_cnt_out, current_state)
   begin
-    
     case current_state is
-      
       when IDLE =>
         dcfeb_data <= (others => '0');
         dcfeb_dv   <= '0';
@@ -216,7 +191,6 @@ begin
         
       when TX_HEADER1 =>
         l1a_cnt_fifo_rd_en <= '0';
---        dcfeb_data <= dcfeb_addr & l1a_cnt_out(23 downto 12);
         dcfeb_data         <= dcfeb_addr & l1a_cnt_h_fifo_out(11 downto 0);
         dcfeb_dv           <= '1';
         dw_cnt_en          <= '0';
@@ -229,7 +203,6 @@ begin
         
       when TX_HEADER2 =>
         l1a_cnt_fifo_rd_en <= '0';
---        dcfeb_data <= dcfeb_addr & l1a_cnt_out(11 downto 0);
         dcfeb_data         <= dcfeb_addr & l1a_cnt_l_fifo_out(11 downto 0);
         dcfeb_dv           <= '1';
         dw_cnt_en          <= '0';
@@ -238,8 +211,6 @@ begin
         
       when TX_DATA =>
         l1a_cnt_fifo_rd_en <= '0';
--- Guido, Aug 2 
---        dcfeb_data <= dcfeb_addr & dw_cnt_out;
         dcfeb_data         <= dcfeb_addr & l1a_cnt_l_fifo_out(7 downto 0) & dw_cnt_out(3 downto 0);
         dcfeb_dv           <= '1';
         if (dw_cnt_out = dw_n) then
@@ -259,9 +230,7 @@ begin
         dw_cnt_en          <= '0';
         dw_cnt_rst         <= '1';
         next_state         <= IDLE;
-        
     end case;
-    
   end process;
   
 end dcfeb_data_gen_architecture;

@@ -30,17 +30,6 @@ entity ODMB_UCSB_V2 is
     );  
   port (
 
--- BPI Prom signals To/From bpi_interface
-
-    prom_a        : inout std_logic_vector(22 downto 0);
-    prom_a_21_rs0 : out   std_logic;    -- not connected in v.2
-    prom_a_22_rs1 : out   std_logic;    -- not connected in v.2
-    prom_d        : inout std_logic_vector(15 downto 0);
-    prom_cs_b     : out   std_logic;
-    prom_oe_b     : out   std_logic;
-    prom_we_b     : out   std_logic;
-    prom_le_b     : out   std_logic;
-
 -- From/To VME connector To/From MBV
 
     vme_data        : inout std_logic_vector(15 downto 0);
@@ -68,6 +57,17 @@ entity ODMB_UCSB_V2 is
     vme_doe_b       : out   std_logic;
 
     tc_run_out : out std_logic;         -- OK           NEW!
+
+-- BPI Prom signals To/From bpi_interface
+
+    prom_a        : inout std_logic_vector(22 downto 0);
+    prom_a_21_rs0 : out   std_logic;    -- not connected in v.2
+    prom_a_22_rs1 : out   std_logic;    -- not connected in v.2
+    prom_d        : inout std_logic_vector(15 downto 0);
+    prom_cs_b     : out   std_logic;
+    prom_oe_b     : out   std_logic;
+    prom_we_b     : out   std_logic;
+    prom_le_b     : out   std_logic;
 
 -- From/To PPIB (connectors J3 and J4)
 
@@ -934,7 +934,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal l1a_match_cnt, into_cafifo_dav_cnt : dav_cnt_type;
   signal data_fifo_re_cnt, data_fifo_oe_cnt : dav_cnt_type;
   signal eof_data_cnt, cafifo_l1a_dav_cnt   : dav_cnt_type;
-  signal dav_cnt_en, into_cafifo_dav        : std_logic_vector(NFEB+2 downto 1);
+  signal into_cafifo_dav        : std_logic_vector(NFEB+2 downto 1);
 
   signal ext_dcfeb_l1a_cnt7 : std_logic_vector(23 downto 0);
   signal dcfeb_l1a_dav7     : std_logic;

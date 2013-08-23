@@ -65,7 +65,8 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
   type   LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
   signal LCT_Q                : LCT_TYPE;
   signal LCT_ERR_D            : std_logic;
-  signal L1A_MATCH            : std_logic_vector(NFEB downto 0);
+  signal L1A_MATCH            : std_logic_vector(NFEB downto 1);
+  signal FIFO_L1A_MATCH_INNER            : std_logic_vector(NFEB+2 downto 0);
 
   signal l1a_push                        : std_logic;
   signal l1a_match_push                  : std_logic_vector(NFEB downto 0);
@@ -120,29 +121,32 @@ begin  --Architecture
     end generate GEN_LCT_Q;
     L1A_MATCH(K) <= '1' when (L1A = '1' and (LCT_Q(K) /= "00000" or PEDESTAL = '1'))  else '0';
   end generate GEN_L1A_MATCH;
-  L1A_MATCH(0)    <= or_reduce(L1A_MATCH(NFEB downto 1));
   DCFEB_L1A_MATCH <= L1A_MATCH(NFEB downto 1);
 
 
 -- Generate FIFO_PUSH, FIFO_L1A_MATCH - All signals are pushed a total of ALCT_PUSH_DLY
   L1APUSH       : SRLC32E port map(l1a_push, open, push_dly, logich, clk, l1a);
   L1A_ALCT_PUSH : SRLC32E port map(fifo_push_inner, open, alct_push_dly, logich, clk, l1a_push);
-  FIFO_PUSH <= fifo_push_inner;
 
-  GEN_L1A_MATCH_PUSH_DLY : for K in 0 to NFEB generate
+  FIFO_PUSH <= fifo_push_inner;
+ 
+  GEN_L1A_MATCH_PUSH_DLY : for K in 1 to NFEB generate
   begin
     L1AMATCHPUSH   : SRLC32E port map(l1a_match_push(K), open, push_dly, logich, clk, l1a_match(K));
-    L1A_MATCH_ALCT : SRLC32E port map(fifo_l1a_match(K), open, alct_push_dly, logich, clk, l1a_match_push(K));
+    L1A_MATCH_ALCT : SRLC32E port map(fifo_l1a_match_inner(K), open, alct_push_dly, logich, clk, l1a_match_push(K));
   end generate GEN_L1A_MATCH_PUSH_DLY;
 
   OTMBDAV_FD     : FD port map(otmb_dav_sync, clk, otmb_dav);
   otmb_alct_dly  <= std_logic_vector(unsigned(alct_push_dly) - unsigned(otmb_push_dly)-1);
   L1A_OTMB_PUSH  : SRLC32E port map(l1a_otmb_pushed, open, otmb_push_dly, logich, clk, l1a_push);
   l1a_otmb_match <= otmb_dav_sync and l1a_otmb_pushed and not kill(NFEB+1);
-  OTMB_ALCT_PUSH : SRLC32E port map(fifo_l1a_match(NFEB+1), open, otmb_alct_dly, logich, clk, l1a_otmb_match);
+  OTMB_ALCT_PUSH : SRLC32E port map(fifo_l1a_match_inner(NFEB+1), open, otmb_alct_dly, logich, clk, l1a_otmb_match);
 
   ALCTDAV_FD : FD port map(alct_dav_sync, clk, alct_dav);
-  fifo_l1a_match(NFEB+2) <= alct_dav_sync and fifo_push_inner and not kill(NFEB+2);
+  fifo_l1a_match_inner(NFEB+2) <= alct_dav_sync and fifo_push_inner and not kill(NFEB+2);
+
+  fifo_l1a_match_inner(0)    <= or_reduce(fifo_l1a_match_inner(NFEB+2 downto 1));
+  fifo_l1a_match    <= fifo_l1a_match_inner;
 
   l1a_otmb_pushed_out <= l1a_otmb_pushed;
   otmb_dav_sync_out   <= otmb_dav_sync;

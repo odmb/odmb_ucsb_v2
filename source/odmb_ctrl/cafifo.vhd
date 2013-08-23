@@ -9,6 +9,7 @@ library unimacro;
 library hdlmacro;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_misc.all;
 use ieee.std_logic_unsigned.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
@@ -17,7 +18,7 @@ use hdlmacro.hdlmacro.all;
 entity cafifo is
   generic (
     NFEB      : integer range 1 to 7  := 5;  -- Number of DCFEBS, 7 in the final design
-    FIFO_SIZE : integer range 1 to 64 := 16  -- Number of CAFIFO words
+    FIFO_SIZE : integer range 1 to 64 := 32  -- Number of CAFIFO words
     );  
   port(
 
@@ -178,7 +179,8 @@ begin
   ext_dcfeb_l1a_cnt7 <= ext_dcfeb_l1a_cnt(7);
   dcfeb_l1a_dav7     <= dcfeb_l1a_dav(7);
 
-  cafifo_wren <= l1a;
+  --cafifo_wren <= l1a;
+  cafifo_wren <= or_reduce(l1a_match_in);  -- Avoids empty packets
   cafifo_rden <= pop;
 
 -- RX FSMs 
