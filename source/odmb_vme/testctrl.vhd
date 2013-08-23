@@ -56,7 +56,7 @@ architecture TESTCTRL_Arch of TESTCTRL is
 
   signal WRITE_FIFO, READ_FIFO, WRITE_FSR, READ_FSR                         : std_logic;
   signal READ_STR, READ_WRC, READ_RDC, READ_TRC                             : std_logic;
-  signal FSR_vector                                                         : std_logic_vector(11 downto 0);
+  signal FSR_vector                                                         : std_logic_vector(9 downto 0);
   signal D_DTACK_WRITE_FSR, E_DTACK_WRITE_FSR                               : std_logic;
   signal D_DTACK_READ_FSR, E_DTACK_READ_FSR                                 : std_logic;
   signal D_DTACK_READ_STR, E_DTACK_READ_STR                                 : std_logic;
@@ -141,15 +141,15 @@ begin  --Architecture
   READ_TRC   <= '1' when (CMDDEV = x"1028") else '0';  -- READ TRIGGER COUNTER
   WRITE_NREP <= '1' when (CMDDEV = x"1030") else '0';  -- WRITE NUMBER OF REPETITIONS
 
-  CREATE_FSR_vector : for I in 11 downto 0 generate
+  CREATE_FSR_vector : for I in 9 downto 0 generate
   begin
     FD_FSR_vec : FDCE port map (FSR_vector(I), STROBE, WRITE_FSR, RST, INDATA(I));
   end generate CREATE_FSR_vector;
 
   FIFO_SEL    <= FSR_vector(3 downto 0);
-  tc_fifo_rst <= rst or FSR_vector(6);
-  trg_cnt_rst <= rst or FSR_vector(7);
-  trg_cnt_sel <= FSR_vector(11 downto 8);
+  tc_fifo_rst <= rst or FSR_vector(4);
+  trg_cnt_rst <= rst or FSR_vector(5);
+  trg_cnt_sel <= FSR_vector(9 downto 6);
 
   -- NREP: VME register and counter
   nrep_rst <= RST;
@@ -179,7 +179,7 @@ begin  --Architecture
   tc_run_inner <= '1' when nrep_cnt > 0 else '0';
   tc_run       <= tc_run_inner;
 
-  OUTDATA <= "00000000000" & FSR_vector(4 downto 0) when (STROBE = '1' and READ_FSR = '1') else
+  OUTDATA <= "000000000000" & FSR_vector(3 downto 0) when (STROBE = '1' and READ_FSR = '1') else
              FIFO_STR(15 downto 0)           when (STROBE = '1' and READ_STR = '1')  else
              "00000" & FIFO_WRC(10 downto 0) when (STROBE = '1' and READ_WRC = '1')  else
              "00000" & FIFO_RDC(10 downto 0) when (STROBE = '1' and READ_RDC = '1')  else

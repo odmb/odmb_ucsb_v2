@@ -24,7 +24,7 @@ end alct_otmb_data_gen;
 
 architecture alct_otmb_data_gen_architecture of alct_otmb_data_gen is
 
-  type state_type is (IDLE, TX_DATA);
+  type state_type is (IDLE, HEADER, TX_DATA);
 
   signal alct_next_state, alct_current_state : state_type;
   signal otmb_next_state, otmb_current_state : state_type;
@@ -252,8 +252,8 @@ begin
 -- FSM 
   alct_tx_start_d <= not alct_l1a_cnt_h_fifo_empty;
   otmb_tx_start_d <= not otmb_l1a_cnt_h_fifo_empty;
-  SRL16_TX_ALCT_START : SRL16 port map(alct_tx_start, '0', '1', '1', '1', CLK, alct_tx_start_d);
-  SRL16_TX_OTMB_START : SRL16 port map(otmb_tx_start, '0', '1', '1', '1', CLK, otmb_tx_start_d);
+  FDALCT_START : FD port map(alct_tx_start, CLK, alct_tx_start_d);
+  FDOTMB_START : FD port map(otmb_tx_start, CLK, otmb_tx_start_d);
 
 
   fsm_regs : process (alct_next_state, otmb_next_state, rst, clk)
@@ -276,12 +276,20 @@ begin
         alct_dw_cnt_en  <= '0';
         alct_dw_cnt_rst <= '1';
         if (alct_tx_start = '1') then
-          alct_next_state         <= TX_DATA;
           alct_l1a_cnt_fifo_rd_en <= '1';
+          alct_next_state         <= HEADER;
         else
-          alct_next_state         <= IDLE;
           alct_l1a_cnt_fifo_rd_en <= '0';
+          alct_next_state         <= IDLE;
         end if;
+        
+      when HEADER =>
+        alct_l1a_cnt_fifo_rd_en <= '0';
+        alct_data               <= (others => '0');
+        alct_dv                 <= '0';
+        alct_dw_cnt_en          <= '0';
+        alct_dw_cnt_rst         <= '1';
+        alct_next_state         <= TX_DATA;
         
       when TX_DATA =>
         alct_l1a_cnt_fifo_rd_en <= '0';
@@ -317,12 +325,20 @@ begin
         otmb_dw_cnt_en  <= '0';
         otmb_dw_cnt_rst <= '1';
         if (otmb_tx_start = '1') then
-          otmb_next_state         <= TX_DATA;
+          otmb_next_state         <= HEADER;
           otmb_l1a_cnt_fifo_rd_en <= '1';
         else
           otmb_next_state         <= IDLE;
           otmb_l1a_cnt_fifo_rd_en <= '0';
         end if;
+        
+      when HEADER =>
+        otmb_l1a_cnt_fifo_rd_en <= '0';
+        otmb_data               <= (others => '0');
+        otmb_dv                 <= '0';
+        otmb_dw_cnt_en          <= '0';
+        otmb_dw_cnt_rst         <= '1';
+        otmb_next_state         <= TX_DATA;
         
       when TX_DATA =>
         otmb_l1a_cnt_fifo_rd_en <= '0';

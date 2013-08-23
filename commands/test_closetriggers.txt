@@ -7,48 +7,25 @@ W  4004  1	Set TMB_PUSH_DLY
 W  400C  2	Set ALCT_PUSH_DLY
 W  401C  0	Do not Kill anything
 
-
-R  520C  0	Read # of words in PC RX FIFO 
-W  20  	 e0 	Reset TC_TS_CNT, TC_FIFOs and TC_TRG_CNTs 
-
 W  20  	 1  	Select FIFO [Time stamp LSB]
+W  8	 10	Write Time stamp LSB
 W  8	 20	Write Time stamp LSB
 W  8	 25	Write Time stamp LSB
-W  8	 30	Write Time stamp LSB
-W  8	 36	Write Time stamp LSB
-W  8	 40	Write Time stamp LSB
-W  8	 46	Write Time stamp LSB
-W  8	 4C	Write Time stamp LSB
-W  8	 60	Write Time stamp LSB
-W  8	 65	Write Time stamp LSB
-W  8	 70	Write Time stamp LSB
 
+W  8	 80	Write Time stamp LSB
+W  8	 83	Write Time stamp LSB
+W  8	 84	Write Time stamp LSB
 W  8	 90	Write Time stamp LSB
 W  8	 93	Write Time stamp LSB
 W  8	 94	Write Time stamp LSB
 W  8	 95	Write Time stamp LSB
 W  8	 98	Write Time stamp LSB
 W  8	 99	Write Time stamp LSB
-W  8	 A0	Write Time stamp LSB
-W  8	 A6	Write Time stamp LSB
-W  8	 B0	Write Time stamp LSB
-W  8	 B6	Write Time stamp LSB
-W  8	 BC	Write Time stamp LSB
-W  8	 D0	Write Time stamp LSB
-W  8	 D5	Write Time stamp LSB
-W  8	 E0	Write Time stamp LSB
 
 W  20  	 4  	Select FIFO [Triggers]
 W  8	 FF	LCTs on all DCFEBs
+W  8	 FF	LCTs on all DCFEBs
 W  8	 3	LCTs on DCFEB 1
-W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
 
 W  8	 400	L1A
 W  8	 100	OTMBDAV
@@ -57,17 +34,12 @@ W  8	 400	L1A
 W  8	 100	OTMBDAV
 W  8	 200	ALCTDAV
 W  8	 400	L1A
-W  8	 400	L1A
-W  8	 400	L1A
-W  8	 400	L1A
-W  8	 400	L1A
-W  8	 400	L1A
-W  8	 400	L1A
-W  8	 400	L1A
+W  8	 100	OTMBDAV
+W  8	 200	ALCTDAV
 
 
 R  001C  0	Read FIFO Status Register
-W  0030  2	Start 2 Test Runs
+W  0030  30	Start 30 Test Runs
  
 R  001C  0	Read FIFO Status Register
 R  001C  0	Read FIFO Status Register

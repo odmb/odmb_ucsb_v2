@@ -526,6 +526,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
 -- From CAFIFO to Data FIFOs
+      cafifo_l1a  : out std_logic;  
       cafifo_l1a_match_in  : out std_logic_vector(NFEB+2 downto 1);  -- From TRGCNTRL to CAFIFO to generate Data  
       cafifo_l1a_match_out : out std_logic_vector(NFEB+2 downto 1);  -- From CAFIFO to CONTROL  
       cafifo_l1a_cnt       : out std_logic_vector(23 downto 0);
@@ -1107,6 +1108,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal data_fifo_re   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   signal data_fifo_re_b : std_logic_vector(NFEB+2 downto 1) := (others => '1');
 
+  signal cafifo_l1a  : std_logic;
   signal cafifo_l1a_match_in  : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_l1a_match_out : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_l1a_cnt       : std_logic_vector(23 downto 0);
@@ -1488,6 +1490,7 @@ begin
       fifo_empty_b => data_fifo_empty_b,
 
 -- From CAFIFO to Data FIFOs
+      cafifo_l1a  => cafifo_l1a,
       cafifo_l1a_match_in  => cafifo_l1a_match_in,
       cafifo_l1a_match_out => cafifo_l1a_match_out,
       cafifo_l1a_cnt       => cafifo_l1a_cnt,
@@ -1927,7 +1930,7 @@ begin
     port map(
       clk            => clk40,
       rst            => reset,
-      l1a            => int_l1a,
+      l1a            => cafifo_l1a,
       alct_l1a_match => cafifo_l1a_match_in(NFEB+2),
       otmb_l1a_match => cafifo_l1a_match_in(NFEB+1),
       alct_dv        => gen_alct_data_valid,

@@ -73,6 +73,7 @@ entity ODMB_CTRL is
     fifo_empty_b : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs 
 
 -- From CAFIFO to Data FIFOs
+    cafifo_l1a : out std_logic;
     cafifo_l1a_match_in  : out std_logic_vector(NFEB+2 downto 1);  -- From TRGCNTRL to CAFIFO to generate Data  
     cafifo_l1a_match_out : out std_logic_vector(NFEB+2 downto 1);  -- From CAFIFO to CONTROL  
     cafifo_l1a_cnt       : out std_logic_vector(23 downto 0);
@@ -755,6 +756,8 @@ begin
       FIFO_L1A_MATCH  => cafifo_l1a_match_in_inner,
       LCT_ERR         => lct_err
       );
+
+  cafifo_l1a <= cafifo_push;
 
   CAFIFO_PM : cafifo
     generic map (NFEB => NFEB, FIFO_SIZE => FIFO_SIZE)
