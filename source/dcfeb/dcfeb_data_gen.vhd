@@ -16,9 +16,9 @@ entity dcfeb_data_gen is
     l1a       : in std_logic;
     l1a_match : in std_logic;
 
-    tx_ack : in std_logic;
-
-    dcfeb_addr : in std_logic_vector(3 downto 0);
+    tx_ack       : in std_logic;
+    dcfeb_addr   : in std_logic_vector(3 downto 0);
+    nwords_dummy : in std_logic_vector(15 downto 0);
 
     dcfeb_dv   : out std_logic;
     dcfeb_data : out std_logic_vector(15 downto 0)
@@ -33,8 +33,7 @@ architecture dcfeb_data_gen_architecture of dcfeb_data_gen is
 
   signal   dw_cnt_en, dw_cnt_rst : std_logic;
   signal   l1a_cnt_out           : std_logic_vector(23 downto 0);
-  signal   dw_cnt_out            : std_logic_vector(11 downto 0);
-  constant dw_n                  : std_logic_vector(11 downto 0) := x"008";  -- x"320" -> 800
+  signal   dw_cnt_out            : std_logic_vector(15 downto 0);
 
   signal tx_start, tx_start_d : std_logic;
 
@@ -90,7 +89,7 @@ begin
 
   -- Data word counter
   dw_cnt : process (dcfebclk, dw_cnt_en, dw_cnt_rst)
-    variable dw_cnt_data : std_logic_vector(11 downto 0);
+    variable dw_cnt_data : std_logic_vector(15 downto 0);
   begin
     if (rst = '1') then
       dw_cnt_data := (others => '0');
@@ -213,7 +212,7 @@ begin
         l1a_cnt_fifo_rd_en <= '0';
         dcfeb_data         <= dcfeb_addr & l1a_cnt_l_fifo_out(7 downto 0) & dw_cnt_out(3 downto 0);
         dcfeb_dv           <= '1';
-        if (dw_cnt_out = dw_n) then
+        if (dw_cnt_out = nwords_dummy) then
           dw_cnt_en  <= '0';
           dw_cnt_rst <= '1';
           next_state <= IDLE;

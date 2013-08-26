@@ -403,6 +403,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       INJ_DLY       : out std_logic_vector(4 downto 0);
       EXT_DLY       : out std_logic_vector(4 downto 0);
       CALLCT_DLY    : out std_logic_vector(3 downto 0);
+      NWORDS_DUMMY : out std_logic_vector(15 downto 0);
       KILL          : out std_logic_vector(NFEB+2 downto 1);
       CRATEID       : out std_logic_vector(6 downto 0);
 
@@ -613,6 +614,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       l1a            : in  std_logic;
       alct_l1a_match : in  std_logic;
       otmb_l1a_match : in  std_logic;
+      nwords_dummy : in std_logic_vector(15 downto 0);
+
       alct_dv        : out std_logic;
       alct_data      : out std_logic_vector(15 downto 0);
       otmb_dv        : out std_logic;
@@ -786,6 +789,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
        l1a           : in  std_logic;
        l1a_match     : in  std_logic;
        tx_ack        : in  std_logic;
+       nwords_dummy  : in  std_logic_vector(15 downto 0);
+      
        dcfeb_dv      : out std_logic;
        dcfeb_data    : out std_logic_vector(15 downto 0);
        adc_mask      : out std_logic_vector(11 downto 0);
@@ -1206,6 +1211,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal INJ_DLY       : std_logic_vector(4 downto 0);
   signal EXT_DLY       : std_logic_vector(4 downto 0);
   signal CALLCT_DLY    : std_logic_vector(3 downto 0);
+  signal NWORDS_DUMMY          : std_logic_vector(15 downto 0);
   signal KILL          : std_logic_vector(NFEB+2 downto 1);
   signal CRATEID       : std_logic_vector(6 downto 0);
 
@@ -1372,6 +1378,7 @@ begin
       INJ_DLY       => INJ_DLY,
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
+      NWORDS_DUMMY  => NWORDS_DUMMY,
       KILL          => KILL,
       CRATEID       => CRATEID,
 
@@ -1741,6 +1748,8 @@ begin
         l1a           => int_l1a,
         l1a_match     => int_l1a_match(I),
         tx_ack        => logich,
+        nwords_dummy  => nwords_dummy,
+      
         dcfeb_dv      => gen_dcfeb_data_valid(I),
         dcfeb_data    => gen_dcfeb_data(I),
         adc_mask      => dcfeb_adc_mask(I),
@@ -1933,6 +1942,8 @@ begin
       l1a            => cafifo_l1a,
       alct_l1a_match => cafifo_l1a_match_in(NFEB+2),
       otmb_l1a_match => cafifo_l1a_match_in(NFEB+1),
+      nwords_dummy   => nwords_dummy,
+
       alct_dv        => gen_alct_data_valid,
       alct_data      => gen_alct_data,
       otmb_dv        => gen_otmb_data_valid,

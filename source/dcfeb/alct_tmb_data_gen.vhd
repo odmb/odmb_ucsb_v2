@@ -15,6 +15,8 @@ entity alct_otmb_data_gen is
     l1a            : in  std_logic;
     alct_l1a_match : in  std_logic;
     otmb_l1a_match : in  std_logic;
+    nwords_dummy : in std_logic_vector(15 downto 0);
+
     alct_dv        : out std_logic;
     alct_data      : out std_logic_vector(15 downto 0);
     otmb_dv        : out std_logic;
@@ -32,9 +34,8 @@ architecture alct_otmb_data_gen_architecture of alct_otmb_data_gen is
   signal   alct_dw_cnt_en, alct_dw_cnt_rst  : std_logic;
   signal   otmb_dw_cnt_en, otmb_dw_cnt_rst  : std_logic;
   signal   l1a_cnt_out                      : std_logic_vector(23 downto 0);
-  signal   alct_dw_cnt_out                  : std_logic_vector(11 downto 0);
-  signal   otmb_dw_cnt_out                  : std_logic_vector(11 downto 0);
-  constant dw_n                             : std_logic_vector(11 downto 0) := x"008";
+  signal   alct_dw_cnt_out                  : std_logic_vector(15 downto 0);
+  signal   otmb_dw_cnt_out                  : std_logic_vector(15 downto 0);
   signal   alct_tx_start, otmb_tx_start     : std_logic;
   signal   alct_tx_start_d, otmb_tx_start_d : std_logic;
 
@@ -108,7 +109,7 @@ begin
 
   -- Data word counters
   alct_dw_cnt : process (clk, alct_dw_cnt_en, alct_dw_cnt_rst, rst)
-    variable alct_dw_cnt_data : std_logic_vector(11 downto 0);
+    variable alct_dw_cnt_data : std_logic_vector(15 downto 0);
   begin
     if (rst = '1') then
       alct_dw_cnt_data := (others => '0');
@@ -124,7 +125,7 @@ begin
   end process;
 
   otmb_dw_cnt : process (clk, otmb_dw_cnt_en, otmb_dw_cnt_rst, rst)
-    variable otmb_dw_cnt_data : std_logic_vector(11 downto 0);
+    variable otmb_dw_cnt_data : std_logic_vector(15 downto 0);
   begin
 
     if (rst = '1') then
@@ -295,7 +296,7 @@ begin
         alct_l1a_cnt_fifo_rd_en <= '0';
         alct_data               <= x"D" & alct_l1a_cnt_l_fifo_out(7 downto 0) & alct_dw_cnt_out(3 downto 0);
         alct_dv                 <= '1';
-        if (alct_dw_cnt_out = dw_n) then
+        if (alct_dw_cnt_out = nwords_dummy) then
           alct_dw_cnt_en  <= '0';
           alct_dw_cnt_rst <= '1';
           alct_next_state <= IDLE;
@@ -344,7 +345,7 @@ begin
         otmb_l1a_cnt_fifo_rd_en <= '0';
         otmb_data               <= x"B" & otmb_l1a_cnt_l_fifo_out(7 downto 0) & otmb_dw_cnt_out(3 downto 0);
         otmb_dv                 <= '1';
-        if (otmb_dw_cnt_out = dw_n) then
+        if (otmb_dw_cnt_out = nwords_dummy) then
           otmb_dw_cnt_en  <= '0';
           otmb_dw_cnt_rst <= '1';
           otmb_next_state <= IDLE;

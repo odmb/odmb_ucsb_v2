@@ -35,8 +35,9 @@ entity VMECONFREGS is
     EXT_DLY    : out std_logic_vector(4 downto 0);
     CALLCT_DLY : out std_logic_vector(3 downto 0);
 
-    KILL    : out std_logic_vector(NFEB+2 downto 1);
-    CRATEID : out std_logic_vector(6 downto 0)
+    NWORDS_DUMMY : out std_logic_vector(15 downto 0);
+    KILL         : out std_logic_vector(NFEB+2 downto 1);
+    CRATEID      : out std_logic_vector(6 downto 0)
     );
 end VMECONFREGS;
 
@@ -86,6 +87,12 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal W_CALLCT_DLY, D_W_CALLCT_DLY, Q_W_CALLCT_DLY : std_logic                     := '0';
   signal R_CALLCT_DLY, D_R_CALLCT_DLY, Q_R_CALLCT_DLY : std_logic                     := '0';
 
+  constant NWORDS_DUMMY_DEF                                       : std_logic_vector(15 downto 0) := x"0008";
+  signal   OUT_NWORDS_DUMMY                                       : std_logic_vector(15 downto 0);
+  signal   NWORDS_DUMMY_INNER, NWORDS_DUMMY_RST, NWORDS_DUMMY_PRE : std_logic_vector(15 downto 0);
+  signal   W_NWORDS_DUMMY, D_W_NWORDS_DUMMY, Q_W_NWORDS_DUMMY     : std_logic;
+  signal   R_NWORDS_DUMMY, D_R_NWORDS_DUMMY, Q_R_NWORDS_DUMMY     : std_logic;
+
   signal OUT_KILL                   : std_logic_vector(15 downto 0) := (others => '0');
   signal KILL_INNER                 : std_logic_vector(NFEB+2 downto 1);
   signal W_KILL, D_W_KILL, Q_W_KILL : std_logic                     := '0';
@@ -101,26 +108,28 @@ begin  --Architecture
 -- Decode instruction
   CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input  
 
-  W_LCT_L1A    <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
-  W_OTMB_PUSH  <= '1' when (CMDDEV = x"1004" and WRITER = '0') else '0';
-  W_PUSH       <= '1' when (CMDDEV = x"1008" and WRITER = '0') else '0';
-  W_ALCT_PUSH  <= '1' when (CMDDEV = x"100C" and WRITER = '0') else '0';
-  W_INJ_DLY    <= '1' when (CMDDEV = x"1010" and WRITER = '0') else '0';
-  W_EXT_DLY    <= '1' when (CMDDEV = x"1014" and WRITER = '0') else '0';
-  W_CALLCT_DLY <= '1' when (CMDDEV = x"1018" and WRITER = '0') else '0';
-  W_KILL       <= '1' when (CMDDEV = x"101C" and WRITER = '0') else '0';
-  W_CRATEID    <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
+  W_LCT_L1A      <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
+  W_OTMB_PUSH    <= '1' when (CMDDEV = x"1004" and WRITER = '0') else '0';
+  W_PUSH         <= '1' when (CMDDEV = x"1008" and WRITER = '0') else '0';
+  W_ALCT_PUSH    <= '1' when (CMDDEV = x"100C" and WRITER = '0') else '0';
+  W_INJ_DLY      <= '1' when (CMDDEV = x"1010" and WRITER = '0') else '0';
+  W_EXT_DLY      <= '1' when (CMDDEV = x"1014" and WRITER = '0') else '0';
+  W_CALLCT_DLY   <= '1' when (CMDDEV = x"1018" and WRITER = '0') else '0';
+  W_KILL         <= '1' when (CMDDEV = x"101C" and WRITER = '0') else '0';
+  W_CRATEID      <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
+  W_NWORDS_DUMMY <= '1' when (CMDDEV = x"1028" and WRITER = '0') else '0';
 
-  R_LCT_L1A    <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
-  R_OTMB_PUSH  <= '1' when (CMDDEV = x"1004" and WRITER = '1') else '0';
-  R_PUSH       <= '1' when (CMDDEV = x"1008" and WRITER = '1') else '0';
-  R_ALCT_PUSH  <= '1' when (CMDDEV = x"100C" and WRITER = '1') else '0';
-  R_INJ_DLY    <= '1' when (CMDDEV = x"1010" and WRITER = '1') else '0';
-  R_EXT_DLY    <= '1' when (CMDDEV = x"1014" and WRITER = '1') else '0';
-  R_CALLCT_DLY <= '1' when (CMDDEV = x"1018" and WRITER = '1') else '0';
-  R_KILL       <= '1' when (CMDDEV = x"101C" and WRITER = '1') else '0';
-  R_CRATEID    <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
-  R_FW_VERSION <= '1' when (CMDDEV = x"1024" and WRITER = '1') else '0';
+  R_LCT_L1A      <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
+  R_OTMB_PUSH    <= '1' when (CMDDEV = x"1004" and WRITER = '1') else '0';
+  R_PUSH         <= '1' when (CMDDEV = x"1008" and WRITER = '1') else '0';
+  R_ALCT_PUSH    <= '1' when (CMDDEV = x"100C" and WRITER = '1') else '0';
+  R_INJ_DLY      <= '1' when (CMDDEV = x"1010" and WRITER = '1') else '0';
+  R_EXT_DLY      <= '1' when (CMDDEV = x"1014" and WRITER = '1') else '0';
+  R_CALLCT_DLY   <= '1' when (CMDDEV = x"1018" and WRITER = '1') else '0';
+  R_KILL         <= '1' when (CMDDEV = x"101C" and WRITER = '1') else '0';
+  R_CRATEID      <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
+  R_FW_VERSION   <= '1' when (CMDDEV = x"1024" and WRITER = '1') else '0';
+  R_NWORDS_DUMMY <= '1' when (CMDDEV = x"1028" and WRITER = '1') else '0';
 
 -- Write LCT_L1A_DLY
   GEN_LCT_L1A_DLY : for I in 5 downto 0 generate
@@ -255,6 +264,27 @@ begin  --Architecture
   FD_R_CALLCT_DLY : FD port map(Q_R_CALLCT_DLY, SLOWCLK, D_R_CALLCT_DLY);
   DTACK_INNER    <= '0' when (Q_R_CALLCT_DLY = '1')                else 'Z';
 
+-- Write NWORDS_DUMMY
+  GEN_NWORDS_DUMMY : for I in 15 downto 0 generate
+  begin
+    NWORDS_DUMMY_PRE(I) <= RST when NWORDS_DUMMY_DEF(I) = '1' else '0';
+    NWORDS_DUMMY_RST(I) <= RST when NWORDS_DUMMY_DEF(I) = '0' else '0';
+    FD_W_NWORDS_DUMMY : FDCPE port map(NWORDS_DUMMY_INNER(I), STROBE, W_NWORDS_DUMMY,
+                                       NWORDS_DUMMY_RST(I), INDATA(I), NWORDS_DUMMY_PRE(I));
+  end generate GEN_NWORDS_DUMMY;
+  NWORDS_DUMMY     <= NWORDS_DUMMY_INNER;
+  D_W_NWORDS_DUMMY <= '1' when (STROBE = '1' and W_NWORDS_DUMMY = '1') else '0';
+  FD_DTACK_NWORDS_DUMMY : FD port map(Q_W_NWORDS_DUMMY, SLOWCLK, D_W_NWORDS_DUMMY);
+  DTACK_INNER      <= '0' when (Q_W_NWORDS_DUMMY = '1')                else 'Z';
+
+-- Read NWORDS_DUMMY
+  OUT_NWORDS_DUMMY <= NWORDS_DUMMY_INNER when (STROBE = '1' and R_NWORDS_DUMMY = '1') else
+                      (others => 'Z');
+
+  D_R_NWORDS_DUMMY <= '1' when (STROBE = '1' and R_NWORDS_DUMMY = '1') else '0';
+  FD_R_NWORDS_DUMMY : FD port map(Q_R_NWORDS_DUMMY, SLOWCLK, D_R_NWORDS_DUMMY);
+  DTACK_INNER      <= '0' when (Q_R_NWORDS_DUMMY = '1')                else 'Z';
+
 -- Write KILL
   GEN_KILL : for I in NFEB+2 downto 1 generate
   begin
@@ -302,15 +332,16 @@ begin  --Architecture
 
 -- General assignments
   OUTDATA <= OUT_LCT_L1A when R_LCT_L1A = '1' else
-             OUT_OTMB_PUSH  when R_OTMB_PUSH = '1'  else
-             OUT_PUSH       when R_PUSH = '1'       else
-             OUT_ALCT_PUSH  when R_ALCT_PUSH = '1'  else
-             OUT_INJ_DLY    when R_INJ_DLY = '1'    else
-             OUT_EXT_DLY    when R_EXT_DLY = '1'    else
-             OUT_CALLCT_DLY when R_CALLCT_DLY = '1' else
-             OUT_KILL       when R_KILL = '1'       else
-             OUT_FW_VERSION when R_FW_VERSION = '1' else
-             OUT_CRATEID    when R_CRATEID = '1'    else
+             OUT_OTMB_PUSH    when R_OTMB_PUSH = '1'    else
+             OUT_PUSH         when R_PUSH = '1'         else
+             OUT_ALCT_PUSH    when R_ALCT_PUSH = '1'    else
+             OUT_INJ_DLY      when R_INJ_DLY = '1'      else
+             OUT_EXT_DLY      when R_EXT_DLY = '1'      else
+             OUT_CALLCT_DLY   when R_CALLCT_DLY = '1'   else
+             OUT_KILL         when R_KILL = '1'         else
+             OUT_FW_VERSION   when R_FW_VERSION = '1'   else
+             OUT_CRATEID      when R_CRATEID = '1'      else
+             OUT_NWORDS_DUMMY when R_NWORDS_DUMMY = '1' else
              (others => 'L');
   DTACK <= DTACK_INNER;
   

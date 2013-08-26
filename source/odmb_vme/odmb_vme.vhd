@@ -137,6 +137,7 @@ entity ODMB_VME is
     INJ_DLY       : out std_logic_vector(4 downto 0);
     EXT_DLY       : out std_logic_vector(4 downto 0);
     CALLCT_DLY    : out std_logic_vector(3 downto 0);
+    NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(6 downto 0);
 
@@ -348,6 +349,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       EXT_DLY    : out std_logic_vector(4 downto 0);
       CALLCT_DLY : out std_logic_vector(3 downto 0);
 
+      NWORDS_DUMMY : out std_logic_vector(15 downto 0);
       KILL    : out std_logic_vector(NFEB+2 downto 1);
       CRATEID : out std_logic_vector(6 downto 0)
       );
@@ -742,6 +744,7 @@ begin
       EXT_DLY    => EXT_DLY,
       CALLCT_DLY => CALLCT_DLY,
 
+      NWORDS_DUMMY => NWORDS_DUMMY,
       KILL    => KILL,
       CRATEID => CRATEID
       );
