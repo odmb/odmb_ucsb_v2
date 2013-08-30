@@ -43,7 +43,12 @@ module BPI_ctrl (
 	 output [1:0] BPI_OP,
 	 output [22:0] BPI_ADDR,
 	 output [15:0] BPI_DATA_TO,
-	 output BPI_EXECUTE
+	 output BPI_EXECUTE,
+// Guido - Aug 26
+	 output BPI_CFG_DONE,
+	 output BPI_CFG_REG_WE,
+	 output [15:0] BPI_CFG_REG_IN
+
     );
 	 
 	 //
@@ -291,6 +296,11 @@ assign BPI_ACTIVE   = parser_active;
 assign trl_edge_pa  = ~parser_active & parser_active_r;
 assign p_tmr_rst    = local_rst || ~parser_idle || trl_edge_pa;
 assign BPI_RBK_WRD_CNT = bpi_rbk_cnt;
+
+// Guido - Aug 26
+assign BPI_CFG_DONE = bpi_cmd_mt;
+assign BPI_CFG_REG_WE = bpi_rbk_wena;
+assign BPI_CFG_REG_IN = BPI_DATA_FROM;
 
 always @(posedge CLK or posedge local_rst)
 begin
@@ -867,7 +877,8 @@ end
       .DEVICE("VIRTEX6"),  // Target device: "VIRTEX5", "VIRTEX6" 
       .FIFO_SIZE ("36Kb"), // Target BRAM: "18Kb" or "36Kb" 
 //      .FIRST_WORD_FALL_THROUGH ("TRUE") // Sets the FIFO FWFT to "TRUE" or "FALSE" 
-      .FIRST_WORD_FALL_THROUGH (1'b1) // Sets the FIFO FWFT to "TRUE" or "FALSE" 
+//      .FIRST_WORD_FALL_THROUGH (1'b1) // Sets the FIFO FWFT to "TRUE" or "FALSE" 
+      .FIRST_WORD_FALL_THROUGH (1'b0) // Sets the FIFO FWFT to "TRUE" or "FALSE" 
    ) BPI_rbk_FIFO_data_i (
       .ALMOSTEMPTY(bpi_rbk_amt), // 1-bit output almost empty
       .ALMOSTFULL(bpi_rbk_afl),   // 1-bit output almost full

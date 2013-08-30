@@ -255,10 +255,15 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       BPI_OP            : out std_logic_vector(1 downto 0);   -- 
       BPI_ADDR          : out std_logic_vector(22 downto 0);  -- 
       BPI_DATA_TO       : out std_logic_vector(15 downto 0);  -- 
-      BPI_EXECUTE       : out std_logic   --  
+      BPI_EXECUTE       : out std_logic;
+-- Guido Aug 26
+      BPI_CFG_DONE      : out std_logic;
+      BPI_CFG_REG_WE    : out std_logic;
+      BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0)
       );
   end component;
-  component bpi_interface
+
+component bpi_interface
     port(
       CLK          : in    std_logic;   -- 40 MHz clock
       RST          : in    std_logic;
@@ -453,7 +458,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
 
-      --To SYSMON
+	BPI_CFG_DONE      : in std_logic;
+	BPI_CFG_REG_WE    : in std_logic;
+	BPI_CFG_REG_IN    : in std_logic_vector(15 downto 0);
+
+        --To SYSMON
       VP    : in std_logic;
       VN    : in std_logic;
       VAUXP : in std_logic_vector(15 downto 0);
@@ -1252,8 +1261,12 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_data_from     : std_logic_vector(15 downto 0);
   signal bpi_op            : std_logic_vector(1 downto 0);
   signal bpi_addr          : std_logic_vector(22 downto 0);
-  signal bpi_data_to       : std_logic_vector(15 downto 0);
-  signal dual_data_leds    : std_logic_vector(15 downto 0);
+  signal bpi_data_to    : std_logic_vector(15 downto 0);
+  signal dual_data_leds : std_logic_vector(15 downto 0);
+
+  signal bpi_cfg_done   : std_logic;
+  signal bpi_cfg_reg_we : std_logic;
+  signal bpi_cfg_reg_in : std_logic_vector(15 downto 0);
 
   -- SYSMON
   signal vauxp : std_logic_vector(15 downto 0);
@@ -1425,10 +1438,14 @@ begin
       BPI_RBK_FIFO_DATA => bpi_rbk_fifo_data,  -- Data on output of the Read back FIFO
       BPI_RBK_WRD_CNT   => bpi_rbk_wrd_cnt,  -- Word count of the Read back FIFO (number of available reads)
       BPI_STATUS        => bpi_status,  -- FIFO status bits and latest value of the PROM status register. 
-      BPI_TIMER         => bpi_timer,   -- General timer
+      BPI_TIMER => bpi_timer,           -- General timer
+
+      BPI_CFG_DONE   => bpi_cfg_done,
+      BPI_CFG_REG_WE => bpi_cfg_reg_we,
+      BPI_CFG_REG_IN => bpi_cfg_reg_in,
 
       -- Adam Aug 15 To SYSMON
-      VP    => '0',
+      VP => '0',
       VN    => '0',
       VAUXP => vauxp,
       VAUXN => vauxn
@@ -2929,9 +2946,13 @@ begin
       BPI_OP            => bpi_op,  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
       BPI_ADDR          => bpi_addr,    -- Bank/Array Address
       BPI_DATA_TO       => bpi_data_to,  -- Command or Data being written to FLASH device
-      BPI_EXECUTE       => bpi_execute
+      BPI_EXECUTE       => bpi_execute,
+      -- Guido - Aug 26
+      BPI_CFG_DONE      => bpi_cfg_done,
+      BPI_CFG_REG_WE    => bpi_cfg_reg_we,
+      BPI_CFG_REG_IN    => bpi_cfg_reg_in
       );
-
+  
   bpi_interface_i : bpi_interface
     port map (
       CLK          => clk40,            -- 40 MHz clock

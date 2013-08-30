@@ -180,8 +180,7 @@ entity ODMB_VME is
     VAUXP : in std_logic_vector(15 downto 0);
     VAUXN : in std_logic_vector(15 downto 0);
 
--- To/From BPI_PORT 
-
+    -- To/From BPI_PORT 
     BPI_RST           : out std_logic;  -- Resets BPI interface state machines
     BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
     BPI_WE            : out std_logic;  -- Command FIFO write enable  (pulse one clock cycle for one write)
@@ -191,10 +190,12 @@ entity ODMB_VME is
     BPI_RBK_FIFO_DATA : in  std_logic_vector(15 downto 0);  -- Data on output of the Read back FIFO
     BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
     BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
-    BPI_TIMER         : in  std_logic_vector(31 downto 0)   -- General timer
+    BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
 
-
-
+-- Guido - Aug 26
+    BPI_CFG_DONE   : in std_logic;
+    BPI_CFG_REG_WE : in std_logic;
+    BPI_CFG_REG_IN : in std_logic_vector(15 downto 0)
     );
 
 end ODMB_VME;
@@ -350,8 +351,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
       CALLCT_DLY : out std_logic_vector(3 downto 0);
 
       NWORDS_DUMMY : out std_logic_vector(15 downto 0);
-      KILL    : out std_logic_vector(NFEB+2 downto 1);
-      CRATEID : out std_logic_vector(6 downto 0)
+      KILL         : out std_logic_vector(NFEB+2 downto 1);
+      CRATEID      : out std_logic_vector(6 downto 0)
       );
   end component;
 
@@ -503,10 +504,60 @@ architecture ODMB_VME_architecture of ODMB_VME is
       BPI_RE            : out std_logic;  -- Read back FIFO read enable  (pulse one clock cycle for one read)
       BPI_DSBL          : out std_logic;  -- Disable parsing of BPI commands in the command FIFO (while being filled)
       BPI_ENBL          : out std_logic;  -- Enable  parsing of BPI commands in the command FIFO
+      BPI_CFG_DL        : out std_logic;  -- Download Configuration Regs in Flash PROM
+      BPI_CFG_UL        : out std_logic;  -- Upload Configuration Regs from Flash PROM
       BPI_RBK_FIFO_DATA : in  std_logic_vector(15 downto 0);  -- Data on output of the Read back FIFO
       BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
       BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
-      BPI_TIMER         : in  std_logic_vector(31 downto 0)  -- General timer
+      -- General timer
+      BPI_TIMER         : in  std_logic_vector(31 downto 0);
+-- Guido - Aug 26
+      BPI_MODE          : out std_logic;  -- 0 -> FILL PROM with CFG_REG values, 1 -> FILL PROM from VME
+      BPI_CFG_DATA_SEL  : out std_logic;
+      BPI_CFG_REG0      : in  std_logic_vector(15 downto 0);
+      BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
+      BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
+      BPI_CFG_REG3      : in  std_logic_vector(15 downto 0)
+      );
+  end component;
+
+  component BPI_CFG_CONTROLLER is
+    port(
+
+      clk : in std_logic;
+      rst : in std_logic;
+
+      bpi_cfg_ul_start : in std_logic;
+      bpi_cfg_dl_start : in std_logic;
+      bpi_cfg_done     : in std_logic;
+      bpi_cfg_reg0     : in std_logic_vector(15 downto 0);
+      bpi_cfg_reg1     : in std_logic_vector(15 downto 0);
+      bpi_cfg_reg2     : in std_logic_vector(15 downto 0);
+      bpi_cfg_reg3     : in std_logic_vector(15 downto 0);
+
+      bpi_dis          : out std_logic;
+      bpi_en           : out std_logic;
+      bpi_cfg_reg_we_i : in  std_logic;
+      bpi_cfg_reg_we_o : out std_logic_vector(3 downto 0);
+      bpi_cfg_busy     : out std_logic;
+      bpi_cfg_data_sel : in  std_logic;
+      bpi_cmd_fifo_we  : out std_logic;
+      bpi_cmd_fifo_in  : out std_logic_vector(15 downto 0)
+      );
+  end component;
+
+  component bpi_cfg_registers is
+    port(
+      clk : in std_logic;
+      rst : in std_logic;
+
+      bpi_cfg_reg_we : in std_logic_vector(3 downto 0);
+      bpi_cfg_reg_in : in std_logic_vector(15 downto 0);
+
+      bpi_cfg_reg0 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg1 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg2 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg3 : out std_logic_vector(15 downto 0)
       );
   end component;
 
@@ -550,6 +601,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       device3_outdata : in  std_logic_vector(15 downto 0);
       device4_outdata : in  std_logic_vector(15 downto 0);
       device5_outdata : in  std_logic_vector(15 downto 0);
+      device6_outdata : in  std_logic_vector(15 downto 0);
       device7_outdata : in  std_logic_vector(15 downto 0);
       device8_outdata : in  std_logic_vector(15 downto 0);
       outdata         : out std_logic_vector(15 downto 0)
@@ -600,6 +652,22 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal outdata_bpi_port    : std_logic_vector(15 downto 0);
 
   signal outdata_testctrl : std_logic_vector(15 downto 0);
+
+  signal cfg_reg0 : std_logic_vector(15 downto 0) := x"fff0";
+  signal cfg_reg1 : std_logic_vector(15 downto 0) := x"fff1";
+  signal cfg_reg2 : std_logic_vector(15 downto 0) := x"fff2";
+  signal cfg_reg3 : std_logic_vector(15 downto 0) := x"fff3";
+
+  signal vme_bpi_cmd_fifo_data, cc_bpi_cmd_fifo_data : std_logic_vector(15 downto 0);
+  signal vme_bpi_we, cc_bpi_we                       : std_logic;
+  signal vme_bpi_dsbl, cc_bpi_dsbl                   : std_logic;
+  signal vme_bpi_enbl, cc_bpi_enbl                   : std_logic;
+  signal bpi_cfg_dl                                  : std_logic                    := '0';
+  signal bpi_cfg_ul                                  : std_logic                    := '0';
+  signal bpi_cfg_reg_we_vec                          : std_logic_vector(3 downto 0) := "0000";
+  signal bpi_mode                                    : std_logic;
+  signal bpi_cfg_busy                                : std_logic;
+  signal bpi_cfg_data_sel                            : std_logic;
 
 begin
 
@@ -745,8 +813,8 @@ begin
       CALLCT_DLY => CALLCT_DLY,
 
       NWORDS_DUMMY => NWORDS_DUMMY,
-      KILL    => KILL,
-      CRATEID => CRATEID
+      KILL         => KILL,
+      CRATEID      => CRATEID
       );
 
   DEV5_TESTFIFOS : TESTFIFOS
@@ -801,9 +869,7 @@ begin
       );
 
   DEV6_BPI_PORT : BPI_PORT
-
     port map (
-
       CLK               => clk,         -- 40MHz clock
       RST               => rst,         -- system reset
       -- VME selection/control
@@ -816,16 +882,69 @@ begin
       DTACK_B           => vme_dtack_b,  -- DTACK bar
       -- BPI controls
       BPI_RST           => BPI_RST,     -- Resets BPI interface state machines
-      BPI_CMD_FIFO_DATA => BPI_CMD_FIFO_DATA,  -- Data for command FIFO
-      BPI_WE            => BPI_WE,  -- Command FIFO write enable  (pulse one clock cycle for one write)
+      BPI_CMD_FIFO_DATA => VME_BPI_CMD_FIFO_DATA,  -- Data for command FIFO
+      BPI_WE            => VME_BPI_WE,  -- Command FIFO write enable  (pulse one clock cycle for one write)
       BPI_RE            => BPI_RE,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
-      BPI_DSBL          => BPI_DSBL,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
-      BPI_ENBL          => BPI_ENBL,  -- Enable  parsing of BPI commands in the command FIFO
+      BPI_DSBL          => VME_BPI_DSBL,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
+      BPI_ENBL          => VME_BPI_ENBL,  -- Enable  parsing of BPI commands in the command FIFO
+      BPI_CFG_DL        => BPI_CFG_DL,  -- Download Configuration Regs in Flash PROM
+      BPI_CFG_UL        => BPI_CFG_UL,  -- Upload Configuration Regs from Flash PROM
       BPI_RBK_FIFO_DATA => BPI_RBK_FIFO_DATA,  -- Data on output of the Read back FIFO
       BPI_RBK_WRD_CNT   => BPI_RBK_WRD_CNT,  -- Word count of the Read back FIFO (number of available reads)
       BPI_STATUS        => BPI_STATUS,  -- FIFO status bits and latest value of the PROM status register. 
-      BPI_TIMER         => BPI_TIMER    -- General timer
+      BPI_TIMER         => BPI_TIMER,   -- General timer
+-- Guido - Aug 26
+      BPI_MODE          => BPI_MODE,  -- 0 -> FILL PROM with CFG_REG values, 1 -> FILL PROM from VME
+      BPI_CFG_DATA_SEL  => BPI_CFG_DATA_SEL,  -- CFG_REG values into PROM: 0 -> constants stored in CFG_CONTROLLER, 1 -> CFG_REG values
+      BPI_CFG_REG0      => CFG_REG0,
+      BPI_CFG_REG1      => CFG_REG1,
+      BPI_CFG_REG2      => CFG_REG2,
+      BPI_CFG_REG3      => CFG_REG3
       );
+
+  BPI_CR_PM : BPI_CFG_REGISTERS
+    port map (
+      clk => clk,
+      rst => rst,
+
+      bpi_cfg_reg_we => BPI_CFG_REG_WE_VEC,
+      bpi_cfg_reg_in => BPI_CFG_REG_IN,
+
+      bpi_cfg_reg0 => CFG_REG0,
+      bpi_cfg_reg1 => CFG_REG1,
+      bpi_cfg_reg2 => CFG_REG2,
+      bpi_cfg_reg3 => CFG_REG3
+      );
+
+  BPI_CC_PM : BPI_CFG_CONTROLLER
+    port map (
+      CLK => clk,
+      RST => rst,
+
+      bpi_cfg_dl_start => BPI_CFG_DL,
+      bpi_cfg_ul_start => BPI_CFG_UL,
+      bpi_cfg_done     => BPI_CFG_DONE,
+      bpi_cfg_reg0     => CFG_REG0,
+      bpi_cfg_reg1     => CFG_REG1,
+      bpi_cfg_reg2     => CFG_REG2,
+      bpi_cfg_reg3     => CFG_REG3,
+
+      bpi_dis          => CC_BPI_DSBL,
+      bpi_en           => CC_BPI_ENBL,
+      bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
+      bpi_cfg_reg_we_o => BPI_CFG_REG_WE_VEC,
+      bpi_cfg_busy     => BPI_CFG_BUSY,
+      bpi_cfg_data_sel => BPI_CFG_DATA_SEL,
+      bpi_cmd_fifo_we  => CC_BPI_WE,
+      bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
+      );
+
+
+  BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (BPI_MODE = '1') else CC_BPI_CMD_FIFO_DATA;
+  BPI_WE            <= VME_BPI_WE            when (BPI_MODE = '1') else CC_BPI_WE;
+  BPI_DSBL          <= VME_BPI_DSBL          when (BPI_MODE = '1') else CC_BPI_DSBL;
+  BPI_ENBL          <= VME_BPI_ENBL          when (BPI_MODE = '1') else CC_BPI_ENBL;
+
 
   DEV7_SYSMON : SYSTEM_MON
     port map(
@@ -937,6 +1056,7 @@ begin
       device3_outdata => outdata_vmemon,
       device4_outdata => outdata_vmeconfregs,
       device5_outdata => outdata_testfifos,
+      device6_outdata => outdata_bpi_port,
       device7_outdata => outdata_sysmon,
       device8_outdata => outdata_lvdbmon,
       outdata         => vme_data_out

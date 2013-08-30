@@ -46,7 +46,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
       en       : in  std_logic;
       l1a      : out std_logic;
       alct_dav : out std_logic;
-      otmb_dav  : out std_logic;
+      otmb_dav : out std_logic;
       lct      : out std_logic_vector(7 downto 0)
       );
 
@@ -54,13 +54,13 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   component file_handler_ccb is
     port (
-      clk         : in  std_logic;
-      en          : in  std_logic;
-      ccb_cmd_s   : out std_logic;
-      ccb_cmd   : out std_logic_vector(5 downto 0);
-      ccb_data_s  : out std_logic;
-      ccb_data  : out std_logic_vector(7 downto 0);
-      ccb_cal     : out std_logic_vector(2 downto 0)
+      clk        : in  std_logic;
+      en         : in  std_logic;
+      ccb_cmd_s  : out std_logic;
+      ccb_cmd    : out std_logic_vector(5 downto 0);
+      ccb_data_s : out std_logic;
+      ccb_data   : out std_logic_vector(7 downto 0);
+      ccb_cal    : out std_logic_vector(2 downto 0)
       );
 
   end component;
@@ -162,18 +162,18 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   component prom is
     port(
-  
-      clk   : in std_logic;
-      rst   : in std_logic;
+
+      clk : in std_logic;
+      rst : in std_logic;
 
       we_b : in std_logic;
       cs_b : in std_logic;
       oe_b : in std_logic;
       le_b : in std_logic;
 
-      addr : in std_logic_vector(22 downto 0);
-	    data : inout std_logic_vector(15 downto 0)
-	    );
+      addr : in    std_logic_vector(22 downto 0);
+      data : inout std_logic_vector(15 downto 0)
+      );
 
   end component;
 
@@ -193,14 +193,14 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- BPI Prom signals To/From bpi_interface
 
-		    prom_a : INOUT STD_LOGIC_VECTOR(22 DOWNTO 0);	   	
-		    prom_a_21_rs0 : OUT STD_LOGIC;								          -- not connected in v.2
-		    prom_a_22_rs1 : OUT STD_LOGIC;								          -- not connected in v.2
-		    prom_d : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);	  
-		    prom_cs_b : OUT STD_LOGIC;							
-		    prom_oe_b : OUT STD_LOGIC;							
-		    prom_we_b : OUT STD_LOGIC;							
-		    prom_le_b : OUT STD_LOGIC;							
+        prom_a        : inout std_logic_vector(22 downto 0);
+        prom_a_21_rs0 : out   std_logic;  -- not connected in v.2
+        prom_a_22_rs1 : out   std_logic;  -- not connected in v.2
+        prom_d        : inout std_logic_vector(15 downto 0);
+        prom_cs_b     : out   std_logic;
+        prom_oe_b     : out   std_logic;
+        prom_we_b     : out   std_logic;
+        prom_le_b     : out   std_logic;
 
 -- From/To VME connector To/From MBV
 
@@ -280,13 +280,13 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 -- From J6/J7 (J3/J4) to FIFOs
 
         otmb      : in std_logic_vector(17 downto 0);
-        alct     : in std_logic_vector(17 downto 0);
-        rawlct   : in std_logic_vector(NFEB downto 0);
+        alct      : in std_logic_vector(17 downto 0);
+        rawlct    : in std_logic_vector(NFEB downto 0);
         otmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
-        otmbdav    : in  std_logic;      --  lctdav1
+        otmbdav   : in  std_logic;      --  lctdav1
         alctdav   : in  std_logic;      --  lctdav2
 --    rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);     
         rsvtd_in  : in  std_logic_vector(4 downto 0);
@@ -393,7 +393,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- clock and reset signals
 
-  signal go, goevent,goccb : std_logic := '0';
+  signal go, goevent, goccb : std_logic := '0';
 
   signal clk  : std_logic := '0';
   signal rst  : std_logic := '0';
@@ -410,7 +410,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal l1a      : std_logic;
   signal l1a_b    : std_logic := '1';
   signal alct_dav : std_logic;
-  signal otmb_dav  : std_logic;
+  signal otmb_dav : std_logic;
   signal lct      : std_logic_vector(NFEB downto 0);
 
 -- signals to/from test_controller (from/to slv_mgt module)
@@ -466,11 +466,11 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- signals between vme_master_fsm and cfebjtag and lvdbmon modules
 
-  signal dtack            : std_logic;
-  signal indata           : std_logic_vector(15 downto 0);
-  signal outdata          : std_logic_vector(15 downto 0);
+  signal dtack   : std_logic;
+  signal indata  : std_logic_vector(15 downto 0);
+  signal outdata : std_logic_vector(15 downto 0);
 
-  signal tovme, doe_b             : std_logic;
+  signal tovme, doe_b : std_logic;
 
   signal ccbinj : std_logic := '0';
   signal ccbpls : std_logic := '0';
@@ -484,13 +484,13 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal dcfeb_tms       : std_logic;
   signal dcfeb_tdi       : std_logic;
   signal dcfeb_tdo       : std_logic_vector(NFEB downto 1) := "0000000";  -- in
-  signal dcfeb_bco       : std_logic := '0';
-  signal dcfeb_resync    : std_logic := '0';
-  signal odmb_hardrst_b  : std_logic := '0';
-  signal dcfeb_reprgen_b : std_logic := '0';
-  signal dcfeb_injpls    : std_logic := '0';
-  signal dcfeb_extpls    : std_logic := '0';
-  signal dcfeb_l1a       : std_logic := '0';
+  signal dcfeb_bco       : std_logic                       := '0';
+  signal dcfeb_resync    : std_logic                       := '0';
+  signal odmb_hardrst_b  : std_logic                       := '0';
+  signal dcfeb_reprgen_b : std_logic                       := '0';
+  signal dcfeb_injpls    : std_logic                       := '0';
+  signal dcfeb_extpls    : std_logic                       := '0';
+  signal dcfeb_l1a       : std_logic                       := '0';
   signal dcfeb_l1a_match : std_logic_vector(NFEB downto 1);
   signal dcfeb_done      : std_logic_vector(NFEB downto 1) := "0000000";  -- in
 
@@ -507,35 +507,35 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From/To J6 (J3) connector to ODMB_CTRL (All signals active low)
 
-  signal ccb_cmd     : std_logic_vector(5 downto 0) := "000000";         -- in
-  signal ccb_cmd_s   : std_logic                    := '1';              -- in
-  signal ccb_data    : std_logic_vector(7 downto 0) := "00000000";       -- in
-  signal ccb_data_s  : std_logic                    := '1';              -- in
-  signal ccb_cal     : std_logic_vector(2 downto 0) := (others => '1');  -- in
-  signal ccb_crsv    : std_logic_vector(4 downto 0) := "00000";          -- in
-  signal ccb_drsv    : std_logic_vector(1 downto 0) := "00";             -- in
-  signal ccb_rsvo    : std_logic_vector(4 downto 0) := "00000";          -- in
-  signal ccb_rsvi    : std_logic_vector(2 downto 0);                     -- out
-  signal ccb_bx0     : std_logic                    := '1';              -- in
-  signal ccb_l1acc   : std_logic                    := '1';              -- in
-  signal ccb_l1rls   : std_logic;                                        -- out
-  signal ccb_clken   : std_logic                    := '1';              -- in
-  signal ccb_hardrst : std_logic                    := '1';              -- in
-  signal ccb_softrst : std_logic                    := '1';              -- in
-  signal ccb_evcntres : std_logic := '1';
-  signal ccb_bxrst   : std_logic                    := '1';              -- in
-  signal ccb_l1arst  : std_logic                    := '1';              -- in
-  
+  signal ccb_cmd      : std_logic_vector(5 downto 0) := "000000";         -- in
+  signal ccb_cmd_s    : std_logic                    := '1';              -- in
+  signal ccb_data     : std_logic_vector(7 downto 0) := "00000000";       -- in
+  signal ccb_data_s   : std_logic                    := '1';              -- in
+  signal ccb_cal      : std_logic_vector(2 downto 0) := (others => '1');  -- in
+  signal ccb_crsv     : std_logic_vector(4 downto 0) := "00000";          -- in
+  signal ccb_drsv     : std_logic_vector(1 downto 0) := "00";             -- in
+  signal ccb_rsvo     : std_logic_vector(4 downto 0) := "00000";          -- in
+  signal ccb_rsvi     : std_logic_vector(2 downto 0);  -- out
+  signal ccb_bx0      : std_logic                    := '1';              -- in
+  signal ccb_l1acc    : std_logic                    := '1';              -- in
+  signal ccb_l1rls    : std_logic;      -- out
+  signal ccb_clken    : std_logic                    := '1';              -- in
+  signal ccb_hardrst  : std_logic                    := '1';              -- in
+  signal ccb_softrst  : std_logic                    := '1';              -- in
+  signal ccb_evcntres : std_logic                    := '1';
+  signal ccb_bxrst    : std_logic                    := '1';              -- in
+  signal ccb_l1arst   : std_logic                    := '1';              -- in
+
 
 -- From J6/J7 (J3/J4) to FIFOs
 
   signal otmb      : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
-  signal alct     : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
+  signal alct      : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
   signal otmbffclk : std_logic                     := '0';  -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
-  signal otmbdav    : std_logic                    := '0';      -- in
+  signal otmbdav   : std_logic                    := '0';      -- in
   signal alctdav   : std_logic                    := '0';      -- in
   signal rsvtd_in  : std_logic_vector(4 downto 0) := "00000";  -- in
   signal rsvtd_out : std_logic_vector(2 downto 0);             -- out
@@ -543,17 +543,17 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From/To QPLL (From/To DAQMBV)
 
-  signal qpll_autorestart : std_logic;                     -- out
-  signal qpll_reset       : std_logic;                     -- out
+  signal qpll_autorestart : std_logic;  -- out
+  signal qpll_reset       : std_logic;  -- out
   signal qpll_f0sel       : std_logic_vector(3 downto 0) := (others => '0');  -- out
-  signal qpll_locked      : std_logic := '1';              -- in
-  signal qpll_error       : std_logic := '1';              -- in
-  signal qpll_clk40MHz_p  : std_logic := '0';              -- in
-  signal qpll_clk40MHz_n  : std_logic := '1';              -- in
-  signal qpll_clk80MHz_p  : std_logic := '0';              -- in
-  signal qpll_clk80MHz_n  : std_logic := '1';              -- in
-  signal qpll_clk160MHz_p : std_logic := '0';              -- in
-  signal qpll_clk160MHz_n : std_logic := '1';              -- in
+  signal qpll_locked      : std_logic                    := '1';  -- in
+  signal qpll_error       : std_logic                    := '1';  -- in
+  signal qpll_clk40MHz_p  : std_logic                    := '0';  -- in
+  signal qpll_clk40MHz_n  : std_logic                    := '1';  -- in
+  signal qpll_clk80MHz_p  : std_logic                    := '0';  -- in
+  signal qpll_clk80MHz_n  : std_logic                    := '1';  -- in
+  signal qpll_clk160MHz_p : std_logic                    := '0';  -- in
+  signal qpll_clk160MHz_n : std_logic                    := '1';  -- in
 
 -- From/To LVMB (From/To DAQMBV and DAQMBC)
 
@@ -631,12 +631,12 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From/To PROM
 
-	signal 	prom_addr : STD_LOGIC_VECTOR(22 DOWNTO 0);	   	
-	signal 	prom_data : STD_LOGIC_VECTOR(15 DOWNTO 0);	  
-  signal  prom_cs_b : STD_LOGIC;              
-  signal  prom_oe_b : STD_LOGIC;              
-  signal  prom_we_b : STD_LOGIC;              
-  signal  prom_le_b : STD_LOGIC;              
+  signal prom_addr : std_logic_vector(22 downto 0);
+  signal prom_data : std_logic_vector(15 downto 0);
+  signal prom_cs_b : std_logic;
+  signal prom_oe_b : std_logic;
+  signal prom_we_b : std_logic;
+  signal prom_le_b : std_logic;
 
 -- Others 
 
@@ -709,22 +709,22 @@ begin
 
 -- BPI Prom signals To/From bpi_interface
 
-		  prom_a => prom_addr, 	
-		  prom_a_21_rs0 => open,								          -- not connected in v.2
-		  prom_a_22_rs1 => open,								          -- not connected in v.2
-		  prom_d => prom_data,	  
-		  prom_cs_b => prom_cs_b,							
-		  prom_oe_b => prom_oe_b,							
-		  prom_we_b => prom_we_b,						
-		  prom_le_b => prom_le_b,						
+      prom_a        => prom_addr,
+      prom_a_21_rs0 => open,            -- not connected in v.2
+      prom_a_22_rs1 => open,            -- not connected in v.2
+      prom_d        => prom_data,
+      prom_cs_b     => prom_cs_b,
+      prom_oe_b     => prom_oe_b,
+      prom_we_b     => prom_we_b,
+      prom_le_b     => prom_le_b,
 
 -- From/To VME connector To/From MBV
 
       vme_data        => vme_data(15 downto 0),  -- inout
-      vme_addr        => adr(23 downto 1),   -- in
-      vme_am          => am(5 downto 0),     -- in
+      vme_addr        => adr(23 downto 1),       -- in
+      vme_am          => am(5 downto 0),         -- in
       vme_gap         => ga(5),         -- in
-      vme_ga          => ga(4 downto 0),     -- in
+      vme_ga          => ga(4 downto 0),         -- in
       vme_bg0         => LOGIC0,        -- in
       vme_bg1         => LOGIC0,        -- in
       vme_bg2         => LOGIC0,        -- in
@@ -794,14 +794,14 @@ begin
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-      otmb      => otmb,                  -- in
-      alct     => alct,                 -- in
-      rawlct   => lct,                  -- from file_handler_event
-      otmbffclk => otmbffclk,             -- in
+      otmb      => otmb,                -- in
+      alct      => alct,                -- in
+      rawlct    => lct,                 -- from file_handler_event
+      otmbffclk => otmbffclk,           -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
-      otmbdav    => otmb_dav,             -- from file_handler_event
+      otmbdav   => otmb_dav,            -- from file_handler_event
       alctdav   => alct_dav,            -- from file_handler_event
 --              rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);                     
       rsvtd_in  => rsvtd_in,            -- in
@@ -886,7 +886,7 @@ begin
       done_in      => done_in,
       ccb_evcntres => ccb_evcntres,
 
- -- Adam Aug 15 To SYSMON
+      -- Adam Aug 15 To SYSMON
       p1v0_sm_p     => p1v0_sm_p,
       p1v0_sm_n     => p1v0_sm_n,
       p2v5_sm_p     => p2v5_sm_p,
@@ -902,7 +902,7 @@ begin
       therm1_p      => therm1_p,
       therm1_n      => therm1_n,
       therm2_p      => therm2_p,
-      therm2_n      => therm2_n     
+      therm2_n      => therm2_n
       );
 
   PMAP_file_handler_event : file_handler_event
@@ -913,7 +913,7 @@ begin
       en       => goevent,
       l1a      => l1a,
       alct_dav => alct_dav,
-      otmb_dav  => otmb_dav,
+      otmb_dav => otmb_dav,
       lct      => lct
       );
 
@@ -921,13 +921,13 @@ begin
 
     port map(
 
-      clk         => clk,
-      en          => goccb,
-      ccb_cmd_s   => ccb_cmd_s,
-      ccb_cmd     => ccb_cmd,
-      ccb_data_s  => ccb_data_s,
-      ccb_data    => ccb_data,
-      ccb_cal     => ccb_cal
+      clk        => clk,
+      en         => goccb,
+      ccb_cmd_s  => ccb_cmd_s,
+      ccb_cmd    => ccb_cmd,
+      ccb_data_s => ccb_data_s,
+      ccb_data   => ccb_data,
+      ccb_cal    => ccb_cal
       );
 
   l1a_b <= not l1a;
@@ -995,17 +995,17 @@ begin
 
   PMAP_prom : prom
     port map (
-  
-      clk     => clk,
-      rst     => rst,
 
-      we_b    => prom_we_b,
-      cs_b    => prom_cs_b,
-      oe_b    => prom_oe_b,
-      le_b    => prom_le_b,
+      clk => clk,
+      rst => rst,
 
-      addr    => prom_addr,
-	    data    => prom_data);
+      we_b => prom_we_b,
+      cs_b => prom_cs_b,
+      oe_b => prom_oe_b,
+      le_b => prom_le_b,
+
+      addr => prom_addr,
+      data => prom_data);
 
 
   PMAP_VME_Master : vme_master
