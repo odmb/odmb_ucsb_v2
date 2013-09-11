@@ -30,19 +30,216 @@ end prom;
 
 architecture prom_architecture of prom is
 
-constant NW   : integer := 16;
+-- Sep 5
+--constant NB : integer := 16;
+constant NBK : integer := 16;
+constant NBL : integer := 128;
+constant NWD : integer := 16;
 
-type prom_array is array (NW-1 downto 0) of std_logic_vector(15 downto 0);
-    
+--signal status_reg : std_logic_vector(15 downto 0) := "1111111010000000"; -- 0xf080
+
+-- signal elec_sig : std_logic_vector(15 downto 0) := "1100111011001010"; -- 0xceca
+
+signal mem_out : std_logic_vector(15 downto 0);
+
+signal read_status_reg : std_logic_vector(NBK-1 downto 0);
+signal read_elec_sig : std_logic_vector(NBK-1 downto 0);
+signal read_array : std_logic_vector(NBK-1 downto 0);
+signal program : std_logic_vector(NBK-1 downto 0);
+
+constant lock_unlock_code : std_logic_vector(15 downto 0)         := "0000000001100000"; -- 0x0060
+constant unlock_confirm_code : std_logic_vector(15 downto 0)      := "0000000011010000"; -- 0x00D0
+constant lock_confirm_code : std_logic_vector(15 downto 0)        := "0000000000000001"; -- 0x0001
+
+constant read_status_reg_code : std_logic_vector(15 downto 0)     := "0000000001110000"; -- 0x0070
+constant read_elec_sig_code : std_logic_vector(15 downto 0)       := "0000000010010000"; -- 0x0090
+constant read_array_code : std_logic_vector(15 downto 0)          := "0000000011111111"; -- 0x00ff
+constant program_code : std_logic_vector(15 downto 0)             := "0000000001000000"; -- 0x0040
+
+
+signal bk_index : integer := 0; -- bank address (0 -> 15)
+signal bl_index : integer := 0; -- block address (0 -> 127)
+signal wd_index : integer := 0; -- word address (0 -> 15)
+
+constant manufacturer_code : std_logic_vector(15 downto 0) := "0000000001001001"; -- ES - Bank Address + 0 - 0x0049
+signal device_code : std_logic_vector(15 downto 0) := "0101000001101011";        -- ES - Bank Address + 1 - 0x506b
+
+type block_array is array (NWD-1 downto 0) of std_logic_vector(15 downto 0);
+type prom_array is array (NBL-1 downto 0) of block_array;
 signal prom_data : prom_array;
 
+type bank_regs is array (NBK-1 downto 0) of std_logic_vector(15 downto 0);
+signal command_reg : bank_regs; -- command register
+signal configuration_reg : bank_regs;                                 -- ES - Bank Address + 5
+signal bank_data : bank_regs;
+signal bank_out : bank_regs;
+signal status_reg : bank_regs;                                        -- Status Register
+
+signal program_done : std_logic_vector(NBK-1 downto 0);               
+
+type block_regs is array (NBL-1 downto 0) of std_logic_vector(15 downto 0);
+signal block_status : block_regs;                                      -- ES - Block Address + 2
+
 signal data_in, data_out : std_logic_vector(15 downto 0);
+
+signal latched_data : std_logic_vector(15 downto 0);
+signal latched_addr : std_logic_vector(22 downto 0);
 
 signal addr_cnt_out : std_logic_vector(22 downto 0);
 
 begin
 
--- Address Counter
+  bk_index <= to_integer(unsigned(latched_addr(22 downto 19)));
+  bl_index <= to_integer(unsigned(latched_addr(22 downto 16)));
+
+  wd_index <= to_integer(unsigned(latched_addr(3 downto 0)));
+
+block_status_proc: process (rst, command_reg, bl_index)
+
+begin
+
+  for i in 0 to NBL-1 loop
+    if (rst = '1') then
+      block_status(i)(15 downto 1) <= (others => '0');
+      block_status(i)(0) <= '1';
+    end if;
+  end loop;
+    
+  for i in 0 to NBK-1 loop
+    if (command_reg(bk_index) = unlock_confirm_code) and (i = bl_index) then 
+      block_status(i)(15 downto 1) <= (others => '0');
+      block_status(i)(0) <= '0';
+    elsif (command_reg(bk_index) = lock_confirm_code) and (i = bl_index) then 
+      block_status(i)(15 downto 1) <= (others => '0');
+      block_status(i)(0) <= '1';
+    end if;
+  end loop;
+    
+end process;
+
+configuration_reg_proc: process (rst)
+
+begin
+
+  for i in 0 to NBK-1 loop
+    if (rst = '1') then
+      configuration_reg(i)(15 downto 4) <= "110011001100";
+      configuration_reg(i)(3 downto 0) <= std_logic_vector(to_unsigned(i, 4));
+    end if;
+  end loop;
+    
+end process;
+
+status_reg_proc: process (rst)
+
+begin
+
+  for i in 0 to NBK-1 loop
+    if (rst = '1') then
+      status_reg(i)(15 downto 12) <= "1111";
+      status_reg(i)(11 downto 8) <= std_logic_vector(to_unsigned(i, 4));
+      status_reg(i)(7 downto 0) <= "10000000";
+    end if;
+  end loop;
+    
+end process;
+
+-- Latch Command/Data
+
+ld_proc: process (we_b, cs_b, data_in, bk_index, command_reg, rst)
+
+begin
+
+  for i in 0 to NBK-1 loop
+    if (rst = '1') then
+      command_reg(i) <= read_array_code;
+    elsif rising_edge(we_b) and (i = bk_index) and ((command_reg(i) = read_array_code) or (data_in = read_array_code)) then
+      command_reg(i) <= data_in;
+    elsif rising_edge(we_b) and (i = bk_index) and ((command_reg(i) = lock_unlock_code) and (data_in = unlock_confirm_code)) then
+      command_reg(i) <= data_in;
+    elsif rising_edge(we_b) and (i = bk_index) and ((command_reg(i) = unlock_confirm_code) and (data_in = read_elec_sig_code)) then
+      command_reg(i) <= data_in;
+    end if;
+  end loop;
+    
+end process;
+
+-- Latch Address
+
+la_proc: process (le_b, cs_b, addr)
+
+begin
+
+  if rising_edge(le_b) then
+	   latched_addr <= addr;
+	end if; 
+
+end process;
+
+cmd_dec_proc: process (clk, command_reg)
+
+begin
+
+  for i in 0 to NBK-1 loop
+  
+    if (command_reg(i) = read_status_reg_code) then  -- 0x70
+      read_status_reg(i) <= '1';
+    else
+      read_status_reg(i) <= '0';
+    end if; 
+
+    if (command_reg(i) = read_elec_sig_code) then  -- 0x90
+      read_elec_sig(i) <= '1';
+    else
+      read_elec_sig(i) <= '0';
+    end if; 
+
+    if (command_reg(i) = read_array_code) then  -- 0xff
+      read_array(i) <= '1';
+    else
+      read_array(i) <= '0';
+    end if; 
+
+    if (command_reg(i) = program_code) then  -- 0x40
+      program(i) <= '1';
+    else
+      program(i) <= '0';
+    end if; 
+    
+  end loop;
+    
+
+end process;
+
+out_mux_proc: process (read_status_reg, status_reg, read_elec_sig, read_array, bank_data, bank_out, bk_index, bl_index, wd_index, block_status)
+
+begin
+
+  for i in 0 to NBK-1 loop
+  
+    if (i = bk_index) and (read_status_reg(i) = '1') then
+      bank_out(i) <= status_reg(i);
+    elsif (i = bk_index) and (read_elec_sig(i) = '1') then
+      if (wd_index = 0) then
+        bank_out(i) <= manufacturer_code;
+      elsif (wd_index = 1) then
+        bank_out(i) <= device_code;
+      elsif (wd_index = 2) then
+        bank_out(i) <= block_status(bl_index);
+      elsif (wd_index = 5) then
+        bank_out(i) <= configuration_reg(i);
+      end if;
+    elsif (i = bk_index) and (read_array(i) = '1') then
+      bank_out(i) <= bank_data(i);
+    else
+      bank_out(i) <= status_reg(i);
+    end if; 
+    
+  end loop;
+
+    data_out <= bank_out(bk_index);
+    
+end process;
 
 cnt_proc: process (clk, le_b, addr)
 
@@ -50,13 +247,16 @@ variable addr_cnt_data : std_logic_vector(22 downto 0);
 
 begin
 
-	if (rst = '0') then
+	if (rst = '1') then
 		addr_cnt_data := (OTHERS => '0');
 	elsif (rising_edge(clk)) then
-		if (le_b = '0') then
+--		if (le_b = '0') then
+--			addr_cnt_data := addr;
+--		elsif (we_b = '0') or (oe_b = '0') then    
+--			addr_cnt_data := addr_cnt_data + 1;
+--		end if;              
+		if (cs_b = '0') and (le_b = '0') then
 			addr_cnt_data := addr;
-		elsif (we_b = '0') or (oe_b = '0') then    
-			addr_cnt_data := addr_cnt_data + 1;
 		end if;              
 	end if; 
 
@@ -66,53 +266,46 @@ end process;
 
 -- Memory
 	
-mem_proc: process (clk, cs_b, we_b, oe_b, addr_cnt_out, prom_data)
+mem_proc: process (clk, cs_b, we_b, oe_b, bk_index, bl_index, command_reg, program_done, data, rst)
 
 begin
 
-	if (cs_b = '0') and (we_b = '0') and (rising_edge(clk)) then
-		case addr_cnt_out(3 downto 0) is
-		  when "0000" => prom_data(0) <= data_in;
-		  when "0001" => prom_data(1) <= data_in;
-		  when "0010" => prom_data(2) <= data_in;
-		  when "0011" => prom_data(3) <= data_in;
-		  when "0100" => prom_data(4) <= data_in;
-		  when "0101" => prom_data(5) <= data_in;
-		  when "0110" => prom_data(6) <= data_in;
-		  when "0111" => prom_data(7) <= data_in;
-		  when "1000" => prom_data(8) <= data_in;
-		  when "1001" => prom_data(9) <= data_in;
-		  when "1010" => prom_data(10) <= data_in;
-		  when "1011" => prom_data(11) <= data_in;
-		  when "1100" => prom_data(12) <= data_in;
-		  when "1101" => prom_data(13) <= data_in;
-		  when "1110" => prom_data(14) <= data_in;
-		  when "1111" => prom_data(15) <= data_in;
-		  when others => prom_data <= prom_data;
-    end case;		
+-- Initial Memory Reset
+
+	if (rst = '1') then
+
+    for i in 0 to NBL-1 loop
+      for j in 0 to NWD-1 loop
+        prom_data(i)(j) <= (others => '1');
+      end loop;
+    end loop;
+
+    for i in 0 to NBK-1 loop
+      program_done(i) <= '0';
+    end loop;
+    
+  end if;
+    
+-- Bank Write
+
+  if (command_reg(bk_index) = program_code) and (block_status(bl_index)(0) = '0') and (program_done(bk_index) = '0') and (cs_b = '0') and (we_b = '0') and (rising_edge(clk)) then
+    prom_data(bl_index)(wd_index) <= data;
+    program_done(bk_index) <= '1';
 	end if; 
 
-	if (cs_b = '0') and (oe_b = '0') and (rising_edge(clk)) then
-		case addr_cnt_out(3 downto 0) is
-		  when "0000" => data_out <= prom_data(0);
-		  when "0001" => data_out <= prom_data(1);
-		  when "0010" => data_out <= prom_data(2);
-		  when "0011" => data_out <= prom_data(3);
-		  when "0100" => data_out <= prom_data(4);
-		  when "0101" => data_out <= prom_data(5);
-		  when "0110" => data_out <= prom_data(6);
-		  when "0111" => data_out <= prom_data(7);
-		  when "1000" => data_out <= prom_data(8);
-		  when "1001" => data_out <= prom_data(9);
-		  when "1010" => data_out <= prom_data(10);
-		  when "1011" => data_out <= prom_data(11);
-		  when "1100" => data_out <= prom_data(12);
-		  when "1101" => data_out <= prom_data(13);
-		  when "1110" => data_out <= prom_data(14);
-		  when "1111" => data_out <= prom_data(15);
-		  when others => data_out <= (others => '0');
-    end case;		
-	end if; 
+  for i in 0 to NBK-1 loop
+    if rising_edge(we_b) and (i = bk_index) and ((command_reg(i) = program_code) and (data_in = read_array_code)) then
+      program_done(i) <= '0';
+    end if;
+  end loop;
+
+-- Bank Read
+
+  for i in 0 to NBK-1 loop
+    if (command_reg(i) = read_array_code) and (cs_b = '0') and (oe_b = '0') and (rising_edge(clk)) then
+      bank_data(i) <= prom_data(bl_index)(wd_index);
+    end if; 
+  end loop;
 
 end process;
 

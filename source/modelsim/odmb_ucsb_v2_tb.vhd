@@ -645,16 +645,10 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal LOGIC0 : std_logic := '0';
   signal LOGIC1 : std_logic := '1';
 
-  signal reset : std_logic := '1';
-
-
 begin
-
-  reset <= '1' after 200 ns, '0' after 13000 ns;
-
-  go <= '1' after 10 us;
+  go <= '1' after 15 us;
   --goevent <= '1' after 300 us;
-  --goccb <= '1' after 10 us;
+  goccb <= '1' after 29 us;
 
   qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 12.5 ns;
   qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 12.5 ns;

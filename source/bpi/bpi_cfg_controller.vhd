@@ -38,8 +38,8 @@ architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
 
   signal next_state, current_state : state_type;
 
-  constant NW_DL : integer := 19;       -- 4xN_REGS
-  constant NW_UL : integer := 12;       -- 3xN_REGS
+  constant NW_DL : integer := 25;       -- 4xN_REGS
+  constant NW_UL : integer := 15;       -- 3xN_REGS
 
   type fifo_data_dl is array (NW_DL-1 downto 0) of std_logic_vector(15 downto 0);
 
@@ -65,47 +65,59 @@ begin
 
 -- Download Assignments (Configuration Registers to PROM)
   
-  bpi_cmd_fifo_data_dl(0) <= x"0017";   -- Load Address in Bank 0
+  bpi_cmd_fifo_data_dl(0) <= x"0017";   -- Load Address in Bank 0 / Block 0
   bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
-  bpi_cmd_fifo_data_dl(2) <= x"0014";   -- Unlock Bank 0 (command = 0x14 => 0xe8)
+  bpi_cmd_fifo_data_dl(2) <= x"0014";   -- Unlock Bank 0 / Block 0
   
-  bpi_cmd_fifo_data_dl(3) <= x"0017";   -- Load Address in Bank 0
-  bpi_cmd_fifo_data_dl(4) <= x"0000";   -- Set Offset = 0 
-  bpi_cmd_fifo_data_dl(5) <= x"002b";  -- Program in Bank 0 (command = 0x0b => 0xe8)
-  bpi_cmd_fifo_data_dl(6) <= x"fed0" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg0;  -- Set Data
+  bpi_cmd_fifo_data_dl(3) <= x"0017";  -- Load Address in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(4) <= x"0000";  -- Set Offset = 0 
+  bpi_cmd_fifo_data_dl(5) <= x"0005";  -- Set Read Array Mode
+
+  bpi_cmd_fifo_data_dl(6) <= x"0017";   -- Load Address in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(7) <= x"0004";   -- Set Offset = 4 
+  bpi_cmd_fifo_data_dl(8) <= x"000b";   -- Program in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(9) <= x"fed0" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg0;  -- Set Data
   
-  bpi_cmd_fifo_data_dl(7) <= x"0017";   -- Load Address in Bank 1
-  bpi_cmd_fifo_data_dl(8) <= x"0001";   -- Set Offset = 1 
-  bpi_cmd_fifo_data_dl(9) <= x"002b";  -- Program in Bank 1 (command = 0x0b => 0xe8)
-  bpi_cmd_fifo_data_dl(10)<= x"fed1" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg1;  -- Set Data
+  bpi_cmd_fifo_data_dl(10) <= x"0017";   -- Load Address in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(11) <= x"0005";   -- Set Offset = 5 
+  bpi_cmd_fifo_data_dl(12) <= x"002b";  -- Program in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(13)<= x"fed1" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg1;  -- Set Data
   
-  bpi_cmd_fifo_data_dl(11) <= x"0017";  -- Load Address in Bank 2
-  bpi_cmd_fifo_data_dl(12) <= x"0002";  -- Set Offset = 2 
-  bpi_cmd_fifo_data_dl(13) <= x"002b";  -- Program in Bank 2 (command = 0x0b => 0xe8)
-  bpi_cmd_fifo_data_dl(14) <= x"fed2" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg2;  -- Set Data
+  bpi_cmd_fifo_data_dl(14) <= x"0017";  -- Load Address in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(15) <= x"0006";  -- Set Offset = 6 
+  bpi_cmd_fifo_data_dl(16) <= x"002b";  -- Program in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(17) <= x"fed2" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg2;  -- Set Data
   
-  bpi_cmd_fifo_data_dl(15) <= x"0017";  -- Load Address in Bank 3
-  bpi_cmd_fifo_data_dl(16) <= x"0003";  -- Set Offset = 3 
-  bpi_cmd_fifo_data_dl(17) <= x"002b";  -- Program in Bank 3 (command = 0x0b => 0xe8)
-  bpi_cmd_fifo_data_dl(18) <= x"fed3" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg3;  -- Set Data
+  bpi_cmd_fifo_data_dl(18) <= x"0017";  -- Load Address in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(19) <= x"0007";  -- Set Offset = 7 
+  bpi_cmd_fifo_data_dl(20) <= x"002b";  -- Program in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(21) <= x"fed3" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg3;  -- Set Data
+
+  bpi_cmd_fifo_data_dl(22) <= x"0017";  -- Load Address in Bank 0 / Block 0
+  bpi_cmd_fifo_data_dl(23) <= x"0000";  -- Set Offset = 0 
+  bpi_cmd_fifo_data_dl(24) <= x"0005";  -- Set Read Array Mode
 
 -- Upload Assignments (PROM to Configuration Registers)
 
-  bpi_cmd_fifo_data_ul(0) <= x"0017";   -- Load Address in Bank 0
+  bpi_cmd_fifo_data_ul(0) <= x"0017";   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(1) <= x"0000";   -- Set Offset = 0 
   bpi_cmd_fifo_data_ul(2) <= x"0002";   -- Read One Word 
 
-  bpi_cmd_fifo_data_ul(3) <= x"0017";   -- Load Address in Bank 1
+  bpi_cmd_fifo_data_ul(3) <= x"0017";   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(4) <= x"0001";   -- Set Offset = 1 
   bpi_cmd_fifo_data_ul(5) <= x"0002";   -- Read One Word 
 
-  bpi_cmd_fifo_data_ul(6) <= x"0017";   -- Load Address in Bank 2
-  bpi_cmd_fifo_data_ul(7) <= x"0002";   -- Set Offset = 0 
+  bpi_cmd_fifo_data_ul(6) <= x"0017";   -- Load Address in Block 0
+  bpi_cmd_fifo_data_ul(7) <= x"0002";   -- Set Offset = 2 
   bpi_cmd_fifo_data_ul(8) <= x"0002";   -- Read One Word 
 
-  bpi_cmd_fifo_data_ul(9)  <= x"0017";  -- Load Address in Bank 3
-  bpi_cmd_fifo_data_ul(10) <= x"0003";  -- Set Offset = 1 
+  bpi_cmd_fifo_data_ul(9)  <= x"0017";  -- Load Address in Block 0
+  bpi_cmd_fifo_data_ul(10) <= x"0003";  -- Set Offset = 3 
   bpi_cmd_fifo_data_ul(11) <= x"0002";  -- Read One Word 
+
+  bpi_cmd_fifo_data_ul(12) <= x"0017";  -- Load Address in Bank 0 / Block 0
+  bpi_cmd_fifo_data_ul(13) <= x"0000";  -- Set Offset = 0 
+  bpi_cmd_fifo_data_ul(14) <= x"0005";  -- Set Read Array Mode
 
 -- UL and DL Registers
 
@@ -155,7 +167,7 @@ begin
 
 -- CFG_REG_WE generation
 
-  we_proc : process (clk, bpi_cfg_reg_we_i, bpi_cfg_reg_sel, bpi_cfg_reg_sel_rst, rst)
+  we_proc : process (clk, bpi_cfg_ul, bpi_cfg_reg_we_i, bpi_cfg_reg_sel, bpi_cfg_reg_sel_rst, rst)
 
   begin
 
@@ -169,7 +181,7 @@ begin
 
     for i in 0 to 3 loop
       if (i = bpi_cfg_reg_sel) then
-        bpi_cfg_reg_we_o(i) <= bpi_cfg_reg_we_i;
+        bpi_cfg_reg_we_o(i) <= bpi_cfg_ul and bpi_cfg_reg_we_i;
       else
         bpi_cfg_reg_we_o(i) <= '0';
       end if;
@@ -332,12 +344,14 @@ begin
         bpi_cmd_fifo_in     <= (others => '0');
         cnt_en              <= '0';
         cnt_res             <= '0';
-        bpi_cfg_ul_reset    <= '1';
+--        bpi_cfg_ul_reset    <= '1';
         bpi_cfg_dl_reset    <= '0';
         bpi_cfg_reg_sel_rst <= '0';
         if (bpi_cfg_done = '1') then
+          bpi_cfg_ul_reset    <= '1';
           next_state <= IDLE;
         else
+          bpi_cfg_ul_reset    <= '0';
           next_state <= BPI_WAIT4DONE_UL;
         end if;
         
@@ -351,11 +365,13 @@ begin
         cnt_en              <= '0';
         cnt_res             <= '0';
         bpi_cfg_ul_reset    <= '0';
-        bpi_cfg_dl_reset    <= '1';
+--        bpi_cfg_dl_reset    <= '1';
         bpi_cfg_reg_sel_rst <= '0';
         if (bpi_cfg_done = '1') then
+          bpi_cfg_dl_reset    <= '1';
           next_state <= IDLE;
         else
+          bpi_cfg_dl_reset    <= '0';
           next_state <= BPI_WAIT4DONE_DL;
         end if;
         

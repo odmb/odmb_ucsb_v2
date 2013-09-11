@@ -263,7 +263,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       );
   end component;
 
-component bpi_interface
+  component bpi_interface
     port(
       CLK          : in    std_logic;   -- 40 MHz clock
       RST          : in    std_logic;
@@ -408,7 +408,7 @@ component bpi_interface
       INJ_DLY       : out std_logic_vector(4 downto 0);
       EXT_DLY       : out std_logic_vector(4 downto 0);
       CALLCT_DLY    : out std_logic_vector(3 downto 0);
-      NWORDS_DUMMY : out std_logic_vector(15 downto 0);
+      NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
       KILL          : out std_logic_vector(NFEB+2 downto 1);
       CRATEID       : out std_logic_vector(6 downto 0);
 
@@ -458,11 +458,11 @@ component bpi_interface
       BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
 
-	BPI_CFG_DONE      : in std_logic;
-	BPI_CFG_REG_WE    : in std_logic;
-	BPI_CFG_REG_IN    : in std_logic_vector(15 downto 0);
+      BPI_CFG_DONE   : in std_logic;
+      BPI_CFG_REG_WE : in std_logic;
+      BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
 
-        --To SYSMON
+      --To SYSMON
       VP    : in std_logic;
       VN    : in std_logic;
       VAUXP : in std_logic_vector(15 downto 0);
@@ -536,7 +536,7 @@ component bpi_interface
 
 
 -- From CAFIFO to Data FIFOs
-      cafifo_l1a  : out std_logic;  
+      cafifo_l1a           : out std_logic;
       cafifo_l1a_match_in  : out std_logic_vector(NFEB+2 downto 1);  -- From TRGCNTRL to CAFIFO to generate Data  
       cafifo_l1a_match_out : out std_logic_vector(NFEB+2 downto 1);  -- From CAFIFO to CONTROL  
       cafifo_l1a_cnt       : out std_logic_vector(23 downto 0);
@@ -618,17 +618,17 @@ component bpi_interface
 
   component alct_otmb_data_gen is
     port(
-      clk            : in  std_logic;
-      rst            : in  std_logic;
-      l1a            : in  std_logic;
-      alct_l1a_match : in  std_logic;
-      otmb_l1a_match : in  std_logic;
-      nwords_dummy : in std_logic_vector(15 downto 0);
+      clk            : in std_logic;
+      rst            : in std_logic;
+      l1a            : in std_logic;
+      alct_l1a_match : in std_logic;
+      otmb_l1a_match : in std_logic;
+      nwords_dummy   : in std_logic_vector(15 downto 0);
 
-      alct_dv        : out std_logic;
-      alct_data      : out std_logic_vector(15 downto 0);
-      otmb_dv        : out std_logic;
-      otmb_data      : out std_logic_vector(15 downto 0));
+      alct_dv   : out std_logic;
+      alct_data : out std_logic_vector(15 downto 0);
+      otmb_dv   : out std_logic;
+      otmb_data : out std_logic_vector(15 downto 0));
   end component;
 
 
@@ -792,14 +792,14 @@ component bpi_interface
       dcfeb_addr : std_logic_vector(3 downto 0) := "1000"  -- DCFEB address
       );  
     port
-      (clk           : in  std_logic;
-       dcfebclk      : in  std_logic;
-       rst           : in  std_logic;
-       l1a           : in  std_logic;
-       l1a_match     : in  std_logic;
-       tx_ack        : in  std_logic;
-       nwords_dummy  : in  std_logic_vector(15 downto 0);
-      
+      (clk          : in std_logic;
+       dcfebclk     : in std_logic;
+       rst          : in std_logic;
+       l1a          : in std_logic;
+       l1a_match    : in std_logic;
+       tx_ack       : in std_logic;
+       nwords_dummy : in std_logic_vector(15 downto 0);
+
        dcfeb_dv      : out std_logic;
        dcfeb_data    : out std_logic_vector(15 downto 0);
        adc_mask      : out std_logic_vector(11 downto 0);
@@ -889,28 +889,26 @@ component bpi_interface
   signal eof_data : std_logic_vector (NFEB+2 downto 1);
 
 -- ALCT ----------------------
-  signal gen_alct_data_valid    : std_logic;
-  signal gen_alct_data          : std_logic_vector(15 downto 0);
-  signal eofgen_alct_data_valid : std_logic;
-  signal eofgen_alct_data       : std_logic_vector(17 downto 0);
-  signal alct_q, alct_qq        : std_logic_vector(17 downto 0);
+  signal gen_alct_data_valid : std_logic;
+  signal gen_alct_data       : std_logic_vector(15 downto 0);
+  signal alct_data_valid     : std_logic;
+  signal alct_data           : std_logic_vector(15 downto 0);
+  signal alct_q, alct_qq     : std_logic_vector(17 downto 0);
 
   signal rx_alct_data_valid : std_logic;
-  signal rx_alct_data       : std_logic_vector(17 downto 0);
 
   signal alct_fifo_data_valid : std_logic;
   signal alct_fifo_data_in    : std_logic_vector(17 downto 0);
   signal alct_fifo_data_out   : std_logic_vector (17 downto 0);
 
 -- OTMB ----------------------
-  signal gen_otmb_data_valid    : std_logic;
-  signal gen_otmb_data          : std_logic_vector(15 downto 0);
-  signal eofgen_otmb_data_valid : std_logic;
-  signal eofgen_otmb_data       : std_logic_vector(17 downto 0);
-  signal otmb_q, otmb_qq        : std_logic_vector(17 downto 0);
+  signal gen_otmb_data_valid : std_logic;
+  signal gen_otmb_data       : std_logic_vector(15 downto 0);
+  signal otmb_data_valid     : std_logic;
+  signal otmb_data           : std_logic_vector(15 downto 0);
+  signal otmb_q, otmb_qq     : std_logic_vector(17 downto 0);
 
   signal rx_otmb_data_valid : std_logic;
-  signal rx_otmb_data       : std_logic_vector(17 downto 0);
 
   signal otmb_fifo_data_valid : std_logic;
   signal otmb_fifo_data_in    : std_logic_vector(17 downto 0);
@@ -949,7 +947,7 @@ component bpi_interface
   signal l1a_match_cnt, into_cafifo_dav_cnt : dav_cnt_type;
   signal data_fifo_re_cnt, data_fifo_oe_cnt : dav_cnt_type;
   signal eof_data_cnt, cafifo_l1a_dav_cnt   : dav_cnt_type;
-  signal into_cafifo_dav        : std_logic_vector(NFEB+2 downto 1);
+  signal into_cafifo_dav                    : std_logic_vector(NFEB+2 downto 1);
 
   signal ext_dcfeb_l1a_cnt7 : std_logic_vector(23 downto 0);
   signal dcfeb_l1a_dav7     : std_logic;
@@ -1122,7 +1120,7 @@ component bpi_interface
   signal data_fifo_re   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   signal data_fifo_re_b : std_logic_vector(NFEB+2 downto 1) := (others => '1');
 
-  signal cafifo_l1a  : std_logic;
+  signal cafifo_l1a           : std_logic;
   signal cafifo_l1a_match_in  : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_l1a_match_out : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_l1a_cnt       : std_logic_vector(23 downto 0);
@@ -1220,7 +1218,7 @@ component bpi_interface
   signal INJ_DLY       : std_logic_vector(4 downto 0);
   signal EXT_DLY       : std_logic_vector(4 downto 0);
   signal CALLCT_DLY    : std_logic_vector(3 downto 0);
-  signal NWORDS_DUMMY          : std_logic_vector(15 downto 0);
+  signal NWORDS_DUMMY  : std_logic_vector(15 downto 0);
   signal KILL          : std_logic_vector(NFEB+2 downto 1);
   signal CRATEID       : std_logic_vector(6 downto 0);
 
@@ -1261,8 +1259,8 @@ component bpi_interface
   signal bpi_data_from     : std_logic_vector(15 downto 0);
   signal bpi_op            : std_logic_vector(1 downto 0);
   signal bpi_addr          : std_logic_vector(22 downto 0);
-  signal bpi_data_to    : std_logic_vector(15 downto 0);
-  signal dual_data_leds : std_logic_vector(15 downto 0);
+  signal bpi_data_to       : std_logic_vector(15 downto 0);
+  signal dual_data_leds    : std_logic_vector(15 downto 0);
 
   signal bpi_cfg_done   : std_logic;
   signal bpi_cfg_reg_we : std_logic;
@@ -1438,14 +1436,14 @@ begin
       BPI_RBK_FIFO_DATA => bpi_rbk_fifo_data,  -- Data on output of the Read back FIFO
       BPI_RBK_WRD_CNT   => bpi_rbk_wrd_cnt,  -- Word count of the Read back FIFO (number of available reads)
       BPI_STATUS        => bpi_status,  -- FIFO status bits and latest value of the PROM status register. 
-      BPI_TIMER => bpi_timer,           -- General timer
+      BPI_TIMER         => bpi_timer,   -- General timer
 
       BPI_CFG_DONE   => bpi_cfg_done,
       BPI_CFG_REG_WE => bpi_cfg_reg_we,
       BPI_CFG_REG_IN => bpi_cfg_reg_in,
 
       -- Adam Aug 15 To SYSMON
-      VP => '0',
+      VP    => '0',
       VN    => '0',
       VAUXP => vauxp,
       VAUXN => vauxn
@@ -1514,7 +1512,7 @@ begin
       fifo_empty_b => data_fifo_empty_b,
 
 -- From CAFIFO to Data FIFOs
-      cafifo_l1a  => cafifo_l1a,
+      cafifo_l1a           => cafifo_l1a,
       cafifo_l1a_match_in  => cafifo_l1a_match_in,
       cafifo_l1a_match_out => cafifo_l1a_match_out,
       cafifo_l1a_cnt       => cafifo_l1a_cnt,
@@ -1759,14 +1757,14 @@ begin
       generic map(
         dcfeb_addr => dcfeb_addr(I))
       port map(
-        clk           => clk40,
-        dcfebclk      => clk160,
-        rst           => reset,
-        l1a           => int_l1a,
-        l1a_match     => int_l1a_match(I),
-        tx_ack        => logich,
-        nwords_dummy  => nwords_dummy,
-      
+        clk          => clk40,
+        dcfebclk     => clk160,
+        rst          => reset,
+        l1a          => int_l1a,
+        l1a_match    => int_l1a_match(I),
+        tx_ack       => logich,
+        nwords_dummy => nwords_dummy,
+
         dcfeb_dv      => gen_dcfeb_data_valid(I),
         dcfeb_data    => gen_dcfeb_data(I),
         adc_mask      => dcfeb_adc_mask(I),
@@ -1961,10 +1959,10 @@ begin
       otmb_l1a_match => cafifo_l1a_match_in(NFEB+1),
       nwords_dummy   => nwords_dummy,
 
-      alct_dv        => gen_alct_data_valid,
-      alct_data      => gen_alct_data,
-      otmb_dv        => gen_otmb_data_valid,
-      otmb_data      => gen_otmb_data
+      alct_dv   => gen_alct_data_valid,
+      alct_data => gen_alct_data,
+      otmb_dv   => gen_otmb_data_valid,
+      otmb_data => gen_otmb_data
       );
 
   ALCT_FIFO : FIFO_DUALCLOCK_MACRO
@@ -2046,32 +2044,28 @@ begin
 
   -- Sync alct and otmb to our clock. Probably not needed
   GENOTMBSYNC : for index in 0 to 17 generate
-    begin
-      FDALCT  : FD port map(alct_q(index), clk40, alct(index));
-      FDALCTQ : FD port map(alct_qq(index), clk40, alct_q(index));
-      FDOTMB  : FD port map(otmb_q(index), clk40, otmb(index));
-      FDOTMBQ : FD port map(otmb_qq(index), clk40, otmb_q(index));
+  begin
+    FDALCT  : FD port map(alct_q(index), clk40, alct(index));
+    FDALCTQ : FD port map(alct_qq(index), clk40, alct_q(index));
+    FDOTMB  : FD port map(otmb_q(index), clk40, otmb(index));
+    FDOTMBQ : FD port map(otmb_qq(index), clk40, otmb_q(index));
   end generate GENOTMBSYNC;
-  
-  alct_fifo_data_valid <= '0' when kill(9) = '1' else
-                          rx_alct_data_valid when (gen_dcfeb_sel = '0') else
-                          eofgen_alct_data_valid;
-
-  alct_fifo_data_in <= rx_alct_data when (gen_dcfeb_sel = '0') else
-                       eofgen_alct_data;
 
   rx_alct_data_valid <= not alct_qq(17);
-  rx_alct_data       <= alct_qq(16) & alct_qq(16 downto 0);  -- For now, we send EOF in 16 and 17
+  alct_data_valid    <= '0' when kill(9) = '1' else
+                     rx_alct_data_valid when (gen_dcfeb_sel = '0') else
+                     gen_alct_data_valid;
 
-  otmb_fifo_data_valid <= '0' when kill(8) = '1' else
-                          rx_otmb_data_valid when (gen_dcfeb_sel = '0') else
-                          eofgen_otmb_data_valid;
-
-  otmb_fifo_data_in <= rx_otmb_data when (gen_dcfeb_sel = '0') else
-                       eofgen_otmb_data;
+  alct_data <= alct_qq(15 downto 0) when (gen_dcfeb_sel = '0') else
+               gen_alct_data;
 
   rx_otmb_data_valid <= not otmb_qq(17);
-  rx_otmb_data       <= otmb_qq(16) & otmb_qq(16 downto 0);  -- For now, we send EOF in 16 and 17
+  otmb_data_valid    <= '0' when kill(8) = '1' else
+                     rx_otmb_data_valid when (gen_dcfeb_sel = '0') else
+                     gen_otmb_data_valid;
+
+  otmb_data <= otmb_qq(15 downto 0) when (gen_dcfeb_sel = '0') else
+               gen_otmb_data;
 
   data_fifo_re      <= not data_fifo_re_b;
   data_fifo_empty_b <= alct_fifo_empty & otmb_fifo_empty & dcfeb_fifo_empty;
@@ -2114,11 +2108,11 @@ begin
       clk => clk40,
       rst => reset,
 
-      dv_in   => gen_alct_data_valid,
-      data_in => gen_alct_data,
+      dv_in   => alct_data_valid,
+      data_in => alct_data,
 
-      dv_out   => eofgen_alct_data_valid,
-      data_out => eofgen_alct_data
+      dv_out   => alct_fifo_data_valid,
+      data_out => alct_fifo_data_in
       );
 
   OTMB_EOFGEN_PM : EOFGEN
@@ -2126,11 +2120,11 @@ begin
       clk => clk40,
       rst => reset,
 
-      dv_in   => gen_otmb_data_valid,
-      data_in => gen_otmb_data,
+      dv_in   => otmb_data_valid,
+      data_in => otmb_data,
 
-      dv_out   => eofgen_otmb_data_valid,
-      data_out => eofgen_otmb_data
+      dv_out   => otmb_fifo_data_valid,
+      data_out => otmb_fifo_data_in
       );
 
   LVMB_MUX_PM : LVMB_MUX
@@ -2915,6 +2909,24 @@ begin
         tph(41) <= otmbdav;
         tph(42) <= OTMB_DAV_SYNC_OUT;
 
+      when x"001A" =>
+        tph(27) <= ccb_cal(2);
+        tph(28) <= ccb_cal(1);
+        tph(41) <= ccb_cal(0);
+        tph(42) <= ccb_cmd(5);
+
+      when x"001B" =>
+        tph(27) <= ccb_cmd(4);
+        tph(28) <= ccb_cmd(3);
+        tph(41) <= ccb_cmd(2);
+        tph(42) <= ccb_cmd(1);
+
+      when x"001C" =>
+        tph(27) <= ccb_cal(2);
+        tph(28) <= ccb_cal(1);
+        tph(41) <= ccb_cal(0);
+        tph(42) <= ccb_cmd(0);
+
       when others =>
         tph(27) <= int_l1a;
         tph(28) <= raw_lct(1);
@@ -2952,7 +2964,7 @@ begin
       BPI_CFG_REG_WE    => bpi_cfg_reg_we,
       BPI_CFG_REG_IN    => bpi_cfg_reg_in
       );
-  
+
   bpi_interface_i : bpi_interface
     port map (
       CLK          => clk40,            -- 40 MHz clock

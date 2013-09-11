@@ -1,5 +1,6 @@
 == ========== Resync and Send calibration pulses ========== ==
 W  3000  3F	Set Calibration Mode   
+W  401C  0
 W  3010  c	 Send EXTPLS and INJPL   
 W  3010  20c	 Set Pedestal Mode   
 W  3010  c	 Send EXTPLS and INJPL   

@@ -1,8 +1,11 @@
-library IEEE;
+-- CALIBTRG: Generates EXTPLS, INJPLS, and L1A_MATCHes that fake muons for
+-- calibration purposes.
+
+library ieee;
 library work;
-use work.Latches_Flipflops.all;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.STD_LOGIC_ARITH.all;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use work.latches_flipflops.all;
 
 entity CALIBTRG is
   port (
@@ -28,10 +31,6 @@ entity CALIBTRG is
     CALLCT      : out std_logic;
     INJBACK     : out std_logic;
     PLSBACK     : out std_logic;
--- SCPSYN AND SCOPE have not been implemented
--- and we do not intend to implement them (we think)
---    SCPSYN : out std_logic; 
---    SYNCIF : out std_logic;
     LCTRQST     : out std_logic;
     INJPLS      : out std_logic
     );
@@ -48,148 +47,109 @@ architecture CALIBTRG_arch of CALIBTRG is
       );
   end component;
 
-  signal BC0_CMD, BC0_RST, BC0_INNER                     : std_logic;
-  signal START_TRG_CMD, START_TRG_RST, START_TRG_INNER   : std_logic;
-  signal STOP_TRG_CMD, STOP_TRG_RST, STOP_TRG_INNER      : std_logic;
-  signal L1ASRST_CMD, L1ASRST_RST, L1ASRST_CLK_CMD       : std_logic;
-  signal L1ASRST_CNT_RST, L1ASRST_CNT_CEO, L1ASRST_INNER : std_logic;
-  signal L1ASRST_CNT                                     : std_logic_vector(15 downto 0);
-  signal TTCCAL_CMD, TTCCAL_RST, TTCCAL_INNER            : std_logic_vector(2 downto 0);
-  signal CCBINJIN_1, CCBINJIN_2, CCBINJIN_3              : std_logic;
-  signal CCBPLSIN_1, CCBPLSIN_2, CCBPLSIN_3              : std_logic;
-  signal PLSINJEN_1, PLSINJEN_RST, PLSINJEN_INV          : std_logic;
-  signal BX0_1                                           : std_logic;
-  signal BXRST_1                                         : std_logic;
-  signal CLKEN_1                                         : std_logic;
-  signal L1ARST_1                                        : std_logic;
+  signal bc0_cmd, bc0_rst, bc0_inner                     : std_logic;
+  signal start_trg_cmd, start_trg_rst, start_trg_inner   : std_logic;
+  signal stop_trg_cmd, stop_trg_rst, stop_trg_inner      : std_logic;
+  signal l1asrst_cmd, l1asrst_rst, l1asrst_clk_cmd       : std_logic;
+  signal l1asrst_cnt_rst, l1asrst_cnt_ceo, l1asrst_inner : std_logic;
+  signal l1asrst_cnt                                     : std_logic_vector(15 downto 0);
+  signal ttccal_cmd, ttccal_rst, ttccal_inner            : std_logic_vector(2 downto 0);
+  signal ccbinjin_1, ccbinjin_2, ccbinjin_3              : std_logic;
+  signal ccbplsin_1, ccbplsin_2, ccbplsin_3              : std_logic;
+  signal plsinjen_1, plsinjen_rst, plsinjen_inv          : std_logic;
+  signal bx0_1                                           : std_logic;
+  signal bxrst_1                                         : std_logic;
+  signal clken_1                                         : std_logic;
+  signal l1arst_1                                        : std_logic;
 
-  signal LOGICH  : std_logic                    := '1';
-  signal LOGICH4 : std_logic_vector(3 downto 0) := "1111";
-  signal LOGIC5  : std_logic_vector(3 downto 0) := "0101";
+  signal logich  : std_logic                    := '1';
+  signal logich4 : std_logic_vector(3 downto 0) := "1111";
+  signal logic5  : std_logic_vector(3 downto 0) := "0101";
 
-  signal FINJ_INV, PREINJ_1, PREINJ                                       : std_logic;
-  signal FPLS_INV, PREPLS_1, PREPLS                                       : std_logic;
-  signal INJ_CMD, INJ_1, INJ_2, INJ_3, INJ_4, INJ_5_A, INJ_5_B, INJ_INNER : std_logic;
-  signal INJ_CNT                                                          : std_logic_vector(15 downto 0);
-  signal PLS_CMD, PLS_1, PLS_2, PLS_3, PLS_4, PLS_5_A, PLS_5_B, PLS_INNER : std_logic;
-  signal PLS_CNT                                                          : std_logic_vector(15 downto 0);
-  signal PEDESTAL_INV                                                     : std_logic;
-  signal RSTPLS_CMD, RSTPLS, RSTPLS_CNT_CEO, RSTPLS_CNT_TC, RSTPLS_1      : std_logic;
-  signal RSTPLS_CNT                                                       : std_logic_vector(7 downto 0);
-  signal INJPLS_CMD, INJPLS_RST, INJPLS_1, INJPLS_INNER                   : std_logic;
-  signal CAL_GTRG_CMD, CAL_GTRG_1                                         : std_logic;
-  --signal SR1_OUT, SR2_OUT, SR3_OUT, SR4_OUT, SR5_OUT, SR6_OUT                         : std_logic;
-  --signal SR7_OUT, SR8_OUT, SR9_OUT, SR10_OUT, SR11_OUT, SR12_OUT, SR13_OUT            : std_logic;
-  --signal SR1_CNT, SR2_CNT, SR3_CNT, SR4_CNT, SR5_CNT, SR6_CNT, SR7_CNT                : std_logic_vector(15 downto 0);
-  --signal SR8_CNT, SR9_CNT, SR10_CNT, SR11_CNT, SR12_CNT, SR13_CNT : std_logic_vector(15 downto 0);
-  signal SR14_CNT, SR15_CNT                                               : std_logic_vector(15 downto 0);
-  signal M4_OUT, M4_OUT_CLK, M2_OUT, M2_OUT_CLK                           : std_logic;
-  signal LCTRQST_INNER, CALLCT_1, CALLCT_2, CALLCT_3, CALLCT_INNER        : std_logic;
-  signal PEDESTAL_INNER                                                   : std_logic;
-  signal XL1ADLY_INNER                                                    : std_logic_vector(1 downto 0);
+  signal finj_inv, preinj_1, preinj                                       : std_logic;
+  signal fpls_inv, prepls_1, prepls                                       : std_logic;
+  signal inj_cmd, inj_1, inj_2, inj_3, inj_4, inj_5_a, inj_5_b, inj_inner : std_logic;
+  signal inj_cnt                                                          : std_logic_vector(15 downto 0);
+  signal pls_cmd, pls_1, pls_2, pls_3, pls_4, pls_5_a, pls_5_b, pls_inner : std_logic;
+  signal pls_cnt                                                          : std_logic_vector(15 downto 0);
+  signal pedestal_inv                                                     : std_logic;
+  signal rstpls_cmd, rstpls, rstpls_cnt_ceo, rstpls_cnt_tc, rstpls_1      : std_logic;
+  signal rstpls_cnt                                                       : std_logic_vector(7 downto 0);
+  signal injpls_cmd, injpls_rst, injpls_1, injpls_inner                   : std_logic;
+  signal cal_gtrg_cmd, cal_gtrg_1                                         : std_logic;
+  signal sr14_cnt, sr15_cnt                                               : std_logic_vector(15 downto 0);
+  signal m4_out, m4_out_clk, m2_out, m2_out_clk                           : std_logic;
+  signal lctrqst_inner, callct_1, callct_2, callct_3, callct_inner        : std_logic;
+  signal pedestal_inner                                                   : std_logic;
+  signal xl1adly_inner                                                    : std_logic_vector(1 downto 0);
 begin
 
-  -- generate PREINJ (FINJ=INSTR3)
-  FINJ_INV <= not FINJ;
-  FDCE(FINJ, CMSCLK, PLSINJEN, FINJ_INV, PREINJ_1);
-  FDC(PREINJ_1, CMSCLK, RST, PREINJ);
+  -- generate preinj (finj=instr3)
+  finj_inv <= not finj;
+  FDCE(finj, cmsclk, plsinjen, finj_inv, preinj_1);
+  FDC(preinj_1, cmsclk, rst, preinj);
 
-  -- generate PREPLS
-  FPLS_INV <= not FPLS;
-  FDCE(FPLS, CMSCLK, PLSINJEN, FPLS_INV, PREPLS_1);
-  FDC(PREPLS_1, CMSCLK, RST, PREPLS);
+  -- generate prepls
+  fpls_inv <= not fpls;
+  FDCE(fpls, cmsclk, plsinjen, fpls_inv, prepls_1);
+  FDC(prepls_1, cmsclk, rst, prepls);
 
-  -- generate INJ
-  INJ_CMD <= PREINJ or CCBINJ; -- Guido May 17
---  INJ_CMD   <= CCBINJ;
-  FDC(LOGICH, INJ_CMD, RSTPLS, INJ_1);
-  FDC(INJ_1, CMSCLK, PEDESTAL_INNER, INJ_2);
-  SRL16(INJ_2, CLK80, INJ_DLY(4 downto 1), INJ_CNT, INJ_CNT, INJ_3);
-  FD(INJ_3, CLK80, INJ_4);
-  FD(INJ_4, CLK80, INJ_5_A);
-  FD_1(INJ_4, CLK80, INJ_5_B);
---  BUFE(INJ_5_A, INJ_DLY(0), INJ_INNER); -- Modelsim Compile Problem
-  INJ_INNER <= INJ_5_A when INJ_DLY(0) = '1' else 'Z';
---  BUFT(INJ_5_B, INJ_DLY(0), INJ_INNER); -- Modelsim Compile Problem
-  INJ_INNER <= INJ_5_B when INJ_DLY(0) = '0' else 'Z';
-  INJBACK   <= INJ_INNER;
+  -- generate inj
+  inj_cmd   <= preinj or ccbinj;
+  FDC(logich, inj_cmd, rstpls, inj_1);
+  FDC(inj_1, cmsclk, pedestal_inner, inj_2);
+  SRL16(inj_2, clk80, inj_dly(4 downto 1), inj_cnt, inj_cnt, inj_3);
+  FD(inj_3, clk80, inj_4);
+  FD(inj_4, clk80, inj_5_a);
+  FD_1(inj_4, clk80, inj_5_b);
+  inj_inner <= inj_5_a when inj_dly(0) = '1' else 'Z';  -- BUFT
+  inj_inner <= inj_5_b when inj_dly(0) = '0' else 'Z';  -- BUFE
+  INJBACK   <= inj_inner;
 
 
-  -- generate PLS
-  PLS_CMD <= PREPLS or CCBPLS or PRELCT; -- Guido May 17
---  PLS_CMD   <= CCBPLS;
-  FDC(LOGICH, PLS_CMD, RSTPLS, PLS_1);
-  FDC(PLS_1, CMSCLK, PEDESTAL_INNER, PLS_2);
-  SRL16(PLS_2, CLK80, EXT_DLY(4 downto 1), PLS_CNT, PLS_CNT, PLS_3);
-  FD(PLS_3, CLK80, PLS_4);
-  FD(PLS_4, CLK80, PLS_5_A);
-  FD_1(PLS_4, CLK80, PLS_5_B);
---  BUFE(PLS_5_A, EXT_DLY(0), PLS_INNER); -- Modelsim Compile Problem
-  PLS_INNER <= PLS_5_A when EXT_DLY(0) = '1' else 'Z';
---  BUFT(PLS_5_B, EXT_DLY(0), PLS_INNER); -- Modelsim Compile Problem
-  PLS_INNER <= PLS_5_B when EXT_DLY(0) = '0' else 'Z';
-  PLSBACK   <= PLS_INNER;
+  -- generate pls
+  pls_cmd   <= prepls or ccbpls or prelct;
+  FDC(logich, pls_cmd, rstpls, pls_1);
+  FDC(pls_1, cmsclk, pedestal_inner, pls_2);
+  SRL16(pls_2, clk80, ext_dly(4 downto 1), pls_cnt, pls_cnt, pls_3);
+  FD(pls_3, clk80, pls_4);
+  FD(pls_4, clk80, pls_5_a);
+  FD_1(pls_4, clk80, pls_5_b);
+  pls_inner <= pls_5_a when ext_dly(0) = '1' else 'Z';  -- BUFT
+  pls_inner <= pls_5_b when ext_dly(0) = '0' else 'Z';  -- BUFE
+  PLSBACK   <= pls_inner;
 
-  -- generate PEDESTAL (FPED=INSTR5)
---  PEDESTAL_INV <= not PEDESTAL_INNER;
---  FDC(PEDESTAL_INV, FPED, RST, PEDESTAL_INNER);
-  PEDESTAL_INNER     <= FPED;
-  PEDESTAL     <= PEDESTAL_INNER;
+  -- generate pedestal (fped=instr5)
+--  pedestal_inv <= not pedestal_inner;
+--  fdc(pedestal_inv, fped, rst, pedestal_inner);
+  pedestal_inner <= fped;
+  PEDESTAL       <= pedestal_inner;
 
-  -- generate RSTPLS
-  RSTPLS_CMD <= PLS_INNER or INJ_INNER;
-  CB8CE(CMSCLK, RSTPLS_CMD, RSTPLS, RSTPLS_CNT, RSTPLS_CNT, RSTPLS_CNT_CEO, RSTPLS_CNT_TC);
-  FD(RSTPLS_CNT(6), CMSCLK, RSTPLS_1);
-  RSTPLS     <= RSTPLS_1 or RST;
+  -- generate rstpls
+  rstpls_cmd <= pls_inner or inj_inner;
+  CB8CE(cmsclk, rstpls_cmd, rstpls, rstpls_cnt, rstpls_cnt, rstpls_cnt_ceo, rstpls_cnt_tc);
+  FD(rstpls_cnt(6), cmsclk, rstpls_1);
+  rstpls     <= rstpls_1 or rst;
 
-  -- generate INJPLS
-  INJPLS_CMD <= CCBINJ or CCBPLS;
-  FDC(LOGICH, INJPLS_CMD, INJPLS_RST, INJPLS_1);
-  FDR(INJPLS_1, CMSCLK, INJPLS_RST, INJPLS_INNER);
-  INJPLS_RST <= INJPLS_INNER or RST;
-  INJPLS     <= INJPLS_INNER;
+  -- generate injpls
+  injpls_cmd <= ccbinj or ccbpls;
+  FDC(logich, injpls_cmd, injpls_rst, injpls_1);
+  FDR(injpls_1, cmsclk, injpls_rst, injpls_inner);
+  injpls_rst <= injpls_inner or rst;
+  INJPLS     <= injpls_inner;
 
-  -- generate CAL_GTRG
--- PREGTRG from CALTRIGCON - still to be implemented
---  CAL_GTRG_CMD <= INJPLS_INNER or PREGTRG; 
---  CAL_GTRG_CMD <= INJPLS_INNER;
---  SRL16(CAL_GTRG_CMD, CMSCLK, LOGICH4, SR1_CNT, SR1_CNT, SR1_OUT);
---  SRL16(SR1_OUT, CMSCLK, LOGICH4, SR2_CNT, SR2_CNT, SR2_OUT);
---  SRL16(SR2_OUT, CMSCLK, LOGICH4, SR3_CNT, SR3_CNT, SR3_OUT);
---  SRL16(SR3_OUT, CMSCLK, LOGICH4, SR4_CNT, SR4_CNT, SR4_OUT);
---  SRL16(SR4_OUT, CMSCLK, LOGICH4, SR5_CNT, SR5_CNT, SR5_OUT);
---  M4_OUT       <= SR2_OUT when XL1ADLY = "00" else
---                  SR3_OUT when XL1ADLY = "01" else
---                  SR4_OUT when XL1ADLY = "10" else
---                  SR5_OUT when XL1ADLY = "11";
---  FD(M4_OUT, CMSCLK, M4_OUT_CLK);
---  SRL16(M4_OUT_CLK, CMSCLK, LOGICH4, SR6_CNT, SR6_CNT, SR6_OUT);  -- SR6_OUT = L1CON1
---  SRL16(SR6_OUT, CMSCLK, LOGICH4, SR7_CNT, SR7_CNT, SR7_OUT);
---  SRL16(SR7_OUT, CMSCLK, LOGICH4, SR8_CNT, SR8_CNT, SR8_OUT);
---  SRL16(SR8_OUT, CMSCLK, LOGICH4, SR9_CNT, SR9_CNT, SR9_OUT);
---  SRL16(SR9_OUT, CMSCLK, LOGICH4, SR10_CNT, SR10_CNT, SR10_OUT);
---  SRL16(SR10_OUT, CMSCLK, LOGIC5, SR11_CNT, SR11_CNT, SR11_OUT);  -- SR11_OUT = NO4DLY
---  SRL16(SR11_OUT, CMSCLK, LOGICH4, SR12_CNT, SR12_CNT, SR12_OUT);
---  M2_OUT <= SR11_OUT when CALGDLY(4) = '0' else
---            SR12_OUT when CALGDLY(4) = '1';
---  FD(M2_OUT, CMSCLK, M2_OUT_CLK);       -- M2_OUT_CLK = L1CON2
---  SRL16(M2_OUT_CLK, CMSCLK, CALGDLY(3 downto 0), SR13_CNT, SR13_CNT, SR13_OUT);
-----  CAL_GTRG_1 <= SR13_OUT or RNDMGTRG; 
---  CAL_GTRG_1 <= SR13_OUT;               -- Guido May 17
---  FD(CAL_GTRG_1, CMSCLK, CAL_GTRG);
-
-  -- generate CALLCT, LCTRQST
--- PRELCT from CALTRIGCON - still to be implemented
---  LCTRQST_INNER <= INJPLS_INNER or PRELCT;
-  LCTRQST_INNER <= INJPLS_INNER;
-  LCTRQST       <= LCTRQST_INNER;
-  SRL16(LCTRQST_INNER, CMSCLK, LOGICH4, SR14_CNT, SR14_CNT, CALLCT_1);
-  FD(CALLCT_1, CMSCLK, CALLCT_2);
-  SRL16(CALLCT_2, CMSCLK, CALLCT_DLY, SR15_CNT, SR15_CNT, CALLCT_3);
-  FD(CALLCT_3, CMSCLK, CALLCT_INNER);
-  CALLCT        <= CALLCT_INNER;
+  -- generate callct, lctrqst
+-- prelct from caltrigcon - still to be implemented
+--  lctrqst_inner <= injpls_inner or prelct;
+  lctrqst_inner <= injpls_inner;
+  lctrqst       <= lctrqst_inner;
+  SRL16(lctrqst_inner, cmsclk, logich4, sr14_cnt, sr14_cnt, callct_1);
+  FD(callct_1, cmsclk, callct_2);
+  SRL16(callct_2, cmsclk, callct_dly, sr15_cnt, sr15_cnt, callct_3);
+  FD(callct_3, cmsclk, callct_inner);
+  CALLCT        <= callct_inner;
 
   -- Generate CAL_GTRG
-  LCTDLY_GTRG : LCTDLY port map(CALLCT_INNER, CMSCLK, LCT_L1A_DLY, CAL_GTRG);
+  LCTDLY_GTRG : LCTDLY port map(callct_inner, cmsclk, lct_l1a_dly, CAL_GTRG);
 
 end CALIBTRG_arch;
