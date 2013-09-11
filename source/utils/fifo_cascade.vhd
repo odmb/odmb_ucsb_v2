@@ -22,6 +22,7 @@ entity FIFO_CASCADE is
     EMPTY : out std_logic;
     FULL  : out std_logic;
     EOF   : out std_logic;
+    BOF   : out std_logic;
 
     DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
     RDCLK : in std_logic;
@@ -34,6 +35,17 @@ entity FIFO_CASCADE is
 end entity FIFO_CASCADE;
 
 architecture fifo_cascade_arch of FIFO_CASCADE is
+
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
 
   type   fifo_data_type is array (NFIFO downto 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
   signal fifo_in, fifo_out        : fifo_data_type;
@@ -160,6 +172,7 @@ begin
   DO    <= fifo_out(1);                 --out
   EMPTY <= fifo_empty(1);               --out
   FULL  <= fifo_full(NFIFO);            --out
-  EOF   <= fifo_in(1)(DATA_WIDTH-1);    --out: tells you when packet has finished arriving at FIFO
-  
+  --out: tells you when packet has finished arriving at FIFO 1
+  PULSE_EOF : PULSE_EDGE port map(EOF, open, WRCLK, RST, 1, fifo_in(1)(DATA_WIDTH-2));
+  BOF   <= fifo_in(1)(DATA_WIDTH-1);  --OUT: tells you when packet has started arriving at FIFO 1
 end fifo_cascade_arch;

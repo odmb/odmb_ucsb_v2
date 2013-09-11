@@ -6,7 +6,7 @@ W  4000  C	Set LCT_L1A_DLY
 W  4004  1	Set TMB_PUSH_DLY
 W  400C  2	Set ALCT_PUSH_DLY
 W  401C  0	Do not Kill anything
-W  4028  4	Number of dummy words
+W  4028  320	Number of dummy words
 
 W  20  	 1  	Select FIFO [Time stamp LSB]
 W  8	 10	Write Time stamp LSB
@@ -40,7 +40,7 @@ W  8	 200	ALCTDAV
 
 
 R  001C  0	Read FIFO Status Register
-W  0030  30	Start 30 Test Runs
+W  0030  1	Start 30 Test Runs
  
 R  001C  0	Read FIFO Status Register
 R  001C  0	Read FIFO Status Register
