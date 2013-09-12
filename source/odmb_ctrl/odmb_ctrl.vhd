@@ -45,7 +45,6 @@ entity ODMB_CTRL is
     otmb_dav  : in  std_logic;          -- previously lctdav1, from J4
     alct_dav  : in  std_logic;          -- previously lctdav2, from J4
     rsvtd_in  : in  std_logic_vector(4 downto 0);  -- OK   spare(2 DOWNTO 0) - to J4
-    rsvtd_out : out std_logic_vector(2 downto 0);  -- OK           spare(7 DOWNTO 3) - from J4
 
 -- From GigaLinks
 
@@ -1142,7 +1141,5 @@ begin
 -- from ODMB_CTRL_EMPTY
 
   ccb_rsvi <= "000";
-
-  rsvtd_out <= "000";
 
 end ODMB_CTRL_arch;

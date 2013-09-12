@@ -503,11 +503,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       ccb_l1rls  : out std_logic;       -- l1rls - to J3
       ccb_clken  : in  std_logic;       -- clken - from J3
 
-      rawlct    : in  std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
-      alct_dav  : in  std_logic;        -- lctdav1 - from J4
-      otmb_dav  : in  std_logic;        -- lctdav2 - from J4
-      rsvtd_in  : in  std_logic_vector(4 downto 0);  -- spare(7 DOWNTO 3) - to J4
-      rsvtd_out : out std_logic_vector(2 downto 0);  -- spare(2 DOWNTO 0) - from J4
+      rawlct   : in std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
+      alct_dav : in std_logic;          -- lctdav1 - from J4
+      otmb_dav : in std_logic;          -- lctdav2 - from J4
+      rsvtd_in : in std_logic_vector(4 downto 0);  -- spare(7 DOWNTO 3) - to J4
 
 -- From GigaLinks
 
@@ -851,26 +850,26 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       );
   end component;
 
-    component FIFO_CASCADE is
+  component FIFO_CASCADE is
     generic(
-      NFIFO 		 : integer range 3 to 16 := 3;
-      DATA_WIDTH   : integer := 18;
-      WR_FASTER_RD : boolean := true
-    );
+      NFIFO        : integer range 3 to 16 := 3;
+      DATA_WIDTH   : integer               := 18;
+      WR_FASTER_RD : boolean               := true
+      );
     port(
-      DO          : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      EMPTY       : out std_logic;
-      FULL        : out std_logic;
-      EOF         : out std_logic;
-      BOF         : out std_logic;
+      DO    : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      EMPTY : out std_logic;
+      FULL  : out std_logic;
+      EOF   : out std_logic;
+      BOF   : out std_logic;
 
-      DI          : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-      RDCLK       : in  std_logic;
-      RDEN        : in  std_logic;
-      RST         : in  std_logic;
-      WRCLK       : in  std_logic;
-      WREN        : in  std_logic
-    );
+      DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
+      RDCLK : in std_logic;
+      RDEN  : in std_logic;
+      RST   : in std_logic;
+      WRCLK : in std_logic;
+      WREN  : in std_logic
+      );
   end component;
 
   component LCTDLY is  -- Aligns RAW_LCT with L1A by 2.4 us to 4.8 us
@@ -1169,9 +1168,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal eof_data_160 : std_logic_vector(NFEB downto 1);
 
 
-  signal data_fifo_empty_b                  : std_logic_vector(NFEB+2 downto 1);
-  signal alct_fifo_empty, otmb_fifo_empty   : std_logic;
-  signal alct_fifo_full, otmb_fifo_full     : std_logic;
+  signal data_fifo_empty_b                : std_logic_vector(NFEB+2 downto 1);
+  signal alct_fifo_empty, otmb_fifo_empty : std_logic;
+  signal alct_fifo_full, otmb_fifo_full   : std_logic;
 
   signal raw_l1a, tc_l1a           : std_logic;
   signal raw_lct                   : std_logic_vector(NFEB downto 0);
@@ -1464,11 +1463,10 @@ begin
       ccb_l1rls  => ccb_l1rls,          -- l1rls - to J3
       ccb_clken  => ccb_clken,          -- clken - from J3
 
-      rawlct    => raw_lct,  -- rawlct(NFEB downto 0) - from -- from testctrl
-      otmb_dav  => int_otmb_dav,        -- lctdav1 - from J4
-      alct_dav  => int_alct_dav,        -- lctdav2 - from J4
-      rsvtd_in  => rsvtd_in,            -- spare(7 DOWNTO 3) - to J4
-      rsvtd_out => rsvtd_out,           -- spare(2 DOWNTO 0) - from J4
+      rawlct   => raw_lct,  -- rawlct(NFEB downto 0) - from -- from testctrl
+      otmb_dav => int_otmb_dav,         -- lctdav1 - from J4
+      alct_dav => int_alct_dav,         -- lctdav2 - from J4
+      rsvtd_in => rsvtd_in,             -- spare(7 DOWNTO 3) - to J4
 
 -- From GigaLinks
 
@@ -1826,6 +1824,10 @@ begin
       otmb_data => gen_otmb_data
       );
 
+  rsvtd_out(0) <= cafifo_l1a;
+  rsvtd_out(1) <= cafifo_l1a_match_in(NFEB+1);
+  rsvtd_out(2) <= cafifo_l1a_match_in(NFEB+2);
+
   ALCT_FIFO_CASCADE : FIFO_CASCADE
     generic map (
       NFIFO        => 3,                -- number of FIFOs in cascade
@@ -1857,7 +1859,7 @@ begin
       DO    => otmb_fifo_data_out,      -- Output data
       EMPTY => otmb_fifo_empty,         -- Output empty
       FULL  => otmb_fifo_full,          -- Output full
-      EOF   => eof_data(NFEB+1),             -- Output EOF
+      EOF   => eof_data(NFEB+1),        -- Output EOF
       BOF   => open,
 
       DI    => otmb_fifo_data_in,       -- Input data
@@ -1867,7 +1869,7 @@ begin
       WRCLK => clk40,                   -- Input write clock
       WREN  => otmb_fifo_data_valid     -- Input write enable
       );
-  
+
 -- FIFO MUX
   fifo_out <= dcfeb_fifo_out(1)(15 downto 0) when data_fifo_oe = "111111110" else
               dcfeb_fifo_out(2)(15 downto 0)  when data_fifo_oe = "111111101" else
@@ -1901,16 +1903,16 @@ begin
 
   rx_alct_data_valid <= not alct_qq(17);
   alct_data_valid    <= '0' when kill(9) = '1' else
-                     rx_alct_data_valid when (gen_dcfeb_sel = '0') else
-                     gen_alct_data_valid;
+                        rx_alct_data_valid when (gen_dcfeb_sel = '0') else
+                        gen_alct_data_valid;
 
   alct_data <= alct_qq(15 downto 0) when (gen_dcfeb_sel = '0') else
                gen_alct_data;
 
   rx_otmb_data_valid <= not otmb_qq(17);
   otmb_data_valid    <= '0' when kill(8) = '1' else
-                     rx_otmb_data_valid when (gen_dcfeb_sel = '0') else
-                     gen_otmb_data_valid;
+                        rx_otmb_data_valid when (gen_dcfeb_sel = '0') else
+                        gen_otmb_data_valid;
 
   otmb_data <= otmb_qq(15 downto 0) when (gen_dcfeb_sel = '0') else
                gen_otmb_data;
