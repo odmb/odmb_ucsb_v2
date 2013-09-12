@@ -7,6 +7,11 @@
 =                                                                    =
 ======================================================================
 
+V01-04: 11 September 2013, Manuel
+--------------------------------
+Send ALCT/OTMB data through EOFGEN to fix shifted word.
+Added FIFO_CASCADE, and applied to all large FIFOs.
+
 V01-03: 20 August 2013, Manuel
 --------------------------------
 Added SYSTEM_MON and BPI_PORT (the latter in progress).
