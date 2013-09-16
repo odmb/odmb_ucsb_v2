@@ -83,10 +83,10 @@ architecture pcfifo_architecture of pcfifo is
   signal tx_ack_q             : std_logic_vector(2 downto 0) := (others => '0');
   signal tx_ack_q_b           : std_logic                    := '1';
 
-  signal fifo_in, fifo_out : std_logic_vector(17 downto 0);
-  signal fifo_empty        : std_logic;
-  signal fifo_full         : std_logic;
-  signal fifo_wren, bof    : std_logic;
+  signal fifo_in, fifo_out         : std_logic_vector(17 downto 0);
+  signal fifo_empty                : std_logic;
+  signal fifo_full                 : std_logic;
+  signal fifo_wren, bof, bof_pulse : std_logic;
 
   signal pck_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
 
@@ -152,7 +152,8 @@ begin
   tx_ack_q_b <= not tx_ack_q(2);
 
 -- FSMs
-  FIRSTDLY : SRLC32E port map(first_dly, open, "11111", logich, clk_out, bof);
+  BOFPULSE : PULSE_EDGE port map(bof_pulse, open, clk_out, rst, 1, bof);
+  FIRSTDLY : SRLC32E port map(first_dly, open, "11111", logich, clk_out, bof_pulse);
 
   LDOUT_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_out, rst, 1, ld_out);
   LDIN_PULSE_EDGE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, first_dly);

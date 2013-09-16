@@ -1158,7 +1158,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal eofgen_dcfeb_fifo_in    : ext_dcfeb_fifo_data_type;
   signal eofgen_dcfeb_data_valid : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_out          : ext_dcfeb_fifo_data_type;
-  signal pulse_eof, pulse_eof40  : std_logic_vector(NFEB downto 1);
+  signal pulse_eof40  : std_logic_vector(NFEB downto 1);
 
   signal dcfeb_fifo_empty  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_aempty : std_logic_vector(NFEB downto 1);
@@ -1800,8 +1800,7 @@ begin
         );
 
     -- Make pulse 5 cc long, so that there are 1-2 matches at 40 MHz
-    PULSEEOF      : PULSE_EDGE port map(pulse_eof(I), open, clk160, reset, 5, eof_data_160(I));
-    PULSEEOF40    : PULSE_EDGE port map(pulse_eof40(I), open, clk40, reset, 1, pulse_eof(I));
+    PULSEEOF40    : PULSE_EDGE port map(pulse_eof40(I), open, clk40, reset, 1, eof_data_160(I));
     EOF_ALCT_PUSH : SRLC32E port map(eof_data(I), open, alct_push_dly, logich, clk40, pulse_eof40(I));
 
   end generate GEN_DCFEB;
