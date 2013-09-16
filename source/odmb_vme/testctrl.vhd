@@ -113,10 +113,13 @@ architecture TESTCTRL_Arch of TESTCTRL is
   signal otmb_dav_inner : std_logic;
   signal lct_inner      : std_logic_vector(NFEB downto 0);
 
-  signal nrep_cnt                   : integer                       := 0;
-  signal nrep_vme                   : std_logic_vector(15 downto 0) := (others => '0');
-  signal write_nrep, d_nrep, q_nrep : std_logic                     := '0';
-  signal nrep_rst, nrep_wren        : std_logic                     := '0';
+  signal nrep_cnt               : integer                       := 0;
+  signal nrep_vme, nrep_data    : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_nrep, d_nrep, q_nrep : std_logic                     := '0';
+  signal nrep_rst, nrep_wren    : std_logic                     := '0';
+
+  signal field_data                  : std_logic_vector(15 downto 0) := (others => '0');
+  signal r_field, d_dtack_field_nrep : std_logic                     := '0';
 
 
 begin  --Architecture
@@ -139,7 +142,9 @@ begin  --Architecture
   READ_WRC   <= '1' when (CMDDEV = x"102C") else '0';  -- READ WRITE COUNTER REGISTER
   READ_RDC   <= '1' when (CMDDEV = x"103C") else '0';  -- READ FIFO READ COUNTER REGISTER
   READ_TRC   <= '1' when (CMDDEV = x"1028") else '0';  -- READ TRIGGER COUNTER
-  WRITE_NREP <= '1' when (CMDDEV = x"1030") else '0';  -- WRITE NUMBER OF REPETITIONS
+
+  W_NREP  <= '1' when (CMDDEV = x"1030")                            else '0';  -- WRITE NUMBER OF REPETITIONS
+  R_FIELD <= '1' when (DEVICE = '1' and CMDDEV(7 downto 0) = x"34") else '0';  -- Read NUMBER OF REPETITIONS
 
   CREATE_FSR_vector : for I in 9 downto 0 generate
   begin
@@ -154,7 +159,7 @@ begin  --Architecture
   -- NREP: VME register and counter
   nrep_rst <= RST;
   GEN_NREP : for I in 0 to 15 generate
-    FDNREP : FDCE port map(nrep_vme(I), strobe, write_nrep, nrep_rst, indata(I));
+    FDNREP : FDCE port map(nrep_vme(I), strobe, w_nrep, nrep_rst, indata(I));
   end generate GEN_NREP;
   PULSENREP : PULSE_EDGE port map(nrep_wren, open, slowclk, rst, 1, d_nrep);
 
@@ -162,7 +167,7 @@ begin  --Architecture
   begin
     if (nrep_rst = '1') then
       nrep_cnt   <= 0;
-      ts_cnt_rst <= '0';
+      ts_cnt_rst <= '1';
     elsif rising_edge(clk) then
       if (nrep_wren = '1') then
         nrep_cnt   <= to_integer(unsigned(nrep_vme));
@@ -178,6 +183,12 @@ begin  --Architecture
   end process;
   tc_run_inner <= '1' when nrep_cnt > 0 else '0';
   tc_run       <= tc_run_inner;
+  nrep_data    <= std_logic_vector(to_unsigned(nrep_cnt, 16));
+
+  field_data <= nrep_data when (CMDDEV(11 downto 8) = x"0") else
+                ts_cnt_out(15 downto 0)  when (CMDDEV(11 downto 8) = x"1") else
+                ts_fifo_out(15 downto 0) when (CMDDEV(11 downto 8) = x"2") else
+                (others => '0');
 
   OUTDATA <= "000000000000" & FSR_vector(3 downto 0) when (STROBE = '1' and READ_FSR = '1') else
              FIFO_STR(15 downto 0)           when (STROBE = '1' and READ_STR = '1')  else
@@ -185,6 +196,7 @@ begin  --Architecture
              "00000" & FIFO_RDC(10 downto 0) when (STROBE = '1' and READ_RDC = '1')  else
              FIFO_DATA(15 downto 0)          when (STROBE = '1' and READ_FIFO = '1') else
              TRG_CNT_DATA(15 downto 0)       when (STROBE = '1' and READ_TRC = '1')  else
+             FIELD_DATA(15 downto 0)         when (STROBE = '1' and R_FIELD = '1')   else
              FIFO_DATA(15 downto 0);
 
   D_DTACK_READ_FSR   <= READ_FSR and STROBE;
@@ -207,8 +219,9 @@ begin  --Architecture
   E_DTACK_WRITE_FIFO <= E1_DTACK_WRITE_FIFO or E2_DTACK_WRITE_FIFO;
   D_DTACK_READ_TRC   <= READ_TRC and STROBE;
   FD_DTACK_READ_TRC        : FD port map (E_DTACK_READ_TRC, SLOWCLK, D_DTACK_READ_TRC);
-  d_nrep             <= write_nrep and strobe;
-  FD_DTACK_WRITE_NREP      : FD port map(q_nrep, slowclk, d_nrep);
+  d_nrep             <= w_nrep and strobe;
+  d_dtack_field_nrep <= (r_field and strobe) or d_nrep;
+  FD_DTACK_W_NREP          : FD port map(q_nrep, slowclk, d_dtack_field_nrep);
 
   DTACK <= '0' when (E_DTACK_READ_FSR = '1' or E_DTACK_READ_STR = '1' or E_DTACK_READ_WRC = '1' or
                      E_DTACK_READ_RDC = '1' or E_DTACK_READ_FIFO = '1' or E_DTACK_WRITE_FSR = '1' or

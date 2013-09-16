@@ -41,6 +41,9 @@ W  8	 200	ALCTDAV
 
 R  001C  0	Read FIFO Status Register
 W  0030  4	Start 4 Test Runs
+R  0034  0	Read NREP
+R  0134  0	Read TS_CNT
+R  0234  0	Read TS_FIFO
  
 R  001C  0	Read FIFO Status Register
 R  001C  0	Read FIFO Status Register
