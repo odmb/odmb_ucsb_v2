@@ -65,7 +65,9 @@ module BPI_PORT(
 	input [15:0] BPI_CFG_REG0,        
 	input [15:0] BPI_CFG_REG1,        
 	input [15:0] BPI_CFG_REG2,        
-	input [15:0] BPI_CFG_REG3        
+	input [15:0] BPI_CFG_REG3,        
+// Guido - Sep 10
+  input BPI_DONE
 );
 
 wire active_write;
@@ -81,6 +83,13 @@ wire trail_0;
 // Guido - Aug 26
 reg BPI_CTRL_REG_WE;
 reg [1:0] BPI_CFG_REG_SEL;
+
+// Guido - Sep 10
+reg BPI_DTACK;
+reg BPI_DTACK_RST;
+reg BPI_ENBL_CMD;
+reg BPI_UL_CMD;
+reg BPI_DL_CMD;
 
 assign DTACK_B = (busy || busy_2) ? ~dtack : 1'bz;
 assign busy    = (DEVICE && STROBE);
@@ -171,6 +180,10 @@ begin
 	BPI_CTRL_REG_WE <= lead_0 && (COMMAND == 10'h004);
 	BPI_CFG_UL <= lead_0 && (COMMAND == 10'h006);
 	BPI_CFG_DL <= lead_0 && (COMMAND == 10'h007);
+// Guido - Sep 10
+	BPI_ENBL_CMD <= (COMMAND == 10'h00A);
+	BPI_UL_CMD <= (COMMAND == 10'h006);
+	BPI_DL_CMD <= (COMMAND == 10'h007);
 end
 
 // Guido - Aug 26
@@ -198,12 +211,36 @@ begin
 	   BPI_CFG_REG_SEL <= INDATA[1:0];
 end
 
+// Guido - Sep 10
+always @(posedge BPI_DONE or posedge RST or posedge BPI_DTACK_RST)
+begin
+	if(RST)
+		BPI_DTACK <= 1'b0;
+	else if(BPI_DTACK_RST)
+		BPI_DTACK <= 1'b0;
+	else
+		BPI_DTACK <= 1'b1;
+end
+
+// Guido - Sep 10
+always @(posedge CLK or posedge RST)
+begin
+	if(RST)
+		BPI_DTACK_RST <= 1'b1;
+	else
+		BPI_DTACK_RST <= BPI_DTACK;
+end
+
 always @(posedge CLK or posedge RST)
 begin
 	if(RST)
 		dtack <= 1'b0;
 	else
-		if((active_read && lead_1) || (active_write && lead_0))
+// Guido - Sep 10
+//		if((active_read && lead_1) || (active_write && lead_0))
+		if(BPI_ENBL_CMD || BPI_UL_CMD || BPI_DL_CMD)
+			dtack <= BPI_DTACK;
+    else if((active_read && lead_1) || (active_write && lead_0))
 			dtack <= 1'b1;
 		else if(trail_0)
 			dtack <= 1'b0;

@@ -2786,7 +2786,7 @@ begin
 
   BPI_ctrl_i : BPI_ctrl
     port map (
-      CLK               => clk40,       -- 40 MHz clock
+      CLK               => clk2p5,       -- 40 MHz clock
       CLK1MHZ           => clk1mhz,     --  1 MHz clock for timers
       RST               => reset,
 -- Interface Signals to/from VME interface
@@ -2816,7 +2816,7 @@ begin
 
   bpi_interface_i : bpi_interface
     port map (
-      CLK          => clk40,            -- 40 MHz clock
+      CLK          => clk2p5,            -- 40 MHz clock
       RST          => reset,
       ADDR         => bpi_addr,         -- Bank/Array Address 
       CMD_DATA_OUT => bpi_data_to,  -- Command or Data being written to FLASH device

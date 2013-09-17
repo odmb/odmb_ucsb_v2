@@ -517,7 +517,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
       BPI_CFG_REG0      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
-      BPI_CFG_REG3      : in  std_logic_vector(15 downto 0)
+      BPI_CFG_REG3      : in  std_logic_vector(15 downto 0);
+      BPI_DONE          : in  std_logic
       );
   end component;
 
@@ -870,7 +871,7 @@ begin
 
   DEV6_BPI_PORT : BPI_PORT
     port map (
-      CLK               => clk,         -- 40MHz clock
+      CLK               => clk_s2,      -- 2.5MHz clock
       RST               => rst,         -- system reset
       -- VME selection/control
       DEVICE            => device(6),  -- 1 bit indicating this device has been selected
@@ -899,12 +900,13 @@ begin
       BPI_CFG_REG0      => CFG_REG0,
       BPI_CFG_REG1      => CFG_REG1,
       BPI_CFG_REG2      => CFG_REG2,
-      BPI_CFG_REG3      => CFG_REG3
+      BPI_CFG_REG3      => CFG_REG3,
+      BPI_DONE          => BPI_CFG_DONE
       );
 
   BPI_CR_PM : BPI_CFG_REGISTERS
     port map (
-      clk => clk,
+      clk => clk_s2,
       rst => rst,
 
       bpi_cfg_reg_we => BPI_CFG_REG_WE_VEC,
@@ -918,7 +920,7 @@ begin
 
   BPI_CC_PM : BPI_CFG_CONTROLLER
     port map (
-      CLK => clk,
+      CLK => clk_s2,
       RST => rst,
 
       bpi_cfg_dl_start => BPI_CFG_DL,

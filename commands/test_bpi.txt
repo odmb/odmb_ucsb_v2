@@ -1,12 +1,266 @@
+W  3000  280	Select dummy DCFEBs and internally generated triggers
+
+== Reset BPI Engine 
+
 W  6020  0	   Reset BPI Engine
+
+== Set operating mode 
+
+W  6010  8	    Set MODE = 1 (CMD FIFO loaded from VME)
+
+== Read Electronic Signature 
 
 W  6024  0	   Disable Parser
 
-W  602C  17	  Load Address (command = 0x17) in Command FIFO
-W  602C  2	   Address
-W  602C  0b	  Program 
-W  602C  fede	Data 
+W  602C  7    RES Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0) 
 
-W  6028  1	   Enable Parser
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  0	    Load Address Data (0x0 => Manufacturer Code - 0x0049) 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  1	    Load Address Data (0x1 => Device Code - 0x506B) 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  2	    Load Address Data (0x0 => Block Protection - 0x0001) 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  5	    Load Address Data (0x0 => Configuration Register - ?) 
+W  602C  2     Read One Word 
+
+
+== Set Read Array Mode 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  5	    Read Array Mode Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+
+W  6028  0	    Enable Parser
+
+W  6024  0	    Disable Parser
+
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+
+== Set operating mode 
+
+W  6010  8	    Set MODE = 1 (CMD FIFO loaded from VME)
+
+== Write Configuration Data in PROM - Bank 0 / Block 0 / Word 0,1,2 and 3 
+
+W  6024  0	   Disable Parser
+
+== Block Unlock 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  14    Block UnLock Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0) 
+
+== Set Read Array Mode 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  5	    Read Array Mode Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+
+== Write Bank 0 - Block 0 - Word 0 - Data = fede
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  b	    Program in Bank 0   
+W  602C  fede	 Set Data   
+
+== Write Bank 0 - Block 0 - Word 1 - Data = ceca
+W  602C  17	   Load Address in Bank 0 
+W  602C  1     Set Offset = 1 
+W  602C  b	    Program in Bank 0   
+W  602C  ceca	 Set Data   
+
+== Write Bank 0 - Block 0 - Word 2 - Data = ceca
+W  602C  17	   Load Address in Bank 0 
+W  602C  2     Set Offset = 2 
+W  602C  b	    Program in Bank 0   
+W  602C  fede	 Set Data   
+
+== Write Bank 0 - Block 0 - Word 1 - Data = ceca
+W  602C  17	   Load Address in Bank 0 
+W  602C  3     Set Offset = 3 
+W  602C  b	    Program in Bank 0   
+W  602C  ceca	 Set Data   
+
+== Set Read Array Mode 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  5	    Read Array Mode Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+
+W  6028  0	   Enable Parser
+
+W  6024  0	   Disable Parser
+
+== Read CFG_REGs (expected values = fffx)
+
+W  6010  0	    Select CFG_REG0
+R  6014  0	    Read CFG_REG0
+W  6010  1	    Select CFG_REG1
+R  6014  0	    Read CFG_REG1
+W  6010  2	    Select CFG_REG2
+R  6014  0	    Read CFG_REG2
+W  6010  3	    Select CFG_REG3
+R  6014  0	    Read CFG_REG3
+
+== Load CFG_REGISTERS from PROM 
+
+W  6018  0	    Upload Flash PROM to CFG Regs
+
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+
+== Read CFG_REGs (expected values = fedx)
+
+W  6010  0	    Select CFG_REG0
+R  6014  0	    Read CFG_REG0
+W  6010  1	    Select CFG_REG1
+R  6014  0	    Read CFG_REG1
+W  6010  2	    Select CFG_REG2
+R  6014  0	    Read CFG_REG2
+W  6010  3	    Select CFG_REG3
+R  6014  0	    Read CFG_REG3
+
+== Set operating mode 
+
+W  6010  4	    Set MODE = 0 (CMD FIFO loaded from CFG_CONTROLLER) and DATA_SEL = 1 (CFG data = constants)
+
+== Load PROM from CFG_CONTROLLER 
+
+W  601C  0	    Download CFG Regs to Flash PROM
+
+== Set operating mode 
+
+W  6010  8	    Set MODE = 1 (CMD FIFO loaded from VME)
+
+== Read PROM 
+
+W  6024  0	    Disable Parser
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  1     Set Offset = 1 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  2     Set Offset = 2 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  3     Set Offset = 3 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  4     Set Offset = 4 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  5     Set Offset = 5 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  6     Set Offset = 6 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  7     Set Offset = 7 
+W  602C  2     Read One Word 
+
+== Set Read Array Mode 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  5	    Read Array Mode Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+
+W  6028  0	    Enable Parser
+
+W  6024  0	    Disable Parser
+
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+
+== Set operating mode 
+
+W  6010  8	    Set MODE = 1 (CMD FIFO loaded from VME)
+
+== Read Electronic Signature 
+
+W  6024  0	   Disable Parser
+
+W  602C  7    RES Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0) 
+
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  0	    Load Address Data (0x0 => Manufacturer Code - 0x0049) 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  1	    Load Address Data (0x1 => Device Code - 0x506B) 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  2	    Load Address Data (0x0 => Block Protection - 0x0001) 
+W  602C  2     Read One Word 
+
+W  602C  17	   Load Address Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+W  602C  5	    Load Address Data (0x0 => Configuration Register - ?) 
+W  602C  2     Read One Word 
+
+== Set Read Array Mode 
+
+W  602C  17	   Load Address in Bank 0 
+W  602C  0     Set Offset = 0 
+W  602C  5	    Read Array Mode Command (BA = 0x0 => Bank 16 - BKA = 0x0 => Block0)
+
+W  6028  0	    Enable Parser
+
+W  6024  0	   Disable Parser
+
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+R  6034  1	    Read NW in Read-Back FIFO
+
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
+R  6030  1	    Read One Word from Read-Back FIFO
 
 
