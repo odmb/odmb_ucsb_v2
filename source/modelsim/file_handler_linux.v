@@ -27,24 +27,8 @@ initial
 
 initial
   begin
-// Test of CONFREGS
-//    infile=$fopen("commands\\test_lct_l1a_conf.txt","r");
-//    outfile=$fopen("commands\\test_lct_l1a_conf_out.txt","w");
-// Test of TESTCTRL
-//    infile=$fopen("commands\\test_lct_l1a_run.txt","r");
-//    outfile=$fopen("commands\\test_lct_l1a_run_out.txt","w");
-
-//    infile=$fopen("commands/test_testctrl.txt","r");       // Test of TESTCTRL
-//    outfile=$fopen("commands/test_testctrl_out.txt","w");  // Test of TESTCTRL
-
-    infile=$fopen("commands/test_lvdbmon.txt","r");       // Test of LVDBMON
-    outfile=$fopen("commands/test_lvdbmon_out.txt","w");  // Test of LVDBMON
- 
-  //  infile=$fopen("commands/test_fullpath.txt","r");       // Test of full path
-  //  outfile=$fopen("commands/test_fullpath.txt","w");  // Test of full path
-
-//    infile=$fopen("commands\\test_cfebjtag.txt","r");      // Test of DCFEBJTAG
-//    outfile=$fopen("commands\\test_cfebjtag_out.txt","w"); // Test of DCFEBJTAG
+    infile=$fopen("commands/test_dduprbs.txt","r");
+    outfile=$fopen("commands/test_dduprbs_out.txt","w");
     
     while (!$feof(infile))
       begin

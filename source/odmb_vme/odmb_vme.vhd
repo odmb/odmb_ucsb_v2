@@ -195,7 +195,15 @@ entity ODMB_VME is
 -- Guido - Aug 26
     BPI_CFG_DONE   : in std_logic;
     BPI_CFG_REG_WE : in std_logic;
-    BPI_CFG_REG_IN : in std_logic_vector(15 downto 0)
+    BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
+
+    -- DDU PRBS signals
+    DDU_PRBS_EN          : out std_logic;
+    DDU_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
+    DDU_PRBS_ERR_CNT_RST : out std_logic;
+    DDU_PRBS_RD_EN       : out std_logic;
+    DDU_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
+    DDU_PRBS_DRDY        : in  std_logic
     );
 
 end ODMB_VME;
@@ -461,6 +469,29 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
+  component SYSTEM_TEST is
+    port (
+      DEVICE  : in std_logic;
+      COMMAND : in std_logic_vector(9 downto 0);
+      INDATA  : in std_logic_vector(15 downto 0);
+      STROBE  : in std_logic;
+      WRITER  : in std_logic;
+      SLOWCLK : in std_logic;
+      RST     : in std_logic;
+
+      OUTDATA : out std_logic_vector(15 downto 0);
+      DTACK   : out std_logic;
+
+      -- DDU PRBS signals
+      DDU_PRBS_EN          : out std_logic;
+      DDU_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
+      DDU_PRBS_ERR_CNT_RST : out std_logic;
+      DDU_PRBS_RD_EN       : out std_logic;
+      DDU_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
+      DDU_PRBS_DRDY        : in  std_logic
+      );
+  end component;
+
   component MBCJTAG is
     port (
       DEVICE    : in std_logic;
@@ -605,6 +636,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       device6_outdata : in  std_logic_vector(15 downto 0);
       device7_outdata : in  std_logic_vector(15 downto 0);
       device8_outdata : in  std_logic_vector(15 downto 0);
+      device9_outdata : in  std_logic_vector(15 downto 0);
       outdata         : out std_logic_vector(15 downto 0)
       );
   end component;
@@ -653,6 +685,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal outdata_bpi_port    : std_logic_vector(15 downto 0);
 
   signal outdata_testctrl : std_logic_vector(15 downto 0);
+  signal outdata_systest  : std_logic_vector(15 downto 0);
 
   signal cfg_reg0 : std_logic_vector(15 downto 0) := x"fff0";
   signal cfg_reg1 : std_logic_vector(15 downto 0) := x"fff1";
@@ -785,7 +818,7 @@ begin
       ODMB_DATA_SEL => odmb_data_sel,
       ODMB_DATA     => odmb_data,
       TXDIFFCTRL    => txdiffctrl,      -- Controls the TX voltage swing
-      LOOPBACK      => loopback         -- For internal loopback tests
+      LOOPBACK      => loopback     -- For internal loopback tests
 
       );
 
@@ -995,6 +1028,28 @@ begin
 
       );
 
+  DEV9_SYSTEST : SYSTEM_TEST
+    port map (
+      DEVICE  => device(9),
+      COMMAND => cmd,
+      INDATA  => vme_data_in,
+      STROBE  => strobe,
+      WRITER  => vme_write_b,
+      SLOWCLK => clk_s2,
+      RST     => rst,
+
+      OUTDATA => outdata_systest,
+      DTACK   => vme_dtack_b,
+
+      -- DDU PRBS signals
+      DDU_PRBS_EN          => DDU_PRBS_EN,
+      DDU_PRBS_TST_CNT     => DDU_PRBS_TST_CNT,
+      DDU_PRBS_ERR_CNT_RST => DDU_PRBS_ERR_CNT_RST,
+      DDU_PRBS_RD_EN       => DDU_PRBS_RD_EN,
+      DDU_PRBS_ERR_CNT     => DDU_PRBS_ERR_CNT,
+      DDU_PRBS_DRDY        => DDU_PRBS_DRDY
+      );
+
   DEVX_MBCJTAG : MBCJTAG
     port map (
       FASTCLK => clk,
@@ -1061,6 +1116,7 @@ begin
       device6_outdata => outdata_bpi_port,
       device7_outdata => outdata_sysmon,
       device8_outdata => outdata_lvdbmon,
+      device9_outdata => outdata_systest,
       outdata         => vme_data_out
       );
 
@@ -1077,7 +1133,6 @@ begin
 
 -- From/To LVMB
   pon_oe_b <= '0';
-
 
 end ODMB_VME_architecture;
 

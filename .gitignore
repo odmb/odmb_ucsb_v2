@@ -6,6 +6,7 @@ work/
 *.bak
 *.do
 commands/*out.txt
+source/transcript
 
 ### ISE ###
 xlnx_auto_0_xdb/

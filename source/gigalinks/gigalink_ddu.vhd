@@ -2,6 +2,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 library UNIMACRO;
@@ -17,12 +18,12 @@ entity GIGALINK_DDU is
     RST        : in std_logic;
 
     -- Transmitter signals
-    TXD         : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
-    TXD_VLD     : in  std_logic;        -- Flag for valid data;
-    TX_DDU_N    : out std_logic;        -- GTX transmit data out - signal
-    TX_DDU_P    : out std_logic;        -- GTX transmit data out + signal
+    TXD        : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
+    TXD_VLD    : in  std_logic;         -- Flag for valid data;
+    TX_DDU_N   : out std_logic;         -- GTX transmit data out - signal
+    TX_DDU_P   : out std_logic;         -- GTX transmit data out + signal
     TXDIFFCTRL : in  std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
-    LOOPBACK    : in  std_logic_vector(2 downto 0);  -- For internal loopback tests
+    LOOPBACK   : in  std_logic_vector(2 downto 0);  -- For internal loopback tests
 
     -- Receiver signals
     RX_DDU_N : in  std_logic;           -- GTX receive data in - signal
@@ -39,7 +40,15 @@ entity GIGALINK_DDU is
     RX_FIFO_RST     : in  std_logic;
     RX_FIFO_RDEN    : in  std_logic;
     RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-    RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0)
+    RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
+
+    -- PRBS signals
+    PRBS_EN          : in  std_logic;
+    PRBS_EN_TST_CNT  : in  std_logic_vector(15 downto 0);
+    PRBS_ERR_CNT_RST : in  std_logic;
+    PRBS_RD_EN       : in  std_logic;
+    PRBS_ERR_CNT     : out std_logic_vector(15 downto 0);
+    PRBS_DRDY        : out std_logic
     );
 end GIGALINK_DDU;
 
@@ -96,7 +105,15 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
       GTX0_MGTREFCLKTX_IN    : in  std_logic;
       GTX0_PLLTXRESET_IN     : in  std_logic;
       GTX0_TXPLLLKDET_OUT    : out std_logic;
-      GTX0_TXRESETDONE_OUT   : out std_logic
+      GTX0_TXRESETDONE_OUT   : out std_logic;
+      -- PRBS Ports --------------------------------------------------------------
+      GTX0_PRBSCNTRESET_IN   : in  std_logic;
+      GTX0_ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+      -- DRP Ports ---------------------------------------------------------------
+      GTX0_DCLK_IN           : in  std_logic;
+      GTX0_DEN_IN            : in  std_logic;
+      GTX0_DRDY_OUT          : out std_logic;
+      GTX0_DRPDO_OUT         : out std_logic_vector(15 downto 0)
       );
   end component;
 
@@ -147,12 +164,12 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal logicl5 : std_logic_vector(4 downto 0) := (others => '0');
 
   -- wrapper_gigalink_ddu inputs
-  signal gtxtest_in        : std_logic_vector(12 downto 0) := "1000000000000";
-  signal gtx0_gtxtest_done : std_logic;
-  signal gtx0_gtxtest_bit1 : std_logic;
-  signal gtx0_txreset_in   : std_logic;
-  signal gtx0_txpreemphasis_in : std_logic_vector(3 downto 0) := "1000";
-  
+  signal gtxtest_in            : std_logic_vector(12 downto 0) := "1000000000000";
+  signal gtx0_gtxtest_done     : std_logic;
+  signal gtx0_gtxtest_bit1     : std_logic;
+  signal gtx0_txreset_in       : std_logic;
+  signal gtx0_txpreemphasis_in : std_logic_vector(3 downto 0)  := "1000";
+
   -- wrapper_gigalink_ddu outputs
   signal gtx0_txplllkdet_out    : std_logic;
   signal gtx0_rxvalid_out       : std_logic;
@@ -167,7 +184,15 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal rx_fifo_empty, rx_fifo_full    : std_logic := '0';
   signal rx_fifo_rderr, rx_fifo_wrerr   : std_logic := '0';
   signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
-  
+
+  -- PRBS signals
+  signal gtx0_enprbstst_in      : std_logic_vector(2 downto 0);
+  signal prbs_err_cnt_rst_inner : std_logic;
+  signal prbs_en_pulse          : std_logic;
+  signal prbs_en_tst_cnt_inner  : integer;
+
+  signal loopback_inner : std_logic_vector(2 downto 0);
+
 begin
 
   BUFG_USR : BUFG port map(O => usr_clk, I => ref_clk_80);
@@ -185,6 +210,7 @@ begin
   gtxtest_in      <= "10000000000" & gtx0_gtxtest_bit1 & '0';
   gtx0_txreset_in <= gtx0_gtxtest_done or RST;
 
+
   WRAPPER_GIGALINK_DDU_PM : WRAPPER_GIGALINK_DDU
     generic map (
       WRAPPER_SIM_GTXRESET_SPEEDUP => SIM_SPEEDUP  -- Set to 1 to speed up sim reset
@@ -195,7 +221,7 @@ begin
       --GTX0  (X0Y4)
 
       ------------------------ Loopback and Powerdown Ports ----------------------
-      GTX0_LOOPBACK_IN       => LOOPBACK,
+      GTX0_LOOPBACK_IN       => loopback_inner,
       ----------------------- Receive Ports - 8b10b Decoder ----------------------
       GTX0_RXDISPERR_OUT     => open,
       GTX0_RXNOTINTABLE_OUT  => open,
@@ -236,7 +262,15 @@ begin
       GTX0_MGTREFCLKTX_IN    => REF_CLK_80,
       GTX0_PLLTXRESET_IN     => RST,
       GTX0_TXPLLLKDET_OUT    => gtx0_txplllkdet_out,
-      GTX0_TXRESETDONE_OUT   => open
+      GTX0_TXRESETDONE_OUT   => open,
+      -- PRBS Ports --------------------------------------------------------------
+      GTX0_PRBSCNTRESET_IN   => prbs_err_cnt_rst_inner,
+      GTX0_ENPRBSTST_IN      => gtx0_enprbstst_in,
+      -- DRP Ports ---------------------------------------------------------------
+      GTX0_DCLK_IN           => usr_clk,
+      GTX0_DEN_IN            => PRBS_RD_EN,
+      GTX0_DRDY_OUT          => PRBS_DRDY,
+      GTX0_DRPDO_OUT         => PRBS_ERR_CNT
       );
 
   -- Double reset required because TXPLL_DIVSEL_OUT = 2
@@ -313,5 +347,12 @@ begin
     port map(RST   => rx_fifo_rst, WRCLK => usr_clk, WREN => rxd_vld_inner, FULL => rx_fifo_full,
              RDCLK => VME_CLK, RDEN => RX_FIFO_RDEN, COUNT => RX_FIFO_WRD_CNT);
 
+  
+  PRBS_EN_PE : PULSE_EDGE port map(prbs_en_pulse, open, usr_clk, RST,
+                                   prbs_en_tst_cnt_inner, PRBS_EN);
+  prbs_err_cnt_rst_inner <= RST or PRBS_ERR_CNT_RST;
+  prbs_en_tst_cnt_inner  <= to_integer(unsigned(prbs_en_tst_cnt));
+  gtx0_enprbstst_in      <= "001" when (prbs_en_pulse = '1') else "000"; --QQQ
 
+  loopback_inner <= "001" when (prbs_en_pulse = '1') else loopback; --QQQ
 end GIGALINK_DDU_ARCH;

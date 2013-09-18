@@ -466,8 +466,15 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       VP    : in std_logic;
       VN    : in std_logic;
       VAUXP : in std_logic_vector(15 downto 0);
-      VAUXN : in std_logic_vector(15 downto 0)
+      VAUXN : in std_logic_vector(15 downto 0);
 
+      -- DDU PRBS signals
+      DDU_PRBS_EN          : out std_logic;
+      DDU_PRBS_TST_CNT  : out std_logic_vector(15 downto 0);
+      DDU_PRBS_ERR_CNT_RST : out std_logic;
+      DDU_PRBS_RD_EN       : out std_logic;
+      DDU_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
+      DDU_PRBS_DRDY        : in  std_logic
       );
 
   end component;  -- ODMB_VME
@@ -706,7 +713,15 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       RX_FIFO_RST     : in  std_logic;
       RX_FIFO_RDEN    : in  std_logic;
       RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-      RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0)
+      RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
+
+      -- PRBS signals
+      PRBS_EN          : in  std_logic;
+      PRBS_EN_TST_CNT  : in  std_logic_vector(15 downto 0);
+      PRBS_ERR_CNT_RST : in  std_logic;
+      PRBS_RD_EN       : in  std_logic;
+      PRBS_ERR_CNT     : out std_logic_vector(15 downto 0);
+      PRBS_DRDY        : out std_logic
       );
   end component;
 
@@ -1158,7 +1173,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal eofgen_dcfeb_fifo_in    : ext_dcfeb_fifo_data_type;
   signal eofgen_dcfeb_data_valid : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_out          : ext_dcfeb_fifo_data_type;
-  signal pulse_eof40  : std_logic_vector(NFEB downto 1);
+  signal pulse_eof40             : std_logic_vector(NFEB downto 1);
 
   signal dcfeb_fifo_empty  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_aempty : std_logic_vector(NFEB downto 1);
@@ -1252,6 +1267,14 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   -- SYSMON
   signal vauxp : std_logic_vector(15 downto 0);
   signal vauxn : std_logic_vector(15 downto 0);
+
+  -- DDU PRBS
+  signal ddu_prbs_en          : std_logic;
+  signal ddu_prbs_en_tst_cnt  : std_logic_vector(15 downto 0);
+  signal ddu_prbs_err_cnt_rst : std_logic;
+  signal ddu_prbs_rd_en       : std_logic;
+  signal ddu_prbs_err_cnt     : std_logic_vector(15 downto 0);
+  signal ddu_prbs_drdy        : std_logic;
   
 begin
 
@@ -1429,7 +1452,15 @@ begin
       VP    => '0',
       VN    => '0',
       VAUXP => vauxp,
-      VAUXN => vauxn
+      VAUXN => vauxn,
+
+      -- DDU PRBS signals
+      DDU_PRBS_EN          => ddu_prbs_en,
+      DDU_PRBS_TST_CNT  => ddu_prbs_en_tst_cnt,
+      DDU_PRBS_ERR_CNT_RST => ddu_prbs_err_cnt_rst,
+      DDU_PRBS_RD_EN       => ddu_prbs_rd_en,
+      DDU_PRBS_ERR_CNT     => ddu_prbs_err_cnt,
+      DDU_PRBS_DRDY        => ddu_prbs_drdy
       );                                -- MBV : ODMB_VME
 
   MBC : ODMB_CTRL
@@ -1607,7 +1638,15 @@ begin
       RX_FIFO_RST     => ddu_rx_fifo_rst2,
       RX_FIFO_RDEN    => ddu_rx_fifo_rden,
       RX_FIFO_DOUT    => ddu_rx_fifo_dout,
-      RX_FIFO_WRD_CNT => ddu_rx_fifo_wrd_cnt
+      RX_FIFO_WRD_CNT => ddu_rx_fifo_wrd_cnt,
+
+      -- DDU PRBS signals
+      PRBS_EN          => ddu_prbs_en,
+      PRBS_EN_TST_CNT  => ddu_prbs_en_tst_cnt,
+      PRBS_ERR_CNT_RST => ddu_prbs_err_cnt_rst,
+      PRBS_RD_EN       => ddu_prbs_rd_en,
+      PRBS_ERR_CNT     => ddu_prbs_err_cnt,
+      PRBS_DRDY        => ddu_prbs_drdy
 
       );
 
@@ -2786,7 +2825,7 @@ begin
 
   BPI_ctrl_i : BPI_ctrl
     port map (
-      CLK               => clk2p5,       -- 40 MHz clock
+      CLK               => clk2p5,      -- 40 MHz clock
       CLK1MHZ           => clk1mhz,     --  1 MHz clock for timers
       RST               => reset,
 -- Interface Signals to/from VME interface
@@ -2816,7 +2855,7 @@ begin
 
   bpi_interface_i : bpi_interface
     port map (
-      CLK          => clk2p5,            -- 40 MHz clock
+      CLK          => clk2p5,           -- 40 MHz clock
       RST          => reset,
       ADDR         => bpi_addr,         -- Bank/Array Address 
       CMD_DATA_OUT => bpi_data_to,  -- Command or Data being written to FLASH device
