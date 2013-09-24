@@ -150,6 +150,15 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
       );
   end component;
 
+  component PRBS_7BIT is
+    port (
+       data_out : out std_logic_vector(19 downto 0);
+       advance_in : in std_logic;
+       reset_in : in std_logic;
+       clock_in : in std_logic
+       );
+  end component;
+
   constant IDLE          : std_logic_vector(15 downto 0) := x"50BC";
   signal   tx_ddu_data   : std_logic_vector(15 downto 0) := (others => '0');
   signal   tx_ddu_k      : std_logic_vector(1 downto 0)  := (others => '0');
@@ -189,7 +198,13 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal gtx0_enprbstst_in      : std_logic_vector(2 downto 0);
   signal prbs_err_cnt_rst_inner : std_logic;
   signal prbs_en_pulse          : std_logic;
+  signal den_pulse              : std_logic;
+  signal error_sel              : std_logic;
+  signal RX_DDU_P_temp          : std_logic;
+
   signal prbs_en_tst_cnt_inner  : integer;
+
+  constant RST_DLY : std_logic_vector(4 downto 0) := "01010";
 
   signal loopback_inner : std_logic_vector(2 downto 0);
 
@@ -234,7 +249,7 @@ begin
       ------- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
       GTX0_RXEQMIX_IN        => logich3,
       GTX0_RXN_IN            => RX_DDU_N,
-      GTX0_RXP_IN            => RX_DDU_P,
+      GTX0_RXP_IN            => RX_DDU_P_temp,
       ------------------------ Receive Ports - RX PLL Ports ----------------------
       GTX0_GTXRXRESET_IN     => RST,
       GTX0_MGTREFCLKRX_IN    => REF_CLK_80,
@@ -268,10 +283,17 @@ begin
       GTX0_ENPRBSTST_IN      => gtx0_enprbstst_in,
       -- DRP Ports ---------------------------------------------------------------
       GTX0_DCLK_IN           => usr_clk,
-      GTX0_DEN_IN            => PRBS_RD_EN,
+      GTX0_DEN_IN            => den_pulse,
       GTX0_DRDY_OUT          => PRBS_DRDY,
       GTX0_DRPDO_OUT         => PRBS_ERR_CNT
       );
+
+  PULSE_DEN : PULSE_EDGE port map(den_pulse, open, usr_clk, rst, 1, VME_CLK);
+
+  SRL_ERROR : SRLC32E port map(error_sel, open, rst_dly, logich, VME_CLK, PRBS_ERR_CNT_RST);
+  RX_DDU_P_temp <= RX_DDU_P when (error_sel = '0') else '0';
+
+  PRBSGEN : PRBS_7BIT port map(open, '1', rst, usr_clk);
 
   -- Double reset required because TXPLL_DIVSEL_OUT = 2
   DOUBLE_RESET_PM : DOUBLE_RESET
@@ -352,7 +374,7 @@ begin
                                    prbs_en_tst_cnt_inner, PRBS_EN);
   prbs_err_cnt_rst_inner <= RST or PRBS_ERR_CNT_RST;
   prbs_en_tst_cnt_inner  <= to_integer(unsigned(prbs_en_tst_cnt));
-  gtx0_enprbstst_in      <= "001" when (prbs_en_pulse = '1') else "000"; --QQQ
+  gtx0_enprbstst_in      <= "001" when (prbs_en_pulse = '1') else "000";  --QQQ
 
-  loopback_inner <= "001" when (prbs_en_pulse = '1') else loopback; --QQQ
+  loopback_inner <= "000" when (prbs_en_pulse = '1') else loopback;  --QQQ
 end GIGALINK_DDU_ARCH;
