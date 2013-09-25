@@ -134,7 +134,6 @@ entity WRAPPER_GIGALINK_DDU is
       GTX0_DEN_IN            : in  std_logic;
       GTX0_DRDY_OUT          : out std_logic;
       GTX0_DRPDO_OUT         : out std_logic_vector(15 downto 0)
-
       );
 
 
@@ -307,6 +306,4 @@ begin
       DRDY_OUT          => GTX0_DRDY_OUT,
       DRPDO_OUT         => GTX0_DRPDO_OUT
       );
-
-
 end RTL;

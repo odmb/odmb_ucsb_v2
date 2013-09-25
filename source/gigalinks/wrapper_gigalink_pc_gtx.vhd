@@ -129,9 +129,15 @@ entity WRAPPER_GIGALINK_PC_GTX is
       MGTREFCLKTX_IN    : in  std_logic_vector(1 downto 0);
       PLLTXRESET_IN     : in  std_logic;
       TXPLLLKDET_OUT    : out std_logic;
-      TXRESETDONE_OUT   : out std_logic
-
-
+      TXRESETDONE_OUT   : out std_logic;
+      -- PRBS Ports --------------------------------------------------------------
+      PRBSCNTRESET_IN   : in  std_logic;
+      ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+      -- DRP Ports ---------------------------------------------------------------
+      DCLK_IN           : in  std_logic;
+      DEN_IN            : in  std_logic;
+      DRDY_OUT          : out std_logic;
+      DRPDO_OUT         : out std_logic_vector(15 downto 0)
       );
 
 
@@ -455,8 +461,8 @@ begin
       RXENPCOMMAALIGN          => tied_to_vcc_i,
       RXSLIDE                  => tied_to_ground_i,
       ----------------------- Receive Ports - PRBS Detection ---------------------
-      PRBSCNTRESET             => tied_to_ground_i,
-      RXENPRBSTST              => tied_to_ground_vec_i(2 downto 0),
+      PRBSCNTRESET             => PRBSCNTRESET_IN,
+      RXENPRBSTST              => ENPRBSTST_IN(2 downto 0),
       RXPRBSERR                => open,
       ------------------- Receive Ports - RX Data Path interface -----------------
       RXDATA                   => rxdata_i,
@@ -533,12 +539,12 @@ begin
       COMSASDET                => open,
       COMWAKEDET               => open,
       ------------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      DADDR                    => tied_to_ground_vec_i(7 downto 0),
-      DCLK                     => tied_to_ground_i,
-      DEN                      => tied_to_ground_i,
+      DADDR                    => x"82",
+      DCLK                     => DCLK_IN,
+      DEN                      => DEN_IN,
       DI                       => tied_to_ground_vec_i(15 downto 0),
-      DRDY                     => open,
-      DRPDO                    => open,
+      DRDY                     => DRDY_OUT,
+      DRPDO                    => DRPDO_OUT,
       DWE                      => tied_to_ground_i,
       -------------- Transmit Ports - 64b66b and 64b67b Gearbox Ports ------------
       TXGEARBOXREADY           => open,
@@ -604,7 +610,7 @@ begin
       TXRATEDONE               => open,
       TXRESETDONE              => TXRESETDONE_OUT,
       --------------------- Transmit Ports - TX PRBS Generator -------------------
-      TXENPRBSTST              => tied_to_ground_vec_i(2 downto 0),
+      TXENPRBSTST              => ENPRBSTST_IN(2 downto 0),
       TXPRBSFORCEERR           => tied_to_ground_i,
       -------------------- Transmit Ports - TX Polarity Control ------------------
       TXPOLARITY               => tied_to_ground_i,
@@ -620,9 +626,7 @@ begin
       TXCOMINIT                => tied_to_ground_i,
       TXCOMSAS                 => tied_to_ground_i,
       TXCOMWAKE                => tied_to_ground_i
-
       );
-
 end RTL;
 
 

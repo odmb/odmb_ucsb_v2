@@ -200,10 +200,16 @@ entity ODMB_VME is
     -- DDU PRBS signals
     DDU_PRBS_EN          : out std_logic;
     DDU_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
-    DDU_PRBS_ERR_CNT_RST : out std_logic;
     DDU_PRBS_RD_EN       : out std_logic;
     DDU_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
-    DDU_PRBS_DRDY        : in  std_logic
+    DDU_PRBS_DRDY        : in  std_logic;
+
+    -- PC PRBS signals
+    PC_PRBS_EN          : out std_logic;
+    PC_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
+    PC_PRBS_RD_EN       : out std_logic;
+    PC_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
+    PC_PRBS_DRDY        : in  std_logic
     );
 
 end ODMB_VME;
@@ -485,10 +491,16 @@ architecture ODMB_VME_architecture of ODMB_VME is
       -- DDU PRBS signals
       DDU_PRBS_EN          : out std_logic;
       DDU_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
-      DDU_PRBS_ERR_CNT_RST : out std_logic;
       DDU_PRBS_RD_EN       : out std_logic;
       DDU_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
-      DDU_PRBS_DRDY        : in  std_logic
+      DDU_PRBS_DRDY        : in  std_logic;
+
+      -- PC PRBS signals
+      PC_PRBS_EN          : out std_logic;
+      PC_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
+      PC_PRBS_RD_EN       : out std_logic;
+      PC_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
+      PC_PRBS_DRDY        : in  std_logic
       );
   end component;
 
@@ -1044,10 +1056,16 @@ begin
       -- DDU PRBS signals
       DDU_PRBS_EN          => DDU_PRBS_EN,
       DDU_PRBS_TST_CNT     => DDU_PRBS_TST_CNT,
-      DDU_PRBS_ERR_CNT_RST => DDU_PRBS_ERR_CNT_RST,
       DDU_PRBS_RD_EN       => DDU_PRBS_RD_EN,
       DDU_PRBS_ERR_CNT     => DDU_PRBS_ERR_CNT,
-      DDU_PRBS_DRDY        => DDU_PRBS_DRDY
+      DDU_PRBS_DRDY        => DDU_PRBS_DRDY,
+
+      -- PC PRBS signals
+      PC_PRBS_EN          => PC_PRBS_EN,
+      PC_PRBS_TST_CNT     => PC_PRBS_TST_CNT,
+      PC_PRBS_RD_EN       => PC_PRBS_RD_EN,
+      PC_PRBS_ERR_CNT     => PC_PRBS_ERR_CNT,
+      PC_PRBS_DRDY        => PC_PRBS_DRDY
       );
 
   DEVX_MBCJTAG : MBCJTAG

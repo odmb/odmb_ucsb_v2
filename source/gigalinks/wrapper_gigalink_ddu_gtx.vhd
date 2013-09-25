@@ -619,9 +619,7 @@ begin
       TXCOMINIT                => tied_to_ground_i,
       TXCOMSAS                 => tied_to_ground_i,
       TXCOMWAKE                => tied_to_ground_i
-
       );
-
 end RTL;
 
 

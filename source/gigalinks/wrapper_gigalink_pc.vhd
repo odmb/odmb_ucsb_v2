@@ -130,9 +130,15 @@ entity WRAPPER_GIGALINK_PC is
       GTX0_MGTREFCLKTX_IN    : in  std_logic;
       GTX0_PLLTXRESET_IN     : in  std_logic;
       GTX0_TXPLLLKDET_OUT    : out std_logic;
-      GTX0_TXRESETDONE_OUT   : out std_logic
-
-
+      GTX0_TXRESETDONE_OUT   : out std_logic;
+      -- PRBS Ports --------------------------------------------------------------
+      GTX0_PRBSCNTRESET_IN   : in  std_logic;
+      GTX0_ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+      -- DRP Ports ---------------------------------------------------------------
+      GTX0_DCLK_IN           : in  std_logic;
+      GTX0_DEN_IN            : in  std_logic;
+      GTX0_DRDY_OUT          : out std_logic;
+      GTX0_DRPDO_OUT         : out std_logic_vector(15 downto 0)
       );
 
 
@@ -214,9 +220,15 @@ architecture RTL of WRAPPER_GIGALINK_PC is
         MGTREFCLKTX_IN    : in  std_logic_vector(1 downto 0);
         PLLTXRESET_IN     : in  std_logic;
         TXPLLLKDET_OUT    : out std_logic;
-        TXRESETDONE_OUT   : out std_logic
-
-
+        TXRESETDONE_OUT   : out std_logic;
+        -- PRBS Ports --------------------------------------------------------------
+        PRBSCNTRESET_IN   : in  std_logic;
+        ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+        -- DRP Ports ---------------------------------------------------------------
+        DCLK_IN           : in  std_logic;
+        DEN_IN            : in  std_logic;
+        DRDY_OUT          : out std_logic;
+        DRPDO_OUT         : out std_logic_vector(15 downto 0)
         );
   end component;
 
@@ -299,10 +311,14 @@ begin
       MGTREFCLKTX_IN    => gtx0_mgtrefclktx_i,
       PLLTXRESET_IN     => GTX0_PLLTXRESET_IN,
       TXPLLLKDET_OUT    => GTX0_TXPLLLKDET_OUT,
-      TXRESETDONE_OUT   => GTX0_TXRESETDONE_OUT
-
+      TXRESETDONE_OUT   => GTX0_TXRESETDONE_OUT,
+      -- PRBS Ports --------------------------------------------------------------
+      PRBSCNTRESET_IN   => GTX0_PRBSCNTRESET_IN,
+      ENPRBSTST_IN      => GTX0_ENPRBSTST_IN,
+      -- DRP Ports ---------------------------------------------------------------
+      DCLK_IN           => GTX0_DCLK_IN,
+      DEN_IN            => GTX0_DEN_IN,
+      DRDY_OUT          => GTX0_DRDY_OUT,
+      DRPDO_OUT         => GTX0_DRPDO_OUT
       );
-
-
-
 end RTL;
