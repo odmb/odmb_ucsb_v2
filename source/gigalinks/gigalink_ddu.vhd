@@ -46,8 +46,7 @@ entity GIGALINK_DDU is
     PRBS_EN         : in  std_logic;
     PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
     PRBS_RD_EN      : in  std_logic;
-    PRBS_ERR_CNT    : out std_logic_vector(15 downto 0);
-    PRBS_DRDY       : out std_logic
+    PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
     );
 end GIGALINK_DDU;
 
@@ -111,7 +110,6 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
       -- DRP Ports ---------------------------------------------------------------
       GTX0_DCLK_IN           : in  std_logic;
       GTX0_DEN_IN            : in  std_logic;
-      GTX0_DRDY_OUT          : out std_logic;
       GTX0_DRPDO_OUT         : out std_logic_vector(15 downto 0)
       );
   end component;
@@ -179,15 +177,18 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
 
   -- PRBS signals
-  signal   gtx0_enprbstst_in     : std_logic_vector(2 downto 0);
-  signal   prbs_err_cnt_rst      : std_logic;
-  signal   prbs_en_pulse         : std_logic;
-  signal   prbs_en_tst_cnt_inner : integer;
-  signal   prbs_rd_en_inner      : std_logic;
-  signal   prbs_init_pulse       : std_logic;
-  signal   prbs_reset_pulse      : std_logic;
-  constant prbs_rst_cycles       : integer := 1;
-  constant prbs_length           : integer := 127;
+  signal   gtx0_enprbstst_in : std_logic_vector(2 downto 0);
+  signal   prbs_err_cnt_rst  : std_logic;
+  signal   prbs_en_pulse     : std_logic;
+  signal   prbs_rd_en_pulse  : std_logic;
+  signal   prbs_init_pulse   : std_logic;
+  signal   prbs_reset_pulse  : std_logic;
+  signal   prbs_rd_en_inner  : std_logic;
+  constant prbs_rst_cycles   : integer := 1;
+  constant prbs_length       : integer := 127;
+  signal   prbs_en_cnt       : integer;
+  signal   prbs_rst_cnt      : integer;
+  signal   prbs_rd_en_cnt    : integer;
 begin
 
   BUFG_USR : BUFG port map(O => usr_clk, I => ref_clk_80);
@@ -264,7 +265,6 @@ begin
       -- DRP Ports ---------------------------------------------------------------
       GTX0_DCLK_IN           => usr_clk,
       GTX0_DEN_IN            => prbs_rd_en_inner,
-      GTX0_DRDY_OUT          => PRBS_DRDY,
       GTX0_DRPDO_OUT         => PRBS_ERR_CNT
       );
 
@@ -343,19 +343,18 @@ begin
              FULL  => rx_fifo_full, RDCLK => VME_CLK, RDEN => RX_FIFO_RDEN,
              COUNT => RX_FIFO_WRD_CNT);
 
-  
-  PRBS_EN_PE : PULSE_EDGE port map(prbs_en_pulse, open, usr_clk, RST,
-                                   prbs_en_tst_cnt_inner, PRBS_EN);
+  prbs_rst_cnt   <= prbs_length+prbs_rst_cycles;
+  prbs_en_cnt    <= prbs_length*to_integer(unsigned(prbs_en_tst_cnt))+prbs_rst_cnt;
+  prbs_rd_en_cnt <= prbs_en_cnt-1;
+
+  PRBS_INIT_PE : PULSE_EDGE port map(prbs_init_pulse, open, usr_clk, RST, prbs_length, PRBS_EN);
   PRBS_RST_PE : PULSE_EDGE port map(prbs_reset_pulse, open, usr_clk, RST,
-                                    prbs_length+prbs_rst_cycles, PRBS_EN);
-  PRBS_INIT_PE : PULSE_EDGE port map(prbs_init_pulse, open, usr_clk, RST,
-                                     prbs_length, PRBS_EN);
-  PRBS_RD_EN_PE : PULSE_EDGE port map(prbs_rd_en_inner, open, usr_clk, RST, 1, PRBS_RD_EN);
+                                    prbs_rst_cnt, PRBS_EN);
+  PRBS_RD_EN_PE : PULSE_EDGE port map(prbs_rd_en_pulse, open, usr_clk, RST,
+                                      prbs_rd_en_cnt, PRBS_EN);
+  PRBS_EN_PE : PULSE_EDGE port map(prbs_en_pulse, open, usr_clk, RST, prbs_en_cnt, PRBS_EN);
 
-  prbs_err_cnt_rst <= '1' when (prbs_reset_pulse = '1' and prbs_init_pulse = '0') else '0';
-
-  prbs_en_tst_cnt_inner <= prbs_length*(to_integer(unsigned(prbs_en_tst_cnt))+1)
-                           +prbs_rst_cycles;
-
+  prbs_err_cnt_rst  <= prbs_reset_pulse and not prbs_init_pulse;
+  prbs_rd_en_inner  <= prbs_en_pulse and not prbs_rd_en_pulse;
   gtx0_enprbstst_in <= "00" & prbs_en_pulse;
 end GIGALINK_DDU_ARCH;

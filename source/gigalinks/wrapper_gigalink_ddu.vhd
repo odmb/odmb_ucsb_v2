@@ -132,7 +132,6 @@ entity WRAPPER_GIGALINK_DDU is
       -- DRP Ports ---------------------------------------------------------------
       GTX0_DCLK_IN           : in  std_logic;
       GTX0_DEN_IN            : in  std_logic;
-      GTX0_DRDY_OUT          : out std_logic;
       GTX0_DRPDO_OUT         : out std_logic_vector(15 downto 0)
       );
 
@@ -217,7 +216,6 @@ architecture RTL of WRAPPER_GIGALINK_DDU is
         -- DRP Ports ---------------------------------------------------------------
         DCLK_IN           : in  std_logic;
         DEN_IN            : in  std_logic;
-        DRDY_OUT          : out std_logic;
         DRPDO_OUT         : out std_logic_vector(15 downto 0)
         );
   end component;
@@ -303,7 +301,6 @@ begin
       -- DRP Ports ---------------------------------------------------------------
       DCLK_IN           => GTX0_DCLK_IN,
       DEN_IN            => GTX0_DEN_IN,
-      DRDY_OUT          => GTX0_DRDY_OUT,
       DRPDO_OUT         => GTX0_DRPDO_OUT
       );
 end RTL;

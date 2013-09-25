@@ -131,7 +131,6 @@ entity WRAPPER_GIGALINK_DDU_GTX is
       -- DRP Ports ---------------------------------------------------------------
       DCLK_IN           : in  std_logic;
       DEN_IN            : in  std_logic;
-      DRDY_OUT          : out std_logic;
       DRPDO_OUT         : out std_logic_vector(15 downto 0)
       );
 
@@ -536,7 +535,6 @@ begin
       DCLK                     => DCLK_IN,
       DEN                      => DEN_IN,
       DI                       => tied_to_ground_vec_i(15 downto 0),
-      DRDY                     => DRDY_OUT,
       DRPDO                    => DRPDO_OUT,
       DWE                      => tied_to_ground_i,
       -------------- Transmit Ports - 64b66b and 64b67b Gearbox Ports ------------

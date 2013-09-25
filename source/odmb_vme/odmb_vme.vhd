@@ -198,18 +198,16 @@ entity ODMB_VME is
     BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
 
     -- DDU PRBS signals
-    DDU_PRBS_EN          : out std_logic;
-    DDU_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
-    DDU_PRBS_RD_EN       : out std_logic;
-    DDU_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
-    DDU_PRBS_DRDY        : in  std_logic;
+    DDU_PRBS_EN      : out std_logic;
+    DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
+    DDU_PRBS_RD_EN   : out std_logic;
+    DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
     -- PC PRBS signals
-    PC_PRBS_EN          : out std_logic;
-    PC_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
-    PC_PRBS_RD_EN       : out std_logic;
-    PC_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
-    PC_PRBS_DRDY        : in  std_logic
+    PC_PRBS_EN      : out std_logic;
+    PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
+    PC_PRBS_RD_EN   : out std_logic;
+    PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0)
     );
 
 end ODMB_VME;
@@ -489,18 +487,16 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DTACK   : out std_logic;
 
       -- DDU PRBS signals
-      DDU_PRBS_EN          : out std_logic;
-      DDU_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
-      DDU_PRBS_RD_EN       : out std_logic;
-      DDU_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
-      DDU_PRBS_DRDY        : in  std_logic;
+      DDU_PRBS_EN      : out std_logic;
+      DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
+      DDU_PRBS_RD_EN   : out std_logic;
+      DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
       -- PC PRBS signals
-      PC_PRBS_EN          : out std_logic;
-      PC_PRBS_TST_CNT     : out std_logic_vector(15 downto 0);
-      PC_PRBS_RD_EN       : out std_logic;
-      PC_PRBS_ERR_CNT     : in  std_logic_vector(15 downto 0);
-      PC_PRBS_DRDY        : in  std_logic
+      PC_PRBS_EN      : out std_logic;
+      PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
+      PC_PRBS_RD_EN   : out std_logic;
+      PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0)
       );
   end component;
 
@@ -830,7 +826,7 @@ begin
       ODMB_DATA_SEL => odmb_data_sel,
       ODMB_DATA     => odmb_data,
       TXDIFFCTRL    => txdiffctrl,      -- Controls the TX voltage swing
-      LOOPBACK      => loopback     -- For internal loopback tests
+      LOOPBACK      => loopback         -- For internal loopback tests
 
       );
 
@@ -1054,18 +1050,16 @@ begin
       DTACK   => vme_dtack_b,
 
       -- DDU PRBS signals
-      DDU_PRBS_EN          => DDU_PRBS_EN,
-      DDU_PRBS_TST_CNT     => DDU_PRBS_TST_CNT,
-      DDU_PRBS_RD_EN       => DDU_PRBS_RD_EN,
-      DDU_PRBS_ERR_CNT     => DDU_PRBS_ERR_CNT,
-      DDU_PRBS_DRDY        => DDU_PRBS_DRDY,
+      DDU_PRBS_EN      => DDU_PRBS_EN,
+      DDU_PRBS_TST_CNT => DDU_PRBS_TST_CNT,
+      DDU_PRBS_RD_EN   => DDU_PRBS_RD_EN,
+      DDU_PRBS_ERR_CNT => DDU_PRBS_ERR_CNT,
 
       -- PC PRBS signals
-      PC_PRBS_EN          => PC_PRBS_EN,
-      PC_PRBS_TST_CNT     => PC_PRBS_TST_CNT,
-      PC_PRBS_RD_EN       => PC_PRBS_RD_EN,
-      PC_PRBS_ERR_CNT     => PC_PRBS_ERR_CNT,
-      PC_PRBS_DRDY        => PC_PRBS_DRDY
+      PC_PRBS_EN      => PC_PRBS_EN,
+      PC_PRBS_TST_CNT => PC_PRBS_TST_CNT,
+      PC_PRBS_RD_EN   => PC_PRBS_RD_EN,
+      PC_PRBS_ERR_CNT => PC_PRBS_ERR_CNT
       );
 
   DEVX_MBCJTAG : MBCJTAG

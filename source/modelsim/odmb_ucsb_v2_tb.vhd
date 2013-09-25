@@ -645,10 +645,15 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal LOGIC0 : std_logic := '0';
   signal LOGIC1 : std_logic := '1';
 
+  signal gl0_inner, gl0_inner_b, gl0_sel : std_logic;
+
 begin
-  go <= '1' after 15 us;
+  gl0_sel     <= '0', '1' after 78000000 ps, '0' after 78100000 ps;
+  gl0_inner   <= gl0_tx_p when (gl0_sel = '0') else '1';
+  gl0_inner_b <= not gl0_inner;
+  go          <= '1'      after 15 us;
   --goevent <= '1' after 300 us;
-  goccb <= '1' after 29 us;
+  goccb       <= '1'      after 29 us;
 
   qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 12.5 ns;
   qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 12.5 ns;
