@@ -227,7 +227,7 @@ begin
       GTX0_RXBYTEREALIGN_OUT => gtx0_rxbyterealign_out,
       GTX0_RXUSRCLK2_IN      => usr_clk,
       ------- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-      GTX0_RXEQMIX_IN        => "000",
+      GTX0_RXEQMIX_IN        => "111",
       GTX0_RXN_IN            => RX_DDU_N,
       GTX0_RXP_IN            => RX_DDU_P,
       ------------------------ Receive Ports - RX PLL Ports ----------------------
