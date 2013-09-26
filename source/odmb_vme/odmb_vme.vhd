@@ -82,7 +82,7 @@ entity ODMB_VME is
 
 -- Done from DCFEB FPGA (CFEBPRG)
 
-    ul_done : in std_logic_vector(6 downto 0);
+    dcfeb_done : in std_logic_vector(NFEB downto 1);
 
 -- From/To LVMB
 
@@ -301,6 +301,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
   end component;
 
   component VMEMON is
+    generic (
+      NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
+      );    
     port (
       SLOWCLK : in std_logic;
       CLK40   : in std_logic;
@@ -315,6 +318,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
       OUTDATA : out std_logic_vector(15 downto 0);
 
       DTACK : out std_logic;
+
+      DCFEB_DONE : in std_logic_vector(NFEB downto 1);
 
       OPT_RESET_PULSE : out std_logic;
       FW_RESET        : out std_logic;
@@ -794,6 +799,7 @@ begin
 
 
   DEV3_VMEMON : VMEMON
+    generic map (NFEB => NFEB)
     port map (
       SLOWCLK => clk_s2,
       CLK40   => clk,
@@ -808,6 +814,8 @@ begin
       OUTDATA => outdata_vmemon,
 
       DTACK => vme_dtack_b,
+
+      DCFEB_DONE => dcfeb_done,
 
       OPT_RESET_PULSE => opt_reset_pulse,
       FW_RESET        => fw_reset,
@@ -944,50 +952,6 @@ begin
       BPI_CFG_REG3      => CFG_REG3,
       BPI_DONE          => BPI_CFG_DONE
       );
-
-  BPI_CR_PM : BPI_CFG_REGISTERS
-    port map (
-      clk => clk_s2,
-      rst => rst,
-
-      bpi_cfg_reg_we => BPI_CFG_REG_WE_VEC,
-      bpi_cfg_reg_in => BPI_CFG_REG_IN,
-
-      bpi_cfg_reg0 => CFG_REG0,
-      bpi_cfg_reg1 => CFG_REG1,
-      bpi_cfg_reg2 => CFG_REG2,
-      bpi_cfg_reg3 => CFG_REG3
-      );
-
-  BPI_CC_PM : BPI_CFG_CONTROLLER
-    port map (
-      CLK => clk_s2,
-      RST => rst,
-
-      bpi_cfg_dl_start => BPI_CFG_DL,
-      bpi_cfg_ul_start => BPI_CFG_UL,
-      bpi_cfg_done     => BPI_CFG_DONE,
-      bpi_cfg_reg0     => CFG_REG0,
-      bpi_cfg_reg1     => CFG_REG1,
-      bpi_cfg_reg2     => CFG_REG2,
-      bpi_cfg_reg3     => CFG_REG3,
-
-      bpi_dis          => CC_BPI_DSBL,
-      bpi_en           => CC_BPI_ENBL,
-      bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
-      bpi_cfg_reg_we_o => BPI_CFG_REG_WE_VEC,
-      bpi_cfg_busy     => BPI_CFG_BUSY,
-      bpi_cfg_data_sel => BPI_CFG_DATA_SEL,
-      bpi_cmd_fifo_we  => CC_BPI_WE,
-      bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
-      );
-
-
-  BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (BPI_MODE = '1') else CC_BPI_CMD_FIFO_DATA;
-  BPI_WE            <= VME_BPI_WE            when (BPI_MODE = '1') else CC_BPI_WE;
-  BPI_DSBL          <= VME_BPI_DSBL          when (BPI_MODE = '1') else CC_BPI_DSBL;
-  BPI_ENBL          <= VME_BPI_ENBL          when (BPI_MODE = '1') else CC_BPI_ENBL;
-
 
   DEV7_SYSMON : SYSTEM_MON
     port map(
@@ -1133,6 +1097,50 @@ begin
       );
 
   PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
+
+  BPI_CR_PM : BPI_CFG_REGISTERS
+    port map (
+      clk => clk_s2,
+      rst => rst,
+
+      bpi_cfg_reg_we => BPI_CFG_REG_WE_VEC,
+      bpi_cfg_reg_in => BPI_CFG_REG_IN,
+
+      bpi_cfg_reg0 => CFG_REG0,
+      bpi_cfg_reg1 => CFG_REG1,
+      bpi_cfg_reg2 => CFG_REG2,
+      bpi_cfg_reg3 => CFG_REG3
+      );
+
+  BPI_CC_PM : BPI_CFG_CONTROLLER
+    port map (
+      CLK => clk_s2,
+      RST => rst,
+
+      bpi_cfg_dl_start => BPI_CFG_DL,
+      bpi_cfg_ul_start => BPI_CFG_UL,
+      bpi_cfg_done     => BPI_CFG_DONE,
+      bpi_cfg_reg0     => CFG_REG0,
+      bpi_cfg_reg1     => CFG_REG1,
+      bpi_cfg_reg2     => CFG_REG2,
+      bpi_cfg_reg3     => CFG_REG3,
+
+      bpi_dis          => CC_BPI_DSBL,
+      bpi_en           => CC_BPI_ENBL,
+      bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
+      bpi_cfg_reg_we_o => BPI_CFG_REG_WE_VEC,
+      bpi_cfg_busy     => BPI_CFG_BUSY,
+      bpi_cfg_data_sel => BPI_CFG_DATA_SEL,
+      bpi_cmd_fifo_we  => CC_BPI_WE,
+      bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
+      );
+
+
+  BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (BPI_MODE = '1') else CC_BPI_CMD_FIFO_DATA;
+  BPI_WE            <= VME_BPI_WE            when (BPI_MODE = '1') else CC_BPI_WE;
+  BPI_DSBL          <= VME_BPI_DSBL          when (BPI_MODE = '1') else CC_BPI_DSBL;
+  BPI_ENBL          <= VME_BPI_ENBL          when (BPI_MODE = '1') else CC_BPI_ENBL;
+
 
   vme_doe_b       <= doe_b;
   vme_doe         <= not doe_b;

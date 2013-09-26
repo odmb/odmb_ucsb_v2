@@ -122,6 +122,7 @@ entity ODMB_CTRL is
     dcfeb_l1a       : out std_logic;
     dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
     PEDESTAL        : in  std_logic;
+    PEDESTAL_OTMB        : in  std_logic;
 
     tck : in  std_logic;
     tdi : in  std_logic;
@@ -359,6 +360,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CALTRGSEL : in std_logic;
       KILL      : in std_logic_vector(NFEB+2 downto 1);
       PEDESTAL  : in std_logic;
+      PEDESTAL_OTMB        : in  std_logic;
 
       L1A_OTMB_PUSHED_OUT : out std_logic;
       OTMB_DAV_SYNC_OUT   : out std_logic;
@@ -745,6 +747,7 @@ begin
       CALTRGSEL => cal_trgsel,
       KILL      => kill(NFEB+2 downto 1),
       PEDESTAL  => pedestal,
+      PEDESTAL_OTMB  => pedestal_otmb,
 
       L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
       OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT,

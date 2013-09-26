@@ -75,7 +75,7 @@ entity ODMB_UCSB_V2 is
     dcfeb_tms       : out std_logic;
     dcfeb_tdi       : out std_logic;
     dcfeb_tdo       : in  std_logic_vector(NFEB downto 1);
-    dcfeb_bco       : out std_logic;
+    dcfeb_bc0       : out std_logic;
     dcfeb_resync    : out std_logic;
     odmb_hardrst_b  : out std_logic;    -- Generates REPROG_B
     dcfeb_reprgen_b : out std_logic;
@@ -354,7 +354,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Done from DCFEB FPGA (CFEBPRG)
 
-      ul_done : in std_logic_vector(6 downto 0);
+      dcfeb_done : in std_logic_vector(NFEB downto 1);
 
 -- From/To LVMB
 
@@ -597,6 +597,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
 
       pedestal : in std_logic;
+      pedestal_otmb        : in  std_logic;
 
       tck : in  std_logic;
       tdi : in  std_logic;
@@ -1352,7 +1353,7 @@ begin
 
 -- Done from DCFEB FPGA (CFEBPRG)
 
-      ul_done => dcfeb_done,
+      dcfeb_done => dcfeb_done,
 
 -- From/To LVMB
 
@@ -1590,6 +1591,7 @@ begin
       dcfeb_injpulse  => dcfeb_injpls,   -- inject - to DCFEBs
       dcfeb_extpulse  => dcfeb_extpls,   -- extpls - to DCFEBs
       pedestal        => pedestal,
+      pedestal_otmb        => odmb_ctrl_reg(14),
 
 -- From/To ODMB_VME
 
@@ -2074,7 +2076,7 @@ begin
   -- To QPLL
   qpll_autorestart <= '1';
   qpll_reset       <= not reset;
-  dcfeb_bco        <= '0';
+  dcfeb_bc0        <= '0';
 
   v6_jtag_sel <= v6_jtag_sel_inner;
 
@@ -2095,11 +2097,11 @@ begin
   opt_rst_reg <= x"0FFFFFFF" when (opt_reset_pulse_q = '0' and opt_reset_pulse = '1') else
                  opt_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
                  opt_rst_reg;
-  reset     <= fw_rst_reg(31) or pon_rst_reg(31) or not pb(0);  -- Firmware reset
+  reset     <= fw_rst_reg(31) or pon_rst_reg(31) or not pb(0) or not ccb_softrst;  -- Firmware reset
   opt_reset <= opt_rst_reg(31) or pon_rst_reg(31);  -- Optical reset
 
   -- Threw the kitchen sink here. This needs to be checked
-  l1acnt_rst <= not ccb_evcntres or not ccb_l1arst or not ccb_softrst or reset;
+  l1acnt_rst <= not ccb_evcntres or not ccb_l1arst or reset;
   bxcnt_rst  <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);

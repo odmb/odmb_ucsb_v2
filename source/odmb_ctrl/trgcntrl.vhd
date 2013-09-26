@@ -32,6 +32,7 @@ entity TRGCNTRL is
     CALTRGSEL : in std_logic;
     KILL      : in std_logic_vector(NFEB+2 downto 1);
     PEDESTAL  : in std_logic;
+    PEDESTAL_OTMB  : in std_logic;
 
     L1A_OTMB_PUSHED_OUT : out std_logic;
     OTMB_DAV_SYNC_OUT   : out std_logic;
@@ -139,11 +140,11 @@ begin  --Architecture
   OTMBDAV_FD     : FD port map(otmb_dav_sync, clk, otmb_dav);
   otmb_alct_dly  <= std_logic_vector(unsigned(alct_push_dly) - unsigned(otmb_push_dly)-1);
   L1A_OTMB_PUSH  : SRLC32E port map(l1a_otmb_pushed, open, otmb_push_dly, logich, clk, l1a_push);
-  l1a_otmb_match <= otmb_dav_sync and l1a_otmb_pushed and not kill(NFEB+1);
+  l1a_otmb_match <= (otmb_dav_sync or pedestal_otmb) and l1a_otmb_pushed and not kill(NFEB+1);
   OTMB_ALCT_PUSH : SRLC32E port map(fifo_l1a_match_inner(NFEB+1), open, otmb_alct_dly, logich, clk, l1a_otmb_match);
 
   ALCTDAV_FD : FD port map(alct_dav_sync, clk, alct_dav);
-  fifo_l1a_match_inner(NFEB+2) <= alct_dav_sync and fifo_push_inner and not kill(NFEB+2);
+  fifo_l1a_match_inner(NFEB+2) <= (alct_dav_sync or pedestal_otmb) and fifo_push_inner and not kill(NFEB+2);
 
   fifo_l1a_match_inner(0)    <= or_reduce(fifo_l1a_match_inner(NFEB+2 downto 1));
   fifo_l1a_match    <= fifo_l1a_match_inner;

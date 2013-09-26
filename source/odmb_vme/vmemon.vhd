@@ -8,6 +8,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity VMEMON is
+  generic (
+    NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
+    );    
   port (
 
     SLOWCLK : in std_logic;
@@ -23,6 +26,8 @@ entity VMEMON is
     OUTDATA : out std_logic_vector(15 downto 0);
 
     DTACK : out std_logic;
+
+    DCFEB_DONE : in std_logic_vector(NFEB downto 1);
 
     OPT_RESET_PULSE : out std_logic;
     FW_RESET        : out std_logic;
@@ -89,6 +94,9 @@ architecture VMEMON_Arch of VMEMON is
   signal W_TXDIFFCTRL, D_W_TXDIFFCTRL, Q_W_TXDIFFCTRL : std_logic                     := '0';
   signal R_TXDIFFCTRL, D_R_TXDIFFCTRL, Q_R_TXDIFFCTRL : std_logic                     := '0';
 
+  signal OUT_DCFEB_DONE                               : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_DCFEB_DONE, D_R_DCFEB_DONE, Q_R_DCFEB_DONE : std_logic                     := '0';
+
 begin
 
 -- generate CMDHIGH / generate WRITECTRL / generate READCTRL / generate READDATA
@@ -105,6 +113,7 @@ begin
   R_LOOPBACK   <= '1' when (CMDDEV = x"1100" and WRITER = '1') else '0';
   W_TXDIFFCTRL <= '1' when (CMDDEV = x"1110" and WRITER = '0') else '0';
   R_TXDIFFCTRL <= '1' when (CMDDEV = x"1110" and WRITER = '1') else '0';
+  R_DCFEB_DONE <= '1' when (CMDDEV = x"1120" and WRITER = '1') else '0';
 
   R_ODMB_DATA               <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
   ODMB_DATA_SEL(7 downto 0) <= COMMAND(9 downto 2);
@@ -202,6 +211,13 @@ begin
   DTACK_INNER    <= '0' when (Q_R_TXDIFFCTRL = '1')                else 'Z';
 
 
+-- Read DCFEB_DONE
+  OUT_DCFEB_DONE <= x"00" & '0' & DCFEB_DONE when (STROBE = '1' and R_DCFEB_DONE = '1') else (others => 'Z');
+
+  D_R_DCFEB_DONE <= '1' when (STROBE = '1' and R_DCFEB_DONE = '1') else '0';
+  FD_R_DCFEB_DONE : FD port map(Q_R_DCFEB_DONE, SLOWCLK, D_R_DCFEB_DONE);
+  DTACK_INNER    <= '0' when (Q_R_DCFEB_DONE = '1')                else 'Z';
+
 
 
   OUTDATA(15 downto 0) <= ODMB_CTRL_INNER(15 downto 0) when (R_ODMB_CTRL = '1') else
@@ -209,6 +225,7 @@ begin
                           OUT_TP_SEL(15 downto 0)       when (R_TP_SEL = '1')     else
                           OUT_LOOPBACK(15 downto 0)     when (R_LOOPBACK = '1')   else
                           OUT_TXDIFFCTRL(15 downto 0)   when (R_TXDIFFCTRL = '1') else
+                          OUT_DCFEB_DONE(15 downto 0)   when (R_DCFEB_DONE = '1') else
                           ODMB_DATA(15 downto 0)        when (R_ODMB_DATA = '1')  else
                           (others => 'L');
 

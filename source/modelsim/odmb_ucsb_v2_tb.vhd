@@ -234,7 +234,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         dcfeb_tms       : out std_logic;
         dcfeb_tdi       : out std_logic;
         dcfeb_tdo       : in  std_logic_vector(NFEB downto 1);
-        dcfeb_bco       : out std_logic;
+        dcfeb_bc0       : out std_logic;
         dcfeb_resync    : out std_logic;
         odmb_hardrst_b  : out std_logic;  -- Generater REPROG_B
         dcfeb_reprgen_b : out std_logic;
@@ -484,7 +484,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal dcfeb_tms       : std_logic;
   signal dcfeb_tdi       : std_logic;
   signal dcfeb_tdo       : std_logic_vector(NFEB downto 1) := "0000000";  -- in
-  signal dcfeb_bco       : std_logic                       := '0';
+  signal dcfeb_bc0       : std_logic                       := '0';
   signal dcfeb_resync    : std_logic                       := '0';
   signal odmb_hardrst_b  : std_logic                       := '0';
   signal dcfeb_reprgen_b : std_logic                       := '0';
@@ -492,7 +492,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal dcfeb_extpls    : std_logic                       := '0';
   signal dcfeb_l1a       : std_logic                       := '0';
   signal dcfeb_l1a_match : std_logic_vector(NFEB downto 1);
-  signal dcfeb_done      : std_logic_vector(NFEB downto 1) := "0000000";  -- in
+  signal dcfeb_done      : std_logic_vector(NFEB downto 1) := "1010101";  -- in
 
 -- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
@@ -645,12 +645,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal LOGIC0 : std_logic := '0';
   signal LOGIC1 : std_logic := '1';
 
-  signal gl0_inner, gl0_inner_b, gl0_sel : std_logic;
-
 begin
-  gl0_sel     <= '0', '1' after 78000000 ps, '0' after 78100000 ps;
-  gl0_inner   <= gl0_tx_p when (gl0_sel = '0') else '1';
-  gl0_inner_b <= not gl0_inner;
+
   go          <= '1'      after 15 us;
   --goevent <= '1' after 300 us;
   goccb       <= '1'      after 29 us;
@@ -749,7 +745,7 @@ begin
       dcfeb_tms       => dcfeb_tms,
       dcfeb_tdi       => dcfeb_tdi,
       dcfeb_tdo       => dcfeb_tdo,
-      dcfeb_bco       => dcfeb_bco,
+      dcfeb_bc0       => dcfeb_bc0,
       dcfeb_resync    => dcfeb_resync,
       odmb_hardrst_b  => odmb_hardrst_b,  -- Generater REPROG_B
       dcfeb_reprgen_b => dcfeb_reprgen_b,
