@@ -55,7 +55,8 @@ entity ODMB_VME is
 
 -- Reset
 
-    rst       : in  std_logic;          -- iglobalrst
+    rst       : in  std_logic;          -- Firmware reset
+    pon_reset : in  std_logic;          -- Power on reset
     led_pulse : out std_logic;
 
 -- JTAG Signals To/From DCFEBs
@@ -454,6 +455,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       SLOWCLK : in std_logic;
       RST     : in std_logic;
+      PON_RESET : in  std_logic;          -- Power on reset
 
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
@@ -976,6 +978,7 @@ begin
     port map(
       SLOWCLK => clk_s2,
       RST     => rst,
+      PON_RESET => pon_reset,
 
       DEVICE  => device(8),
       STROBE  => strobe,

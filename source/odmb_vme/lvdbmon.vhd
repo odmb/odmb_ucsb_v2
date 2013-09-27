@@ -4,7 +4,8 @@ library unisim;
 use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-library hdlmacro; use hdlmacro.hdlmacro.all;
+library hdlmacro;
+use hdlmacro.hdlmacro.all;
 
 entity LVDBMON is
   
@@ -12,6 +13,7 @@ entity LVDBMON is
 
     SLOWCLK  : in  std_logic;
     RST      : in  std_logic;
+    PON_RESET : in  std_logic;          -- Power on reset
 
     DEVICE   : in  std_logic;
     STROBE   : in  std_logic;
@@ -39,6 +41,19 @@ end LVDBMON;
 
 
 architecture LVDBMON_Arch of LVDBMON is
+
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
+
+  signal pon_reset_b, pon_reset_b1,pon_pulse : std_logic; 
 
   signal BUSY : std_logic;
   signal WRITEADC,READMON,WRITEPOWER,READPOWER,READPOWERSTATUS,SELADC,READADC : STD_LOGIC;
@@ -96,7 +111,7 @@ begin  --Architecture
 -- Generate OUTDATA_2
   FDCE_GEN2: for i in 0 to 7 generate
   begin
-  	FDCE_OUT2 : FDCE port map (LVTURNON_INNER(i+1),STROBE,WRITEPOWER,RST,INDATA(i));
+  	FDPE_OUT2 : FDPE port map (LVTURNON_INNER(i+1),STROBE,WRITEPOWER,INDATA(i),RST);
   end generate FDCE_GEN2;
 
   OUTDATA <= x"00" & LVTURNON_INNER(8 downto 1) when (STROBE='1' and READPOWER='1') else
@@ -127,8 +142,11 @@ begin  --Architecture
   LVADCEN(5) <= '0' when SELADC_vector(3 downto 1)="101" else '1';
   LVADCEN(6) <= '0' when SELADC_vector(3 downto 1)="110" else '1';
 
--- Generate LOADON
-  C_LOADON <= '1' when (WRITEPOWER='1' and STROBE='1') else '0';
+-- Generate LOADON: from VME command and from Power-on reset
+  pon_reset_b <= not pon_reset;
+  FDPON : FD port map(pon_reset_b1, slowclk, pon_reset_b);
+  PULSEPON : PULSE_EDGE port map(pon_pulse, open, slowclk, rst, 1, pon_reset_b1);
+  C_LOADON <= (WRITEPOWER and STROBE) or pon_pulse;
   FDC_LOADON : FDC port map (Q1_LOADON,C_LOADON,LOADON_INNER,VCC);
   FD_LOADON1 : FD port map (Q2_LOADON,SLOWCLK,Q1_LOADON);
   FD_LOADON2 : FD port map (LOADON_INNER,SLOWCLK,Q2_LOADON);

@@ -327,7 +327,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Reset
 
-      rst       : in  std_logic;        -- iglobalrst
+      rst       : in  std_logic;          -- Firmware reset
+      pon_reset : in  std_logic;          -- Power on reset
       led_pulse : out std_logic;
 
 -- JTAG signals To/From DCFEBs
@@ -1152,7 +1153,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pon_rst_reg, fw_rst_reg, opt_rst_reg : std_logic_vector (31 downto 0) := (others => '0');
   signal reset, opt_reset, fw_reset_q         : std_logic                      := '0';
   signal opt_reset_pulse, opt_reset_pulse_q   : std_logic                      := '0';
-
+  signal pon_reset : std_logic;
 
   signal mbc_leds : std_logic_vector (6 downto 0);
 
@@ -1327,6 +1328,7 @@ begin
 -- Reset
 
       rst       => reset,
+      pon_reset => pon_reset,
       led_pulse => led_pulse,
 
 -- JTAG signals To/From DCFEBs
@@ -2067,16 +2069,17 @@ begin
   mask_l1a       <= odmb_ctrl_reg(11);
   mask_l1a_match <= odmb_ctrl_reg(12);
 
+  -- To DCFEBs
   dcfeb_tms       <= int_tms;
   dcfeb_tdi       <= int_tdi;
   dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
+  dcfeb_bc0        <= not ccb_bx0; -- New signal to DCFEB for syncing
 
   -- To QPLL
   qpll_autorestart <= '1';
   qpll_reset       <= not reset;
-  dcfeb_bc0        <= '0';
 
   v6_jtag_sel <= v6_jtag_sel_inner;
 
@@ -2091,13 +2094,14 @@ begin
   pon_rst_reg <= x"0FFFFFFF" when (pll1_locked = '0') else
                  pon_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
                  pon_rst_reg;
-  fw_rst_reg <= x"0FFFFFFF" when (fw_reset_q = '0' and fw_reset = '1') else
+  fw_rst_reg <= x"0FFFFFFF" when ((fw_reset_q = '0' and fw_reset = '1') or ccb_softrst = '0') else
                 fw_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
                 fw_rst_reg;
   opt_rst_reg <= x"0FFFFFFF" when (opt_reset_pulse_q = '0' and opt_reset_pulse = '1') else
                  opt_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
                  opt_rst_reg;
-  reset     <= fw_rst_reg(31) or pon_rst_reg(31) or not pb(0) or not ccb_softrst;  -- Firmware reset
+  pon_reset <= pon_rst_reg(31);
+  reset     <= fw_rst_reg(31) or pon_rst_reg(31) or not pb(0);  -- Firmware reset
   opt_reset <= opt_rst_reg(31) or pon_rst_reg(31);  -- Optical reset
 
   -- Threw the kitchen sink here. This needs to be checked
