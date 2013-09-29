@@ -327,8 +327,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Reset
 
-      rst       : in  std_logic;          -- Firmware reset
-      pon_reset : in  std_logic;          -- Power on reset
+      rst       : in  std_logic;        -- Firmware reset
+      pon_reset : in  std_logic;        -- Power on reset
       led_pulse : out std_logic;
 
 -- JTAG signals To/From DCFEBs
@@ -597,8 +597,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       dcfeb_l1a       : out std_logic;
       dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
 
-      pedestal : in std_logic;
-      pedestal_otmb        : in  std_logic;
+      pedestal      : in std_logic;
+      pedestal_otmb : in std_logic;
 
       tck : in  std_logic;
       tdi : in  std_logic;
@@ -1061,6 +1061,12 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   constant WR_EN_FF      : std_logic_vector(NFEB downto 1) := (others => '0');
   constant FF_DATA_IN    : std_logic_vector(15 downto 0)   := (others => '0');
 
+  -- CCB
+  signal ccb_cmd_bxev                   : std_logic_vector(7 downto 0)  := (others => '0');
+  signal ccb_cmd_reg, ccb_data_reg      : std_logic_vector(15 downto 0) := (others => '0');
+  signal ccb_other, ccb_rsv             : std_logic_vector(15 downto 0) := (others => '0');
+  signal ccb_other_reg, ccb_rsv_reg     : std_logic_vector(15 downto 0) := (others => '0');
+  signal ccb_other_reg_b, ccb_rsv_reg_b : std_logic_vector(15 downto 0) := (others => '0');
 
 
 -- DCFEB I/O Signals
@@ -1153,7 +1159,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pon_rst_reg, fw_rst_reg, opt_rst_reg : std_logic_vector (31 downto 0) := (others => '0');
   signal reset, opt_reset, fw_reset_q         : std_logic                      := '0';
   signal opt_reset_pulse, opt_reset_pulse_q   : std_logic                      := '0';
-  signal pon_reset : std_logic;
+  signal pon_reset                            : std_logic;
 
   signal mbc_leds : std_logic_vector (6 downto 0);
 
@@ -1593,7 +1599,7 @@ begin
       dcfeb_injpulse  => dcfeb_injpls,   -- inject - to DCFEBs
       dcfeb_extpulse  => dcfeb_extpls,   -- extpls - to DCFEBs
       pedestal        => pedestal,
-      pedestal_otmb        => odmb_ctrl_reg(14),
+      pedestal_otmb   => odmb_ctrl_reg(14),
 
 -- From/To ODMB_VME
 
@@ -2069,13 +2075,30 @@ begin
   mask_l1a       <= odmb_ctrl_reg(11);
   mask_l1a_match <= odmb_ctrl_reg(12);
 
+  -- From CCB - for production tests
+  ccb_cmd_bxev <= ccb_cmd & ccb_evcntres & ccb_bxrst;
+  GEN_CCB : for index in 0 to 7 generate
+    FDCMD : FDC port map(ccb_cmd_reg(index), ccb_cmd_s, reset, ccb_cmd_bxev(index));
+    FDDAT : FDC port map(ccb_data_reg(index), ccb_data_s, reset, ccb_data(index));
+  end generate GEN_CCB;
+
+  ccb_rsv   <= "0000" & ccb_crsv(4 downto 0) & ccb_drsv(1 downto 0) & ccb_rsvo(4 downto 0);
+  ccb_other <= "00000" & ccb_cal(2 downto 0) & ccb_bx0 & ccb_bxrst & ccb_l1arst & ccb_l1acc
+               & ccb_clken & ccb_evcntres & ccb_cmd_s & ccb_data_s;
+  GEN_CCB_FD : for index in 0 to 15 generate
+    FDOTHER : FDC port map(ccb_other_reg(index), ccb_other(index), reset, ccb_other_reg_b(index));
+    FDRSV   : FDC port map(ccb_rsv_reg(index), ccb_rsv(index), reset, ccb_rsv_reg_b(index));
+    ccb_other_reg_b(index) <= not ccb_other_reg(index);
+    ccb_rsv_reg_b(index)   <= not ccb_rsv_reg(index);
+  end generate GEN_CCB_FD;
+
   -- To DCFEBs
   dcfeb_tms       <= int_tms;
   dcfeb_tdi       <= int_tdi;
   dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
-  dcfeb_bc0        <= not ccb_bx0; -- New signal to DCFEB for syncing
+  dcfeb_bc0       <= not ccb_bx0;       -- New signal to DCFEB for syncing
 
   -- To QPLL
   qpll_autorestart <= '1';
@@ -2608,6 +2631,10 @@ begin
       when x"57" => odmb_data <= data_fifo_re_cnt(7);  -- from control to FIFOs in top
       when x"58" => odmb_data <= data_fifo_re_cnt(8);  -- from control to FIFOs in top
       when x"59" => odmb_data <= data_fifo_re_cnt(9);  -- from control to FIFOs in top
+      when x"5A" => odmb_data <= ccb_cmd_reg;
+      when x"5B" => odmb_data <= ccb_data_reg;
+      when x"5C" => odmb_data <= ccb_other_reg;
+      when x"5D" => odmb_data <= ccb_rsv_reg;
 
       when x"61" => odmb_data <= goodcrc_cnt(1);
       when x"62" => odmb_data <= goodcrc_cnt(2);

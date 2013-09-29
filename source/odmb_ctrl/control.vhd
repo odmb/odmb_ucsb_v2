@@ -167,21 +167,21 @@ architecture CONTROL_arch of CONTROL is
   constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
 
-  signal GEMPTY_TMP : std_logic;        --Adam Add initialization
+  signal DO_PACKET : std_logic;      
 
 
 begin
 
   cafifo_l1a_dav_corr(NFEB downto 1) <= cafifo_l1a_dav(NFEB downto 1) xnor cafifo_l1a_match(NFEB downto 1);
 
-  GEMPTY_TMP <= and_reduce(cafifo_l1a_dav(9 downto 8)) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '1') else
-                cafifo_l1a_dav(9) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '0') else
-                cafifo_l1a_dav(8) when (cafifo_l1a_match(9) = '0' and cafifo_l1a_match(8) = '1') else
-                and_reduce(cafifo_l1a_dav_corr(NFEB downto 1)) and or_reduce(cafifo_l1a_match(NFEB downto 1));
-
+  --DO_PACKET <= and_reduce(cafifo_l1a_dav(9 downto 8)) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '1') else
+  --              cafifo_l1a_dav(9) when (cafifo_l1a_match(9) = '1' and cafifo_l1a_match(8) = '0') else
+  --              cafifo_l1a_dav(8) when (cafifo_l1a_match(9) = '0' and cafifo_l1a_match(8) = '1') else
+  --              and_reduce(cafifo_l1a_dav_corr(NFEB downto 1)) and or_reduce(cafifo_l1a_match(NFEB downto 1));
+  DO_PACKET <= or_reduce(cafifo_l1a_match);
+  
 --  Generate BUSY (page 1)
---  FDC(GEMPTY, CLKCMS, POP, GEMPTY_D(1));
-  FDC_GEN_BUSY1 : FDC port map (GEMPTY_D(1), CLKCMS, POP, GEMPTY_TMP);
+  FDC_GEN_BUSY1 : FDC port map (GEMPTY_D(1), CLKCMS, POP, DO_PACKET);
   FDCE_GEN_BUSY : FDCE port map (GEMPTY_D(2), CLK, GLRFD, POP, GEMPTY_D(1));
   FDC_GEN_BUSY2 : FDC port map (GEMPTY_D(3), CLK, POP, GEMPTY_D(2));
   FDC_GEN_BUSY3 : FDC port map (BUSY, CLK, POP, GEMPTY_D(3));
@@ -206,16 +206,17 @@ begin
 
 -- Generate OKDATA / Generate DODAT (page 1)
   TAIL_RST     <= RST or TAIL(1);
-  DDCNT_EN_RST <= RST or OKDATA;        -- modified!
---  DDCNT_EN_RST <= RST or EODATA;
+  DDCNT_EN_RST <= RST or OKDATA;
   FDCE_OKDATA   : FDCE port map (DDCNT_EN(0), CLK, OEHDR(8), TAIL_RST, BUSY);
   FDC_LOGICH    : FDC port map (DDCNT_EN(1), DDCNT_EN(0), DDCNT_EN_RST, LOGICH);
+  FDC_OKDATA : FDC port map(OKDATA, DDCNT_EN(1), TAIL_RST, LOGICH);
+  
   --Adam CB16CE_OKDATA : CB16CE port map (DDCNT_CEO, DDCNT, DDCNT_TC, CLK, DDCNT_EN(1), TAIL_RST);
-  CB16CE_OKDATA : CB16CE port map (open, DDCNT, DDCNT_TC, CLK, DDCNT_EN(1), TAIL_RST);
+--  CB16CE_OKDATA : CB16CE port map (open, DDCNT, DDCNT_TC, CLK, DDCNT_EN(1), TAIL_RST);
 --  OKDATA <= DDCNT(8) and DDCNT(7) and DDCNT(6); -- modified!
-  OKDATA       <= '1' when DDCNT(2 downto 0) = "100" else '0';  -- modified by G&M
+--  OKDATA       <= '1' when DDCNT(2 downto 0) = "100" else '0';  -- modified by G&M
 --  DATAON <= not (DDCNT(8) and DDCNT(7) and DDCNT(6)); -- modified!
-  FDC_OKDATA    : FDC port map (DODAT, CLK, TAIL(1), OKDATA);
+  FDC_DODAT    : FDC port map (DODAT, CLK, TAIL(1), OKDATA);
 --  EODATA <= not DATAON; -- modified!
 --  FDC(DATAON, CLK, TAIL(1), DODAT); -- modified!
 
@@ -373,7 +374,7 @@ begin
   P(9) <= '1' when (R(9) = '1' and DODAT = '1')                                       else '0';
 
 -- Generate OE (page 4)
-  OE <= P and RDY;
+  OE <= P and RDY and cafifo_l1a_dav;
 
 -- Generate OEALL / Generate DOEALL / Generate OEDATA (page 4)
   OEALL_D <= or_reduce(OE);
@@ -454,7 +455,8 @@ begin
     FDC_DAVNODATA  : FDC port map (DAVNODATA(K), DODAT, POP, DAVNODATA_D(K));
     FDCE_DATANOEND : FDCE port map (DATANOEND(K), CLKCMS, RSTCNT, POP, OE(K));
   end generate GEN_ERRORD;
-  ERRORD    <= DAVNODATA or DATANOEND;
+  --ERRORD    <= DAVNODATA or DATANOEND;
+  ERRORD    <= DATANOEND;
   NOEND_RST <= DONE or STARTREAD or RSTCNT;
   CB16CE_DATANOEND : CB16CE port map(NOEND_CEO, NOEND, NOEND_TC, CLKCMS, OEALL, NOEND_RST);
   FD_NOEND         : FD port map (RSTCNT, CLKCMS, NOEND(11));

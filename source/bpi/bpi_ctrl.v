@@ -847,8 +847,8 @@ end
       .DEVICE("VIRTEX6"),  // Target device: "VIRTEX5", "VIRTEX6" 
       .FIFO_SIZE ("36Kb"), // Target BRAM: "18Kb" or "36Kb" 
 //      .FIRST_WORD_FALL_THROUGH ("TRUE") // Sets the FIFO FWFT to "TRUE" or "FALSE" 
-//      .FIRST_WORD_FALL_THROUGH (1'b1) // Sets the FIFO FWFT to "TRUE" or "FALSE" 
-      .FIRST_WORD_FALL_THROUGH (1'b0) // Sets the FIFO FWFT to "TRUE" or "FALSE" 
+      .FIRST_WORD_FALL_THROUGH (1'b1) // Sets the FIFO FWFT to "TRUE" or "FALSE" 
+//      .FIRST_WORD_FALL_THROUGH (1'b0) // Sets the FIFO FWFT to "TRUE" or "FALSE" 
    ) BPI_CMD_FIFO_i (
       .ALMOSTEMPTY(bpi_cmd_amt), // 1-bit output almost empty
       .ALMOSTFULL(bpi_cmd_afl),   // 1-bit output almost full
