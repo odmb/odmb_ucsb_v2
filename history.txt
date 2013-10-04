@@ -7,6 +7,13 @@
 =                                                                    =
 ======================================================================
 
+V01-05: 29 September 2013, Manuel
+--------------------------------
+Moved header ahead to avoid DDU timeouts.
+Turn on all DCFEBs and ALCT on power on.
+Fix issue with PCFIFO that would not send 21% of the packets.
+Added PRBS test, and functionality to test all CCB signals.
+
 V01-04: 11 September 2013, Manuel
 --------------------------------
 Send ALCT/OTMB data through EOFGEN to fix shifted word.
