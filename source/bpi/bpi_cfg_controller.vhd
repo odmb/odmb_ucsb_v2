@@ -38,7 +38,11 @@ architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
 
   signal next_state, current_state : state_type;
 
-  constant NW_DL : integer := 25;       -- 4xN_REGS
+--  constant NW_DL : integer := 25;       -- 4xN_REGS
+-- GM, TD: change to reflect commenting out set array mode.  And unlock executed outside via VME
+	constant NW_DL : integer := 19;       -- 4xN_REGS
+--  constant NW_UL : integer := 15;       -- 3xN_REGS
+-- GM, TD: change to reflect commenting out set array mode.
   constant NW_UL : integer := 15;       -- 3xN_REGS
 
   type fifo_data_dl is array (NW_DL-1 downto 0) of std_logic_vector(15 downto 0);
@@ -64,58 +68,63 @@ architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
 begin
 
 -- Download Assignments (Configuration Registers to PROM)
-  
-  bpi_cmd_fifo_data_dl(0) <= x"0017";   -- Load Address in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
-  bpi_cmd_fifo_data_dl(2) <= x"0014";   -- Unlock Bank 0 / Block 0
-  
-  bpi_cmd_fifo_data_dl(3) <= x"0017";  -- Load Address in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(4) <= x"0000";  -- Set Offset = 0 
-  bpi_cmd_fifo_data_dl(5) <= x"0005";  -- Set Read Array Mode
 
-  bpi_cmd_fifo_data_dl(6) <= x"0017";   -- Load Address in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(7) <= x"0004";   -- Set Offset = 4 
-  bpi_cmd_fifo_data_dl(8) <= x"000b";   -- Program in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(9) <= x"fed0" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg0;  -- Set Data
-  
-  bpi_cmd_fifo_data_dl(10) <= x"0017";   -- Load Address in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(11) <= x"0005";   -- Set Offset = 5 
-  bpi_cmd_fifo_data_dl(12) <= x"002b";  -- Program in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(13)<= x"fed1" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg1;  -- Set Data
-  
-  bpi_cmd_fifo_data_dl(14) <= x"0017";  -- Load Address in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(15) <= x"0006";  -- Set Offset = 6 
-  bpi_cmd_fifo_data_dl(16) <= x"002b";  -- Program in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(17) <= x"fed2" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg2;  -- Set Data
-  
-  bpi_cmd_fifo_data_dl(18) <= x"0017";  -- Load Address in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(19) <= x"0007";  -- Set Offset = 7 
-  bpi_cmd_fifo_data_dl(20) <= x"002b";  -- Program in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(21) <= x"fed3" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg3;  -- Set Data
+-- GM, TD: Unlock and erase of block 126 executed via VME.  
+--  bpi_cmd_fifo_data_dl(0) <= x"0017";   -- Load Address in Bank 0 / Block 0
+--  bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
+--  bpi_cmd_fifo_data_dl(2) <= x"0014";   -- Unlock Bank 0 / Block 0
 
-  bpi_cmd_fifo_data_dl(22) <= x"0017";  -- Load Address in Bank 0 / Block 0
-  bpi_cmd_fifo_data_dl(23) <= x"0000";  -- Set Offset = 0 
-  bpi_cmd_fifo_data_dl(24) <= x"0005";  -- Set Read Array Mode
+--  GM, TD: Set read array mode doesn't seem to be needed.
+--  bpi_cmd_fifo_data_dl(3) <= x"0017";  -- Load Address in Bank 0 / Block 0
+--  bpi_cmd_fifo_data_dl(4) <= x"0000";  -- Set Offset = 0 
+--  bpi_cmd_fifo_data_dl(5) <= x"0005";  -- Set Read Array Mode
+
+-- GM, TD: Block 0 replaced by block 127 (parameter block) --> FD7 replaces 017
+  bpi_cmd_fifo_data_dl(0) <= x"0fd7";   -- Load Address in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(1) <= x"0004";   -- Set Offset = 4 
+  bpi_cmd_fifo_data_dl(2) <= x"000b";   -- Program in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(3) <= x"fed0" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg0;  -- Set Data
+  
+  bpi_cmd_fifo_data_dl(4) <= x"0fd7";   -- Load Address in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(5) <= x"0005";   -- Set Offset = 5 
+  bpi_cmd_fifo_data_dl(6) <= x"002b";  -- Program in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(7)<= x"fed1" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg1;  -- Set Data
+  
+  bpi_cmd_fifo_data_dl(8) <= x"0fd7";  -- Load Address in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(9) <= x"0006";  -- Set Offset = 6 
+  bpi_cmd_fifo_data_dl(10) <= x"002b";  -- Program in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(11) <= x"fed2" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg2;  -- Set Data
+  
+  bpi_cmd_fifo_data_dl(12) <= x"0fd7";  -- Load Address in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(13) <= x"0007";  -- Set Offset = 7 
+  bpi_cmd_fifo_data_dl(14) <= x"002b";  -- Program in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(15) <= x"fed3" when (bpi_cfg_data_sel = '0') else bpi_cfg_reg3;  -- Set Data
+
+--  GM, TD: Set read array mode doesn't seem to be needed.
+  bpi_cmd_fifo_data_dl(16) <= x"0fd7";  -- Load Address in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(17) <= x"0000";  -- Set Offset = 0 
+  bpi_cmd_fifo_data_dl(18) <= x"0005";  -- Set Read Array Mode
 
 -- Upload Assignments (PROM to Configuration Registers)
-
-  bpi_cmd_fifo_data_ul(0) <= x"0017";   -- Load Address in Block 0
+-- GM, TD: Block 0 replaced by block 127 (parameter block) --> FD7 replaces 017
+  bpi_cmd_fifo_data_ul(0) <= x"0fd7";   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(1) <= x"0000";   -- Set Offset = 0 
   bpi_cmd_fifo_data_ul(2) <= x"0002";   -- Read One Word 
 
-  bpi_cmd_fifo_data_ul(3) <= x"0017";   -- Load Address in Block 0
+  bpi_cmd_fifo_data_ul(3) <= x"0fd7";   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(4) <= x"0001";   -- Set Offset = 1 
   bpi_cmd_fifo_data_ul(5) <= x"0002";   -- Read One Word 
 
-  bpi_cmd_fifo_data_ul(6) <= x"0017";   -- Load Address in Block 0
+  bpi_cmd_fifo_data_ul(6) <= x"0fd7";   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(7) <= x"0002";   -- Set Offset = 2 
   bpi_cmd_fifo_data_ul(8) <= x"0002";   -- Read One Word 
 
-  bpi_cmd_fifo_data_ul(9)  <= x"0017";  -- Load Address in Block 0
+  bpi_cmd_fifo_data_ul(9)  <= x"0fd7";  -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(10) <= x"0003";  -- Set Offset = 3 
   bpi_cmd_fifo_data_ul(11) <= x"0002";  -- Read One Word 
 
-  bpi_cmd_fifo_data_ul(12) <= x"0017";  -- Load Address in Bank 0 / Block 0
+--  GM, TD: Set read array mode doesn't seem to be needed.
+  bpi_cmd_fifo_data_ul(12) <= x"0fd7";  -- Load Address in Bank 0 / Block 0
   bpi_cmd_fifo_data_ul(13) <= x"0000";  -- Set Offset = 0 
   bpi_cmd_fifo_data_ul(14) <= x"0005";  -- Set Read Array Mode
 

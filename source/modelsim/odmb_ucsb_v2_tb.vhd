@@ -384,12 +384,33 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         therm1_p      : in std_logic;
         therm1_n      : in std_logic;
         therm2_p      : in std_logic;
-        therm2_n      : in std_logic
+        therm2_n      : in std_logic;
 
-
+        otmb_tx : in  std_logic_vector(48 downto 0);
+        otmb_rx : out std_logic_vector(5 downto 0)
         );
   end component;
 
+  component PRBS_GEN is
+    port (
+      DOUT : out std_logic;
+
+      CLK    : in std_logic;
+      RST    : in std_logic;
+      ENABLE : in std_logic
+      );
+  end component;
+
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
 
 -- clock and reset signals
 
@@ -516,7 +537,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal ccb_drsv     : std_logic_vector(1 downto 0) := "00";             -- in
   signal ccb_rsvo     : std_logic_vector(4 downto 0) := "00000";          -- in
   signal ccb_rsvi     : std_logic_vector(2 downto 0);  -- out
-  signal ccb_bx0      : std_logic                    := '1';              -- in
+  signal ccb_bx0      : std_logic                    := '1';  -- in
   signal ccb_l1acc    : std_logic                    := '1';              -- in
   signal ccb_l1rls    : std_logic;      -- out
   signal ccb_clken    : std_logic                    := '1';              -- in
@@ -645,11 +666,15 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal LOGIC0 : std_logic := '0';
   signal LOGIC1 : std_logic := '1';
 
+  signal otmb_prbs_tx, otmb_prbs_tx_en, pulse_otmb_prbs_tx_en : std_logic;
+  signal otmb_tx                                              : std_logic_vector(48 downto 0);
+  signal otmb_rx                                              : std_logic_vector(5 downto 0);
+
 begin
 
-  go          <= '1'      after 15 us;
+  go    <= '1' after 15 us;
   --goevent <= '1' after 300 us;
-  goccb       <= '1'      after 29 us;
+  goccb <= '1' after 29 us;
 
   qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 12.5 ns;
   qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 12.5 ns;
@@ -689,6 +714,12 @@ begin
   stop <= '0';
 
   dtack <= 'H';
+
+  otmb_prbs_tx_en <= '0', '1' after 30000 ns;
+  PE_OTMB_PRBS_TX_EN : PULSE_EDGE port map(pulse_otmb_prbs_tx_en, open, gl0_clk_p, rst, 1024, otmb_prbs_tx_en);
+
+  PRBS_GEN_PM : PRBS_GEN port map(otmb_prbs_tx, gl0_clk_p, rst, pulse_otmb_prbs_tx_en);
+  otmb_tx <= (48 => pulse_otmb_prbs_tx_en, others => otmb_prbs_tx);
 
 -- Beginning of the Test Bench Section
 
@@ -897,7 +928,10 @@ begin
       therm1_p      => therm1_p,
       therm1_n      => therm1_n,
       therm2_p      => therm2_p,
-      therm2_n      => therm2_n
+      therm2_n      => therm2_n,
+
+      otmb_tx => otmb_tx,
+      otmb_rx => otmb_rx
       );
 
   PMAP_file_handler_event : file_handler_event

@@ -208,7 +208,11 @@ entity ODMB_VME is
     PC_PRBS_EN      : out std_logic;
     PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
     PC_PRBS_RD_EN   : out std_logic;
-    PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0)
+    PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
+
+    -- OTMB PRBS signals
+    OTMB_TX : in std_logic_vector(48 downto 0);
+    OTMB_RX : out std_logic_vector(5 downto 0)
     );
 
 end ODMB_VME;
@@ -453,9 +457,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
   component LVDBMON is
     port (
 
-      SLOWCLK : in std_logic;
-      RST     : in std_logic;
-      PON_RESET : in  std_logic;          -- Power on reset
+      SLOWCLK   : in std_logic;
+      RST       : in std_logic;
+      PON_RESET : in std_logic;         -- Power on reset
 
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
@@ -488,6 +492,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       STROBE  : in std_logic;
       WRITER  : in std_logic;
       SLOWCLK : in std_logic;
+      CLK80   : in std_logic;
       RST     : in std_logic;
 
       OUTDATA : out std_logic_vector(15 downto 0);
@@ -503,7 +508,11 @@ architecture ODMB_VME_architecture of ODMB_VME is
       PC_PRBS_EN      : out std_logic;
       PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
       PC_PRBS_RD_EN   : out std_logic;
-      PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0)
+      PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
+
+      -- OTMB PRBS signals
+      OTMB_TX : in  std_logic_vector(48 downto 0);
+      OTMB_RX : out std_logic_vector(5 downto 0)
       );
   end component;
 
@@ -976,8 +985,8 @@ begin
 
   DEV8_LVDBMON : LVDBMON
     port map(
-      SLOWCLK => clk_s2,
-      RST     => rst,
+      SLOWCLK   => clk_s2,
+      RST       => rst,
       PON_RESET => pon_reset,
 
       DEVICE  => device(8),
@@ -1011,6 +1020,7 @@ begin
       STROBE  => strobe,
       WRITER  => vme_write_b,
       SLOWCLK => clk_s2,
+      CLK80   => clk80,
       RST     => rst,
 
       OUTDATA => outdata_systest,
@@ -1026,7 +1036,11 @@ begin
       PC_PRBS_EN      => PC_PRBS_EN,
       PC_PRBS_TST_CNT => PC_PRBS_TST_CNT,
       PC_PRBS_RD_EN   => PC_PRBS_RD_EN,
-      PC_PRBS_ERR_CNT => PC_PRBS_ERR_CNT
+      PC_PRBS_ERR_CNT => PC_PRBS_ERR_CNT,
+
+      --OTMB_PRBS signals
+      OTMB_TX => OTMB_TX,
+      OTMB_RX => OTMB_RX
       );
 
   DEVX_MBCJTAG : MBCJTAG

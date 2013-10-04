@@ -224,9 +224,10 @@ entity ODMB_UCSB_V2 is
     therm1_p      : in std_logic;
     therm1_n      : in std_logic;
     therm2_p      : in std_logic;
-    therm2_n      : in std_logic
+    therm2_n      : in std_logic;
 
-
+    otmb_tx : in std_logic_vector(48 downto 0);
+    otmb_rx : out std_logic_vector(5 downto 0)
     );
 end ODMB_UCSB_V2;
 
@@ -479,7 +480,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       PC_PRBS_EN      : out std_logic;
       PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
       PC_PRBS_RD_EN   : out std_logic;
-      PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0)
+      PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
+
+      -- OTMB PRBS signals
+      OTMB_TX : in std_logic_vector(48 downto 0);
+      OTMB_RX : out std_logic_vector(5 downto 0)
       );
 
   end component;  -- ODMB_VME
@@ -1485,7 +1490,11 @@ begin
       PC_PRBS_EN      => pc_prbs_en,
       PC_PRBS_TST_CNT => pc_prbs_en_tst_cnt,
       PC_PRBS_RD_EN   => pc_prbs_rd_en,
-      PC_PRBS_ERR_CNT => pc_prbs_err_cnt
+      PC_PRBS_ERR_CNT => pc_prbs_err_cnt,
+
+      -- OTMB PRBS signals
+      OTMB_TX => OTMB_TX,
+      OTMB_RX => OTMB_RX
       );                                -- MBV : ODMB_VME
 
   MBC : ODMB_CTRL

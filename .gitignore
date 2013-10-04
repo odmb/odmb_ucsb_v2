@@ -5,6 +5,7 @@ work/
 *.wlf
 *.bak
 *.do
+*.vstf
 commands/*out.txt
 source/transcript
 
