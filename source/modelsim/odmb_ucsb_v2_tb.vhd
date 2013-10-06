@@ -289,7 +289,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         otmbdav   : in  std_logic;      --  lctdav1
         alctdav   : in  std_logic;      --  lctdav2
 --    rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);     
-        rsvtd_in  : in  std_logic_vector(4 downto 0);
+        rsvtd_in  : in  std_logic_vector(2 downto 0);
         rsvtd_out : out std_logic_vector(2 downto 0);
         lctrqst   : out std_logic_vector(2 downto 1);
 
@@ -386,8 +386,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         therm2_p      : in std_logic;
         therm2_n      : in std_logic;
 
-        otmb_tx : in  std_logic_vector(48 downto 0);
-        otmb_rx : out std_logic_vector(5 downto 0)
+    otmb_tx_tb : in std_logic_vector(48 downto 0)
         );
   end component;
 
@@ -558,7 +557,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   signal otmbdav   : std_logic                    := '0';      -- in
   signal alctdav   : std_logic                    := '0';      -- in
-  signal rsvtd_in  : std_logic_vector(4 downto 0) := "00000";  -- in
+  signal rsvtd_in  : std_logic_vector(2 downto 0) := "000";  -- in
   signal rsvtd_out : std_logic_vector(2 downto 0);             -- out
   signal lctrqst   : std_logic_vector(2 downto 1);             -- out
 
@@ -668,7 +667,6 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   signal otmb_prbs_tx, otmb_prbs_tx_en, pulse_otmb_prbs_tx_en : std_logic;
   signal otmb_tx                                              : std_logic_vector(48 downto 0);
-  signal otmb_rx                                              : std_logic_vector(5 downto 0);
 
 begin
 
@@ -716,9 +714,9 @@ begin
   dtack <= 'H';
 
   otmb_prbs_tx_en <= '0', '1' after 30000 ns;
-  PE_OTMB_PRBS_TX_EN : PULSE_EDGE port map(pulse_otmb_prbs_tx_en, open, gl0_clk_p, rst, 1024, otmb_prbs_tx_en);
+  PE_OTMB_PRBS_TX_EN : PULSE_EDGE port map(pulse_otmb_prbs_tx_en, open, clk, rst, 1024, otmb_prbs_tx_en);
 
-  PRBS_GEN_PM : PRBS_GEN port map(otmb_prbs_tx, gl0_clk_p, rst, pulse_otmb_prbs_tx_en);
+  PRBS_GEN_PM : PRBS_GEN port map(otmb_prbs_tx, clk, rst, pulse_otmb_prbs_tx_en);
   otmb_tx <= (48 => pulse_otmb_prbs_tx_en, others => otmb_prbs_tx);
 
 -- Beginning of the Test Bench Section
@@ -930,8 +928,7 @@ begin
       therm2_p      => therm2_p,
       therm2_n      => therm2_n,
 
-      otmb_tx => otmb_tx,
-      otmb_rx => otmb_rx
+      otmb_tx_tb => otmb_tx
       );
 
   PMAP_file_handler_event : file_handler_event

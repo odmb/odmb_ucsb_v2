@@ -1,17 +1,19 @@
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
-W  3000  280	Select dummy DCFEBs and internally generated triggers
+R  920C  0      Read OTMB PRBS errors
+
+W  3000  6280	Select dummy DCFEBs and internally generated triggers and PEDESTAL
 
 W  4000  C	Set LCT_L1A_DLY   
 W  4004  1	Set TMB_PUSH_DLY
 W  400C  2	Set ALCT_PUSH_DLY
 W  401C  0	Do not Kill anything
-W  4028  4	Number of dummy words
+W  4028  320	Number of dummy words
 
 W  20  	 1  	Select FIFO [Time stamp LSB]
 W  8	 10	Write Time stamp LSB
 W  8	 20	Write Time stamp LSB
 W  8	 25	Write Time stamp LSB
+
+R  920C  0      Read OTMB PRBS errors
 
 W  8	 80	Write Time stamp LSB
 W  8	 83	Write Time stamp LSB
@@ -23,21 +25,23 @@ W  8	 95	Write Time stamp LSB
 W  8	 98	Write Time stamp LSB
 W  8	 99	Write Time stamp LSB
 
+R  920C  0      Read OTMB PRBS errors
+0 0 0
+
 W  20  	 4  	Select FIFO [Triggers]
 W  8	 FF	LCTs on all DCFEBs
-W  8	 FF	LCTs on all DCFEBs
+W  8	 0	LCTs on all DCFEBs
 W  8	 3	LCTs on DCFEB 1
 
 W  8	 400	L1A
-W  8	 100	OTMBDAV
-W  8	 200	ALCTDAV
+W  8	 000	OTMBDAV
+W  8	 000	ALCTDAV
 W  8	 400	L1A
 W  8	 100	OTMBDAV
 W  8	 200	ALCTDAV
 W  8	 400	L1A
 W  8	 100	OTMBDAV
 W  8	 200	ALCTDAV
-
 
 R  001C  0	Read FIFO Status Register
 W  0030  4	Start 4 Test Runs
@@ -70,7 +74,6 @@ R  001C  0	Read FIFO Status Register
 R  001C  0	Read FIFO Status Register
 R  001C  0	Read FIFO Status Register
 
-W  0030  5	Start 5 Test Runs
 
 R  001C  0	Read FIFO Status Register
 R  001C  0	Read FIFO Status Register

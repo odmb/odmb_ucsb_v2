@@ -1020,7 +1020,7 @@ begin
       STROBE  => strobe,
       WRITER  => vme_write_b,
       SLOWCLK => clk_s2,
-      CLK80   => clk80,
+      CLK80   => clk,
       RST     => rst,
 
       OUTDATA => outdata_systest,

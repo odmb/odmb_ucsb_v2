@@ -78,6 +78,7 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   signal otmb_prbs_tx_err                       : std_logic;
   signal q_otmb_prbs_tx                         : std_logic;
   signal w_otmb_prbs_en, r_otmb_prbs_err_cnt    : std_logic;
+  signal r_otmb_prbs_good_cnt                   : std_logic;
   signal otmb_prbs_rx_cycles                    : integer;
   signal otmb_prbs_rx_sequences                 : std_logic_vector (15 downto 0);
   signal otmb_prbs_rx_en, otmb_prbs_rx_en_b     : std_logic;
@@ -87,15 +88,18 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   signal qq_otmb_prbs_tx_en                     : std_logic;
   signal mux_otmb_tx                            : std_logic_vector(48 downto 0);
   signal q_otmb_tx                              : std_logic_vector(48 downto 0);
+
+  signal otmb_tx_good_cnt, otmb_tx_good_cnt_int : integer;
   
 begin
-  cmddev              <= "000" & DEVICE & COMMAND & "00";
-  w_ddu_prbs_en       <= '1' when (cmddev = x"1000" and STROBE = '1' and WRITER = '0') else '0';
-  r_ddu_prbs_err_cnt  <= '1' when (cmddev = x"100C" and STROBE = '1' and WRITER = '1') else '0';
-  w_pc_prbs_en        <= '1' when (cmddev = x"1100" and STROBE = '1' and WRITER = '0') else '0';
-  r_pc_prbs_err_cnt   <= '1' when (cmddev = x"110C" and STROBE = '1' and WRITER = '1') else '0';
-  w_otmb_prbs_en      <= '1' when (cmddev = x"1200" and STROBE = '1' and WRITER = '0') else '0';
-  r_otmb_prbs_err_cnt <= '1' when (cmddev = x"120C" and STROBE = '1' and WRITER = '1') else '0';
+  cmddev               <= "000" & DEVICE & COMMAND & "00";
+  w_ddu_prbs_en        <= '1' when (cmddev = x"1000" and STROBE = '1' and WRITER = '0') else '0';
+  r_ddu_prbs_err_cnt   <= '1' when (cmddev = x"100C" and STROBE = '1' and WRITER = '1') else '0';
+  w_pc_prbs_en         <= '1' when (cmddev = x"1100" and STROBE = '1' and WRITER = '0') else '0';
+  r_pc_prbs_err_cnt    <= '1' when (cmddev = x"110C" and STROBE = '1' and WRITER = '1') else '0';
+  w_otmb_prbs_en       <= '1' when (cmddev = x"1200" and STROBE = '1' and WRITER = '0') else '0';
+  r_otmb_prbs_good_cnt <= '1' when (cmddev = x"1208" and STROBE = '1' and WRITER = '1') else '0';
+  r_otmb_prbs_err_cnt  <= '1' when (cmddev = x"120C" and STROBE = '1' and WRITER = '1') else '0';
 
   STROBE_PE : PULSE_EDGE port map(strobe_pulse, open, SLOWCLK, RST, 1, STROBE);
 
@@ -113,16 +117,18 @@ begin
   end generate GEN_PRBS;
 
   OUTDATA <= DDU_PRBS_ERR_CNT when (r_ddu_prbs_err_cnt = '1') else
-             PC_PRBS_ERR_CNT                                    when (r_pc_prbs_err_cnt = '1')   else
-             std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16)) when (r_otmb_prbs_err_cnt = '1') else
+             PC_PRBS_ERR_CNT                                     when (r_pc_prbs_err_cnt = '1')    else
+             std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16)) when (r_otmb_prbs_good_cnt = '1') else
+             std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  when (r_otmb_prbs_err_cnt = '1')  else
              (others => 'L');
 
-  dtack_inner <= '0' when (w_ddu_prbs_en = '1' and strobe_pulse = '1')       else 'Z';
-  dtack_inner <= '0' when (r_ddu_prbs_err_cnt = '1' and strobe_pulse = '1')  else 'Z';
-  dtack_inner <= '0' when (w_pc_prbs_en = '1' and strobe_pulse = '1')        else 'Z';
-  dtack_inner <= '0' when (r_pc_prbs_err_cnt = '1' and strobe_pulse = '1')   else 'Z';
-  dtack_inner <= '0' when (w_otmb_prbs_en = '1' and strobe_pulse = '1')      else 'Z';
-  dtack_inner <= '0' when (r_otmb_prbs_err_cnt = '1' and strobe_pulse = '1') else 'Z';
+  dtack_inner <= '0' when (w_ddu_prbs_en = '1' and strobe_pulse = '1')        else 'Z';
+  dtack_inner <= '0' when (r_ddu_prbs_err_cnt = '1' and strobe_pulse = '1')   else 'Z';
+  dtack_inner <= '0' when (w_pc_prbs_en = '1' and strobe_pulse = '1')         else 'Z';
+  dtack_inner <= '0' when (r_pc_prbs_err_cnt = '1' and strobe_pulse = '1')    else 'Z';
+  dtack_inner <= '0' when (w_otmb_prbs_en = '1' and strobe_pulse = '1')       else 'Z';
+  dtack_inner <= '0' when (r_otmb_prbs_good_cnt = '1' and strobe_pulse = '1') else 'Z';
+  dtack_inner <= '0' when (r_otmb_prbs_err_cnt = '1' and strobe_pulse = '1')  else 'Z';
   DTACK       <= dtack_inner;
 
   -- OTMB PRBS RX test
@@ -159,11 +165,23 @@ begin
   prbs_tx_cnt_proc : process (CLK80, otmb_prbs_tx_err, RST, otmb_prbs_tx_en)
     variable bit : std_logic;
   begin
-    if (RST = '1' or rising_edge(otmb_prbs_tx_en)) then
-      otmb_tx_err_cnt <= 0;
+    if (RST = '1') then
+      otmb_tx_err_cnt      <= 0;
+      otmb_tx_good_cnt_int <= 0;
+      otmb_tx_good_cnt     <= 0;
+    elsif (otmb_prbs_tx_en = '1' and otmb_prbs_tx_en'event) then
+      otmb_tx_err_cnt      <= 0;
+      otmb_tx_good_cnt_int <= 0;
+      otmb_tx_good_cnt     <= 0;
     elsif (falling_edge(CLK80)) then
       if otmb_prbs_tx_err = '1' then
         otmb_tx_err_cnt <= otmb_tx_err_cnt + 1;
+      else
+        otmb_tx_good_cnt_int <= otmb_tx_good_cnt_int + 1;
+        if otmb_tx_good_cnt_int = 127 then
+          otmb_tx_good_cnt     <= otmb_tx_good_cnt + 1;
+          otmb_tx_good_cnt_int <= 0;
+        end if;
       end if;
     end if;
   end process;

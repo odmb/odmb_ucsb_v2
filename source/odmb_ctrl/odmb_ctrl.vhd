@@ -44,7 +44,6 @@ entity ODMB_CTRL is
     rawlct    : in  std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
     otmb_dav  : in  std_logic;          -- previously lctdav1, from J4
     alct_dav  : in  std_logic;          -- previously lctdav2, from J4
-    rsvtd_in  : in  std_logic_vector(4 downto 0);  -- OK   spare(2 DOWNTO 0) - to J4
 
 -- From GigaLinks
 

@@ -255,9 +255,10 @@ NET  "rsvtd_out[0]"  		LOC = "W30"  	| IOSTANDARD = LVCMOS25; # ok  (out)   #STA
 NET  "rsvtd_out[1]"  		LOC = "V28"  	| IOSTANDARD = LVCMOS25; # ok  (out)    #STAT0
 NET  "rsvtd_out[2]"  		LOC = "AC25"  	| IOSTANDARD = LVCMOS25; # ok  (out)    #STAT0
 NET  "rsvtd_in[0]"  		LOC = "AK31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
+NET  "rsvtd_in[1]"		LOC = "AL30"  	| IOSTANDARD = LVCMOS25 | PULLDOWN; # ok  #STAT0
+NET  "rsvtd_in[2]"  		LOC = "AM31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 # NET  "rsvtd_in[1]"  		LOC = "AL31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 # NET  "rsvtd_in[2]"  		LOC = "AM32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "rsvtd_in[3]"  		LOC = "AM31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "otmb[0]"			LOC = "AA31"  	| IOSTANDARD = LVCMOS25; # ok    #STAT0
 NET  "otmb[10]"  		LOC = "AG32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "otmb[11]"  		LOC = "AH30"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0

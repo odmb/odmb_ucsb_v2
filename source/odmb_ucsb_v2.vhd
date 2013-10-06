@@ -130,7 +130,7 @@ entity ODMB_UCSB_V2 is
     otmbdav   : in  std_logic;          --  lctdav1
     alctdav   : in  std_logic;          --  lctdav2
 --    rsvtd : INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);     
-    rsvtd_in  : in  std_logic_vector(4 downto 0);  -- rsvt_in(1:2) are rawlct(6:7) 
+    rsvtd_in  : in  std_logic_vector(2 downto 0);  -- rsvt_in(1:2) are rawlct(6:7) 
     rsvtd_out : out std_logic_vector(2 downto 0);
     lctrqst   : out std_logic_vector(2 downto 1);
 
@@ -226,8 +226,7 @@ entity ODMB_UCSB_V2 is
     therm2_p      : in std_logic;
     therm2_n      : in std_logic;
 
-    otmb_tx : in std_logic_vector(48 downto 0);
-    otmb_rx : out std_logic_vector(5 downto 0)
+    otmb_tx_tb : in std_logic_vector(48 downto 0)
     );
 end ODMB_UCSB_V2;
 
@@ -483,7 +482,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
       -- OTMB PRBS signals
-      OTMB_TX : in std_logic_vector(48 downto 0);
+      OTMB_TX : in  std_logic_vector(48 downto 0);
       OTMB_RX : out std_logic_vector(5 downto 0)
       );
 
@@ -523,7 +522,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       rawlct   : in std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
       alct_dav : in std_logic;          -- lctdav1 - from J4
       otmb_dav : in std_logic;          -- lctdav2 - from J4
-      rsvtd_in : in std_logic_vector(4 downto 0);  -- spare(7 DOWNTO 3) - to J4
 
 -- From GigaLinks
 
@@ -1014,7 +1012,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal alct_dav_cnt, otmb_dav_cnt       : std_logic_vector(15 downto 0);
   signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
   signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
-
+  signal otmb_tx_inner                    : std_logic_vector(48 downto 0);
 
   signal tp_sel_reg               : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg            : std_logic_vector(15 downto 0) := (others => '0');
@@ -1300,6 +1298,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pc_prbs_en_tst_cnt : std_logic_vector(15 downto 0);
   signal pc_prbs_rd_en      : std_logic;
   signal pc_prbs_err_cnt    : std_logic_vector(15 downto 0);
+
+  signal otmb_rx : std_logic_vector(5 downto 0);
+  signal otmb_tx : std_logic_vector(48 downto 0);
   
 begin
 
@@ -1531,7 +1532,6 @@ begin
       rawlct   => raw_lct,  -- rawlct(NFEB downto 0) - from -- from testctrl
       otmb_dav => int_otmb_dav,         -- lctdav1 - from J4
       alct_dav => int_alct_dav,         -- lctdav2 - from J4
-      rsvtd_in => rsvtd_in,             -- spare(7 DOWNTO 3) - to J4
 
 -- From GigaLinks
 
@@ -1900,9 +1900,17 @@ begin
       otmb_data => gen_otmb_data
       );
 
-  rsvtd_out(0) <= cafifo_l1a;
-  rsvtd_out(1) <= cafifo_l1a_match_in(NFEB+1);
-  rsvtd_out(2) <= cafifo_l1a_match_in(NFEB+2);
+  rsvtd_out(0) <= cafifo_l1a                  when otmb_rx(0) = '0' else otmb_rx(3);
+  rsvtd_out(1) <= cafifo_l1a_match_in(NFEB+1) when otmb_rx(0) = '0' else otmb_rx(4);
+  rsvtd_out(2) <= cafifo_l1a_match_in(NFEB+2) when otmb_rx(0) = '0' else otmb_rx(5);
+--  dmb_tx_odmb_inner <= dmb_tx_reserved & lct(7 downto 6) & alct_dav & eof_alct_data(16 downto 15) &
+--                       eof_alct_data_valid_b & lct(5 downto 0) & eof_otmb_data_valid_b & otmb_dav &
+--                       eof_otmb_data(16 downto 15) & eof_alct_data(14 downto 0) &
+--                       eof_otmb_data(14 downto 0);
+  otmb_tx      <= rsvtd_in(0) & rsvtd_in(1) & rsvtd_in(2) & rawlct(7 downto 6) & alctdav & alct(16 downto 15) &
+                  alct(17) & rawlct(5 downto 0) & otmb(17) & otmb(17) &
+                  otmb(16 downto 15) & alct(14 downto 0) &
+                  otmb(14 downto 0) when IS_SIMULATION = 0 else otmb_tx_tb;
 
   ALCT_FIFO_CASCADE : FIFO_CASCADE
     generic map (
@@ -2071,8 +2079,8 @@ begin
 
 ---------------------------  General assignments  ---------------------------
 -----------------------------------------------------------------------------
-  lctrqst(1) <= otmb_lct_rqst;
-  lctrqst(2) <= otmb_ext_trig;
+  lctrqst(1) <= otmb_lct_rqst when otmb_rx(0) = '0' else otmb_rx(0);
+  lctrqst(2) <= otmb_ext_trig when otmb_rx(0) = '0' else otmb_rx(1);
 
   gen_alct_sel  <= odmb_ctrl_reg(7);
   gen_otmb_sel  <= odmb_ctrl_reg(7);
@@ -2189,7 +2197,7 @@ begin
   
   qpll_clk160MHz_buf : IBUFDS_GTXE1 port map (I => qpll_clk160MHz_p, IB => qpll_clk160MHz_n, CEB => logicl,
                                               O => qpll_clk160MHz, ODIV2 => open);
-  qpll_clk160MHz_bufg : BUFG port map (O => clk160, I => qpll_clk160MHz);
+  qpll_clk160MHz_bufg : BUFR port map (O => clk160, CE => logich, CLR => logicl, I => qpll_clk160MHz);
 
   -- Clock for PC TX
   gl1_clk_buf_gtxe1 : IBUFDS_GTXE1 port map (I => gl1_clk_p, IB => gl1_clk_n, CEB => logicl,
