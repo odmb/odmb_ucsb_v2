@@ -573,6 +573,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG3      : in  std_logic_vector(15 downto 0);
+      BPI_CFG_BUSY      : in std_logic;  
       BPI_DONE          : in  std_logic
       );
   end component;
@@ -961,6 +962,7 @@ begin
       BPI_CFG_REG1      => CFG_REG1,
       BPI_CFG_REG2      => CFG_REG2,
       BPI_CFG_REG3      => CFG_REG3,
+      BPI_CFG_BUSY      => BPI_CFG_BUSY,
       BPI_DONE          => BPI_CFG_DONE
       );
 

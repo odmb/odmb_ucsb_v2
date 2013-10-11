@@ -2349,6 +2349,61 @@ begin
 
 
 
+  BPI_ctrl_i : BPI_ctrl
+    port map (
+      CLK               => clk2p5,      -- 40 MHz clock
+      CLK1MHZ           => clk1mhz,     --  1 MHz clock for timers
+      RST               => reset,
+-- Interface Signals to/from VME interface
+      BPI_CMD_FIFO_DATA => bpi_cmd_fifo_data,  -- Data for command FIFO
+      BPI_WE            => bpi_we,  -- Command FIFO write enable  (pulse one clock cycle for one write)
+      BPI_RE            => bpi_re,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
+      BPI_DSBL          => bpi_dsbl,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
+      BPI_ENBL          => bpi_enbl,  -- Enable  parsing of BPI commands in the command FIFO
+      BPI_RBK_FIFO_DATA => bpi_rbk_fifo_data,  -- Data on output of the Read back FIFO
+      BPI_RBK_WRD_CNT   => bpi_rbk_wrd_cnt,  -- Word count of the Read back FIFO (number of available reads)
+      BPI_STATUS        => bpi_status,  -- FIFO status bits and latest value of the PROM status register. 
+      BPI_TIMER         => bpi_timer,   -- General timer
+-- Signals to/from low level BPI interface
+      BPI_BUSY          => bpi_busy,  -- Operation in progress signal (not ready)
+      BPI_DATA_FROM     => bpi_data_from,  -- Data read from FLASH device      -- Data read from FLASH device
+      BPI_LOAD_DATA     => bpi_load_data,  -- Clock enable signal for capturing Data read from FLASH device
+      BPI_ACTIVE        => bpi_active,  -- output set to 1 when data lines are for BPI communications.
+      BPI_OP            => bpi_op,  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
+      BPI_ADDR          => bpi_addr,    -- Bank/Array Address
+      BPI_DATA_TO       => bpi_data_to,  -- Command or Data being written to FLASH device
+      BPI_EXECUTE       => bpi_execute,
+      -- Guido - Aug 26
+      BPI_CFG_DONE      => bpi_cfg_done,
+      BPI_CFG_REG_WE    => bpi_cfg_reg_we,
+      BPI_CFG_REG_IN    => bpi_cfg_reg_in
+      );
+
+  bpi_interface_i : bpi_interface
+    port map (
+      CLK          => clk2p5,           -- 40 MHz clock
+      RST          => reset,
+      ADDR         => bpi_addr,         -- Bank/Array Address 
+      CMD_DATA_OUT => bpi_data_to,  -- Command or Data being written to FLASH device
+      OP           => bpi_op,  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
+      EXECUTE      => bpi_execute,
+      DATA_IN      => bpi_data_from,    -- Data read from FLASH device
+      LOAD_DATA    => bpi_load_data,  -- Clock enable signal for capturing Data read from FLASH device
+      BUSY         => bpi_busy,    -- Operation in progress signal (not ready)
+-- signals for Dual purpose data lines
+      BPI_ACTIVE   => bpi_active,  -- set to 1 when data lines are for BPI communications.
+      DUAL_DATA    => dual_data_leds,  -- Data provided for non BPI communications
+-- external connections cooresponding to I/O pins
+      BPI_AD       => prom_a,
+      CFG_DAT      => prom_d,
+      RS0          => prom_a_21_rs0,
+      RS1          => prom_a_22_rs1,
+      FCS_B        => prom_cs_b,
+      FOE_B        => prom_oe_b,
+      FWE_B        => prom_we_b,
+      FLATCH_B     => prom_le_b
+      );
+
 ------------------------------------  Monitoring  ------------------------------------
 ---------------------------------------------------------------------------------------
 
@@ -2879,10 +2934,16 @@ begin
         tph(42) <= ccb_cmd(1);
 
       when x"001C" =>
-        tph(27) <= ccb_cal(2);
+        tph(27) <= int_l1a;
         tph(28) <= ccb_cal(1);
         tph(41) <= ccb_cal(0);
-        tph(42) <= ccb_cmd(0);
+        tph(42) <= raw_l1a;
+
+      when x"001D" =>
+        tph(27) <= vme_ds_b(0);
+        tph(28) <= vme_as_b;
+        tph(41) <= vme_dtack_v6_b;
+        tph(42) <= vme_write_b;
 
       when others =>
         tph(27) <= int_l1a;
@@ -2891,60 +2952,5 @@ begin
         tph(42) <= int_l1a_match(1);
     end case;
   end process;
-
-  BPI_ctrl_i : BPI_ctrl
-    port map (
-      CLK               => clk2p5,      -- 40 MHz clock
-      CLK1MHZ           => clk1mhz,     --  1 MHz clock for timers
-      RST               => reset,
--- Interface Signals to/from VME interface
-      BPI_CMD_FIFO_DATA => bpi_cmd_fifo_data,  -- Data for command FIFO
-      BPI_WE            => bpi_we,  -- Command FIFO write enable  (pulse one clock cycle for one write)
-      BPI_RE            => bpi_re,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
-      BPI_DSBL          => bpi_dsbl,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
-      BPI_ENBL          => bpi_enbl,  -- Enable  parsing of BPI commands in the command FIFO
-      BPI_RBK_FIFO_DATA => bpi_rbk_fifo_data,  -- Data on output of the Read back FIFO
-      BPI_RBK_WRD_CNT   => bpi_rbk_wrd_cnt,  -- Word count of the Read back FIFO (number of available reads)
-      BPI_STATUS        => bpi_status,  -- FIFO status bits and latest value of the PROM status register. 
-      BPI_TIMER         => bpi_timer,   -- General timer
--- Signals to/from low level BPI interface
-      BPI_BUSY          => bpi_busy,  -- Operation in progress signal (not ready)
-      BPI_DATA_FROM     => bpi_data_from,  -- Data read from FLASH device      -- Data read from FLASH device
-      BPI_LOAD_DATA     => bpi_load_data,  -- Clock enable signal for capturing Data read from FLASH device
-      BPI_ACTIVE        => bpi_active,  -- output set to 1 when data lines are for BPI communications.
-      BPI_OP            => bpi_op,  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
-      BPI_ADDR          => bpi_addr,    -- Bank/Array Address
-      BPI_DATA_TO       => bpi_data_to,  -- Command or Data being written to FLASH device
-      BPI_EXECUTE       => bpi_execute,
-      -- Guido - Aug 26
-      BPI_CFG_DONE      => bpi_cfg_done,
-      BPI_CFG_REG_WE    => bpi_cfg_reg_we,
-      BPI_CFG_REG_IN    => bpi_cfg_reg_in
-      );
-
-  bpi_interface_i : bpi_interface
-    port map (
-      CLK          => clk2p5,           -- 40 MHz clock
-      RST          => reset,
-      ADDR         => bpi_addr,         -- Bank/Array Address 
-      CMD_DATA_OUT => bpi_data_to,  -- Command or Data being written to FLASH device
-      OP           => bpi_op,  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
-      EXECUTE      => bpi_execute,
-      DATA_IN      => bpi_data_from,    -- Data read from FLASH device
-      LOAD_DATA    => bpi_load_data,  -- Clock enable signal for capturing Data read from FLASH device
-      BUSY         => bpi_busy,    -- Operation in progress signal (not ready)
--- signals for Dual purpose data lines
-      BPI_ACTIVE   => bpi_active,  -- set to 1 when data lines are for BPI communications.
-      DUAL_DATA    => dual_data_leds,  -- Data provided for non BPI communications
--- external connections cooresponding to I/O pins
-      BPI_AD       => prom_a,
-      CFG_DAT      => prom_d,
-      RS0          => prom_a_21_rs0,
-      RS1          => prom_a_22_rs1,
-      FCS_B        => prom_cs_b,
-      FOE_B        => prom_oe_b,
-      FWE_B        => prom_we_b,
-      FLATCH_B     => prom_le_b
-      );
 
 end ODMB_UCSB_V2_ARCH;
