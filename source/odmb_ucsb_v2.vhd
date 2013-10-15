@@ -867,6 +867,17 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       );
   end component;
 
+component GAP_COUNTER is
+  port (
+    GAP_COUNT : out std_logic_vector(15 downto 0);
+
+    CLK     : in std_logic;
+    RST     : in std_logic;
+    SIGNAL1 : in std_logic;
+    SIGNAL2 : in std_logic
+    );
+end component;
+
   component PULSE_EDGE is
     port (
       DOUT   : out std_logic;
@@ -1003,12 +1014,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   type   gap_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
   signal lct_l1a_gap                       : gap_cnt_type;
-  signal gap_cnt_rst, gap_cnt_en           : std_logic_vector(NFEB downto 1);
-  type   gap_state_type is (GAP_IDLE, GAP_COUNTING);
-  type   gap_state_array_type is array (NFEB downto 1) of gap_state_type;
-  signal gap_next_state, gap_current_state : gap_state_array_type;
-
-
+  signal l1a_otmbdav_gap, l1a_alctdav_gap : std_logic_vector(15 downto 0);
+  
   signal alct_dav_cnt, otmb_dav_cnt       : std_logic_vector(15 downto 0);
   signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
   signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
@@ -2424,6 +2431,7 @@ begin
   begin
     RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
     CRC_CNT    : COUNT_EDGES port map(goodcrc_cnt(dev), clk160, reset, crc_valid(dev));
+    LCTL1AGAP  : GAP_COUNTER port map(lct_l1a_gap(dev), clk40, reset, raw_lct(dev), int_l1a);
   end generate NFEB_CNT;
 
   NFEB2_CNT : for dev in 1 to NFEB+2 generate
@@ -2436,76 +2444,14 @@ begin
     CAFIFODAV_CNT : COUNT_EDGES port map(cafifo_l1a_dav_cnt(dev), cafifo_l1a_dav(dev), reset, logich);
   end generate NFEB2_CNT;
 
+    L1AALCTGAP  : GAP_COUNTER port map(l1a_alctdav_gap, clk40, reset, raw_l1a, int_alct_dav);
+    L1AOTMBGAP  : GAP_COUNTER port map(l1a_otmbdav_gap, clk40, reset, raw_l1a, int_otmb_dav);
+  
   -- Defined to count the ALCT and OTMB davs as well 
   into_cafifo_dav(NFEB downto 1) <= dcfeb_data_valid(NFEB downto 1);  -- MUXed from gen and real
   into_cafifo_dav(8)             <= otmb_fifo_data_valid;
   into_cafifo_dav(9)             <= alct_fifo_data_valid;
 
-
-  gap_cnt : process (clk40, reset, gap_cnt_rst, gap_cnt_en)
-    variable gap_cnt_data : gap_cnt_type;
-  begin
-    for dcfeb_index in 1 to NFEB loop
-      if (reset = '1') then
-        gap_cnt_data(dcfeb_index) := (others => '0');
-      elsif (rising_edge(clk40)) then
-        if (gap_cnt_rst(dcfeb_index) = '1') then
-          gap_cnt_data(dcfeb_index) := (others => '0');
-        elsif (gap_cnt_en(dcfeb_index) = '1') then
-          gap_cnt_data(dcfeb_index) := gap_cnt_data(dcfeb_index) + 1;
-        end if;
-      end if;
-
-      lct_l1a_gap(dcfeb_index) <= gap_cnt_data(dcfeb_index);
-    end loop;
-  end process;
-
-
-  gap_fsm_regs : process (gap_next_state, reset, clk40)
-  begin
-    for dcfeb_index in 1 to NFEB loop
-      if (reset = '1') then
-        gap_current_state(dcfeb_index) <= GAP_IDLE;
-      elsif rising_edge(clk40) then
-        gap_current_state(dcfeb_index) <= gap_next_state(dcfeb_index);
-      end if;
-    end loop;
-  end process;
-
-  gap_fsm_logic : process (gap_current_state, raw_lct, raw_l1a)
-  begin
-    for dcfeb_index in 1 to NFEB loop
-      case gap_current_state(dcfeb_index) is
-        when GAP_IDLE =>
-          if (raw_lct(dcfeb_index) = '1') then
-            gap_next_state(dcfeb_index) <= GAP_COUNTING;
-            gap_cnt_rst(dcfeb_index)    <= '1';
-            gap_cnt_en(dcfeb_index)     <= '0';
-          else
-            gap_next_state(dcfeb_index) <= GAP_IDLE;
-            gap_cnt_rst(dcfeb_index)    <= '0';
-            gap_cnt_en(dcfeb_index)     <= '0';
-          end if;
-          
-        when GAP_COUNTING =>
-          if (raw_l1a = '1') then
-            gap_next_state(dcfeb_index) <= GAP_IDLE;
-            gap_cnt_rst(dcfeb_index)    <= '0';
-            gap_cnt_en(dcfeb_index)     <= '0';
-          else
-            gap_next_state(dcfeb_index) <= GAP_COUNTING;
-            gap_cnt_rst(dcfeb_index)    <= '0';
-            gap_cnt_en(dcfeb_index)     <= '1';
-          end if;
-
-        when others =>
-          gap_next_state(dcfeb_index) <= GAP_IDLE;
-          gap_cnt_rst(dcfeb_index)    <= '1';
-          gap_cnt_en(dcfeb_index)     <= '0';
-          
-      end case;
-    end loop;
-  end process;
 
 
   clk_led <= clk2p5;
@@ -2670,9 +2616,9 @@ begin
       when x"35" => odmb_data <= lct_l1a_gap(5);
       when x"36" => odmb_data <= lct_l1a_gap(6);
       when x"37" => odmb_data <= lct_l1a_gap(7);
+      when x"38" => odmb_data <= l1a_otmbdav_gap;
+      when x"39" => odmb_data <= l1a_alctdav_gap;
 
-      when x"38" => odmb_data <= "0000000" & cafifo_l1a_match_out;
-      when x"39" => odmb_data <= "0000000" & cafifo_l1a_dav;
       when x"3A" => odmb_data <= "00000000" & cafifo_l1a_cnt(23 downto 16);
       when x"3B" => odmb_data <= cafifo_l1a_cnt(15 downto 0);
       when x"3C" => odmb_data <= "0000" & cafifo_bx_cnt;
@@ -2693,6 +2639,8 @@ begin
       when x"4A" => odmb_data <= ddu_eof_cnt;  -- Number of packets sent to DDU
       when x"4B" => odmb_data <= gtx1_data_valid_cnt;  -- Number of packets sent to PC
       when x"4C" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
+      when x"4D" => odmb_data <= "0000000" & cafifo_l1a_match_out;
+      when x"4E" => odmb_data <= "0000000" & cafifo_l1a_dav;
 
       when x"51" => odmb_data <= data_fifo_re_cnt(1);  -- from control to FIFOs in top
       when x"52" => odmb_data <= data_fifo_re_cnt(2);  -- from control to FIFOs in top
