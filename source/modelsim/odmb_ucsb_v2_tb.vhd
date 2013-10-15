@@ -713,12 +713,6 @@ begin
 
   dtack <= 'H';
 
-  otmb_prbs_tx_en <= '0', '1' after 30000 ns;
-  PE_OTMB_PRBS_TX_EN : PULSE_EDGE port map(pulse_otmb_prbs_tx_en, open, clk, rst, 1024, otmb_prbs_tx_en);
-
-  PRBS_GEN_PM : PRBS_GEN port map(otmb_prbs_tx, clk, rst, pulse_otmb_prbs_tx_en);
-  otmb_tx <= (48 => pulse_otmb_prbs_tx_en, others => otmb_prbs_tx);
-
 -- Beginning of the Test Bench Section
 
 -- End of the Test Bench Section
@@ -1094,5 +1088,12 @@ begin
       pon_out  => r_lvmb_pon);
 
   error <= '0';
+
+-- PRBS tests
+  otmb_prbs_tx_en <= '0', '1' after 30000 ns;
+  PE_OTMB_PRBS_TX_EN : PULSE_EDGE port map(pulse_otmb_prbs_tx_en, open, clk, rst, 1024, otmb_prbs_tx_en);
+
+  PRBS_GEN_PM : PRBS_GEN port map(otmb_prbs_tx, clk, rst, pulse_otmb_prbs_tx_en);
+  otmb_tx <= (48 => pulse_otmb_prbs_tx_en, others => otmb_prbs_tx);
 
 end ODMB_UCSB_V2_TB_arch;

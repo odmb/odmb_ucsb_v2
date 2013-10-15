@@ -7,6 +7,11 @@
 =                                                                    =
 ======================================================================
 
+V01-06: 14 October 2013, Manuel
+--------------------------------
+Coded BPI_PORT in VHDL to avoid dobule DTACK.
+Rolled back the old control.vhd (CERN request).
+
 V01-05: 29 September 2013, Manuel
 --------------------------------
 Moved header ahead to avoid DDU timeouts.
