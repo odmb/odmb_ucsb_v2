@@ -17,8 +17,8 @@ use hdlmacro.hdlmacro.all;
 
 entity cafifo is
   generic (
-    NFEB      : integer range 1 to 7  := 5;  -- Number of DCFEBS, 7 in the final design
-    FIFO_SIZE : integer range 1 to 64 := 32  -- Number of CAFIFO words
+    NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
+    CAFIFO_SIZE : integer range 1 to 64 := 32  -- Number of CAFIFO words
     );  
   port(
 
@@ -98,13 +98,13 @@ architecture cafifo_architecture of cafifo is
   type ext_dcfeb_l1a_cnt_array_type is array (NFEB downto 1) of std_logic_vector(23 downto 0);
   signal ext_dcfeb_l1a_cnt : ext_dcfeb_l1a_cnt_array_type;
 
-  type l1a_cnt_array_type is array (FIFO_SIZE-1 downto 0) of std_logic_vector(23 downto 0);
+  type l1a_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(23 downto 0);
   signal l1a_cnt : l1a_cnt_array_type;
 
-  type bx_cnt_array_type is array (FIFO_SIZE-1 downto 0) of std_logic_vector(15 downto 0);
+  type bx_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(15 downto 0);
   signal bx_cnt : bx_cnt_array_type;
 
-  type l1a_array_type is array (FIFO_SIZE-1 downto 0) of std_logic_vector(NFEB+2 downto 1);
+  type l1a_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(NFEB+2 downto 1);
   signal l1a_match : l1a_array_type;
   signal l1a_dav, reg_l1a_dav   : l1a_array_type;
 
@@ -252,7 +252,7 @@ begin
   l1a_cnt_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_cnt_out)
   begin
     if (rst = '1') then
-      for index in 0 to FIFO_SIZE-1 loop
+      for index in 0 to CAFIFO_SIZE-1 loop
         l1a_cnt(index) <= (others => '1');
       end loop;
     elsif rising_edge(clk) then
@@ -267,7 +267,7 @@ begin
   bx_cnt_fifo : process (cafifo_wren, wr_addr_out, bxcnt_rst, clk, bx_cnt_out)
   begin
     if (bxcnt_rst = '1') then
-      for index in 0 to FIFO_SIZE-1 loop
+      for index in 0 to CAFIFO_SIZE-1 loop
         bx_cnt(index) <= (others => '0');
       end loop;
     elsif rising_edge(clk) then
@@ -282,7 +282,7 @@ begin
   l1a_match_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_match_in)
   begin
     if (rst = '1') then
-      for index in 0 to FIFO_SIZE-1 loop
+      for index in 0 to CAFIFO_SIZE-1 loop
         l1a_match(index) <= (others => '0');
       end loop;
     elsif rising_edge(clk) then
@@ -328,7 +328,7 @@ begin
         DO          => l1acnt_dav_fifo_out(dev)      -- Output data
         );
 
-    GEN_L1A_DAV : for index in 0 to FIFO_SIZE-1 generate
+    GEN_L1A_DAV : for index in 0 to CAFIFO_SIZE-1 generate
       FDDAV : FD port map(reg_l1a_dav(index)(dev), dcfebclk, l1a_dav(index)(dev));
       l1a_dav(index)(dev) <= '0' when (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) else
                              '1' when (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and eof_data(dev) = '1') else
@@ -351,14 +351,14 @@ begin
       addr_wr_data := 0;
     elsif (rising_edge(clk)) then
       if (wr_addr_en = '1') then
-        if (addr_wr_data = FIFO_SIZE-1) then
+        if (addr_wr_data = CAFIFO_SIZE-1) then
           addr_wr_data := 0;
         else
           addr_wr_data := addr_wr_data + 1;
         end if;
       end if;
       if (rd_addr_en = '1') then
-        if (addr_rd_data = FIFO_SIZE-1) then
+        if (addr_rd_data = CAFIFO_SIZE-1) then
           addr_rd_data := 0;
         else
           addr_rd_data := addr_rd_data + 1;

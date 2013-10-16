@@ -101,6 +101,7 @@ entity ODMB_VME is
 
 -- From VMEMON
     OPT_RESET_PULSE : out std_logic;
+    L1A_RESET_PULSE : out std_logic;
     FW_RESET        : out std_logic;
     RESYNC          : out std_logic;
     REPROG_B        : out std_logic;
@@ -327,6 +328,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       DCFEB_DONE : in std_logic_vector(NFEB downto 1);
 
       OPT_RESET_PULSE : out std_logic;
+      L1A_RESET_PULSE : out std_logic;
       FW_RESET        : out std_logic;
       RESYNC          : out std_logic;
       REPROG_B        : out std_logic;
@@ -830,6 +832,7 @@ begin
       DCFEB_DONE => dcfeb_done,
 
       OPT_RESET_PULSE => opt_reset_pulse,
+      L1A_RESET_PULSE => l1a_reset_pulse,
       FW_RESET        => fw_reset,
       RESYNC          => resync,
       REPROG_B        => reprog_b,

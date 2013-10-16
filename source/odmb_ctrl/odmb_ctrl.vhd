@@ -9,7 +9,7 @@ entity ODMB_CTRL is
   generic (
     NFIFO     : integer range 1 to 16 := 16;  -- Number of FIFOs in PCFIFO
     NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
-    FIFO_SIZE : integer range 1 to 64 := 32  -- Number FIFO words in CAFIFO
+    CAFIFO_SIZE : integer range 1 to 64 := 64  -- Number FIFO words in CAFIFO
     );  
   port (
 
@@ -447,7 +447,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   component cafifo is
     generic (
       NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
-      FIFO_SIZE : integer range 1 to 64 := 16  -- Number of CAFIFO words
+      CAFIFO_SIZE : integer range 1 to 64 := 16  -- Number of CAFIFO words
       );  
     port(
 
@@ -761,11 +761,11 @@ begin
   cafifo_l1a <= cafifo_push;
 
   CAFIFO_PM : cafifo
-    generic map (NFEB => NFEB, FIFO_SIZE => FIFO_SIZE)
+    generic map (NFEB => NFEB, CAFIFO_SIZE => 32)
     port map(
       clk        => clk40,
       dcfebclk   => clk160,
-      rst        => reset,
+      rst        => l1acnt_rst,
       resync     => resync,
       l1acnt_rst => l1acnt_rst,
       bxcnt_rst  => bxcnt_rst,
@@ -814,7 +814,7 @@ begin
     port map(
       CLK    => dduclk,                 -- CLKDDU?
       CLKCMS => clk40,
-      RST    => reset,
+      RST    => l1acnt_rst,
       STATUS => status,
       L1ARST => l1arst,                 -- from CCBCODE
 
@@ -863,7 +863,7 @@ begin
 
       clk_in  => dduclk,
       clk_out => pcclk,
-      rst     => reset,
+      rst     => l1acnt_rst,
 
       tx_ack => gl_pc_tx_ack,
       --tx_ack => logich,

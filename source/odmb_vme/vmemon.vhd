@@ -30,6 +30,7 @@ entity VMEMON is
     DCFEB_DONE : in std_logic_vector(NFEB downto 1);
 
     OPT_RESET_PULSE : out std_logic;
+    L1A_RESET_PULSE : out std_logic;
     FW_RESET        : out std_logic;
     RESYNC          : out std_logic;
     REPROG_B        : out std_logic;
@@ -83,7 +84,8 @@ architecture VMEMON_Arch of VMEMON is
   signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST : std_logic                     := '0';
   signal LCT_RQST_RST, EXT_TRIG_RST, OPT_RESET_PULSE_RST    : std_logic                     := '0';
   signal REPROG, DO_RESYNC, TEST_LCT_RST, RESET_RST         : std_logic                     := '0';
-
+  signal L1A_RESET_PULSE_RST : std_logic;
+  
   signal OUT_LOOPBACK                           : std_logic_vector(15 downto 0) := (others => '0');
   signal LOOPBACK_INNER                         : std_logic_vector(2 downto 0);
   signal W_LOOPBACK, D_W_LOOPBACK, Q_W_LOOPBACK : std_logic                     := '0';
@@ -140,10 +142,12 @@ begin
   GEN_ODMB_CTRL : for K in 0 to 15 generate
   begin
     ODMB_RST(K) <= RESET_RST when K = 8 else
+                   L1A_RESET_PULSE_RST when K = 15 else
                    RST;
     ODMB_CTRL_K : FDCE port map (ODMB_CTRL_INNER(K), STROBE, W_ODMB_CTRL, ODMB_RST(K), INDATA(K));
   end generate GEN_ODMB_CTRL;
-  PULSE_RESET : PULSE_EDGE port map(fw_reset, reset_rst, slowclk, rst, 2, odmb_ctrl_inner(8));
+  PULSE_RESET  : PULSE_EDGE port map(fw_reset, reset_rst, slowclk, rst, 2, odmb_ctrl_inner(8));
+  PULSE_L1ARST : PULSE_EDGE port map(l1a_reset_pulse, l1a_reset_pulse_rst, clk40, rst, 10, odmb_ctrl_inner(15));
   ODMB_CTRL <= ODMB_CTRL_INNER;
 
 

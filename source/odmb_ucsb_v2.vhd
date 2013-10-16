@@ -373,6 +373,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       -- From VMEMON
       OPT_RESET_PULSE : out std_logic;
+      L1A_RESET_PULSE : out std_logic;
       FW_RESET        : out std_logic;
       RESYNC          : out std_logic;
       REPROG_B        : out std_logic;
@@ -867,16 +868,16 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       );
   end component;
 
-component GAP_COUNTER is
-  port (
-    GAP_COUNT : out std_logic_vector(15 downto 0);
+  component GAP_COUNTER is
+    port (
+      GAP_COUNT : out std_logic_vector(15 downto 0);
 
-    CLK     : in std_logic;
-    RST     : in std_logic;
-    SIGNAL1 : in std_logic;
-    SIGNAL2 : in std_logic
-    );
-end component;
+      CLK     : in std_logic;
+      RST     : in std_logic;
+      SIGNAL1 : in std_logic;
+      SIGNAL2 : in std_logic
+      );
+  end component;
 
   component PULSE_EDGE is
     port (
@@ -1013,9 +1014,9 @@ end component;
   signal dcfeb_l1a_dav7     : std_logic;
 
   type   gap_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
-  signal lct_l1a_gap                       : gap_cnt_type;
+  signal lct_l1a_gap                      : gap_cnt_type;
   signal l1a_otmbdav_gap, l1a_alctdav_gap : std_logic_vector(15 downto 0);
-  
+
   signal alct_dav_cnt, otmb_dav_cnt       : std_logic_vector(15 downto 0);
   signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
   signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
@@ -1169,6 +1170,7 @@ end component;
   signal pon_rst_reg, fw_rst_reg, opt_rst_reg : std_logic_vector (31 downto 0) := (others => '0');
   signal reset, opt_reset, fw_reset_q         : std_logic                      := '0';
   signal opt_reset_pulse, opt_reset_pulse_q   : std_logic                      := '0';
+  signal l1a_reset_pulse, l1acnt_rst_pulse    : std_logic                      := '0';
   signal pon_reset                            : std_logic;
 
   signal mbc_leds : std_logic_vector (6 downto 0);
@@ -1392,6 +1394,7 @@ begin
 
 -- From VMEMON    
       OPT_RESET_PULSE => opt_reset_pulse,
+      L1A_RESET_PULSE => l1a_reset_pulse,
       FW_RESET        => fw_reset,
       resync          => resync,
       reprog_b        => odmb_hardrst_b,
@@ -1825,7 +1828,7 @@ begin
       port map(
         clk          => clk40,
         dcfebclk     => clk160,
-        rst          => reset,
+        rst          => l1acnt_rst,
         l1a          => int_l1a,
         l1a_match    => int_l1a_match(I),
         tx_ack       => logich,
@@ -1878,7 +1881,7 @@ begin
         DI    => eofgen_dcfeb_fifo_in(I),    -- Input data
         RDCLK => dduclk,                     -- Input read clock
         RDEN  => data_fifo_re(I),            -- Input read enable
-        RST   => reset,                      -- Input reset
+        RST   => l1acnt_rst,                 -- Input reset
         WRCLK => clk160,                     -- Input write clock
         WREN  => eofgen_dcfeb_data_valid(I)  -- Input write enable
         );
@@ -1935,7 +1938,7 @@ begin
       DI    => alct_fifo_data_in,       -- Input data
       RDCLK => dduclk,                  -- Input read clock
       RDEN  => data_fifo_re(NFEB+2),    -- Input read enable
-      RST   => reset,                   -- Input reset
+      RST   => l1acnt_rst,              -- Input reset
       WRCLK => clk40,                   -- Input write clock
       WREN  => alct_fifo_data_valid     -- Input write enable
       );
@@ -2151,9 +2154,10 @@ begin
   reset     <= fw_rst_reg(31) or pon_rst_reg(31) or not pb(0);  -- Firmware reset
   opt_reset <= opt_rst_reg(31) or pon_rst_reg(31);  -- Optical reset
 
-  -- Threw the kitchen sink here. This needs to be checked
-  l1acnt_rst <= not ccb_evcntres or not ccb_l1arst or reset;
-  bxcnt_rst  <= not ccb_bxrst or reset;
+  -- FIFOs require more than 1 clock cycle to properly reset
+  l1acnt_rst_pulse <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse or reset;
+  PULSE_L1A : PULSE_EDGE port map(l1acnt_rst, open, clk40, reset, 10, l1acnt_rst_pulse);
+  bxcnt_rst        <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
   PULLDOWN_DCFEB_TMS : PULLDOWN port map (int_tms);
@@ -2444,9 +2448,9 @@ begin
     CAFIFODAV_CNT : COUNT_EDGES port map(cafifo_l1a_dav_cnt(dev), cafifo_l1a_dav(dev), reset, logich);
   end generate NFEB2_CNT;
 
-    L1AALCTGAP  : GAP_COUNTER port map(l1a_alctdav_gap, clk40, reset, raw_l1a, int_alct_dav);
-    L1AOTMBGAP  : GAP_COUNTER port map(l1a_otmbdav_gap, clk40, reset, raw_l1a, int_otmb_dav);
-  
+  L1AALCTGAP : GAP_COUNTER port map(l1a_alctdav_gap, clk40, reset, raw_l1a, int_alct_dav);
+  L1AOTMBGAP : GAP_COUNTER port map(l1a_otmbdav_gap, clk40, reset, raw_l1a, int_otmb_dav);
+
   -- Defined to count the ALCT and OTMB davs as well 
   into_cafifo_dav(NFEB downto 1) <= dcfeb_data_valid(NFEB downto 1);  -- MUXed from gen and real
   into_cafifo_dav(8)             <= otmb_fifo_data_valid;
