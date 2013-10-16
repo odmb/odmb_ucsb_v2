@@ -7,6 +7,11 @@
 =                                                                    =
 ======================================================================
 
+V01-07: 15 October 2013, Manuel
+--------------------------------
+Added counters for the gaps between L1A and OTMB/ALCT DAVs.
+Applied L1ACNT_RST to FIFOs, CAFIFO, CONTROL, and PCFIFO.
+
 V01-06: 14 October 2013, Manuel
 --------------------------------
 Coded BPI_PORT in VHDL to avoid dobule DTACK.
