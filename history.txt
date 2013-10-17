@@ -7,6 +7,10 @@
 =                                                                    =
 ======================================================================
 
+V01-08: 16 October 2013, Manuel
+--------------------------------
+Bypassed PLSINJEN to avoid the jitter on EXTPLS/INJPLS.
+
 V01-07: 15 October 2013, Manuel
 --------------------------------
 Added counters for the gaps between L1A and OTMB/ALCT DAVs.

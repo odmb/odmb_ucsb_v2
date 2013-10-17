@@ -85,7 +85,7 @@ architecture pcfifo_architecture of pcfifo is
 
   signal fifo_in, fifo_out         : std_logic_vector(17 downto 0);
   signal fifo_empty                : std_logic;
-  signal fifo_full                 : std_logic;
+  signal fifo_full, fifo_rst       : std_logic;
   signal fifo_wren, bof, bof_pulse : std_logic;
 
   signal pck_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
@@ -117,9 +117,10 @@ begin
 
 
 -- FIFOs
-  FDFIRST : FDCP port map(first_in, ld_in_q, dv_in_pulse, logich, rst);
+  FDFIRST  : FDCP port map(first_in, ld_in_q, dv_in_pulse, logich, rst);
   fifo_wren <= dv_in or ld_in_q;
   fifo_in   <= first_in & '0' & data_in when ld_in_q = '0' else "01" & pck_cnt_total;
+  PULSERST : PULSE_EDGE port map(fifo_rst, open, clk_out, '0', 3, rst);
 
   PC_FIFO_CASCADE : FIFO_CASCADE
     generic map (
@@ -137,7 +138,7 @@ begin
       DI    => fifo_in,                 -- Input data
       RDCLK => clk_out,                 -- Input read clock
       RDEN  => f0_rden,                 -- Input read enable
-      RST   => rst,                     -- Input reset
+      RST   => fifo_rst,                -- Input reset
       WRCLK => clk_in,                  -- Input write clock
       WREN  => fifo_wren                -- Input write enable
       );

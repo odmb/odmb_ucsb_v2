@@ -1828,7 +1828,7 @@ begin
       port map(
         clk          => clk40,
         dcfebclk     => clk160,
-        rst          => l1acnt_rst,
+        rst          => reset,
         l1a          => int_l1a,
         l1a_match    => int_l1a_match(I),
         tx_ack       => logich,
@@ -2156,7 +2156,7 @@ begin
 
   -- FIFOs require more than 1 clock cycle to properly reset
   l1acnt_rst_pulse <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse or reset;
-  PULSE_L1A : PULSE_EDGE port map(l1acnt_rst, open, clk40, reset, 10, l1acnt_rst_pulse);
+  PULSE_L1A : PULSE_EDGE port map(l1acnt_rst, open, clk40, logicl, 20, l1acnt_rst_pulse);
   bxcnt_rst        <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
@@ -2209,6 +2209,7 @@ begin
   qpll_clk160MHz_buf : IBUFDS_GTXE1 port map (I => qpll_clk160MHz_p, IB => qpll_clk160MHz_n, CEB => logicl,
                                               O => qpll_clk160MHz, ODIV2 => open);
   qpll_clk160MHz_bufg : BUFR port map (O => clk160, CE => logich, CLR => logicl, I => qpll_clk160MHz);
+  --qpll_clk160MHz_bufg : BUFG port map (O => clk160, I => qpll_clk160MHz);
 
   -- Clock for PC TX
   gl1_clk_buf_gtxe1 : IBUFDS_GTXE1 port map (I => gl1_clk_p, IB => gl1_clk_n, CEB => logicl,

@@ -414,7 +414,10 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 -- clock and reset signals
 
   signal go, goevent, goccb : std_logic := '0';
+  signal goccbcal0 : std_logic := '0';
 
+  signal ccb_cal_tb : std_logic_vector(2 downto 0);
+  
   signal clk  : std_logic := '0';
   signal rst  : std_logic := '0';
   signal rstn : std_logic := '1';
@@ -673,7 +676,10 @@ begin
   go    <= '1' after 15 us;
   --goevent <= '1' after 300 us;
   goccb <= '1' after 29 us;
+  goccbcal0 <= '1', '0' after 20 us, '1' after 20.025 us;
 
+  ccb_cal_tb <= goccbcal0 & goccbcal0 & goccbcal0;
+  
   qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 12.5 ns;
   qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 12.5 ns;
   qpll_clk80MHz_p  <= not qpll_clk80MHz_p  after 6.25 ns;
@@ -795,7 +801,7 @@ begin
       ccb_cmd_s   => ccb_cmd_s,         -- in - from file_handler_ccb
       ccb_data    => ccb_data,          -- in - from file_handler_ccb
       ccb_data_s  => ccb_data_s,        -- in - from file_handler_ccb
-      ccb_cal     => ccb_cal,           -- in - from file_handler_ccb
+      ccb_cal     => ccb_cal_tb,           -- in - from file_handler_ccb
       ccb_crsv    => ccb_crsv,          -- in
       ccb_drsv    => ccb_drsv,          -- in
       ccb_rsvo    => ccb_rsvo,          -- in

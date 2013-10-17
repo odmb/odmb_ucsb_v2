@@ -2,13 +2,17 @@
 
 library ieee;
 library work;
-use work.Latches_Flipflops.all;
+--use work.Latches_Flipflops.all;
 use ieee.std_logic_1164.all;
+--library hdlmacro;
+--use hdlmacro.hdlmacro.all;
+library UNISIM;
+use UNISIM.vcomponents.all;
 
 entity ODMB_CTRL is
   generic (
-    NFIFO     : integer range 1 to 16 := 16;  -- Number of FIFOs in PCFIFO
-    NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
+    NFIFO       : integer range 1 to 16 := 16;  -- Number of FIFOs in PCFIFO
+    NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
     CAFIFO_SIZE : integer range 1 to 64 := 64  -- Number FIFO words in CAFIFO
     );  
   port (
@@ -41,9 +45,9 @@ entity ODMB_CTRL is
     ccb_l1rls  : out std_logic;         -- l1rls - to J3
     ccb_clken  : in  std_logic;         -- clken - from J3
 
-    rawlct    : in  std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
-    otmb_dav  : in  std_logic;          -- previously lctdav1, from J4
-    alct_dav  : in  std_logic;          -- previously lctdav2, from J4
+    rawlct   : in std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
+    otmb_dav : in std_logic;            -- previously lctdav1, from J4
+    alct_dav : in std_logic;            -- previously lctdav2, from J4
 
 -- From GigaLinks
 
@@ -71,7 +75,7 @@ entity ODMB_CTRL is
     fifo_empty_b : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs 
 
 -- From CAFIFO to Data FIFOs
-    cafifo_l1a : out std_logic;
+    cafifo_l1a           : out std_logic;
     cafifo_l1a_match_in  : out std_logic_vector(NFEB+2 downto 1);  -- From TRGCNTRL to CAFIFO to generate Data  
     cafifo_l1a_match_out : out std_logic_vector(NFEB+2 downto 1);  -- From CAFIFO to CONTROL  
     cafifo_l1a_cnt       : out std_logic_vector(23 downto 0);
@@ -121,7 +125,7 @@ entity ODMB_CTRL is
     dcfeb_l1a       : out std_logic;
     dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
     PEDESTAL        : in  std_logic;
-    PEDESTAL_OTMB        : in  std_logic;
+    PEDESTAL_OTMB   : in  std_logic;
 
     tck : in  std_logic;
     tdi : in  std_logic;
@@ -353,13 +357,13 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       ALCT_PUSH_DLY : in std_logic_vector(4 downto 0);
       OTMB_PUSH_DLY : in std_logic_vector(4 downto 0);
 
-      JTRGEN    : in std_logic_vector(3 downto 0);
-      EAFEB     : in std_logic;
-      CMODE     : in std_logic;
-      CALTRGSEL : in std_logic;
-      KILL      : in std_logic_vector(NFEB+2 downto 1);
-      PEDESTAL  : in std_logic;
-      PEDESTAL_OTMB        : in  std_logic;
+      JTRGEN        : in std_logic_vector(3 downto 0);
+      EAFEB         : in std_logic;
+      CMODE         : in std_logic;
+      CALTRGSEL     : in std_logic;
+      KILL          : in std_logic_vector(NFEB+2 downto 1);
+      PEDESTAL      : in std_logic;
+      PEDESTAL_OTMB : in std_logic;
 
       L1A_OTMB_PUSHED_OUT : out std_logic;
       OTMB_DAV_SYNC_OUT   : out std_logic;
@@ -446,7 +450,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
   component cafifo is
     generic (
-      NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
+      NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
       CAFIFO_SIZE : integer range 1 to 64 := 16  -- Number of CAFIFO words
       );  
     port(
@@ -659,13 +663,13 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
 -- CALIBTRG outputs
 
-  signal cal_pedestal   : std_logic;
-  signal cal_gtrg   : std_logic;
-  signal callct_1   : std_logic;
-  signal inject     : std_logic;
-  signal pulse      : std_logic;
-  signal prelctrqst : std_logic;
-  signal injplsmon  : std_logic;
+  signal cal_pedestal : std_logic;
+  signal cal_gtrg     : std_logic;
+  signal callct_1     : std_logic;
+  signal inject       : std_logic;
+  signal pulse        : std_logic;
+  signal prelctrqst   : std_logic;
+  signal injplsmon    : std_logic;
 
 -------------------------------------------------------------------------------
 
@@ -740,13 +744,13 @@ begin
       ALCT_PUSH_DLY => alct_push_dly,
       OTMB_PUSH_DLY => otmb_push_dly,
 
-      JTRGEN    => cal_trgen,
-      EAFEB     => enacfeb,
-      CMODE     => cal_mode,
-      CALTRGSEL => cal_trgsel,
-      KILL      => kill(NFEB+2 downto 1),
-      PEDESTAL  => pedestal,
-      PEDESTAL_OTMB  => pedestal_otmb,
+      JTRGEN        => cal_trgen,
+      EAFEB         => enacfeb,
+      CMODE         => cal_mode,
+      CALTRGSEL     => cal_trgsel,
+      KILL          => kill(NFEB+2 downto 1),
+      PEDESTAL      => pedestal,
+      PEDESTAL_OTMB => pedestal_otmb,
 
       L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
       OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT,
@@ -1102,21 +1106,30 @@ begin
   ccbplsin <= '1' when (ccb_cal(0) = '0' or ttccal(0) = '1') else '0';
 
 -- generate CCBINJ
-  FD(ccbinjin, clk40, ccbinjin_1);
-  FD(ccbinjin_1, clk40, ccbinjin_2);
+  FD_ccbinjin_1 : FD port map(ccbinjin_1, clk40, ccbinjin);
+  FD_ccbinjin_2 : FD port map(ccbinjin_2, clk40, ccbinjin_1);
+  --  FD(ccbinjin, clk40, ccbinjin_1);
+  --  FD(ccbinjin_1, clk40, ccbinjin_2);
   ccbinjin_3 <= '1' when (plsinjen = '1' and (ccbinjin_1 = '1' or ccbinjin_2 = '1')) else '0';
-  FD(ccbinjin_3, clk40, ccbinj);
+  FD_ccbinj     : FD port map(ccbinj, clk40, ccbinjin_2);
+  --  FD(ccbinjin_3, clk40, ccbinj);
 
 -- generate CCBPLS
-  FD(ccbplsin, clk40, ccbplsin_1);
-  FD(ccbplsin_1, clk40, ccbplsin_2);
+  FD_ccbplsin_1 : FD port map(ccbplsin_1, clk40, ccbplsin);
+  FD_ccbplsin_2 : FD port map(ccbplsin_2, clk40, ccbplsin_1);
+  --FD(ccbplsin, clk40, ccbplsin_1);
+  --FD(ccbplsin_1, clk40, ccbplsin_2);
   ccbplsin_3 <= '1' when (plsinjen = '1' and (ccbplsin_1 = '1' or ccbplsin_2 = '1')) else '0';
-  FD(ccbplsin_3, clk40, ccbpls);
+  FD_ccbpls     : FD port map(ccbpls, clk40, ccbplsin_2);
+  --FD(ccbplsin_3, clk40, ccbpls);
 
 -- generate PLSINJEN (CLKSYN inside CALTRIGCON inside of JTAGCOM)
-  FDC(LOGICH, reset, plsinjen_rst, plsinjen_1);
-  FD(plsinjen_1, clk40, plsinjen_rst);
-  FDC(plsinjen_inv, clk40, plsinjen_rst, plsinjen_inner);
+  FDC_plsinjen_1     : FDC port map (plsinjen_1, reset, plsinjen_rst, LOGICH);
+  FD_plsinjen_rst    : FD port map (plsinjen_rst, clk40, plsinjen_1);
+  FDC_plsinjen_inner : FDC port map (plsinjen_inner, clk40, plsinjen_rst, plsinjen_inv);
+  --  FDC(LOGICH, reset, plsinjen_rst, plsinjen_1);
+  --  FD(plsinjen_1, clk40, plsinjen_rst);
+  -- FDC(plsinjen_inv, clk40, plsinjen_rst, plsinjen_inner);
   plsinjen     <= plsinjen_inner;
   plsinjen_inv <= not plsinjen_inner;
 
