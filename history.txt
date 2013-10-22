@@ -7,6 +7,11 @@
 =                                                                    =
 ======================================================================
 
+V01-09: 21 October 2013, Manuel
+--------------------------------
+Forward L1A resets to DCFEBs, fixed slot/crateid on ODMB headers.
+Reversed jitter fix on EXTPLS (PLINJEN not bypassed anymore).
+
 V01-08: 16 October 2013, Manuel
 --------------------------------
 Bypassed PLSINJEN to avoid the jitter on EXTPLS/INJPLS.
