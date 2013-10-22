@@ -32,7 +32,6 @@ entity VMEMON is
     OPT_RESET_PULSE : out std_logic;
     L1A_RESET_PULSE : out std_logic;
     FW_RESET        : out std_logic;
-    RESYNC          : out std_logic;
     REPROG_B        : out std_logic;
     TEST_INJ        : out std_logic;
     TEST_PLS        : out std_logic;
@@ -83,8 +82,7 @@ architecture VMEMON_Arch of VMEMON is
   signal ODMB_RST, DCFEB_RST                                : std_logic_vector(15 downto 0) := (others => '0');
   signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST : std_logic                     := '0';
   signal LCT_RQST_RST, EXT_TRIG_RST, OPT_RESET_PULSE_RST    : std_logic                     := '0';
-  signal REPROG, DO_RESYNC, TEST_LCT_RST, RESET_RST         : std_logic                     := '0';
-  signal L1A_RESET_PULSE_RST : std_logic;
+  signal REPROG, TEST_LCT_RST, RESET_RST         : std_logic                     := '0';
   
   signal OUT_LOOPBACK                           : std_logic_vector(15 downto 0) := (others => '0');
   signal LOOPBACK_INNER                         : std_logic_vector(2 downto 0);
@@ -142,12 +140,10 @@ begin
   GEN_ODMB_CTRL : for K in 0 to 15 generate
   begin
     ODMB_RST(K) <= RESET_RST when K = 8 else
-                   L1A_RESET_PULSE_RST when K = 15 else
                    RST;
     ODMB_CTRL_K : FDCE port map (ODMB_CTRL_INNER(K), STROBE, W_ODMB_CTRL, ODMB_RST(K), INDATA(K));
   end generate GEN_ODMB_CTRL;
   PULSE_RESET  : PULSE_EDGE port map(fw_reset, reset_rst, slowclk, rst, 2, odmb_ctrl_inner(8));
-  PULSE_L1ARST : PULSE_EDGE port map(l1a_reset_pulse, l1a_reset_pulse_rst, clk40, rst, 10, odmb_ctrl_inner(15));
   ODMB_CTRL <= ODMB_CTRL_INNER;
 
 
@@ -165,8 +161,7 @@ begin
     ODMB_DCFEB_K : FDCE port map (DCFEB_CTRL_INNER(K), STROBE, W_DCFEB_CTRL, DCFEB_RST(K), INDATA(K));
   end generate GEN_DCFEB_CTRL;
   PULSE_REPROG : PULSE_EDGE port map(reprog, reprog_rst, slowclk, rst, 2, dcfeb_ctrl_inner(0));
-  DO_RESYNC  <= dcfeb_ctrl_inner(1) or RST or reprog;
-  PULSE_RESYNC : PULSE_EDGE port map(resync, resync_rst, clk40, '0', 1, do_resync);
+  PULSE_RESYNC : PULSE_EDGE port map(l1a_reset_pulse, resync_rst, clk40, '0', 1, dcfeb_ctrl_inner(1));
   PULSE_INJ    : PULSE_EDGE port map(test_inj, test_inj_rst, slowclk, rst, 2, dcfeb_ctrl_inner(2));
   PULSE_PLS    : PULSE_EDGE port map(test_pls, test_pls_rst, slowclk, rst, 2, dcfeb_ctrl_inner(3));
   PULSE_L1A    : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1, dcfeb_ctrl_inner(4));

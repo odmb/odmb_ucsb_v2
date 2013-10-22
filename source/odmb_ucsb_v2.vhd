@@ -375,7 +375,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       OPT_RESET_PULSE : out std_logic;
       L1A_RESET_PULSE : out std_logic;
       FW_RESET        : out std_logic;
-      RESYNC          : out std_logic;
       REPROG_B        : out std_logic;
       TEST_INJ        : out std_logic;
       TEST_PLS        : out std_logic;
@@ -412,7 +411,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       CALLCT_DLY    : out std_logic_vector(3 downto 0);
       NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
       KILL          : out std_logic_vector(NFEB+2 downto 1);
-      CRATEID       : out std_logic_vector(6 downto 0);
+      CRATEID       : out std_logic_vector(7 downto 0);
 
       -- ALCT/OTMB FIFO signals
       alct_fifo_data_in    : in std_logic_vector(17 downto 0);
@@ -496,7 +495,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       clk80  : in std_logic;
       clk160 : in std_logic;
       reset  : in std_logic;
-      resync : in std_logic;
 
       ga : in std_logic_vector(4 downto 0);
 
@@ -614,7 +612,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       test_ccbped : in std_logic;
 
       lct_err : out std_logic;          -- To an LED in the original design
-      leds    : out std_logic_vector(6 downto 0);
 
       cal_mode   : in std_logic;
       cal_trgsel : in std_logic;
@@ -628,7 +625,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       EXT_DLY       : in std_logic_vector(4 downto 0);
       CALLCT_DLY    : in std_logic_vector(3 downto 0);
       KILL          : in std_logic_vector(NFEB+2 downto 1);
-      CRATEID       : in std_logic_vector(6 downto 0)
+      CRATEID       : in std_logic_vector(7 downto 0)
       ); 
   end component;  -- ODMB_CTRL
 
@@ -1173,8 +1170,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal l1a_reset_pulse, l1acnt_rst_pulse    : std_logic                      := '0';
   signal pon_reset                            : std_logic;
 
-  signal mbc_leds : std_logic_vector (6 downto 0);
-
   signal select_diagnostic : integer := 0;
 
   signal lct_err : std_logic := '0';
@@ -1246,7 +1241,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal CALLCT_DLY    : std_logic_vector(3 downto 0);
   signal NWORDS_DUMMY  : std_logic_vector(15 downto 0);
   signal KILL          : std_logic_vector(NFEB+2 downto 1);
-  signal CRATEID       : std_logic_vector(6 downto 0);
+  signal CRATEID       : std_logic_vector(7 downto 0);
 
   -- From/to TESTFIFOS to test FIFOs
   signal TFF_DOUT    : std_logic_vector(15 downto 0);
@@ -1396,7 +1391,6 @@ begin
       OPT_RESET_PULSE => opt_reset_pulse,
       L1A_RESET_PULSE => l1a_reset_pulse,
       FW_RESET        => fw_reset,
-      resync          => resync,
       reprog_b        => odmb_hardrst_b,
       test_inj        => test_inj,
       test_pls        => test_pls,
@@ -1515,7 +1509,6 @@ begin
       clk80  => clk80,
       clk160 => clk160,
       reset  => reset,
-      resync => resync,
 
       ga => vme_ga,
 
@@ -1632,7 +1625,6 @@ begin
       test_ccbped => test_ped,
 
       lct_err => lct_err,
-      leds    => mbc_leds,
 
       cal_mode   => odmb_ctrl_reg(4),
       cal_trgsel => odmb_ctrl_reg(5),
@@ -2156,6 +2148,7 @@ begin
 
   -- FIFOs require more than 1 clock cycle to properly reset
   l1acnt_rst_pulse <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse or reset;
+  PULSE_RESYNC : PULSE_EDGE port map(resync, open, clk40, logicl, 1, l1acnt_rst_pulse);
   PULSE_L1A : PULSE_EDGE port map(l1acnt_rst, open, clk40, logicl, 20, l1acnt_rst_pulse);
   bxcnt_rst        <= not ccb_bxrst or reset;
 

@@ -37,7 +37,7 @@ entity VMECONFREGS is
 
     NWORDS_DUMMY : out std_logic_vector(15 downto 0);
     KILL         : out std_logic_vector(NFEB+2 downto 1);
-    CRATEID      : out std_logic_vector(6 downto 0)
+    CRATEID      : out std_logic_vector(7 downto 0)
     );
 end VMECONFREGS;
 
@@ -48,7 +48,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal DTACK_INNER : std_logic;
   signal CMDDEV      : unsigned(12 downto 0);
 
-  constant FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0108";
+  constant FW_VERSION                                   : std_logic_vector(15 downto 0) := x"0109";
   signal   OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
   signal   R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
 
@@ -99,7 +99,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal R_KILL, D_R_KILL, Q_R_KILL : std_logic                     := '0';
 
   signal OUT_CRATEID                         : std_logic_vector(15 downto 0) := (others => '0');
-  signal CRATEID_INNER                       : std_logic_vector(6 downto 0);
+  signal CRATEID_INNER                       : std_logic_vector(7 downto 0);
   signal W_CRATEID, D_W_CRATEID, Q_W_CRATEID : std_logic                     := '0';
   signal R_CRATEID, D_R_CRATEID, Q_R_CRATEID : std_logic                     := '0';
 
@@ -305,7 +305,7 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_R_KILL = '1')                else 'Z';
 
 -- Write CRATEID
-  GEN_CRATEID : for I in 6 downto 0 generate
+  GEN_CRATEID : for I in 7 downto 0 generate
   begin
     FD_W_CRATEID : FDCE port map(CRATEID_INNER(I), STROBE, W_CRATEID, RST, INDATA(I));
   end generate GEN_CRATEID;
@@ -315,8 +315,8 @@ begin  --Architecture
   DTACK_INNER <= '0' when (Q_W_CRATEID = '1')                else 'Z';
 
 -- Read CRATEID
-  OUT_CRATEID(15 downto 7) <= (others => '0');
-  OUT_CRATEID(6 downto 0)  <= CRATEID_INNER when (STROBE = '1' and R_CRATEID = '1') else
+  OUT_CRATEID(15 downto 8) <= (others => '0');
+  OUT_CRATEID(7 downto 0)  <= CRATEID_INNER when (STROBE = '1' and R_CRATEID = '1') else
                               (others => 'Z');
 
   D_R_CRATEID <= '1' when (STROBE = '1' and R_CRATEID = '1') else '0';

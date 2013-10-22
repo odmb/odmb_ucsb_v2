@@ -21,7 +21,6 @@ entity ODMB_CTRL is
     clk80  : in std_logic;
     clk160 : in std_logic;
     reset  : in std_logic;
-    resync : in std_logic;
 
     ga : in std_logic_vector(4 downto 0);
 
@@ -137,7 +136,6 @@ entity ODMB_CTRL is
     test_ccbped : in std_logic;
 
     lct_err : out std_logic;            -- To an LED in the original design
-    leds    : out std_logic_vector(6 downto 0);
 
     cal_mode   : in std_logic;
     cal_trgsel : in std_logic;
@@ -151,7 +149,7 @@ entity ODMB_CTRL is
     EXT_DLY       : in std_logic_vector(4 downto 0);
     CALLCT_DLY    : in std_logic_vector(3 downto 0);
     KILL          : in std_logic_vector(NFEB+2 downto 1);
-    CRATEID       : in std_logic_vector(6 downto 0)
+    CRATEID       : in std_logic_vector(7 downto 0)
     );
 
 end ODMB_CTRL;
@@ -458,7 +456,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       clk        : in std_logic;
       dcfebclk   : in std_logic;
       rst        : in std_logic;
-      resync     : in std_logic;
       l1acnt_rst : in std_logic;
       bxcnt_rst  : in std_logic;
 
@@ -770,7 +767,6 @@ begin
       clk        => clk40,
       dcfebclk   => clk160,
       rst        => l1acnt_rst,
-      resync     => resync,
       l1acnt_rst => l1acnt_rst,
       bxcnt_rst  => bxcnt_rst,
 
@@ -884,8 +880,6 @@ begin
 
   ddu_eof   <= eof;  -- This counts the number of packets sent to the DDU
   mbc_instr <= instr;
-
-  leds <= crateid;
 
   CRC_CHECKER_PM : CRC_CHECKER
     port map (
@@ -1061,8 +1055,8 @@ begin
 
   jtag_trgen <= (others => '0');
 
-  daqmbid(11 downto 5) <= crateid(6 downto 0);
-  daqmbid(4 downto 0)  <= ga(4 downto 0);  -- to be inverted - why ga(0) is not included?
+  daqmbid(11 downto 4) <= crateid(7 downto 0);
+  daqmbid(3 downto 0)  <= not ga(4 downto 1);  -- GA0 not included so that this is ODMB counter
 
 
   gtx0_data       <= ddu_data;
@@ -1111,7 +1105,7 @@ begin
   --  FD(ccbinjin, clk40, ccbinjin_1);
   --  FD(ccbinjin_1, clk40, ccbinjin_2);
   ccbinjin_3 <= '1' when (plsinjen = '1' and (ccbinjin_1 = '1' or ccbinjin_2 = '1')) else '0';
-  FD_ccbinj     : FD port map(ccbinj, clk40, ccbinjin_2);
+  FD_ccbinj     : FD port map(ccbinj, clk40, ccbinjin_3);
   --  FD(ccbinjin_3, clk40, ccbinj);
 
 -- generate CCBPLS
@@ -1120,7 +1114,7 @@ begin
   --FD(ccbplsin, clk40, ccbplsin_1);
   --FD(ccbplsin_1, clk40, ccbplsin_2);
   ccbplsin_3 <= '1' when (plsinjen = '1' and (ccbplsin_1 = '1' or ccbplsin_2 = '1')) else '0';
-  FD_ccbpls     : FD port map(ccbpls, clk40, ccbplsin_2);
+  FD_ccbpls     : FD port map(ccbpls, clk40, ccbplsin_3);
   --FD(ccbplsin_3, clk40, ccbpls);
 
 -- generate PLSINJEN (CLKSYN inside CALTRIGCON inside of JTAGCOM)

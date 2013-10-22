@@ -103,7 +103,6 @@ entity ODMB_VME is
     OPT_RESET_PULSE : out std_logic;
     L1A_RESET_PULSE : out std_logic;
     FW_RESET        : out std_logic;
-    RESYNC          : out std_logic;
     REPROG_B        : out std_logic;
     TEST_INJ        : out std_logic;
     TEST_PLS        : out std_logic;
@@ -141,7 +140,7 @@ entity ODMB_VME is
     CALLCT_DLY    : out std_logic_vector(3 downto 0);
     NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
     KILL          : out std_logic_vector(NFEB+2 downto 1);
-    CRATEID       : out std_logic_vector(6 downto 0);
+    CRATEID       : out std_logic_vector(7 downto 0);
 
     -- ALCT/OTMB FIFO signals
     alct_fifo_data_in    : in std_logic_vector(17 downto 0);
@@ -330,7 +329,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
       OPT_RESET_PULSE : out std_logic;
       L1A_RESET_PULSE : out std_logic;
       FW_RESET        : out std_logic;
-      RESYNC          : out std_logic;
       REPROG_B        : out std_logic;
       TEST_INJ        : out std_logic;
       TEST_PLS        : out std_logic;
@@ -376,7 +374,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       NWORDS_DUMMY : out std_logic_vector(15 downto 0);
       KILL         : out std_logic_vector(NFEB+2 downto 1);
-      CRATEID      : out std_logic_vector(6 downto 0)
+      CRATEID      : out std_logic_vector(7 downto 0)
       );
   end component;
 
@@ -834,7 +832,6 @@ begin
       OPT_RESET_PULSE => opt_reset_pulse,
       L1A_RESET_PULSE => l1a_reset_pulse,
       FW_RESET        => fw_reset,
-      RESYNC          => resync,
       REPROG_B        => reprog_b,
       TEST_INJ        => test_inj,
       TEST_PLS        => test_pls,
