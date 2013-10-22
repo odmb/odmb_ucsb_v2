@@ -2,12 +2,8 @@
 
 library ieee;
 library work;
---use work.Latches_Flipflops.all;
+use work.Latches_Flipflops.all;
 use ieee.std_logic_1164.all;
---library hdlmacro;
---use hdlmacro.hdlmacro.all;
-library UNISIM;
-use UNISIM.vcomponents.all;
 
 entity ODMB_CTRL is
   generic (
@@ -1055,7 +1051,7 @@ begin
 
   jtag_trgen <= (others => '0');
 
-  daqmbid(11 downto 4) <= crateid(7 downto 0);
+  daqmbid(11 downto 4) <= crateid;
   daqmbid(3 downto 0)  <= not ga(4 downto 1);  -- GA0 not included so that this is ODMB counter
 
 
@@ -1100,30 +1096,21 @@ begin
   ccbplsin <= '1' when (ccb_cal(0) = '0' or ttccal(0) = '1') else '0';
 
 -- generate CCBINJ
-  FD_ccbinjin_1 : FD port map(ccbinjin_1, clk40, ccbinjin);
-  FD_ccbinjin_2 : FD port map(ccbinjin_2, clk40, ccbinjin_1);
-  --  FD(ccbinjin, clk40, ccbinjin_1);
-  --  FD(ccbinjin_1, clk40, ccbinjin_2);
+  FD(ccbinjin, clk40, ccbinjin_1);
+  FD(ccbinjin_1, clk40, ccbinjin_2);
   ccbinjin_3 <= '1' when (plsinjen = '1' and (ccbinjin_1 = '1' or ccbinjin_2 = '1')) else '0';
-  FD_ccbinj     : FD port map(ccbinj, clk40, ccbinjin_3);
-  --  FD(ccbinjin_3, clk40, ccbinj);
+  FD(ccbinjin_3, clk40, ccbinj);
 
 -- generate CCBPLS
-  FD_ccbplsin_1 : FD port map(ccbplsin_1, clk40, ccbplsin);
-  FD_ccbplsin_2 : FD port map(ccbplsin_2, clk40, ccbplsin_1);
-  --FD(ccbplsin, clk40, ccbplsin_1);
-  --FD(ccbplsin_1, clk40, ccbplsin_2);
+  FD(ccbplsin, clk40, ccbplsin_1);
+  FD(ccbplsin_1, clk40, ccbplsin_2);
   ccbplsin_3 <= '1' when (plsinjen = '1' and (ccbplsin_1 = '1' or ccbplsin_2 = '1')) else '0';
-  FD_ccbpls     : FD port map(ccbpls, clk40, ccbplsin_3);
-  --FD(ccbplsin_3, clk40, ccbpls);
+  FD(ccbplsin_3, clk40, ccbpls);
 
 -- generate PLSINJEN (CLKSYN inside CALTRIGCON inside of JTAGCOM)
-  FDC_plsinjen_1     : FDC port map (plsinjen_1, reset, plsinjen_rst, LOGICH);
-  FD_plsinjen_rst    : FD port map (plsinjen_rst, clk40, plsinjen_1);
-  FDC_plsinjen_inner : FDC port map (plsinjen_inner, clk40, plsinjen_rst, plsinjen_inv);
-  --  FDC(LOGICH, reset, plsinjen_rst, plsinjen_1);
-  --  FD(plsinjen_1, clk40, plsinjen_rst);
-  -- FDC(plsinjen_inv, clk40, plsinjen_rst, plsinjen_inner);
+  FDC(LOGICH, reset, plsinjen_rst, plsinjen_1);
+  FD(plsinjen_1, clk40, plsinjen_rst);
+  FDC(plsinjen_inv, clk40, plsinjen_rst, plsinjen_inner);
   plsinjen     <= plsinjen_inner;
   plsinjen_inv <= not plsinjen_inner;
 
