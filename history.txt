@@ -7,6 +7,11 @@
 =                                                                    =
 ======================================================================
 
+V01-0A: 22 October 2013, Manuel
+--------------------------------
+Reverted ODMB_CTRL and CALIBTRG to their pre-cleanup state.
+Brought down the DTACK of the BPI parser enable early to avoid timeout.
+
 V01-09: 21 October 2013, Manuel
 --------------------------------
 Forward L1A resets to DCFEBs, fixed slot/crateid on ODMB headers.

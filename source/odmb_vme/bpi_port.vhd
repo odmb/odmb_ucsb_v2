@@ -77,6 +77,7 @@ architecture BPI_PORT_Arch of BPI_PORT is
   signal r_bpi_timer_h          : std_logic;
 
   signal send_bpi_enbl,d_dtack_send_bpi_enbl,q_dtack_send_bpi_enbl: std_logic;
+  signal rst_send_bpi_enbl,dd_dtack_send_bpi_enbl,ddd_dtack_send_bpi_enbl: std_logic;
   signal send_bpi_cfg_ul,d_dtack_send_bpi_cfg_ul,q_dtack_send_bpi_cfg_ul: std_logic;
   signal send_bpi_cfg_dl,d_dtack_send_bpi_cfg_dl,q_dtack_send_bpi_cfg_dl: std_logic;
   signal w_cmd_fifo, d_dtack_w_cmd_fifo, q_dtack_w_cmd_fifo : std_logic;
@@ -125,8 +126,11 @@ begin  --Architecture
   FD_DTACK_SEND_BPI_CFG_DL : FD port map (Q_DTACK_SEND_BPI_CFG_DL, CLK, D_DTACK_SEND_BPI_CFG_DL);
   DTACK_INNER             <= '0' when (Q_DTACK_SEND_BPI_CFG_DL = '1') else 'Z';
 
-  D_DTACK_SEND_BPI_ENBL <= '1' when (SEND_BPI_ENBL = '1' and STROBE = '1' and BPI_DONE = '1') else '0';
-  FD_DTACK_SEND_BPI_ENBL : FD port map (Q_DTACK_SEND_BPI_ENBL, CLK, D_DTACK_SEND_BPI_ENBL);
+  DDD_DTACK_SEND_BPI_ENBL <= SEND_BPI_ENBL and STROBE;
+  FD_DD_SEND_BPI_ENBL : FD port map(DD_DTACK_SEND_BPI_ENBL, CLK, DDD_DTACK_SEND_BPI_ENBL);
+  FD_D_SEND_BPI_ENBL : FDC port map(D_DTACK_SEND_BPI_ENBL, DD_DTACK_SEND_BPI_ENBL, RST_SEND_BPI_ENBL, '1');
+  FD_SEND_BPI_ENBL : FD port map(Q_DTACK_SEND_BPI_ENBL, CLK, D_DTACK_SEND_BPI_ENBL);
+  RST_SEND_BPI_ENBL <= BPI_DONE and Q_DTACK_SEND_BPI_ENBL;
   DTACK_INNER           <= '0' when (Q_DTACK_SEND_BPI_ENBL = '1') else 'Z';
 
   D_DTACK_W_CMD_FIFO <= '1' when (W_CMD_FIFO = '1' and STROBE = '1') else '0';
