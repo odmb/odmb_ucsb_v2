@@ -521,3 +521,27 @@ NET: "v6_tms"			LOC = "AG22" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "vme_tovme"		LOC = "N33" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "vme_doe_b"		LOC = "N34" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "tc_run_out"		LOC = "J15" | IOSTANDARD = LVCMOS25; #user added for port used in simulation so ise doesn't complain
+
+# User Clock Constraints
+NET "qpll_clk40mhz_n" TNM_NET = qpll_clk40mhz_n;
+TIMESPEC TS_qpll_clk40mhz_n = PERIOD "qpll_clk40mhz_n" 25 ns HIGH 50%;
+NET "qpll_clk40mhz_p" TNM_NET = qpll_clk40mhz_p;
+TIMESPEC TS_qpll_clk40mhz_p = PERIOD "qpll_clk40mhz_p" 25 ns HIGH 50%;
+NET "qpll_clk80mhz_n" TNM_NET = qpll_clk80mhz_n;
+TIMESPEC TS_qpll_clk80mhz_n = PERIOD "qpll_clk80mhz_n" 12.5 ns HIGH 50%;
+NET "qpll_clk80mhz_p" TNM_NET = qpll_clk80mhz_p;
+TIMESPEC TS_qpll_clk80mhz_p = PERIOD "qpll_clk80mhz_p" 12.5 ns HIGH 50%;
+NET "qpll_clk160mhz_n" TNM_NET = qpll_clk160mhz_n;
+TIMESPEC TS_qpll_clk160mhz_n = PERIOD "qpll_clk160mhz_n" 6.25 ns HIGH 50%;
+NET "qpll_clk160mhz_p" TNM_NET = qpll_clk160mhz_p;
+TIMESPEC TS_qpll_clk160mhz_p = PERIOD "qpll_clk160mhz_p" 6.25 ns HIGH 50%;
+NET "gl0_clk_n" TNM_NET = gl0_clk_n;
+TIMESPEC TS_gl0_clk_n = PERIOD "gl0_clk_n" 12.5 ns HIGH 50%;
+NET "gl0_clk_p" TNM_NET = gl0_clk_p;
+TIMESPEC TS_gl0_clk_p = PERIOD "gl0_clk_p" 12.5 ns HIGH 50%;
+NET "gl1_clk_n" TNM_NET = gl1_clk_n;
+TIMESPEC TS_gl1_clk_n = PERIOD "gl1_clk_n" 8 ns HIGH 50%;
+NET "gl1_clk_p" TNM_NET = gl1_clk_p;
+TIMESPEC TS_gl1_clk_p = PERIOD "gl1_clk_p" 8 ns HIGH 50%;
+NET "otmbffclk" TNM_NET = otmbffclk;
+TIMESPEC TS_otmbffclk = PERIOD "otmbffclk" 25 ns HIGH 50%; 
