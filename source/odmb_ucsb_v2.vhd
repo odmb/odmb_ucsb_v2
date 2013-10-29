@@ -2149,7 +2149,7 @@ begin
   -- FIFOs require more than 1 clock cycle to properly reset
   l1acnt_rst_pulse <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse or reset;
   PULSE_RESYNC : PULSE_EDGE port map(resync, open, clk40, logicl, 1, l1acnt_rst_pulse);
-  PULSE_L1A : PULSE_EDGE port map(l1acnt_rst, open, clk40, logicl, 20, l1acnt_rst_pulse);
+  PULSE_L1A    : PULSE_EDGE port map(l1acnt_rst, open, clk40, logicl, 20, l1acnt_rst_pulse);
   bxcnt_rst        <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
@@ -2890,6 +2890,96 @@ begin
         tph(28) <= vme_as_b;
         tph(41) <= vme_dtack_v6_b;
         tph(42) <= vme_write_b;
+
+      when x"001E" =>
+        tph(27) <= otmb_rx(5);
+        tph(28) <= otmb_rx(4);
+        tph(41) <= otmb_rx(3);
+        tph(42) <= otmb_rx(2);
+        
+      when x"001F" =>
+        tph(27) <= otmb_rx(1);
+        tph(28) <= otmb_rx(0);
+        tph(41) <= rawlct(1);
+        tph(42) <= int_l1a_match(1);
+
+      when x"0020" =>
+        tph(27) <= otmb_tx(48);
+        tph(28) <= otmb_tx(47);
+        tph(41) <= otmb_tx(46);
+        tph(42) <= otmb_tx(45);
+        
+      when x"0021" =>
+        tph(27) <= otmb_tx(44);
+        tph(28) <= otmb_tx(43);
+        tph(41) <= otmb_tx(42);
+        tph(42) <= otmb_tx(41);
+
+      when x"0022" =>
+        tph(27) <= otmb_tx(40);
+        tph(28) <= otmb_tx(39);
+        tph(41) <= otmb_tx(38);
+        tph(42) <= otmb_tx(37);
+
+      when x"0023" =>
+        tph(27) <= otmb_tx(36);
+        tph(28) <= otmb_tx(35);
+        tph(41) <= otmb_tx(34);
+        tph(42) <= otmb_tx(33);
+
+      when x"0024" =>
+        tph(27) <= otmb_tx(32);
+        tph(28) <= otmb_tx(31);
+        tph(41) <= otmb_tx(30);
+        tph(42) <= otmb_tx(29);
+
+      when x"0025" =>
+        tph(27) <= otmb_tx(28);
+        tph(28) <= otmb_tx(27);
+        tph(41) <= otmb_tx(26);
+        tph(42) <= otmb_tx(25);
+
+      when x"0026" =>
+        tph(27) <= otmb_tx(24);
+        tph(28) <= otmb_tx(23);
+        tph(41) <= otmb_tx(22);
+        tph(42) <= otmb_tx(21);
+
+      when x"0027" =>
+        tph(27) <= otmb_tx(20);
+        tph(28) <= otmb_tx(19);
+        tph(41) <= otmb_tx(18);
+        tph(42) <= otmb_tx(17);
+
+      when x"0028" =>
+        tph(27) <= otmb_tx(16);
+        tph(28) <= otmb_tx(15);
+        tph(41) <= otmb_tx(14);
+        tph(42) <= otmb_tx(13);
+
+      when x"0029" =>
+        tph(27) <= otmb_tx(12);
+        tph(28) <= otmb_tx(11);
+        tph(41) <= otmb_tx(10);
+        tph(42) <= otmb_tx(9);
+
+      when x"002A" =>
+        tph(27) <= otmb_tx(8);
+        tph(28) <= otmb_tx(7);
+        tph(41) <= otmb_tx(6);
+        tph(42) <= otmb_tx(5);
+
+      when x"002B" =>
+        tph(27) <= otmb_tx(4);
+        tph(28) <= otmb_tx(3);
+        tph(41) <= otmb_tx(2);
+        tph(42) <= otmb_tx(1);
+        
+      when x"002C" =>
+        tph(27) <= otmb_tx(0);
+        tph(28) <= raw_lct(1);
+        tph(41) <= rawlct(1);
+        tph(42) <= int_l1a_match(1);
 
       when others =>
         tph(27) <= int_l1a;

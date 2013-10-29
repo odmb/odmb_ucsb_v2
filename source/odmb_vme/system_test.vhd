@@ -118,7 +118,7 @@ begin
 
   OUTDATA <= DDU_PRBS_ERR_CNT when (r_ddu_prbs_err_cnt = '1') else
              PC_PRBS_ERR_CNT                                     when (r_pc_prbs_err_cnt = '1')    else
-             std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16)) when (r_otmb_prbs_good_cnt = '1') else
+             std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16)) when (r_otmb_prbs_good_cnt = '1') else
              std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  when (r_otmb_prbs_err_cnt = '1')  else
              (others => 'L');
 
@@ -173,14 +173,14 @@ begin
       otmb_tx_err_cnt      <= 0;
       otmb_tx_good_cnt_int <= 0;
       otmb_tx_good_cnt     <= 0;
-    elsif (falling_edge(CLK80)) then
+    elsif (falling_edge(CLK80) and otmb_prbs_tx_en = '1') then
       if otmb_prbs_tx_err = '1' then
         otmb_tx_err_cnt <= otmb_tx_err_cnt + 1;
       else
         otmb_tx_good_cnt_int <= otmb_tx_good_cnt_int + 1;
         if otmb_tx_good_cnt_int = 127 then
           otmb_tx_good_cnt     <= otmb_tx_good_cnt + 1;
-          otmb_tx_good_cnt_int <= 0;
+   --       otmb_tx_good_cnt_int <= 0;
         end if;
       end if;
     end if;
