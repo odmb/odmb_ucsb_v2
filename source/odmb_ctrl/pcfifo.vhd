@@ -69,7 +69,7 @@ architecture pcfifo_architecture of pcfifo is
 
   constant logich : std_logic := '1';
 
-  type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, FIFO_TX_EPKT, FIFO_TX_EVT, IDLE_ETH);
+  type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, FIFO_TX_EPKT, IDLE_ETH);
   signal f0_current_state : fsm_state_type := IDLE;
   signal f0_next_state    : fsm_state_type := IDLE;
 
@@ -108,6 +108,9 @@ begin
 
 
 -- FIFOs
+  DV_PULSE_EDGE      : pulse_edge port map(dv_in_pulse, open, clk_in, rst, 1, dv_in);
+  FDLDIN             : FD port map(ld_in_q, clk_in, ld_in);
+  
   FDFIRST  : FDCP port map(first_in, ld_in_q, dv_in_pulse, logich, rst);
   fifo_wren <= dv_in;
   fifo_in   <= first_in & ld_in & data_in;
@@ -151,13 +154,11 @@ begin
   LDIN_PULSE_EDGE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, first_dly);
 
 -- Generation of counter for total packets sent
-  DV_PULSE_EDGE      : pulse_edge port map(dv_in_pulse, open, clk_in, rst, 1, dv_in);
-  FDLDIN             : FD port map(ld_in_q, clk_in, ld_in);
-  epkt_cnt_total_pro : process (ld_in, rst, clk_in)
+  epkt_cnt_total_pro : process (rst, clk_out, epkt_cnt_en)
   begin
     if (rst = '1') then
       epkt_cnt_total <= (others => '0');
-    elsif (rising_edge(clk_in)) then
+    elsif (rising_edge(clk_out)) then
       if (epkt_cnt_en = '1') then
         epkt_cnt_total <= epkt_cnt_total + 1;
       end if;
@@ -258,37 +259,19 @@ begin
         idle_cnt_en  <= '0';
         word_cnt_rst <= '0';
         word_cnt_en  <= '1';
+        epkt_cnt_en  <= '0';
         ld_out       <= '0';
-        if f0_ld = '1' or word_cnt_out = x"0FFE" then
+        if f0_ld = '1' or word_cnt_out = x"0FFF" then
           f0_next_state <= FIFO_TX_EPKT;
           f0_rden       <= '0';
-          epkt_cnt_en   <= '1';
         else
           f0_next_state <= FIFO_TX;
           f0_rden       <= '1';
-          epkt_cnt_en   <= '0';
         end if;
 
       when FIFO_TX_EPKT =>
         dv_out        <= '1';
         data_out      <= epkt_cnt_total;
-        ld_out        <= '0';
-        idle_cnt_rst  <= '0';
-        idle_cnt_en   <= '0';
-        word_cnt_rst  <= '0';
-        word_cnt_en   <= '0';
-        epkt_cnt_en   <= '0';
-        f0_rden       <= '0';
-        f0_next_state <= FIFO_TX_EVT;
-
-      when FIFO_TX_EVT =>
-        dv_out   <= '1';
-        data_out <= epkt_cnt_total;
-        if (word_cnt_out(12) = '0') then
-          data_out <= x"0001";          -- Id = 1, packet split
-        else
-          data_out <= x"0002";          -- Id = 2, packet finished
-        end if;
         if (f0_ld = '0') then
           word_cnt_rst <= '0';
           ld_out       <= '0';
@@ -299,7 +282,7 @@ begin
         idle_cnt_rst  <= '0';
         idle_cnt_en   <= '0';
         word_cnt_en   <= '0';
-        epkt_cnt_en   <= '0';
+        epkt_cnt_en   <= '1';
         f0_rden       <= '0';
         f0_next_state <= IDLE_ETH;
 
