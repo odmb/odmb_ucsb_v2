@@ -69,7 +69,7 @@ architecture pcfifo_architecture of pcfifo is
 
   constant logich : std_logic := '1';
 
-  type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, IDLE_ETH);
+  type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, FIFO_TX_PID, IDLE_ETH);
   signal f0_current_state : fsm_state_type := IDLE;
   signal f0_next_state    : fsm_state_type := IDLE;
 
@@ -89,6 +89,10 @@ architecture pcfifo_architecture of pcfifo is
   signal fifo_wren, bof, bof_pulse : std_logic;
 
   signal pck_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
+
+-- Guido 10/28 => split long data packets
+  signal word_cnt_en, word_cnt_rst : std_logic                     := '0';
+  signal word_cnt_out              : std_logic_vector(11 downto 0) := (others => '0');
 
   -- IDLE_ETH ensures the interframe gap of 96 bits between packets
   signal idle_cnt_en, idle_cnt_rst : std_logic            := '0';
@@ -159,6 +163,24 @@ begin
   LDOUT_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_out, rst, 1, ld_out);
   LDIN_PULSE_EDGE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, first_dly);
 
+-- Guido 10/28 => split long data packets
+  word_cnt : process (word_cnt_rst, word_cnt_en, rst, clk_out)
+    variable word_cnt_data : std_logic_vector(11 downto 0) := (others => '0');
+  begin
+    if (rst = '1') then
+      word_cnt_data := (others => '0');
+    elsif (rising_edge(clk_out)) then
+      if (word_cnt_rst = '1') then
+        word_cnt_data := (others => '0');
+      elsif (word_cnt_en = '1') then
+        word_cnt_data := word_cnt_data + 1;
+      end if;
+    end if;
+
+    word_cnt_out <= word_cnt_data;
+    
+  end process;
+
   pck_cnt : process (ld_in_pulse, ld_out_pulse, rst, clk_out)
     variable pck_cnt_data : std_logic_vector(7 downto 0) := (others => '0');
   begin
@@ -191,7 +213,7 @@ begin
     
   end process;
 
-  f0_fsm_logic : process (f0_current_state, f0_out, f0_empty, f0_ld, pck_cnt_out, tx_ack_q, idle_cnt)
+  f0_fsm_logic : process (f0_current_state, f0_out, f0_empty, f0_ld, pck_cnt_out, tx_ack_q, idle_cnt, word_cnt_out)
   begin
     case f0_current_state is
       when IDLE =>
@@ -200,6 +222,8 @@ begin
         ld_out       <= '0';
         idle_cnt_rst <= '0';
         idle_cnt_en  <= '0';
+        word_cnt_rst <= '0';
+        word_cnt_en  <= '0';
         if (pck_cnt_out = "00000000") then
           f0_rden       <= '0';
           f0_next_state <= IDLE;
@@ -214,6 +238,8 @@ begin
         ld_out       <= '0';
         idle_cnt_rst <= '0';
         idle_cnt_en  <= '0';
+        word_cnt_rst <= '0';
+        word_cnt_en  <= '0';
         if (tx_ack_q(0) = '1') then
           f0_rden       <= '1';
           f0_next_state <= FIFO_TX;
@@ -227,22 +253,41 @@ begin
         data_out     <= f0_out;
         idle_cnt_rst <= '0';
         idle_cnt_en  <= '0';
-        if f0_ld = '1' then
-          ld_out        <= '1';
+        word_cnt_rst <= '0';
+        word_cnt_en  <= '1';
+        ld_out       <= '0';
+        if f0_ld = '1' or word_cnt_out = x"FFE" then
+          f0_next_state <= FIFO_TX_PID;
           f0_rden       <= '0';
-          f0_next_state <= IDLE_ETH;
         else
-          ld_out        <= '0';
-          f0_rden       <= '1';
           f0_next_state <= FIFO_TX;
+          f0_rden       <= '1';
         end if;
 
+      when FIFO_TX_PID =>
+        dv_out <= '1';
+        if (word_cnt_out = x"FFF") then
+          data_out <= x"0001";          -- Id = 1, packet split
+          ld_out   <= '0';
+        else
+          data_out <= x"0002";          -- Id = 2, packet finished
+          ld_out   <= '1';
+        end if;
+        idle_cnt_rst  <= '0';
+        idle_cnt_en   <= '0';
+        word_cnt_rst  <= '1';
+        word_cnt_en   <= '0';
+        f0_rden       <= '0';
+        f0_next_state <= IDLE_ETH;
+
       when IDLE_ETH =>
-        dv_out      <= '0';
-        data_out    <= (others => '0');
-        ld_out      <= '0';
-        f0_rden     <= '0';
-        idle_cnt_en <= '1';
+        dv_out       <= '0';
+        data_out     <= (others => '0');
+        ld_out       <= '0';
+        f0_rden      <= '0';
+        idle_cnt_en  <= '1';
+        word_cnt_rst <= '0';
+        word_cnt_en  <= '0';
         if (idle_cnt > 7) then
           f0_next_state <= IDLE;
           idle_cnt_rst  <= '1';
@@ -250,7 +295,7 @@ begin
           f0_next_state <= IDLE_ETH;
           idle_cnt_rst  <= '0';
         end if;
-        
+
       when others =>
         dv_out        <= '0';
         data_out      <= (others => '0');
@@ -258,10 +303,12 @@ begin
         ld_out        <= '0';
         idle_cnt_rst  <= '0';
         idle_cnt_en   <= '0';
+        word_cnt_rst  <= '0';
+        word_cnt_en   <= '0';
         f0_next_state <= IDLE;
         
     end case;
     
   end process;
-  
+
 end pcfifo_architecture;
