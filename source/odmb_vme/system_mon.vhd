@@ -90,5 +90,5 @@ begin
          else '0';
 
   --DTACK when OUTDATA contains valid data (signalled by drdy)
-  DTACK <= '0' when (device = '1' and drdy = '1' and STROBE = '1') else 'Z';
+  DTACK <= '1' when (device = '1' and drdy = '1' and STROBE = '1') else '0';
 end SYSTEM_MON_ARCH;

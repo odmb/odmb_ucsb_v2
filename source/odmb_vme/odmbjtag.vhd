@@ -73,11 +73,11 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   signal D_DONEDATA                                                        : std_logic;
   signal DONEDATA                                                          : std_logic_vector(1 downto 0);
 
-  signal CE_TAILEN, CLR_TAILEN, TAILEN                                                : std_logic;
-  signal SHTAIL                                                                       : std_logic;
+  signal CE_TAILEN, CLR_TAILEN, TAILEN                     : std_logic;
+  signal SHTAIL                                            : std_logic;
   signal CE_DONETAIL, CLR_DONETAIL, Q_DONETAIL, C_DONETAIL : std_logic;
-  signal DONETAIL                                                                     : std_logic;
-  signal CE_SHTAIL_TMS, Q1_SHTAIL_TMS, Q2_SHTAIL_TMS                                  : std_logic;
+  signal DONETAIL                                          : std_logic;
+  signal CE_SHTAIL_TMS, Q1_SHTAIL_TMS, Q2_SHTAIL_TMS       : std_logic;
 
   signal CE_ENABLE, D_ENABLE, ENABLE : std_logic;
 
@@ -248,7 +248,7 @@ begin
   RESETDONE <= '1' when (QV_RESETDONE(2) = '1' and QV_RESETDONE(3) = '1') else '0';
 
 -- Generate DTACK when RESETDONE=1 AND INITJTAGS=0
-  DTACK_INNER <= '0' when (RESETDONE = '1' and INITJTAGS = '0') else 'Z';
+  --DTACK_INNER <= '0' when (RESETDONE = '1' and INITJTAGS = '0') else 'Z';
 
 -- Generate TMS when RESETJTAG=1
   CE_RESETJTAG_TMS <= (RESETJTAG and ENABLE);
@@ -278,7 +278,7 @@ begin
   RDTDODK <= '1' when (STROBE = '1' and READTDO = '1' and BUSYP1 = '0' and BUSY = '0') else '0';
 
 -- Generate DTACK when RDTDODK=1
-  DTACK_INNER <= '0' when (RDTDODK = '1') else 'Z';
+  --DTACK_INNER <= '0' when (RDTDODK = '1') else 'Z';
 
 -- Generate OUTDATA
   SHFT_EN              <= SHDATAX and not ENABLE;
@@ -302,9 +302,12 @@ begin
   FD_Q1Q2_DTACK : FDCE port map (Q2_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q1_DTACK);
   FD_Q2Q3_DTACK : FDCE port map (Q3_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q2_DTACK);
   FD_Q3Q4_DTACK : FDCE port map (Q4_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q3_DTACK);
-  DTACK_INNER <= '0' when (Q3_DTACK = '1' and Q4_DTACK = '1') else 'Z';
+  --DTACK_INNER <= '0' when (Q3_DTACK = '1' and Q4_DTACK = '1') else 'Z';
 
--- DTACK_INNER                          ----> DTACK
+-- DTACK_INNER                     
+  DTACK_INNER <= '1' when (RESETDONE = '1' and INITJTAGS = '0') or
+                 (RDTDODK = '1') or
+                 (Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
   DTACK <= DTACK_INNER;
 
 -- Generate LED.

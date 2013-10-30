@@ -223,9 +223,9 @@ begin  --Architecture
   d_dtack_field_nrep <= (r_field and strobe) or d_nrep;
   FD_DTACK_W_NREP          : FD port map(q_nrep, slowclk, d_dtack_field_nrep);
 
-  DTACK <= '0' when (E_DTACK_READ_FSR = '1' or E_DTACK_READ_STR = '1' or E_DTACK_READ_WRC = '1' or
+  DTACK <= '1' when (E_DTACK_READ_FSR = '1' or E_DTACK_READ_STR = '1' or E_DTACK_READ_WRC = '1' or
                      E_DTACK_READ_RDC = '1' or E_DTACK_READ_FIFO = '1' or E_DTACK_WRITE_FSR = '1' or
-                     E_DTACK_WRITE_FIFO = '1' or E_DTACK_READ_TRC = '1' or q_nrep = '1') else 'Z';
+                     E_DTACK_WRITE_FIFO = '1' or E_DTACK_READ_TRC = '1' or q_nrep = '1') else '0';
 
 
   CREATE_FIFO_RD_EN : for I in 3 downto 0 generate

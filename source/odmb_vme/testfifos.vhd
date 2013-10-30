@@ -271,7 +271,7 @@ begin  --Architecture
 
   D_R_TFF_READ <= '1' when (STROBE = '1' and R_TFF_READ = '1') else '0';
   FD_R_TFF_READ : FD port map(Q_R_TFF_READ, SLOWCLK, D_R_TFF_READ);
-  DTACK_INNER  <= '0' when (Q_R_TFF_READ = '1')                else 'Z';
+  --DTACK_INNER  <= '0' when (Q_R_TFF_READ = '1')                else 'Z';
 
 
 -- Read TFF_WRD_CNT
@@ -281,7 +281,7 @@ begin  --Architecture
 
   D_R_TFF_WRD_CNT <= '1' when (STROBE = '1' and R_TFF_WRD_CNT = '1') else '0';
   FD_R_TFF_WRD_CNT : FD port map(Q_R_TFF_WRD_CNT, SLOWCLK, D_R_TFF_WRD_CNT);
-  DTACK_INNER     <= '0' when (Q_R_TFF_WRD_CNT = '1')                else 'Z';
+  --DTACK_INNER     <= '0' when (Q_R_TFF_WRD_CNT = '1')                else 'Z';
 
 -- Write TFF_SEL
   GEN_TFF_SEL : for I in 2 downto 0 generate
@@ -299,7 +299,7 @@ begin  --Architecture
   TFF_SEL     <= TFF_SEL_INNER;
   D_W_TFF_SEL <= '1' when (STROBE = '1' and W_TFF_SEL = '1') else '0';
   FD_DTACK_TFF_SEL : FD port map(Q_W_TFF_SEL, SLOWCLK, D_W_TFF_SEL);
-  DTACK_INNER <= '0' when (Q_W_TFF_SEL = '1')                else 'Z';
+  --DTACK_INNER <= '0' when (Q_W_TFF_SEL = '1')                else 'Z';
 
 -- Read TFF_SEL
   OUT_TFF_SEL(15 downto 3) <= (others => '0');
@@ -308,7 +308,7 @@ begin  --Architecture
 
   D_R_TFF_SEL <= '1' when (STROBE = '1' and R_TFF_SEL = '1') else '0';
   FD_R_TFF_SEL : FD port map(Q_R_TFF_SEL, SLOWCLK, D_R_TFF_SEL);
-  DTACK_INNER <= '0' when (Q_R_TFF_SEL = '1')                else 'Z';
+  --DTACK_INNER <= '0' when (Q_R_TFF_SEL = '1')                else 'Z';
 
 
 -- Write TFF_RST (Reset test FIFOs)
@@ -320,7 +320,7 @@ begin  --Architecture
   end generate GEN_TFF_RST;
   D_W_TFF_RST <= '1' when (STROBE = '1' and W_TFF_RST = '1') else '0';
   FD_DTACK_TFF_RST : FD port map(Q_W_TFF_RST, SLOWCLK, D_W_TFF_RST);
-  DTACK_INNER <= '0' when (Q_W_TFF_RST = '1')                else 'Z';
+  --DTACK_INNER <= '0' when (Q_W_TFF_RST = '1')                else 'Z';
 
 -- Read PC_TX_FF_READ
   PC_TX_FF_RD(0)  <= R_PC_TX_FF_READ;
@@ -334,7 +334,7 @@ begin  --Architecture
 
   D_R_PC_TX_FF_READ <= '1' when (STROBE = '1' and R_PC_TX_FF_READ = '1') else '0';
   FD_R_PC_TX_FF_READ : FD port map(Q_R_PC_TX_FF_READ, SLOWCLK, D_R_PC_TX_FF_READ);
-  DTACK_INNER       <= '0' when (Q_R_PC_TX_FF_READ = '1')                else 'Z';
+  --DTACK_INNER       <= '0' when (Q_R_PC_TX_FF_READ = '1')                else 'Z';
 
 -- Read PC_TX_FF_WRD_CNT
   OUT_PC_TX_FF_WRD_CNT(15 downto 12) <= (others => '0');
@@ -343,7 +343,7 @@ begin  --Architecture
 
   D_R_PC_TX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_PC_TX_FF_WRD_CNT = '1') else '0';
   FD_R_PC_TX_FF_WRD_CNT : FD port map(Q_R_PC_TX_FF_WRD_CNT, SLOWCLK, D_R_PC_TX_FF_WRD_CNT);
-  DTACK_INNER          <= '0' when (Q_R_PC_TX_FF_WRD_CNT = '1')                else 'Z';
+  --DTACK_INNER          <= '0' when (Q_R_PC_TX_FF_WRD_CNT = '1')                else 'Z';
 
 -- Write PC_TX_FF_RST (Reset PC_TX FIFO)
   IN_PC_TX_FF_RST  <= PULSE_PC_TX_FF_RST or RST;
@@ -351,7 +351,7 @@ begin  --Architecture
   PULSE_RESET_PC_TX     : PULSE_EDGE port map(pc_tx_fifo_rst, pulse_pc_tx_ff_rst, slowclk, rst, 1, pc_tx_ff_rst_inner);
   D_W_PC_TX_FF_RST <= '1' when (STROBE = '1' and W_PC_TX_FF_RST = '1') else '0';
   FD_DTACK_PC_TX_FF_RST : FD port map(Q_W_PC_TX_FF_RST, SLOWCLK, D_W_PC_TX_FF_RST);
-  DTACK_INNER      <= '0' when (Q_W_PC_TX_FF_RST = '1')                else 'Z';
+  --DTACK_INNER      <= '0' when (Q_W_PC_TX_FF_RST = '1')                else 'Z';
 
 -- Read PC_RX_FF_READ
   PC_RX_FF_RD(0)  <= R_PC_RX_FF_READ;
@@ -365,7 +365,7 @@ begin  --Architecture
 
   D_R_PC_RX_FF_READ <= '1' when (STROBE = '1' and R_PC_RX_FF_READ = '1') else '0';
   FD_R_PC_RX_FF_READ : FD port map(Q_R_PC_RX_FF_READ, SLOWCLK, D_R_PC_RX_FF_READ);
-  DTACK_INNER       <= '0' when (Q_R_PC_RX_FF_READ = '1')                else 'Z';
+  --DTACK_INNER       <= '0' when (Q_R_PC_RX_FF_READ = '1')                else 'Z';
 
 -- Read PC_RX_FF_WRD_CNT
   OUT_PC_RX_FF_WRD_CNT(15 downto 12) <= (others => '0');
@@ -374,7 +374,7 @@ begin  --Architecture
 
   D_R_PC_RX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_PC_RX_FF_WRD_CNT = '1') else '0';
   FD_R_PC_RX_FF_WRD_CNT : FD port map(Q_R_PC_RX_FF_WRD_CNT, SLOWCLK, D_R_PC_RX_FF_WRD_CNT);
-  DTACK_INNER          <= '0' when (Q_R_PC_RX_FF_WRD_CNT = '1')                else 'Z';
+  --DTACK_INNER          <= '0' when (Q_R_PC_RX_FF_WRD_CNT = '1')                else 'Z';
 
 -- Write PC_RX_FF_RST (Reset PC_RX FIFO)
   IN_PC_RX_FF_RST  <= PULSE_PC_RX_FF_RST or RST;
@@ -382,7 +382,7 @@ begin  --Architecture
   PULSE_RESET_PC_RX     : PULSE_EDGE port map(pc_rx_fifo_rst, pulse_pc_rx_ff_rst, slowclk, rst, 1, pc_rx_ff_rst_inner);
   D_W_PC_RX_FF_RST <= '1' when (STROBE = '1' and W_PC_RX_FF_RST = '1') else '0';
   FD_DTACK_PC_RX_FF_RST : FD port map(Q_W_PC_RX_FF_RST, SLOWCLK, D_W_PC_RX_FF_RST);
-  DTACK_INNER      <= '0' when (Q_W_PC_RX_FF_RST = '1')                else 'Z';
+  --DTACK_INNER      <= '0' when (Q_W_PC_RX_FF_RST = '1')                else 'Z';
 
 -- Read DDU_TX_FF_READ
   DDU_TX_FF_RD(0)  <= R_DDU_TX_FF_READ;
@@ -396,7 +396,7 @@ begin  --Architecture
 
   D_R_DDU_TX_FF_READ <= '1' when (STROBE = '1' and R_DDU_TX_FF_READ = '1') else '0';
   FD_R_DDU_TX_FF_READ : FD port map(Q_R_DDU_TX_FF_READ, SLOWCLK, D_R_DDU_TX_FF_READ);
-  DTACK_INNER        <= '0' when (Q_R_DDU_TX_FF_READ = '1')                else 'Z';
+  --DTACK_INNER        <= '0' when (Q_R_DDU_TX_FF_READ = '1')                else 'Z';
 
 -- Read DDU_TX_FF_WRD_CNT
   OUT_DDU_TX_FF_WRD_CNT(15 downto 12) <= (others => '0');
@@ -405,7 +405,7 @@ begin  --Architecture
 
   D_R_DDU_TX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_DDU_TX_FF_WRD_CNT = '1') else '0';
   FD_R_DDU_TX_FF_WRD_CNT : FD port map(Q_R_DDU_TX_FF_WRD_CNT, SLOWCLK, D_R_DDU_TX_FF_WRD_CNT);
-  DTACK_INNER           <= '0' when (Q_R_DDU_TX_FF_WRD_CNT = '1')                else 'Z';
+  --DTACK_INNER           <= '0' when (Q_R_DDU_TX_FF_WRD_CNT = '1')                else 'Z';
 
 -- Write DDU_TX_FF_RST (Reset DDU_TX FIFO)
   IN_DDU_TX_FF_RST  <= PULSE_DDU_TX_FF_RST or RST;
@@ -413,7 +413,7 @@ begin  --Architecture
   PULSE_RESET_DDU_TX     : PULSE_EDGE port map(ddu_tx_fifo_rst, pulse_ddu_tx_ff_rst, slowclk, rst, 1, ddu_tx_ff_rst_inner);
   D_W_DDU_TX_FF_RST <= '1' when (STROBE = '1' and W_DDU_TX_FF_RST = '1') else '0';
   FD_DTACK_DDU_TX_FF_RST : FD port map(Q_W_DDU_TX_FF_RST, SLOWCLK, D_W_DDU_TX_FF_RST);
-  DTACK_INNER       <= '0' when (Q_W_DDU_TX_FF_RST = '1')                else 'Z';
+  --DTACK_INNER       <= '0' when (Q_W_DDU_TX_FF_RST = '1')                else 'Z';
 
 -- Read DDU_RX_FF_READ
   DDU_RX_FF_RD(0)  <= R_DDU_RX_FF_READ;
@@ -427,7 +427,7 @@ begin  --Architecture
 
   D_R_DDU_RX_FF_READ <= '1' when (STROBE = '1' and R_DDU_RX_FF_READ = '1') else '0';
   FD_R_DDU_RX_FF_READ : FD port map(Q_R_DDU_RX_FF_READ, SLOWCLK, D_R_DDU_RX_FF_READ);
-  DTACK_INNER        <= '0' when (Q_R_DDU_RX_FF_READ = '1')                else 'Z';
+  --DTACK_INNER        <= '0' when (Q_R_DDU_RX_FF_READ = '1')                else 'Z';
 
 -- Read DDU_RX_FF_WRD_CNT
   OUT_DDU_RX_FF_WRD_CNT(15 downto 12) <= (others => '0');
@@ -436,7 +436,7 @@ begin  --Architecture
 
   D_R_DDU_RX_FF_WRD_CNT <= '1' when (STROBE = '1' and R_DDU_RX_FF_WRD_CNT = '1') else '0';
   FD_R_DDU_RX_FF_WRD_CNT : FD port map(Q_R_DDU_RX_FF_WRD_CNT, SLOWCLK, D_R_DDU_RX_FF_WRD_CNT);
-  DTACK_INNER           <= '0' when (Q_R_DDU_RX_FF_WRD_CNT = '1')                else 'Z';
+  --DTACK_INNER           <= '0' when (Q_R_DDU_RX_FF_WRD_CNT = '1')                else 'Z';
 
 -- Write DDU_RX_FF_RST (Reset DDU_RX FIFO)
   IN_DDU_RX_FF_RST  <= PULSE_DDU_RX_FF_RST or RST;
@@ -444,7 +444,7 @@ begin  --Architecture
   PULSE_RESET_DDU_RX     : PULSE_EDGE port map(ddu_rx_fifo_rst, pulse_ddu_rx_ff_rst, slowclk, rst, 1, ddu_rx_ff_rst_inner);
   D_W_DDU_RX_FF_RST <= '1' when (STROBE = '1' and W_DDU_RX_FF_RST = '1') else '0';
   FD_DTACK_DDU_RX_FF_RST : FD port map(Q_W_DDU_RX_FF_RST, SLOWCLK, D_W_DDU_RX_FF_RST);
-  DTACK_INNER       <= '0' when (Q_W_DDU_RX_FF_RST = '1')                else 'Z';
+  --DTACK_INNER       <= '0' when (Q_W_DDU_RX_FF_RST = '1')                else 'Z';
 
 -- Read OTMB_FF_READ
   OTMB_FF_RD(0)  <= R_OTMB_FF_READ;
@@ -458,7 +458,7 @@ begin  --Architecture
 
   D_R_OTMB_FF_READ <= '1' when (STROBE = '1' and R_OTMB_FF_READ = '1') else '0';
   FD_R_OTMB_FF_READ : FD port map(Q_R_OTMB_FF_READ, SLOWCLK, D_R_OTMB_FF_READ);
-  DTACK_INNER      <= '0' when (Q_R_OTMB_FF_READ = '1')                else 'Z';
+  --DTACK_INNER      <= '0' when (Q_R_OTMB_FF_READ = '1')                else 'Z';
 
 -- Read OTMB_FF_WRD_CNT
   OUT_OTMB_FF_WRD_CNT(15 downto 12) <= (others => '0');
@@ -467,7 +467,7 @@ begin  --Architecture
 
   D_R_OTMB_FF_WRD_CNT <= '1' when (STROBE = '1' and R_OTMB_FF_WRD_CNT = '1') else '0';
   FD_R_OTMB_FF_WRD_CNT : FD port map(Q_R_OTMB_FF_WRD_CNT, SLOWCLK, D_R_OTMB_FF_WRD_CNT);
-  DTACK_INNER         <= '0' when (Q_R_OTMB_FF_WRD_CNT = '1')                else 'Z';
+  --DTACK_INNER         <= '0' when (Q_R_OTMB_FF_WRD_CNT = '1')                else 'Z';
 
 -- Write OTMB_FF_RST (Reset OTMB FIFO)
   IN_OTMB_FF_RST  <= PULSE_OTMB_FF_RST or RST;
@@ -475,7 +475,7 @@ begin  --Architecture
   PULSE_RESET_OTMB     : PULSE_EDGE port map(otmb_fifo_rst, pulse_otmb_ff_rst, clk40, rst, 1, otmb_ff_rst_inner);
   D_W_OTMB_FF_RST <= '1' when (STROBE = '1' and W_OTMB_FF_RST = '1') else '0';
   FD_DTACK_OTMB_FF_RST : FD port map(Q_W_OTMB_FF_RST, SLOWCLK, D_W_OTMB_FF_RST);
-  DTACK_INNER     <= '0' when (Q_W_OTMB_FF_RST = '1')                else 'Z';
+  --DTACK_INNER     <= '0' when (Q_W_OTMB_FF_RST = '1')                else 'Z';
 
   otmb_fifo_reset <= otmb_fifo_rst or RST;
 
@@ -523,7 +523,7 @@ begin  --Architecture
 
   D_R_ALCT_FF_READ <= '1' when (STROBE = '1' and R_ALCT_FF_READ = '1') else '0';
   FD_R_ALCT_FF_READ : FD port map(Q_R_ALCT_FF_READ, SLOWCLK, D_R_ALCT_FF_READ);
-  DTACK_INNER      <= '0' when (Q_R_ALCT_FF_READ = '1')                else 'Z';
+  --DTACK_INNER      <= '0' when (Q_R_ALCT_FF_READ = '1')                else 'Z';
 
 -- Read ALCT_FF_WRD_CNT
   OUT_ALCT_FF_WRD_CNT(15 downto 12) <= (others => '0');
@@ -532,7 +532,7 @@ begin  --Architecture
 
   D_R_ALCT_FF_WRD_CNT <= '1' when (STROBE = '1' and R_ALCT_FF_WRD_CNT = '1') else '0';
   FD_R_ALCT_FF_WRD_CNT : FD port map(Q_R_ALCT_FF_WRD_CNT, SLOWCLK, D_R_ALCT_FF_WRD_CNT);
-  DTACK_INNER         <= '0' when (Q_R_ALCT_FF_WRD_CNT = '1')                else 'Z';
+  --DTACK_INNER         <= '0' when (Q_R_ALCT_FF_WRD_CNT = '1')                else 'Z';
 
 -- Write ALCT_FF_RST (Reset ALCT FIFO)
   IN_ALCT_FF_RST  <= PULSE_ALCT_FF_RST or RST;
@@ -540,7 +540,7 @@ begin  --Architecture
   PULSE_RESET_ALCT     : PULSE_EDGE port map(alct_fifo_rst, pulse_alct_ff_rst, clk40, rst, 1, alct_ff_rst_inner);
   D_W_ALCT_FF_RST <= '1' when (STROBE = '1' and W_ALCT_FF_RST = '1') else '0';
   FD_DTACK_ALCT_FF_RST : FD port map(Q_W_ALCT_FF_RST, SLOWCLK, D_W_ALCT_FF_RST);
-  DTACK_INNER     <= '0' when (Q_W_ALCT_FF_RST = '1')                else 'Z';
+  --DTACK_INNER     <= '0' when (Q_W_ALCT_FF_RST = '1')                else 'Z';
 
   alct_fifo_reset <= alct_fifo_rst or RST;
 
@@ -593,6 +593,30 @@ begin  --Architecture
              OUT_ALCT_FF_READ      when R_ALCT_FF_READ = '1'      else
              OUT_ALCT_FF_WRD_CNT   when R_ALCT_FF_WRD_CNT = '1'   else
              (others => 'L');
+
+  DTACK_INNER <= '1' when (Q_R_TFF_READ = '1') or
+                  (Q_R_TFF_WRD_CNT = '1') or
+                  (Q_W_TFF_SEL = '1') or
+                  (Q_R_TFF_SEL = '1') or
+                  (Q_W_TFF_RST = '1') or
+                  (Q_R_PC_TX_FF_READ = '1') or
+                  (Q_R_PC_TX_FF_WRD_CNT = '1') or
+                  (Q_W_PC_TX_FF_RST = '1') or
+                  (Q_R_PC_RX_FF_READ = '1') or
+                  (Q_R_PC_RX_FF_WRD_CNT = '1') or
+                  (Q_W_PC_RX_FF_RST = '1') or
+                  (Q_R_DDU_TX_FF_READ = '1') or
+                  (Q_R_DDU_TX_FF_WRD_CNT = '1') or
+                  (Q_W_DDU_TX_FF_RST = '1') or
+                  (Q_R_DDU_RX_FF_READ = '1') or
+                  (Q_R_DDU_RX_FF_WRD_CNT = '1') or
+                  (Q_W_DDU_RX_FF_RST = '1') or
+                  (Q_R_OTMB_FF_READ = '1') or
+                  (Q_R_OTMB_FF_WRD_CNT = '1') or
+                  (Q_W_OTMB_FF_RST = '1') or
+                  (Q_R_ALCT_FF_READ = '1') or
+                  (Q_R_ALCT_FF_WRD_CNT = '1') or
+                  (Q_W_ALCT_FF_RST = '1') else '0';
   DTACK <= DTACK_INNER;
   
 end TESTFIFOS_Arch;

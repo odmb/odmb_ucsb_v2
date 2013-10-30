@@ -211,7 +211,7 @@ entity ODMB_VME is
     PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
     -- OTMB PRBS signals
-    OTMB_TX : in std_logic_vector(48 downto 0);
+    OTMB_TX : in  std_logic_vector(48 downto 0);
     OTMB_RX : out std_logic_vector(5 downto 0)
     );
 
@@ -492,7 +492,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       STROBE  : in std_logic;
       WRITER  : in std_logic;
       SLOWCLK : in std_logic;
-      CLK80   : in std_logic;
+      CLK     : in std_logic;
       RST     : in std_logic;
 
       OUTDATA : out std_logic_vector(15 downto 0);
@@ -551,7 +551,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       WRITE_B           : in  std_logic;  -- read/write_bar
       INDATA            : in  std_logic_vector(15 downto 0);  -- data from VME writes to be provided to BPI interface
       OUTDATA           : out std_logic_vector(15 downto 0);  -- data from BPI interface to VME buss for reads
-      DTACK_B           : out std_logic;  -- DTACK bar
+      DTACK           : out std_logic;  -- DTACK bar
       -- BPI PORT signals
       BPI_RST           : out std_logic;  -- Resets BPI interface state machines
       BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
@@ -573,7 +573,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG3      : in  std_logic_vector(15 downto 0);
-      BPI_CFG_BUSY      : in std_logic;  
+      BPI_CFG_BUSY      : in  std_logic;
       BPI_DONE          : in  std_logic
       );
   end component;
@@ -728,6 +728,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_cfg_busy                                : std_logic;
   signal bpi_cfg_data_sel                            : std_logic;
 
+  signal dtack_dev : std_logic_vector(9 downto 0);
+
 begin
 
   DEV0_TESTCTRL : TESTCTRL
@@ -745,7 +747,7 @@ begin
       INDATA  => vme_data_in,
       OUTDATA => outdata_testctrl,
 
-      DTACK => vme_dtack_b,
+      DTACK => dtack_dev(0),
 
       L1A            => TC_L1A,
       ALCT_DAV       => TC_ALCT_DAV,
@@ -770,7 +772,7 @@ begin
       INDATA  => vme_data_in,
       OUTDATA => outdata_cfebjtag,
 
-      DTACK => vme_dtack_b,
+      DTACK => dtack_dev(1),
 
       INITJTAGS => '0',                 -- to be defined
       TCK       => dl_jtag_tck,
@@ -796,7 +798,7 @@ begin
       INDATA  => vme_data_in,
       OUTDATA => outdata_odmbjtag,
 
-      DTACK => vme_dtack_b,
+      DTACK => dtack_dev(2),
 
       INITJTAGS => '0',                 -- to be defined
       TCK       => odmb_jtag_tck,
@@ -825,7 +827,7 @@ begin
       INDATA  => vme_data_in,
       OUTDATA => outdata_vmemon,
 
-      DTACK => vme_dtack_b,
+      DTACK => dtack_dev(3),
 
       DCFEB_DONE => dcfeb_done,
 
@@ -864,7 +866,7 @@ begin
       INDATA  => VME_DATA_IN,
       OUTDATA => OUTDATA_VMECONFREGS,
 
-      DTACK         => VME_DTACK_B,
+      DTACK         => DTACK_DEV(4),
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
       OTMB_PUSH_DLY => OTMB_PUSH_DLY,
       PUSH_DLY      => PUSH_DLY,
@@ -893,7 +895,7 @@ begin
       INDATA  => VME_DATA_IN,
       OUTDATA => OUTDATA_TESTFIFOS,
 
-      DTACK => VME_DTACK_B,
+      DTACK => DTACK_DEV(5),
 
       -- ALCT/OTMB FIFO signals
       alct_fifo_data_in    => alct_fifo_data_in,
@@ -941,7 +943,7 @@ begin
       WRITE_B           => vme_write_b,  -- read/write_bar
       INDATA            => vme_data_in,  -- data from VME writes to be provided to BPI interface
       OUTDATA           => outdata_bpi_port,  -- data from BPI interface to VME buss for reads
-      DTACK_B           => vme_dtack_b,  -- DTACK bar
+      DTACK           => dtack_dev(6),  -- DTACK bar
       -- BPI controls
       BPI_RST           => BPI_RST,     -- Resets BPI interface state machines
       BPI_CMD_FIFO_DATA => VME_BPI_CMD_FIFO_DATA,  -- Data for command FIFO
@@ -969,7 +971,7 @@ begin
   DEV7_SYSMON : SYSTEM_MON
     port map(
       OUTDATA => outdata_sysmon,
-      DTACK   => vme_dtack_b,
+      DTACK   => dtack_dev(7),
 
       FASTCLK => clk,
       RST     => rst,
@@ -999,7 +1001,7 @@ begin
       INDATA  => vme_data_in,
       OUTDATA => outdata_lvdbmon,
 
-      DTACK => vme_dtack_b,
+      DTACK => dtack_dev(8),
 
       LVADCEN => lvmb_csb,
       ADCCLK  => lvmb_sclk,
@@ -1022,11 +1024,11 @@ begin
       STROBE  => strobe,
       WRITER  => vme_write_b,
       SLOWCLK => clk_s2,
-      CLK80   => clk,
+      CLK     => clk,
       RST     => rst,
 
       OUTDATA => outdata_systest,
-      DTACK   => vme_dtack_b,
+      DTACK   => dtack_dev(9),
 
       -- DDU PRBS signals
       DDU_PRBS_EN      => DDU_PRBS_EN,
@@ -1058,7 +1060,7 @@ begin
       INDATA  => vme_data_in,
       OUTDATA => outdata_mbcjtag,
 
-      DTACK => vme_dtack_b,
+      DTACK => open,
 
       INITJTAGS => '0',                 -- to be defined
       TCK       => mbc_jtag_tck,
@@ -1172,6 +1174,13 @@ begin
 
 -- From/To LVMB
   pon_oe_b <= '0';
+
+  vme_dtack_b <= not (dtack_dev(0) or dtack_dev(1) or dtack_dev(2) or
+                      dtack_dev(3) or dtack_dev(4) or dtack_dev(5) or
+                      dtack_dev(6) or dtack_dev(7) or dtack_dev(8) or
+                      dtack_dev(9));
+
+  
 
 end ODMB_VME_architecture;
 

@@ -371,11 +371,11 @@ begin
   FD(Q3_DTACK, SLOWCLK, Q4_DTACK);
 
 -- BGB
-  DTACK_INNER <= '0' when (Q_DTACK_SELCFEB = '1') or
+  DTACK_INNER <= '1' when (Q_DTACK_SELCFEB = '1') or
                  (Q_DTACK_READCFEB = '1') or
                  (RESETDONE = '1' and INITJTAGS = '0') or
                  (RDTDODK = '1') or
-                 (Q1_DTACK = '1' and Q2_DTACK = '1' and Q3_DTACK = '1' and Q4_DTACK = '1') else 'Z';
+                 (Q1_DTACK = '1' and Q2_DTACK = '1' and Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
                                         -- BGB
 
 -- DTACK_INNER ----> DTACK

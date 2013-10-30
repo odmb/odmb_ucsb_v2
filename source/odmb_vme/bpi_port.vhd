@@ -17,12 +17,12 @@ entity BPI_PORT is
     DEVICE  : in std_logic;
     STROBE  : in std_logic;
     COMMAND : in std_logic_vector(9 downto 0);
-    WRITE_B : in std_logic;             -- WRITER
+    WRITE_B : in std_logic;           
 
     INDATA  : in  std_logic_vector(15 downto 0);
     OUTDATA : out std_logic_vector(15 downto 0);
 
-    DTACK_B : out std_logic;            -- DTACK
+    DTACK : out std_logic;       
 
     -- BPI controls
     BPI_RST           : out std_logic;
@@ -83,8 +83,6 @@ architecture BPI_PORT_Arch of BPI_PORT is
   signal w_cmd_fifo, d_dtack_w_cmd_fifo, q_dtack_w_cmd_fifo : std_logic;
   signal r_rbk_fifo, d_dtack_r_rbk_fifo, q_dtack_r_rbk_fifo : std_logic;
 
-  signal dtack_inner : std_logic;
-
   signal bpi_cfg_reg_sel : std_logic_vector(1 downto 0);
   signal out_ctrl_reg    : std_logic_vector(15 downto 0);
   
@@ -116,32 +114,33 @@ begin  --Architecture
                         R_BPI_STATUS = '1' or R_BPI_TIMER_L = '1' or R_BPI_TIMER_H = '1')
                        and STROBE = '1') else '0';
   FD_DTACK : FD port map (Q_DTACK, CLK, D_DTACK);
-  DTACK_INNER <= '0' when (Q_DTACK = '1') else 'Z';
+  --DTACK_INNER <= '0' when (Q_DTACK = '1') else 'Z';
 
   D_DTACK_SEND_BPI_CFG_UL <= '1' when (SEND_BPI_CFG_UL = '1' and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
   FD_DTACK_SEND_BPI_CFG_UL : FD port map (Q_DTACK_SEND_BPI_CFG_UL, CLK, D_DTACK_SEND_BPI_CFG_UL);
-  DTACK_INNER             <= '0' when (Q_DTACK_SEND_BPI_CFG_UL = '1') else 'Z';
+  --DTACK_INNER             <= '0' when (Q_DTACK_SEND_BPI_CFG_UL = '1') else 'Z';
 
   D_DTACK_SEND_BPI_CFG_DL <= '1' when (SEND_BPI_CFG_DL = '1' and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
   FD_DTACK_SEND_BPI_CFG_DL : FD port map (Q_DTACK_SEND_BPI_CFG_DL, CLK, D_DTACK_SEND_BPI_CFG_DL);
-  DTACK_INNER             <= '0' when (Q_DTACK_SEND_BPI_CFG_DL = '1') else 'Z';
+  --DTACK_INNER             <= '0' when (Q_DTACK_SEND_BPI_CFG_DL = '1') else 'Z';
 
   DDD_DTACK_SEND_BPI_ENBL <= SEND_BPI_ENBL and STROBE;
   FD_DD_SEND_BPI_ENBL : FD port map(DD_DTACK_SEND_BPI_ENBL, CLK, DDD_DTACK_SEND_BPI_ENBL);
   FD_D_SEND_BPI_ENBL : FDC port map(D_DTACK_SEND_BPI_ENBL, DD_DTACK_SEND_BPI_ENBL, RST_SEND_BPI_ENBL, '1');
   FD_SEND_BPI_ENBL : FD port map(Q_DTACK_SEND_BPI_ENBL, CLK, D_DTACK_SEND_BPI_ENBL);
   RST_SEND_BPI_ENBL <= BPI_DONE and Q_DTACK_SEND_BPI_ENBL;
-  DTACK_INNER           <= '0' when (Q_DTACK_SEND_BPI_ENBL = '1') else 'Z';
+  --DTACK_INNER           <= '0' when (Q_DTACK_SEND_BPI_ENBL = '1') else 'Z';
 
   D_DTACK_W_CMD_FIFO <= '1' when (W_CMD_FIFO = '1' and STROBE = '1') else '0';
   FD_DTACK_W_CMD_FIFO : FD port map (Q_DTACK_W_CMD_FIFO, CLK, D_DTACK_W_CMD_FIFO);
-  DTACK_INNER        <= '0' when (Q_DTACK_W_CMD_FIFO = '1') else 'Z';
+  --DTACK_INNER        <= '0' when (Q_DTACK_W_CMD_FIFO = '1') else 'Z';
 
   D_DTACK_R_RBK_FIFO <= '1' when (R_RBK_FIFO = '1' and STROBE = '1') else '0';
   FD_DTACK_R_RBK_FIFO : FD port map (Q_DTACK_R_RBK_FIFO, CLK, D_DTACK_R_RBK_FIFO);
-  DTACK_INNER        <= '0' when (Q_DTACK_R_RBK_FIFO = '1') else 'Z';
+  --DTACK_INNER        <= '0' when (Q_DTACK_R_RBK_FIFO = '1') else 'Z';
 
-  DTACK_B <= DTACK_INNER;
+  DTACK <= Q_DTACK or Q_DTACK_SEND_BPI_CFG_UL or Q_DTACK_SEND_BPI_CFG_DL or
+           Q_DTACK_SEND_BPI_ENBL or Q_DTACK_W_CMD_FIFO or Q_DTACK_R_RBK_FIFO;
 
 -- CTRL_REG
 

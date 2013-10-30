@@ -127,14 +127,14 @@ begin
   TP_SEL      <= TP_SEL_INNER;
   D_W_TP_SEL  <= '1' when (STROBE = '1' and W_TP_SEL = '1') else '0';
   FD_DTACK_TP_SEL : FD port map(Q_W_TP_SEL, SLOWCLK, D_W_TP_SEL);
-  DTACK_INNER <= '0' when (Q_W_TP_SEL = '1')                else 'Z';
+  --DTACK_INNER <= '0' when (Q_W_TP_SEL = '1')                else 'Z';
 
 -- Read TP_SEL
   OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when (STROBE = '1' and R_TP_SEL = '1') else (others => 'Z');
 
   D_R_TP_SEL  <= '1' when (STROBE = '1' and R_TP_SEL = '1') else '0';
   FD_R_TP_SEL : FD port map(Q_R_TP_SEL, SLOWCLK, D_R_TP_SEL);
-  DTACK_INNER <= '0' when (Q_R_TP_SEL = '1')                else 'Z';
+  --DTACK_INNER <= '0' when (Q_R_TP_SEL = '1')                else 'Z';
 
 
   GEN_ODMB_CTRL : for K in 0 to 15 generate
@@ -181,7 +181,7 @@ begin
   LOOPBACK     <= LOOPBACK_INNER;
   D_W_LOOPBACK <= '1' when (STROBE = '1' and W_LOOPBACK = '1') else '0';
   FD_DTACK_LOOPBACK : FD port map(Q_W_LOOPBACK, SLOWCLK, D_W_LOOPBACK);
-  DTACK_INNER  <= '0' when (Q_W_LOOPBACK = '1')                else 'Z';
+  --DTACK_INNER  <= '0' when (Q_W_LOOPBACK = '1')                else 'Z';
 
 -- Read LOOPBACK
   OUT_LOOPBACK(15 downto 3) <= (others => '0');
@@ -190,7 +190,7 @@ begin
 
   D_R_LOOPBACK <= '1' when (STROBE = '1' and R_LOOPBACK = '1') else '0';
   FD_R_LOOPBACK : FD port map(Q_R_LOOPBACK, SLOWCLK, D_R_LOOPBACK);
-  DTACK_INNER  <= '0' when (Q_R_LOOPBACK = '1')                else 'Z';
+  --DTACK_INNER  <= '0' when (Q_R_LOOPBACK = '1')                else 'Z';
 
 -- Write TXDIFFCTRL
   GEN_TXDIFFCTRL : for I in 3 downto 0 generate
@@ -200,14 +200,14 @@ begin
   TXDIFFCTRL     <= TXDIFFCTRL_INNER;
   D_W_TXDIFFCTRL <= '1' when (STROBE = '1' and W_TXDIFFCTRL = '1') else '0';
   FD_DTACK_TXDIFFCTRL : FD port map(Q_W_TXDIFFCTRL, SLOWCLK, D_W_TXDIFFCTRL);
-  DTACK_INNER    <= '0' when (Q_W_TXDIFFCTRL = '1')                else 'Z';
+  --DTACK_INNER    <= '0' when (Q_W_TXDIFFCTRL = '1')                else 'Z';
 
 -- Read TXDIFFCTRL
   OUT_TXDIFFCTRL(3 downto 0) <= TXDIFFCTRL_INNER when (STROBE = '1' and R_TXDIFFCTRL = '1') else (others => 'Z');
 
   D_R_TXDIFFCTRL <= '1' when (STROBE = '1' and R_TXDIFFCTRL = '1') else '0';
   FD_R_TXDIFFCTRL : FD port map(Q_R_TXDIFFCTRL, SLOWCLK, D_R_TXDIFFCTRL);
-  DTACK_INNER    <= '0' when (Q_R_TXDIFFCTRL = '1')                else 'Z';
+  --DTACK_INNER    <= '0' when (Q_R_TXDIFFCTRL = '1')                else 'Z';
 
 
 -- Read DCFEB_DONE
@@ -215,7 +215,7 @@ begin
 
   D_R_DCFEB_DONE <= '1' when (STROBE = '1' and R_DCFEB_DONE = '1') else '0';
   FD_R_DCFEB_DONE : FD port map(Q_R_DCFEB_DONE, SLOWCLK, D_R_DCFEB_DONE);
-  DTACK_INNER    <= '0' when (Q_R_DCFEB_DONE = '1')                else 'Z';
+  --DTACK_INNER    <= '0' when (Q_R_DCFEB_DONE = '1')                else 'Z';
 
 
 
@@ -235,10 +235,19 @@ begin
   FD_OUTDATA_1 : FD port map(Q_OUTDATA_1, SLOWCLK, D_OUTDATA_1);
   FD_OUTDATA_2 : FD port map(Q_OUTDATA_2, SLOWCLK, D_OUTDATA_2);
 
-  DTACK_INNER <= '0' when (Q_OUTDATA_1 = '1')                  else 'Z';
+  --DTACK_INNER <= '0' when (Q_OUTDATA_1 = '1')                  else 'Z';
   D_OUTDATA_2 <= '1' when (STROBE = '1' and R_ODMB_DATA = '1') else '0';
 
-  DTACK_INNER <= '0' when (Q_OUTDATA_2 = '1') else 'Z';
+  --DTACK_INNER <= '0' when (Q_OUTDATA_2 = '1') else 'Z';
+  DTACK_INNER <= '1' when (Q_W_TP_SEL = '1') or
+                 (Q_R_TP_SEL = '1') or
+                 (Q_W_LOOPBACK = '1') or
+                 (Q_R_LOOPBACK = '1') or
+                 (Q_W_TXDIFFCTRL = '1') or
+                 (Q_R_TXDIFFCTRL = '1') or
+                 (Q_R_DCFEB_DONE = '1') or
+                 (Q_OUTDATA_1 = '1') or
+                 (Q_OUTDATA_2 = '1') else '0';
   DTACK       <= DTACK_INNER;
 
 end VMEMON_Arch;
