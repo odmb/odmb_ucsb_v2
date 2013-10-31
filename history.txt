@@ -7,6 +7,12 @@
 =                                                                    =
 ======================================================================
 
+V01-0B: 30 October 2013, Manuel
+--------------------------------
+Added capability to split packets larger than 4096 words in PCFIFO.
+Made DTACK active high in devices, and got rid of high impedance states.
+Added time constraints to UCF file. Switched to ISE 12.4
+
 V01-0A: 22 October 2013, Manuel
 --------------------------------
 Reverted ODMB_CTRL and CALIBTRG to their pre-cleanup state.
