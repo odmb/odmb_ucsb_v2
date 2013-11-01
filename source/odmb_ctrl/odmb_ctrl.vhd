@@ -442,6 +442,57 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       );
   end component;
 
+ component CONTROL_FSM is
+    generic (
+      NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
+      );  
+    port (
+
+      RST    : in std_logic;
+      CLKCMS : in std_logic;
+      CLK    : in std_logic;
+      STATUS : in std_logic_vector(47 downto 0);
+      L1ARST : in std_logic;
+
+-- From DMB_VME
+      RDFFNXT : in std_logic;
+
+-- to GigaBit Link
+      DOUT : out std_logic_vector(15 downto 0);
+      DAV  : out std_logic;
+
+-- to FIFOs
+      OEFIFO_B  : out std_logic_vector(NFEB+2 downto 1);
+      RENFIFO_B : out std_logic_vector(NFEB+2 downto 1);
+
+-- from FIFOs
+      FFOR_B      : in std_logic_vector(NFEB+2 downto 1);
+      DATAIN      : in std_logic_vector(15 downto 0);
+      DATAIN_LAST : in std_logic;
+
+-- From LOADFIFO
+      JOEF : in std_logic_vector(NFEB+2 downto 1);
+
+-- to ???
+      DAQMBID : in std_logic_vector(11 downto 0);  -- From CRATEID in SETFEBDLY, and GA
+
+-- FROM SW1
+      GIGAEN : in std_logic;
+
+-- TO CAFIFO
+      FIFO_POP : out std_logic;
+
+-- TO PCFIFO
+      EOF : out std_logic;
+
+-- FROM CAFIFO
+      cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
+      cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
+      cafifo_l1a_cnt   : in std_logic_vector(23 downto 0);
+      cafifo_bx_cnt    : in std_logic_vector(11 downto 0)
+      );
+  end component;
+
   component cafifo is
     generic (
       NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
@@ -852,6 +903,53 @@ begin
       cafifo_bx_cnt    => cafifo_bx_cnt_out
       );
 
+  CONTROL_FSM_PM : CONTROL_FSM
+    generic map(NFEB => NFEB)
+    port map(
+      CLK    => dduclk,                 -- CLKDDU?
+      CLKCMS => clk40,
+      RST    => l1acnt_rst,
+      STATUS => status,
+      L1ARST => l1arst,                 -- from CCBCODE
+
+-- From DMB_VME
+      RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
+
+-- to GigaBit Link
+      DOUT => open,
+      DAV  => open,
+
+-- to Data FIFOs
+      OEFIFO_B  => open,
+      RENFIFO_B => open,
+
+-- from Data FIFOs
+      FFOR_B      => fifo_empty_b,
+      DATAIN      => fifo_out(15 downto 0),
+      DATAIN_LAST => fifo_eof,
+
+-- From JTAGCOM
+      JOEF => joef,                     -- from LOADFIFO
+
+-- From CONFREG and GA
+      DAQMBID => daqmbid,
+
+-- FROM SW1
+      GIGAEN => LOGICH,
+
+-- TO CAFIFO
+      FIFO_POP => open,
+
+-- TO PCFIFO
+      EOF => open,
+
+-- FROM CAFIFO
+      cafifo_l1a_dav   => cafifo_l1a_dav_out,
+      cafifo_l1a_match => cafifo_l1a_match_out_inner,
+      cafifo_l1a_cnt   => cafifo_l1a_cnt_out,
+      cafifo_bx_cnt    => cafifo_bx_cnt_out
+      );
+  
   PCFIFO_PM : pcfifo
     generic map (NFIFO => NFIFO)
 
@@ -871,6 +969,7 @@ begin
       dv_out   => pc_data_valid,
       data_out => pc_data
       );
+
 
 
 
