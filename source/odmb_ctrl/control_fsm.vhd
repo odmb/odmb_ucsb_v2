@@ -64,24 +64,21 @@ end CONTROL_FSM;
 
 architecture CONTROL_arch of CONTROL_FSM is
 
-  constant LOGICH                   : std_logic                    := '1';
-  signal   BUSY                     : std_logic;
-  signal   STARTREAD_RST, STARTREAD : std_logic                    := '0';
-  signal   OEHDR                    : std_logic_vector(8 downto 1) := (others => '0');
-
-  signal R, R_RST : std_logic_vector(NFEB+2 downto 1);
-
-  signal TAIL_RST, DDCNT_EN_RST, DDCNT_TC, OKDATA, DODAT : std_logic := '0';
-  signal TAIL                                            : std_logic_vector(8 downto 1);
-  signal STARTTAIL_CE, STARTTAIL                         : std_logic := '0';
-  signal TAILDONE, STPOP, L1ONLY, POP                    : std_logic := '0';
-
-  signal FIFO_POP_RST, FIFO_POP_INNER, FIFO_POP_D : std_logic;
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
+  
+  signal fifo_pop_80 : std_logic := '0';
 
   type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
   signal hdr_word, tail_word : hdr_tail_array;
-
-  constant ZERO9 : std_logic_vector(8 downto 0) := (others => '0');
 
   constant fmt_vers         : std_logic_vector(1 downto 0)      := "01";
   constant l1a_dav_mismatch : std_logic                         := '0';
@@ -97,14 +94,19 @@ architecture CONTROL_arch of CONTROL_FSM is
   constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
 
-  type   control_state is (IDLE, HDR_TX, TAIL_TX, WAIT_ALCT);
+  type   control_state is (IDLE, HDR, WAIT_ALCT_OTMB, TX_ALCT_OTMB, WAIT_DCFEB, TX_DCFEB, TAIL);
   signal control_current_state, control_next_state : control_state := IDLE;
 
   signal hdr_tail_cnt_en, hdr_tail_cnt_rst : std_logic                     := '0';
   signal hdr_tail_cnt                      : integer range 1 to 9          := 1;
+  signal dev_cnt_en						   : std_logic                     := '0';
+  signal dev_cnt                           : integer range 1 to 9          := 9;
   signal reg_crc                           : std_logic_vector(23 downto 0) := (others => '0');
 
 begin
+
+-- Get a 40 MHz pulse for FIFO_POP
+  PULSE_FIFO_POP : PULSE_EDGE port map(FIFO_POP, open, CLKCMS, RST, 1, fifo_pop_80);
 
   control_fsm_regs : process (control_next_state, RST, CLK)
   begin
@@ -119,61 +121,120 @@ begin
         hdr_tail_cnt <= hdr_tail_cnt + 1;
       end if;
     end if;
+    if(dev_cnt_en = '1') then
+      if(dev_cnt = 9) then
+        dev_cnt <= 8;
+      elsif(dev_cnt = 8) then
+		dev_cnt <= 1;
+      elsif(dev_cnt = 7) then
+		dev_cnt <= 9;
+      else
+        dev_cnt <= dev_cnt + 1;
+      end if;
+    end if;
   end process;
 
-  control_fsm_logic : process (control_current_state, cafifo_l1a_match, hdr_word, hdr_tail_cnt)
+  control_fsm_logic : process (control_current_state, cafifo_l1a_match, hdr_word, hdr_tail_cnt, dev_cnt)
   begin
     DOUT             <= (others => '0');
     DAV              <= '0';
+    OEFIFO_B         <= (others => '1');
+    RENFIFO_B         <= (others => '1');
+    EOF              <= '0';
+    fifo_pop_80      <= '0';
     hdr_tail_cnt_rst <= '0';
     hdr_tail_cnt_en  <= '0';
+    dev_cnt_en		 <= '0';
 
     case control_current_state is
       when IDLE =>
         hdr_tail_cnt_rst <= '1';
         if (or_reduce(cafifo_l1a_match) = '1') then
-          control_next_state <= HDR_TX;
+          control_next_state <= HDR;
         else
           control_next_state <= IDLE;
         end if;
         
-      when HDR_TX =>
-        DOUT             <= hdr_word(hdr_tail_cnt);
-        DAV              <= '1';
-        hdr_tail_cnt_en  <= '1';
+      when HDR =>
+        DOUT            <= hdr_word(hdr_tail_cnt);
+        DAV             <= '1';
+        hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
-          control_next_state <= WAIT_ALCT;
+          control_next_state <= WAIT_ALCT_OTMB;
         else
-          control_next_state <= HDR_TX;
+          control_next_state <= HDR;
         end if;
         
-      when WAIT_ALCT =>
+      when WAIT_ALCT_OTMB =>
+        if(cafifo_l1a_match(dev_cnt) = '0') then
+          dev_cnt_en <= '1';
+          if (dev_cnt = 8) then
+            control_next_state <= WAIT_DCFEB;
+          end if;      	
+        elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then  
+          control_next_state <= TX_ALCT_OTMB;
+          OEFIFO_B <= (dev_cnt => '0', others => '1');
+          RENFIFO_B <= (dev_cnt => '0', others => '1');
+        else
+          control_next_state <= WAIT_ALCT_OTMB;
+        end if;
+        
+      when TX_ALCT_OTMB =>
+        DOUT			 <= DATAIN;
+        DAV              <= '1';
+        if(DATAIN_LAST = '1') then
+          dev_cnt_en <= '1';
+          if (dev_cnt = 9) then
+            control_next_state <= WAIT_ALCT_OTMB;
+          elsif (dev_cnt = 8) then
+            control_next_state <= WAIT_DCFEB;
+          end if;
+        else
+          control_next_state <= TX_ALCT_OTMB;
+        end if;
+        
+      when WAIT_DCFEB =>
+        if(cafifo_l1a_match(dev_cnt) = '0') then
+          dev_cnt_en <= '1';
+          if (dev_cnt = 7) then
+            control_next_state <= TAIL;
+          end if;
+        elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then
+          control_next_state <= TX_DCFEB;
+          OEFIFO_B <= (dev_cnt => '0', others => '1');
+          RENFIFO_B <= (dev_cnt => '0', others => '1');
+        else
+          control_next_state <= WAIT_DCFEB;
+        end if;
+        
+      when TX_DCFEB =>
+        DOUT			 <= DATAIN;
+        DAV                <= '1';
         hdr_tail_cnt_rst   <= '1';
-        control_next_state <= TAIL_TX;
+    	if(DATAIN_LAST = '1') then
+          dev_cnt_en <= '1';
+          if (dev_cnt /= 7) then
+            control_next_state <= WAIT_DCFEB;
+          else
+            control_next_state <= TAIL;
+		  end if;
+        end if;
         
-      when TAIL_TX =>
-        DOUT             <= tail_word(hdr_tail_cnt);
-        DAV              <= '1';
-        hdr_tail_cnt_en  <= '1';
+      when TAIL =>
+        DOUT            <= tail_word(hdr_tail_cnt);
+        DAV             <= '1';
+        hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= IDLE;
+          EOF                <= '1';
+          fifo_pop_80        <= '1';
         else
-          control_next_state <= TAIL_TX;
+          control_next_state <= TAIL;
+          EOF                <= '0';
+          fifo_pop_80        <= '0';
         end if;
     end case;
   end process;
-
-
--- Generate OEHDR (page 1)
-  STARTREAD_RST <= RST or OEHDR(1);
-  FDC_OEHDR_LOGICH : FDC port map (STARTREAD, BUSY, STARTREAD_RST, LOGICH);
-  FDC_OEHDR_START  : FDC port map (OEHDR(1), CLK, RST, STARTREAD);
-  FDC_OEHDR1       : FDC port map (OEHDR(2), CLK, RST, OEHDR(1));
-  FDC_OEHDR2       : FDC port map (OEHDR(3), CLK, RST, OEHDR(2));
-  FDC_OEHDR_GEN    : for i in 3 to 7 generate
-  begin
-    FDC_OEHDR : FDC port map (OEHDR(i+1), CLK, POP, OEHDR(i));
-  end generate FDC_OEHDR_GEN;
 
   hdr_word(1) <= x"9" & cafifo_l1a_cnt(11 downto 0);
   hdr_word(2) <= x"9" & cafifo_l1a_cnt(23 downto 12);
@@ -183,16 +244,6 @@ begin
   hdr_word(6) <= x"A" & DAQMBID(11 downto 0);
   hdr_word(7) <= x"A" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & ovlp & cafifo_bx_cnt(4 downto 0);
   hdr_word(8) <= x"A" & sync & fmt_vers & l1a_dav_mismatch & cafifo_l1a_cnt(4 downto 0);
-
--- Generate TAIL (page 1)
-  STARTTAIL_CE <= '1' when (BUSY = '1' and (R(NFEB+2 downto 1) = ZERO9)) else '0';
-  FDCE_TAIL     : FDCE port map (STARTTAIL, CLK, STARTTAIL_CE, TAIL(1), DODAT);
-  FDC_STARTTAIL : FDC port map (TAIL(1), CLK, RST, STARTTAIL);
-  FDC_TAIL1     : FDC port map (TAIL(2), CLK, RST, TAIL(1));
-  FDC_TAIL_GEN  : for i in 2 to 7 generate
-  begin
-    FDC_TAIL : FDC port map (TAIL(i+1), CLK, POP, TAIL(i));
-  end generate FDC_TAIL_GEN;
 
   tail_word(1) <= x"F" & alct_to_end & cafifo_bx_cnt(4 downto 0) & cafifo_l1a_cnt(5 downto 0);
   tail_word(2) <= x"F" & ovlp & dcfeb_to_end;
