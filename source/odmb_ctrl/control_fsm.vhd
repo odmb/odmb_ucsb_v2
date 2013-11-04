@@ -74,7 +74,7 @@ architecture CONTROL_arch of CONTROL_FSM is
       DIN    : in  std_logic
       );
   end component;
-  
+
   signal fifo_pop_80 : std_logic := '0';
 
   type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
@@ -98,8 +98,8 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal control_current_state, control_next_state : control_state := IDLE;
 
   signal hdr_tail_cnt_en, hdr_tail_cnt_rst : std_logic                     := '0';
-  signal hdr_tail_cnt                      : integer range 1 to 9          := 1;
-  signal dev_cnt_en						   : std_logic                     := '0';
+  signal hdr_tail_cnt                      : integer range 1 to 8          := 1;
+  signal dev_cnt_en                        : std_logic                     := '0';
   signal dev_cnt                           : integer range 1 to 9          := 9;
   signal reg_crc                           : std_logic_vector(23 downto 0) := (others => '0');
 
@@ -108,11 +108,12 @@ begin
 -- Get a 40 MHz pulse for FIFO_POP
   PULSE_FIFO_POP : PULSE_EDGE port map(FIFO_POP, open, CLKCMS, RST, 1, fifo_pop_80);
 
-  control_fsm_regs : process (control_next_state, RST, CLK)
+  control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en)
   begin
     if (RST = '1') then
       control_current_state <= IDLE;
       hdr_tail_cnt          <= 1;
+      dev_cnt               <= 9;
     elsif rising_edge(CLK) then
       control_current_state <= control_next_state;
       if(hdr_tail_cnt_rst = '1') then
@@ -120,31 +121,31 @@ begin
       elsif(hdr_tail_cnt_en = '1') then
         hdr_tail_cnt <= hdr_tail_cnt + 1;
       end if;
-    end if;
-    if(dev_cnt_en = '1') then
-      if(dev_cnt = 9) then
-        dev_cnt <= 8;
-      elsif(dev_cnt = 8) then
-		dev_cnt <= 1;
-      elsif(dev_cnt = 7) then
-		dev_cnt <= 9;
-      else
-        dev_cnt <= dev_cnt + 1;
+      if(dev_cnt_en = '1') then
+        if(dev_cnt = 9) then
+          dev_cnt <= 8;
+        elsif(dev_cnt = 8) then
+          dev_cnt <= 1;
+        elsif(dev_cnt = 7) then
+          dev_cnt <= 9;
+        else
+          dev_cnt <= dev_cnt + 1;
+        end if;
       end if;
     end if;
   end process;
 
-  control_fsm_logic : process (control_current_state, cafifo_l1a_match, hdr_word, hdr_tail_cnt, dev_cnt)
+  control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav, hdr_word, hdr_tail_cnt, dev_cnt, DATAIN, DATAIN_LAST, tail_word)
   begin
     DOUT             <= (others => '0');
     DAV              <= '0';
     OEFIFO_B         <= (others => '1');
-    RENFIFO_B         <= (others => '1');
+    RENFIFO_B        <= (others => '1');
     EOF              <= '0';
     fifo_pop_80      <= '0';
     hdr_tail_cnt_rst <= '0';
     hdr_tail_cnt_en  <= '0';
-    dev_cnt_en		 <= '0';
+    dev_cnt_en       <= '0';
 
     case control_current_state is
       when IDLE =>
@@ -161,6 +162,7 @@ begin
         hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_ALCT_OTMB;
+          hdr_tail_cnt_rst   <= '1';
         else
           control_next_state <= HDR;
         end if;
@@ -170,18 +172,30 @@ begin
           dev_cnt_en <= '1';
           if (dev_cnt = 8) then
             control_next_state <= WAIT_DCFEB;
-          end if;      	
-        elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then  
+          end if;
+        elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then
           control_next_state <= TX_ALCT_OTMB;
-          OEFIFO_B <= (dev_cnt => '0', others => '1');
-          RENFIFO_B <= (dev_cnt => '0', others => '1');
+          if (dev_cnt = 9) then
+            OEFIFO_B  <= (9 => '0', others => '1');
+            RENFIFO_B <= (9 => '0', others => '1');
+          elsif (dev_cnt = 8) then
+            OEFIFO_B  <= (8 => '0', others => '1');
+            RENFIFO_B <= (8 => '0', others => '1');
+          end if;
         else
           control_next_state <= WAIT_ALCT_OTMB;
         end if;
         
       when TX_ALCT_OTMB =>
-        DOUT			 <= DATAIN;
-        DAV              <= '1';
+        DOUT <= DATAIN;
+        DAV  <= '1';
+        if (dev_cnt = 9) then
+          OEFIFO_B  <= (9 => '0', others => '1');
+          RENFIFO_B <= (9 => '0', others => '1');
+        elsif (dev_cnt = 8) then
+          OEFIFO_B  <= (8 => '0', others => '1');
+          RENFIFO_B <= (8 => '0', others => '1');
+        end if;
         if(DATAIN_LAST = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt = 9) then
@@ -192,7 +206,7 @@ begin
         else
           control_next_state <= TX_ALCT_OTMB;
         end if;
-        
+
       when WAIT_DCFEB =>
         if(cafifo_l1a_match(dev_cnt) = '0') then
           dev_cnt_en <= '1';
@@ -201,25 +215,26 @@ begin
           end if;
         elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then
           control_next_state <= TX_DCFEB;
-          OEFIFO_B <= (dev_cnt => '0', others => '1');
-          RENFIFO_B <= (dev_cnt => '0', others => '1');
+          OEFIFO_B(dev_cnt)  <= '0';
+          RENFIFO_B(dev_cnt) <= '0';
         else
           control_next_state <= WAIT_DCFEB;
         end if;
-        
+
       when TX_DCFEB =>
-        DOUT			 <= DATAIN;
+        DOUT               <= DATAIN;
         DAV                <= '1';
-        hdr_tail_cnt_rst   <= '1';
-    	if(DATAIN_LAST = '1') then
+        OEFIFO_B(dev_cnt)  <= '0';
+        RENFIFO_B(dev_cnt) <= '0';
+        if(DATAIN_LAST = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt /= 7) then
             control_next_state <= WAIT_DCFEB;
           else
             control_next_state <= TAIL;
-		  end if;
+          end if;
         end if;
-        
+
       when TAIL =>
         DOUT            <= tail_word(hdr_tail_cnt);
         DAV             <= '1';
