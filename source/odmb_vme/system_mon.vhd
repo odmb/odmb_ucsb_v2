@@ -8,6 +8,7 @@ entity SYSTEM_MON is
     OUTDATA : out std_logic_vector(15 downto 0);
     DTACK   : out std_logic;
 
+    SLOWCLK : in std_logic;
     FASTCLK : in std_logic;
     RST     : in std_logic;
     DEVICE  : in std_logic;
@@ -22,10 +23,22 @@ entity SYSTEM_MON is
 end SYSTEM_MON;
 
 architecture SYSTEM_MON_ARCH of SYSTEM_MON is
-  signal drdy      : std_logic;
-  signal den       : std_logic;
-  signal q_strobe  : std_logic;
-  signal q2_strobe : std_logic;
+  component PULSE_EDGE is
+    port (
+      DOUT   : out std_logic;
+      PULSE1 : out std_logic;
+      CLK    : in  std_logic;
+      RST    : in  std_logic;
+      NPULSE : in  integer;
+      DIN    : in  std_logic
+      );
+  end component;
+
+  signal drdy       : std_logic;
+  signal den        : std_logic;
+  signal q_strobe   : std_logic;
+  signal q2_strobe  : std_logic;
+  signal drdy_pulse : std_logic;
 
   signal outdata_inner : std_logic_vector(15 downto 0);
   
@@ -81,7 +94,7 @@ begin
       VP        => VP
       );
 
-  OUTDATA <= x"0" & outdata_inner(15 downto 4); -- Discarding the 4 LSB
+  OUTDATA <= x"0" & outdata_inner(15 downto 4);  -- Discarding the 4 LSB
 
   --Enable sysmon output in first full clock cycle after strobe goes high
   FD_STROBE  : FD port map (q_strobe, FASTCLK, STROBE);
@@ -90,5 +103,6 @@ begin
          else '0';
 
   --DTACK when OUTDATA contains valid data (signalled by drdy)
-  DTACK <= '1' when (device = '1' and drdy = '1' and STROBE = '1') else '0';
+  DRDY_PE : PULSE_EDGE port map(drdy_pulse, open, SLOWCLK, RST, 1, DRDY);
+  DTACK <= '1' when (device = '1' and drdy_pulse = '1' and STROBE = '1') else '0';
 end SYSTEM_MON_ARCH;
