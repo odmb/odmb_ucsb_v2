@@ -67,49 +67,56 @@
 //***************************** Entity Declaration ****************************
 
 module MGT_32GBPS_16BIT_1TO12_GTX #
-(
-    // Simulation attributes
-    parameter   GTX_SIM_GTXRESET_SPEEDUP   =   1,      // Set to 1 to speed up sim reset
-    
-    // Share RX PLL parameter
-    parameter   GTX_TX_CLK_SOURCE          =   "TXPLL",
-    // Save power parameter
-    parameter   GTX_POWER_SAVE             =   10'b0000000000
-)
-(
+  (
+   // Simulation attributes
+   parameter   GTX_SIM_GTXRESET_SPEEDUP   =   1,      // Set to 1 to speed up sim reset
+   
+   // Share RX PLL parameter
+   parameter   GTX_TX_CLK_SOURCE          =   "TXPLL",
+   // Save power parameter
+   parameter   GTX_POWER_SAVE             =   10'b0000000000
+   )
+   (
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   RXPOWERDOWN_IN,
+    input [1:0]   RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   RXCHARISK_OUT,
-    output  [1:0]   RXDISPERR_OUT,
-    output  [1:0]   RXNOTINTABLE_OUT,
+    output [1:0]  RXCHARISK_OUT,
+    output [1:0]  RXDISPERR_OUT,
+    output [1:0]  RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   RXCLKCORCNT_OUT,
+    output [2:0]  RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           RXENMCOMMAALIGN_IN,
-    input           RXENPCOMMAALIGN_IN,
+    input 	  RXENMCOMMAALIGN_IN,
+    input 	  RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  RXDATA_OUT,
-    output          RXRECCLK_OUT,
-    input           RXUSRCLK2_IN,
+    output [15:0] RXDATA_OUT,
+    output 	  RXRECCLK_OUT,
+    input 	  RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           RXN_IN,
-    input           RXP_IN,
+    input 	  RXN_IN,
+    input 	  RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTXRXRESET_IN,
-    input   [1:0]   MGTREFCLKRX_IN,
-    input           PLLRXRESET_IN,
-    output          RXPLLLKDET_OUT,
-    output          RXRESETDONE_OUT,
+    input 	  GTXRXRESET_IN,
+    input [1:0]   MGTREFCLKRX_IN,
+    input 	  PLLRXRESET_IN,
+    output 	  RXPLLLKDET_OUT,
+    output 	  RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          TXN_OUT,
-    output          TXP_OUT
-
-
-);
-
-
-//***************************** Wire Declarations *****************************
+    output 	  TXN_OUT,
+    output 	  TXP_OUT,
+    //-- PRBS Ports ------------------------------------------------------------
+    input 	  PRBSCNTRESET_IN,
+    input  [2:0]  ENPRBSTST_IN,
+    output 	  RXPRBSERR_OUT,
+    //--------------- Shared Ports - Dynamic Reconfiguration Port (DERP)
+    input 	  DCLK_IN,
+    input 	  DEN_IN,
+    output [15:0] DRPDO_OUT
+    
+    );
+   
+   
+   //***************************** Wire Declarations *****************************
 
     // ground and vcc signals
     wire            tied_to_ground_i;
@@ -411,9 +418,9 @@ module MGT_32GBPS_16BIT_1TO12_GTX #
         .RXENPCOMMAALIGN                (RXENPCOMMAALIGN_IN),
         .RXSLIDE                        (tied_to_ground_i),
         //--------------------- Receive Ports - PRBS Detection ---------------------
-        .PRBSCNTRESET                   (tied_to_ground_i),
-        .RXENPRBSTST                    (tied_to_ground_vec_i[2:0]),
-        .RXPRBSERR                      (),
+        .PRBSCNTRESET                   (PRBSCNTRESET_IN),
+        .RXENPRBSTST                    (ENPRBSTST_IN[2:0]),
+        .RXPRBSERR                      (RXPRBSERR_OUT),
         //----------------- Receive Ports - RX Data Path interface -----------------
         .RXDATA                         (rxdata_i),
         .RXRECCLK                       (RXRECCLK_OUT),
@@ -489,12 +496,12 @@ module MGT_32GBPS_16BIT_1TO12_GTX #
         .COMSASDET                      (),
         .COMWAKEDET                     (),
         //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-        .DADDR                          (tied_to_ground_vec_i[7:0]),
-        .DCLK                           (tied_to_ground_i),
-        .DEN                            (tied_to_ground_i),
+        .DADDR                          (8'h82),
+        .DCLK                           (DCLK_IN),
+        .DEN                            (DEN_IN),
         .DI                             (tied_to_ground_vec_i[15:0]),
         .DRDY                           (),
-        .DRPDO                          (),
+        .DRPDO                          (DRPDO_OUT),
         .DWE                            (tied_to_ground_i),
         //------------ Transmit Ports - 64b66b and 64b67b Gearbox Ports ------------
         .TXGEARBOXREADY                 (),

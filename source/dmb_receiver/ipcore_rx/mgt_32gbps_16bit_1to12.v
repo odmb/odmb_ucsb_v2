@@ -67,1017 +67,1149 @@
 //***************************** Entity Declaration ****************************
 
 (* CORE_GENERATION_INFO = "MGT_32GBPS_16BIT_1TO12,v6_gtxwizard_v1_8,{protocol_file=gigabit_ethernet}" *) module MGT_32GBPS_16BIT_1TO12 #
-(
-    // Simulation attributes
-    parameter   WRAPPER_SIM_GTXRESET_SPEEDUP    = 0    // Set to 1 to speed up sim reset
-)
-(
-    
+  (
+   // Simulation attributes
+   parameter   WRAPPER_SIM_GTXRESET_SPEEDUP    = 0    // Set to 1 to speed up sim reset
+   )
+   (
+
+    // PRBS signals
+    input [2:0]       PRBS_TYPE,
+    input [3:0]       PRBS_FIBER_SEL,
+    input 	      PRBS_EN,
+    input 	      PRBS_RST, 
+    input 	      PRBS_RD_EN,
+    output reg        RXPRBSERR, 	      
+    output reg [15:0] PRBS_ERR_CNT_OUT,
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX0  (X0Y8)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX0_RXPOWERDOWN_IN,
+    input [1:0]       GTX0_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX0_RXCHARISK_OUT,
-    output  [1:0]   GTX0_RXDISPERR_OUT,
-    output  [1:0]   GTX0_RXNOTINTABLE_OUT,
+    output [1:0]      GTX0_RXCHARISK_OUT,
+    output [1:0]      GTX0_RXDISPERR_OUT,
+    output [1:0]      GTX0_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX0_RXCLKCORCNT_OUT,
+    output [2:0]      GTX0_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX0_RXENMCOMMAALIGN_IN,
-    input           GTX0_RXENPCOMMAALIGN_IN,
+    input 	      GTX0_RXENMCOMMAALIGN_IN,
+    input 	      GTX0_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX0_RXDATA_OUT,
-    output          GTX0_RXRECCLK_OUT,
-    input           GTX0_RXUSRCLK2_IN,
+    output [15:0]     GTX0_RXDATA_OUT,
+    output 	      GTX0_RXRECCLK_OUT,
+    input 	      GTX0_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX0_RXN_IN,
-    input           GTX0_RXP_IN,
+    input 	      GTX0_RXN_IN,
+    input 	      GTX0_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX0_GTXRXRESET_IN,
-    input           GTX0_MGTREFCLKRX_IN,
-    input           GTX0_PLLRXRESET_IN,
-    output          GTX0_RXPLLLKDET_OUT,
-    output          GTX0_RXRESETDONE_OUT,
+    input 	      GTX0_GTXRXRESET_IN,
+    input 	      GTX0_MGTREFCLKRX_IN,
+    input 	      GTX0_PLLRXRESET_IN,
+    output 	      GTX0_RXPLLLKDET_OUT,
+    output 	      GTX0_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX0_TXN_OUT,
-    output          GTX0_TXP_OUT,
-
-
-    
+    output 	      GTX0_TXN_OUT,
+    output 	      GTX0_TXP_OUT,
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX1  (X0Y9)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX1_RXPOWERDOWN_IN,
+    input [1:0]       GTX1_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX1_RXCHARISK_OUT,
-    output  [1:0]   GTX1_RXDISPERR_OUT,
-    output  [1:0]   GTX1_RXNOTINTABLE_OUT,
+    output [1:0]      GTX1_RXCHARISK_OUT,
+    output [1:0]      GTX1_RXDISPERR_OUT,
+    output [1:0]      GTX1_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX1_RXCLKCORCNT_OUT,
+    output [2:0]      GTX1_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX1_RXENMCOMMAALIGN_IN,
-    input           GTX1_RXENPCOMMAALIGN_IN,
+    input 	      GTX1_RXENMCOMMAALIGN_IN,
+    input 	      GTX1_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX1_RXDATA_OUT,
-    output          GTX1_RXRECCLK_OUT,
-    input           GTX1_RXUSRCLK2_IN,
+    output [15:0]     GTX1_RXDATA_OUT,
+    output 	      GTX1_RXRECCLK_OUT,
+    input 	      GTX1_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX1_RXN_IN,
-    input           GTX1_RXP_IN,
+    input 	      GTX1_RXN_IN,
+    input 	      GTX1_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX1_GTXRXRESET_IN,
-    input           GTX1_MGTREFCLKRX_IN,
-    input           GTX1_PLLRXRESET_IN,
-    output          GTX1_RXPLLLKDET_OUT,
-    output          GTX1_RXRESETDONE_OUT,
+    input 	      GTX1_GTXRXRESET_IN,
+    input 	      GTX1_MGTREFCLKRX_IN,
+    input 	      GTX1_PLLRXRESET_IN,
+    output 	      GTX1_RXPLLLKDET_OUT,
+    output 	      GTX1_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX1_TXN_OUT,
-    output          GTX1_TXP_OUT,
-
-
-    
+    output 	      GTX1_TXN_OUT,
+    output 	      GTX1_TXP_OUT,
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX2  (X0Y10)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX2_RXPOWERDOWN_IN,
+    input [1:0]       GTX2_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX2_RXCHARISK_OUT,
-    output  [1:0]   GTX2_RXDISPERR_OUT,
-    output  [1:0]   GTX2_RXNOTINTABLE_OUT,
+    output [1:0]      GTX2_RXCHARISK_OUT,
+    output [1:0]      GTX2_RXDISPERR_OUT,
+    output [1:0]      GTX2_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX2_RXCLKCORCNT_OUT,
+    output [2:0]      GTX2_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX2_RXENMCOMMAALIGN_IN,
-    input           GTX2_RXENPCOMMAALIGN_IN,
+    input 	      GTX2_RXENMCOMMAALIGN_IN,
+    input 	      GTX2_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX2_RXDATA_OUT,
-    output          GTX2_RXRECCLK_OUT,
-    input           GTX2_RXUSRCLK2_IN,
+    output [15:0]     GTX2_RXDATA_OUT,
+    output 	      GTX2_RXRECCLK_OUT,
+    input 	      GTX2_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX2_RXN_IN,
-    input           GTX2_RXP_IN,
+    input 	      GTX2_RXN_IN,
+    input 	      GTX2_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX2_GTXRXRESET_IN,
-    input           GTX2_MGTREFCLKRX_IN,
-    input           GTX2_PLLRXRESET_IN,
-    output          GTX2_RXPLLLKDET_OUT,
-    output          GTX2_RXRESETDONE_OUT,
+    input 	      GTX2_GTXRXRESET_IN,
+    input 	      GTX2_MGTREFCLKRX_IN,
+    input 	      GTX2_PLLRXRESET_IN,
+    output 	      GTX2_RXPLLLKDET_OUT,
+    output 	      GTX2_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX2_TXN_OUT,
-    output          GTX2_TXP_OUT,
-
-
-    
+    output 	      GTX2_TXN_OUT,
+    output 	      GTX2_TXP_OUT,
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX3  (X0Y11)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX3_RXPOWERDOWN_IN,
+    input [1:0]       GTX3_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX3_RXCHARISK_OUT,
-    output  [1:0]   GTX3_RXDISPERR_OUT,
-    output  [1:0]   GTX3_RXNOTINTABLE_OUT,
+    output [1:0]      GTX3_RXCHARISK_OUT,
+    output [1:0]      GTX3_RXDISPERR_OUT,
+    output [1:0]      GTX3_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX3_RXCLKCORCNT_OUT,
+    output [2:0]      GTX3_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX3_RXENMCOMMAALIGN_IN,
-    input           GTX3_RXENPCOMMAALIGN_IN,
+    input 	      GTX3_RXENMCOMMAALIGN_IN,
+    input 	      GTX3_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX3_RXDATA_OUT,
-    output          GTX3_RXRECCLK_OUT,
-    input           GTX3_RXUSRCLK2_IN,
+    output [15:0]     GTX3_RXDATA_OUT,
+    output 	      GTX3_RXRECCLK_OUT,
+    input 	      GTX3_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX3_RXN_IN,
-    input           GTX3_RXP_IN,
+    input 	      GTX3_RXN_IN,
+    input 	      GTX3_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX3_GTXRXRESET_IN,
-    input           GTX3_MGTREFCLKRX_IN,
-    input           GTX3_PLLRXRESET_IN,
-    output          GTX3_RXPLLLKDET_OUT,
-    output          GTX3_RXRESETDONE_OUT,
+    input 	      GTX3_GTXRXRESET_IN,
+    input 	      GTX3_MGTREFCLKRX_IN,
+    input 	      GTX3_PLLRXRESET_IN,
+    output 	      GTX3_RXPLLLKDET_OUT,
+    output 	      GTX3_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX3_TXN_OUT,
-    output          GTX3_TXP_OUT,
+    output 	      GTX3_TXN_OUT,
+    output 	      GTX3_TXP_OUT,
 
-
-    
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX4  (X0Y12)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX4_RXPOWERDOWN_IN,
+    input [1:0]       GTX4_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX4_RXCHARISK_OUT,
-    output  [1:0]   GTX4_RXDISPERR_OUT,
-    output  [1:0]   GTX4_RXNOTINTABLE_OUT,
+    output [1:0]      GTX4_RXCHARISK_OUT,
+    output [1:0]      GTX4_RXDISPERR_OUT,
+    output [1:0]      GTX4_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX4_RXCLKCORCNT_OUT,
+    output [2:0]      GTX4_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX4_RXENMCOMMAALIGN_IN,
-    input           GTX4_RXENPCOMMAALIGN_IN,
+    input 	      GTX4_RXENMCOMMAALIGN_IN,
+    input 	      GTX4_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX4_RXDATA_OUT,
-    output          GTX4_RXRECCLK_OUT,
-    input           GTX4_RXUSRCLK2_IN,
+    output [15:0]     GTX4_RXDATA_OUT,
+    output 	      GTX4_RXRECCLK_OUT,
+    input 	      GTX4_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX4_RXN_IN,
-    input           GTX4_RXP_IN,
+    input 	      GTX4_RXN_IN,
+    input 	      GTX4_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX4_GTXRXRESET_IN,
-    input           GTX4_MGTREFCLKRX_IN,
-    input           GTX4_PLLRXRESET_IN,
-    output          GTX4_RXPLLLKDET_OUT,
-    output          GTX4_RXRESETDONE_OUT,
+    input 	      GTX4_GTXRXRESET_IN,
+    input 	      GTX4_MGTREFCLKRX_IN,
+    input 	      GTX4_PLLRXRESET_IN,
+    output 	      GTX4_RXPLLLKDET_OUT,
+    output 	      GTX4_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX4_TXN_OUT,
-    output          GTX4_TXP_OUT,
-
-
-    
+    output 	      GTX4_TXN_OUT,
+    output 	      GTX4_TXP_OUT,
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX5  (X0Y13)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX5_RXPOWERDOWN_IN,
+    input [1:0]       GTX5_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX5_RXCHARISK_OUT,
-    output  [1:0]   GTX5_RXDISPERR_OUT,
-    output  [1:0]   GTX5_RXNOTINTABLE_OUT,
+    output [1:0]      GTX5_RXCHARISK_OUT,
+    output [1:0]      GTX5_RXDISPERR_OUT,
+    output [1:0]      GTX5_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX5_RXCLKCORCNT_OUT,
+    output [2:0]      GTX5_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX5_RXENMCOMMAALIGN_IN,
-    input           GTX5_RXENPCOMMAALIGN_IN,
+    input 	      GTX5_RXENMCOMMAALIGN_IN,
+    input 	      GTX5_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX5_RXDATA_OUT,
-    output          GTX5_RXRECCLK_OUT,
-    input           GTX5_RXUSRCLK2_IN,
+    output [15:0]     GTX5_RXDATA_OUT,
+    output 	      GTX5_RXRECCLK_OUT,
+    input 	      GTX5_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX5_RXN_IN,
-    input           GTX5_RXP_IN,
+    input 	      GTX5_RXN_IN,
+    input 	      GTX5_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX5_GTXRXRESET_IN,
-    input           GTX5_MGTREFCLKRX_IN,
-    input           GTX5_PLLRXRESET_IN,
-    output          GTX5_RXPLLLKDET_OUT,
-    output          GTX5_RXRESETDONE_OUT,
+    input 	      GTX5_GTXRXRESET_IN,
+    input 	      GTX5_MGTREFCLKRX_IN,
+    input 	      GTX5_PLLRXRESET_IN,
+    output 	      GTX5_RXPLLLKDET_OUT,
+    output 	      GTX5_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX5_TXN_OUT,
-    output          GTX5_TXP_OUT,
-
-
-    
+    output 	      GTX5_TXN_OUT,
+    output 	      GTX5_TXP_OUT,
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX6  (X0Y14)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX6_RXPOWERDOWN_IN,
+    input [1:0]       GTX6_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX6_RXCHARISK_OUT,
-    output  [1:0]   GTX6_RXDISPERR_OUT,
-    output  [1:0]   GTX6_RXNOTINTABLE_OUT,
+    output [1:0]      GTX6_RXCHARISK_OUT,
+    output [1:0]      GTX6_RXDISPERR_OUT,
+    output [1:0]      GTX6_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX6_RXCLKCORCNT_OUT,
+    output [2:0]      GTX6_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX6_RXENMCOMMAALIGN_IN,
-    input           GTX6_RXENPCOMMAALIGN_IN,
+    input 	      GTX6_RXENMCOMMAALIGN_IN,
+    input 	      GTX6_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX6_RXDATA_OUT,
-    output          GTX6_RXRECCLK_OUT,
-    input           GTX6_RXUSRCLK2_IN,
+    output [15:0]     GTX6_RXDATA_OUT,
+    output 	      GTX6_RXRECCLK_OUT,
+    input 	      GTX6_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX6_RXN_IN,
-    input           GTX6_RXP_IN,
+    input 	      GTX6_RXN_IN,
+    input 	      GTX6_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX6_GTXRXRESET_IN,
-    input           GTX6_MGTREFCLKRX_IN,
-    input           GTX6_PLLRXRESET_IN,
-    output          GTX6_RXPLLLKDET_OUT,
-    output          GTX6_RXRESETDONE_OUT,
+    input 	      GTX6_GTXRXRESET_IN,
+    input 	      GTX6_MGTREFCLKRX_IN,
+    input 	      GTX6_PLLRXRESET_IN,
+    output 	      GTX6_RXPLLLKDET_OUT,
+    output 	      GTX6_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX6_TXN_OUT,
-    output          GTX6_TXP_OUT,
+    output 	      GTX6_TXN_OUT,
+    output 	      GTX6_TXP_OUT,
 
-
-    
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX7  (X0Y15)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX7_RXPOWERDOWN_IN,
+    input [1:0]       GTX7_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX7_RXCHARISK_OUT,
-    output  [1:0]   GTX7_RXDISPERR_OUT,
-    output  [1:0]   GTX7_RXNOTINTABLE_OUT,
+    output [1:0]      GTX7_RXCHARISK_OUT,
+    output [1:0]      GTX7_RXDISPERR_OUT,
+    output [1:0]      GTX7_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX7_RXCLKCORCNT_OUT,
+    output [2:0]      GTX7_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX7_RXENMCOMMAALIGN_IN,
-    input           GTX7_RXENPCOMMAALIGN_IN,
+    input 	      GTX7_RXENMCOMMAALIGN_IN,
+    input 	      GTX7_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX7_RXDATA_OUT,
-    output          GTX7_RXRECCLK_OUT,
-    input           GTX7_RXUSRCLK2_IN,
+    output [15:0]     GTX7_RXDATA_OUT,
+    output 	      GTX7_RXRECCLK_OUT,
+    input 	      GTX7_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX7_RXN_IN,
-    input           GTX7_RXP_IN,
+    input 	      GTX7_RXN_IN,
+    input 	      GTX7_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX7_GTXRXRESET_IN,
-    input           GTX7_MGTREFCLKRX_IN,
-    input           GTX7_PLLRXRESET_IN,
-    output          GTX7_RXPLLLKDET_OUT,
-    output          GTX7_RXRESETDONE_OUT,
+    input 	      GTX7_GTXRXRESET_IN,
+    input 	      GTX7_MGTREFCLKRX_IN,
+    input 	      GTX7_PLLRXRESET_IN,
+    output 	      GTX7_RXPLLLKDET_OUT,
+    output 	      GTX7_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX7_TXN_OUT,
-    output          GTX7_TXP_OUT,
+    output 	      GTX7_TXN_OUT,
+    output 	      GTX7_TXP_OUT,
 
 
-    
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX8  (X0Y16)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX8_RXPOWERDOWN_IN,
+    input [1:0]       GTX8_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX8_RXCHARISK_OUT,
-    output  [1:0]   GTX8_RXDISPERR_OUT,
-    output  [1:0]   GTX8_RXNOTINTABLE_OUT,
+    output [1:0]      GTX8_RXCHARISK_OUT,
+    output [1:0]      GTX8_RXDISPERR_OUT,
+    output [1:0]      GTX8_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX8_RXCLKCORCNT_OUT,
+    output [2:0]      GTX8_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX8_RXENMCOMMAALIGN_IN,
-    input           GTX8_RXENPCOMMAALIGN_IN,
+    input 	      GTX8_RXENMCOMMAALIGN_IN,
+    input 	      GTX8_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX8_RXDATA_OUT,
-    output          GTX8_RXRECCLK_OUT,
-    input           GTX8_RXUSRCLK2_IN,
+    output [15:0]     GTX8_RXDATA_OUT,
+    output 	      GTX8_RXRECCLK_OUT,
+    input 	      GTX8_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX8_RXN_IN,
-    input           GTX8_RXP_IN,
+    input 	      GTX8_RXN_IN,
+    input 	      GTX8_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX8_GTXRXRESET_IN,
-    input           GTX8_MGTREFCLKRX_IN,
-    input           GTX8_PLLRXRESET_IN,
-    output          GTX8_RXPLLLKDET_OUT,
-    output          GTX8_RXRESETDONE_OUT,
+    input 	      GTX8_GTXRXRESET_IN,
+    input 	      GTX8_MGTREFCLKRX_IN,
+    input 	      GTX8_PLLRXRESET_IN,
+    output 	      GTX8_RXPLLLKDET_OUT,
+    output 	      GTX8_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX8_TXN_OUT,
-    output          GTX8_TXP_OUT,
+    output 	      GTX8_TXN_OUT,
+    output 	      GTX8_TXP_OUT,
 
 
-    
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX9  (X0Y17)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX9_RXPOWERDOWN_IN,
+    input [1:0]       GTX9_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX9_RXCHARISK_OUT,
-    output  [1:0]   GTX9_RXDISPERR_OUT,
-    output  [1:0]   GTX9_RXNOTINTABLE_OUT,
+    output [1:0]      GTX9_RXCHARISK_OUT,
+    output [1:0]      GTX9_RXDISPERR_OUT,
+    output [1:0]      GTX9_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX9_RXCLKCORCNT_OUT,
+    output [2:0]      GTX9_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX9_RXENMCOMMAALIGN_IN,
-    input           GTX9_RXENPCOMMAALIGN_IN,
+    input 	      GTX9_RXENMCOMMAALIGN_IN,
+    input 	      GTX9_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX9_RXDATA_OUT,
-    output          GTX9_RXRECCLK_OUT,
-    input           GTX9_RXUSRCLK2_IN,
+    output [15:0]     GTX9_RXDATA_OUT,
+    output 	      GTX9_RXRECCLK_OUT,
+    input 	      GTX9_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX9_RXN_IN,
-    input           GTX9_RXP_IN,
+    input 	      GTX9_RXN_IN,
+    input 	      GTX9_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX9_GTXRXRESET_IN,
-    input           GTX9_MGTREFCLKRX_IN,
-    input           GTX9_PLLRXRESET_IN,
-    output          GTX9_RXPLLLKDET_OUT,
-    output          GTX9_RXRESETDONE_OUT,
+    input 	      GTX9_GTXRXRESET_IN,
+    input 	      GTX9_MGTREFCLKRX_IN,
+    input 	      GTX9_PLLRXRESET_IN,
+    output 	      GTX9_RXPLLLKDET_OUT,
+    output 	      GTX9_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX9_TXN_OUT,
-    output          GTX9_TXP_OUT,
+    output 	      GTX9_TXN_OUT,
+    output 	      GTX9_TXP_OUT,
 
 
-    
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX10  (X0Y18)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX10_RXPOWERDOWN_IN,
+    input [1:0]       GTX10_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX10_RXCHARISK_OUT,
-    output  [1:0]   GTX10_RXDISPERR_OUT,
-    output  [1:0]   GTX10_RXNOTINTABLE_OUT,
+    output [1:0]      GTX10_RXCHARISK_OUT,
+    output [1:0]      GTX10_RXDISPERR_OUT,
+    output [1:0]      GTX10_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX10_RXCLKCORCNT_OUT,
+    output [2:0]      GTX10_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX10_RXENMCOMMAALIGN_IN,
-    input           GTX10_RXENPCOMMAALIGN_IN,
+    input 	      GTX10_RXENMCOMMAALIGN_IN,
+    input 	      GTX10_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX10_RXDATA_OUT,
-    output          GTX10_RXRECCLK_OUT,
-    input           GTX10_RXUSRCLK2_IN,
+    output [15:0]     GTX10_RXDATA_OUT,
+    output 	      GTX10_RXRECCLK_OUT,
+    input 	      GTX10_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX10_RXN_IN,
-    input           GTX10_RXP_IN,
+    input 	      GTX10_RXN_IN,
+    input 	      GTX10_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX10_GTXRXRESET_IN,
-    input           GTX10_MGTREFCLKRX_IN,
-    input           GTX10_PLLRXRESET_IN,
-    output          GTX10_RXPLLLKDET_OUT,
-    output          GTX10_RXRESETDONE_OUT,
+    input 	      GTX10_GTXRXRESET_IN,
+    input 	      GTX10_MGTREFCLKRX_IN,
+    input 	      GTX10_PLLRXRESET_IN,
+    output 	      GTX10_RXPLLLKDET_OUT,
+    output 	      GTX10_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX10_TXN_OUT,
-    output          GTX10_TXP_OUT,
-
-
-    
+    output 	      GTX10_TXN_OUT,
+    output 	      GTX10_TXP_OUT,
+   
     //_________________________________________________________________________
     //_________________________________________________________________________
     //GTX11  (X0Y19)
 
     //---------------------- Loopback and Powerdown Ports ----------------------
-    input   [1:0]   GTX11_RXPOWERDOWN_IN,
+    input [1:0]       GTX11_RXPOWERDOWN_IN,
     //--------------------- Receive Ports - 8b10b Decoder ----------------------
-    output  [1:0]   GTX11_RXCHARISK_OUT,
-    output  [1:0]   GTX11_RXDISPERR_OUT,
-    output  [1:0]   GTX11_RXNOTINTABLE_OUT,
+    output [1:0]      GTX11_RXCHARISK_OUT,
+    output [1:0]      GTX11_RXDISPERR_OUT,
+    output [1:0]      GTX11_RXNOTINTABLE_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
-    output  [2:0]   GTX11_RXCLKCORCNT_OUT,
+    output [2:0]      GTX11_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
-    input           GTX11_RXENMCOMMAALIGN_IN,
-    input           GTX11_RXENPCOMMAALIGN_IN,
+    input 	      GTX11_RXENMCOMMAALIGN_IN,
+    input 	      GTX11_RXENPCOMMAALIGN_IN,
     //----------------- Receive Ports - RX Data Path interface -----------------
-    output  [15:0]  GTX11_RXDATA_OUT,
-    output          GTX11_RXRECCLK_OUT,
-    input           GTX11_RXUSRCLK2_IN,
+    output [15:0]     GTX11_RXDATA_OUT,
+    output 	      GTX11_RXRECCLK_OUT,
+    input 	      GTX11_RXUSRCLK2_IN,
     //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-    input           GTX11_RXN_IN,
-    input           GTX11_RXP_IN,
+    input 	      GTX11_RXN_IN,
+    input 	      GTX11_RXP_IN,
     //---------------------- Receive Ports - RX PLL Ports ----------------------
-    input           GTX11_GTXRXRESET_IN,
-    input           GTX11_MGTREFCLKRX_IN,
-    input           GTX11_PLLRXRESET_IN,
-    output          GTX11_RXPLLLKDET_OUT,
-    output          GTX11_RXRESETDONE_OUT,
+    input 	      GTX11_GTXRXRESET_IN,
+    input 	      GTX11_MGTREFCLKRX_IN,
+    input 	      GTX11_PLLRXRESET_IN,
+    output 	      GTX11_RXPLLLKDET_OUT,
+    output 	      GTX11_RXRESETDONE_OUT,
     //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-    output          GTX11_TXN_OUT,
-    output          GTX11_TXP_OUT
-
-
-);
-
-//***************************** Wire Declarations *****************************
-
-    // ground and vcc signals
-    wire            tied_to_ground_i;
-    wire    [63:0]  tied_to_ground_vec_i;
-    wire            tied_to_vcc_i;
-    wire    [63:0]  tied_to_vcc_vec_i;
- 
-//********************************* Main Body of Code**************************
-
-    assign tied_to_ground_i             = 1'b0;
-    assign tied_to_ground_vec_i         = 64'h0000000000000000;
-    assign tied_to_vcc_i                = 1'b1;
-    assign tied_to_vcc_vec_i            = 64'hffffffffffffffff;
-
-
-//------------------------- GTX Instances  -------------------------------
-
-
-
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX0  (X0Y8)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx0_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX0_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX0_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX0_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX0_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX0_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX0_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX0_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX0_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX0_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX0_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX0_RXN_IN),
-        .RXP_IN                         (GTX0_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX0_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX0_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX0_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX0_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX0_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX0_TXN_OUT),
-        .TXP_OUT                        (GTX0_TXP_OUT)
-
+    output 	      GTX11_TXN_OUT,
+    output 	      GTX11_TXP_OUT
     );
 
+   //***************************** Wire Declarations *****************************
+
+   // ground and vcc signals
+   wire 	  tied_to_ground_i;
+   wire [63:0] 	  tied_to_ground_vec_i;
+   wire 	  tied_to_vcc_i;
+   wire [63:0] 	  tied_to_vcc_vec_i;
+
+   // PRBS signals
+   wire [2:0]     enprbstst_in;
+   wire [15:0]    drpdo1_out;
+   wire [15:0]    drpdo2_out;
+   wire [15:0]    drpdo3_out;
+   wire [15:0]    drpdo4_out;
+   wire [15:0]    drpdo5_out;
+   wire [15:0]    drpdo6_out;
+   wire [15:0]    drpdo7_out;
+   wire [15:0]    drpdo8_out;
+   wire [15:0]    drpdo9_out;
+   wire [15:0]    drpdo10_out;
+   wire [15:0]    drpdo11_out;
+   wire [15:0]    drpdo12_out;
+   wire [12:1]    rxprbserr_out;
+      
+   //********************************* Main Body of Code**************************
+
+   assign tied_to_ground_i             = 1'b0;
+   assign tied_to_ground_vec_i         = 64'h0000000000000000;
+   assign tied_to_vcc_i                = 1'b1;
+   assign tied_to_vcc_vec_i            = 64'hffffffffffffffff;
 
 
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX1  (X0Y9)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx1_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX1_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX1_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX1_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX1_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX1_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX1_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX1_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX1_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX1_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX1_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX1_RXN_IN),
-        .RXP_IN                         (GTX1_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX1_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX1_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX1_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX1_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX1_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX1_TXN_OUT),
-        .TXP_OUT                        (GTX1_TXP_OUT)
-
-    );
+   //------------------------- GTX Instances  -------------------------------
 
 
 
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX2  (X0Y10)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx2_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX2_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX2_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX2_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX2_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX2_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX2_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX2_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX2_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX2_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX2_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX2_RXN_IN),
-        .RXP_IN                         (GTX2_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX2_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX2_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX2_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX2_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX2_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX2_TXN_OUT),
-        .TXP_OUT                        (GTX2_TXP_OUT)
-
-    );
-
-
-
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX3  (X0Y11)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx3_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX3_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX3_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX3_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX3_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX3_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX3_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX3_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX3_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX3_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX3_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX3_RXN_IN),
-        .RXP_IN                         (GTX3_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX3_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX3_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX3_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX3_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX3_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX3_TXN_OUT),
-        .TXP_OUT                        (GTX3_TXP_OUT)
-
-    );
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX0  (X0Y8)
+   
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx0_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX0_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX0_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX0_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX0_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX0_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX0_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX0_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX0_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX0_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX0_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX0_RXN_IN),
+      .RXP_IN                         (GTX0_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX0_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX0_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX0_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX0_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX0_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX0_TXN_OUT),
+      .TXP_OUT                        (GTX0_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[5]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX0_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo5_out)
+      
+      
+      );
+   
 
 
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX1  (X0Y9)
 
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX4  (X0Y12)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx4_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX4_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX4_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX4_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX4_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX4_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX4_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX4_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX4_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX4_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX4_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX4_RXN_IN),
-        .RXP_IN                         (GTX4_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX4_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX4_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX4_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX4_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX4_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX4_TXN_OUT),
-        .TXP_OUT                        (GTX4_TXP_OUT)
-
-    );
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx1_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX1_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX1_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX1_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX1_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX1_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX1_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX1_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX1_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX1_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX1_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX1_RXN_IN),
+      .RXP_IN                         (GTX1_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX1_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX1_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX1_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX1_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX1_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX1_TXN_OUT),
+      .TXP_OUT                        (GTX1_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[1]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX1_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo1_out)
+      );
 
 
 
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX5  (X0Y13)
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX2  (X0Y10)
 
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx5_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX5_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX5_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX5_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX5_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX5_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX5_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX5_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX5_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX5_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX5_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX5_RXN_IN),
-        .RXP_IN                         (GTX5_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX5_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX5_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX5_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX5_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX5_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX5_TXN_OUT),
-        .TXP_OUT                        (GTX5_TXP_OUT)
-
-    );
-
-
-
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX6  (X0Y14)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx6_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX6_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX6_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX6_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX6_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX6_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX6_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX6_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX6_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX6_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX6_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX6_RXN_IN),
-        .RXP_IN                         (GTX6_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX6_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX6_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX6_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX6_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX6_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX6_TXN_OUT),
-        .TXP_OUT                        (GTX6_TXP_OUT)
-
-    );
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx2_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX2_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX2_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX2_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX2_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX2_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX2_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX2_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX2_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX2_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX2_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX2_RXN_IN),
+      .RXP_IN                         (GTX2_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX2_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX2_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX2_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX2_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX2_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX2_TXN_OUT),
+      .TXP_OUT                        (GTX2_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[4]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX2_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo4_out)
+      );
 
 
 
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX7  (X0Y15)
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX3  (X0Y11)
 
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx7_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX7_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX7_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX7_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX7_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX7_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX7_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX7_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX7_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX7_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX7_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX7_RXN_IN),
-        .RXP_IN                         (GTX7_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX7_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX7_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX7_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX7_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX7_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX7_TXN_OUT),
-        .TXP_OUT                        (GTX7_TXP_OUT)
-
-    );
-
-
-
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX8  (X0Y16)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx8_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX8_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX8_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX8_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX8_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX8_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX8_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX8_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX8_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX8_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX8_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX8_RXN_IN),
-        .RXP_IN                         (GTX8_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX8_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX8_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX8_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX8_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX8_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX8_TXN_OUT),
-        .TXP_OUT                        (GTX8_TXP_OUT)
-
-    );
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx3_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX3_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX3_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX3_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX3_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX3_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX3_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX3_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX3_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX3_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX3_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX3_RXN_IN),
+      .RXP_IN                         (GTX3_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX3_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX3_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX3_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX3_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX3_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX3_TXN_OUT),
+      .TXP_OUT                        (GTX3_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[2]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX3_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo2_out)
+      );
 
 
 
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX9  (X0Y17)
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX4  (X0Y12)
 
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx9_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX9_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX9_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX9_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX9_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX9_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX9_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX9_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX9_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX9_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX9_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX9_RXN_IN),
-        .RXP_IN                         (GTX9_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX9_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX9_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX9_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX9_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX9_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX9_TXN_OUT),
-        .TXP_OUT                        (GTX9_TXP_OUT)
-
-    );
-
-
-
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX10  (X0Y18)
-
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx10_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX10_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX10_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX10_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX10_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX10_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX10_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX10_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX10_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX10_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX10_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX10_RXN_IN),
-        .RXP_IN                         (GTX10_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX10_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX10_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX10_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX10_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX10_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX10_TXN_OUT),
-        .TXP_OUT                        (GTX10_TXP_OUT)
-
-    );
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx4_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX4_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX4_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX4_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX4_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX4_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX4_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX4_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX4_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX4_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX4_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX4_RXN_IN),
+      .RXP_IN                         (GTX4_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX4_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX4_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX4_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX4_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX4_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX4_TXN_OUT),
+      .TXP_OUT                        (GTX4_TXP_OUT),
+       //-------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[3]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX4_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo3_out)
+     );
 
 
 
-    //_________________________________________________________________________
-    //_________________________________________________________________________
-    //GTX11  (X0Y19)
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX5  (X0Y13)
 
-    MGT_32GBPS_16BIT_1TO12_GTX #
-    (
-        // Simulation attributes
-        .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
-        
-        // Share RX PLL parameter
-        .GTX_TX_CLK_SOURCE           ("TXPLL"),
-        // Save power parameter
-        .GTX_POWER_SAVE              (10'b0000110000)
-    )
-    gtx11_mgt_32gbps_16bit_1to12_i
-    (
-        //---------------------- Loopback and Powerdown Ports ----------------------
-        .RXPOWERDOWN_IN                 (GTX11_RXPOWERDOWN_IN),
-        //--------------------- Receive Ports - 8b10b Decoder ----------------------
-        .RXCHARISK_OUT                  (GTX11_RXCHARISK_OUT),
-        .RXDISPERR_OUT                  (GTX11_RXDISPERR_OUT),
-        .RXNOTINTABLE_OUT               (GTX11_RXNOTINTABLE_OUT),
-        //----------------- Receive Ports - Clock Correction Ports -----------------
-        .RXCLKCORCNT_OUT                (GTX11_RXCLKCORCNT_OUT),
-        //------------- Receive Ports - Comma Detection and Alignment --------------
-        .RXENMCOMMAALIGN_IN             (GTX11_RXENMCOMMAALIGN_IN),
-        .RXENPCOMMAALIGN_IN             (GTX11_RXENPCOMMAALIGN_IN),
-        //----------------- Receive Ports - RX Data Path interface -----------------
-        .RXDATA_OUT                     (GTX11_RXDATA_OUT),
-        .RXRECCLK_OUT                   (GTX11_RXRECCLK_OUT),
-        .RXUSRCLK2_IN                   (GTX11_RXUSRCLK2_IN),
-        //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
-        .RXN_IN                         (GTX11_RXN_IN),
-        .RXP_IN                         (GTX11_RXP_IN),
-        //---------------------- Receive Ports - RX PLL Ports ----------------------
-        .GTXRXRESET_IN                  (GTX11_GTXRXRESET_IN),
-        .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX11_MGTREFCLKRX_IN}),
-        .PLLRXRESET_IN                  (GTX11_PLLRXRESET_IN),
-        .RXPLLLKDET_OUT                 (GTX11_RXPLLLKDET_OUT),
-        .RXRESETDONE_OUT                (GTX11_RXRESETDONE_OUT),
-        //-------------- Transmit Ports - TX Driver and OOB signaling --------------
-        .TXN_OUT                        (GTX11_TXN_OUT),
-        .TXP_OUT                        (GTX11_TXP_OUT)
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx5_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX5_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX5_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX5_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX5_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX5_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX5_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX5_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX5_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX5_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX5_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX5_RXN_IN),
+      .RXP_IN                         (GTX5_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX5_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX5_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX5_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX5_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX5_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX5_TXN_OUT),
+      .TXP_OUT                        (GTX5_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[11]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX5_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo11_out)
+      );
 
-    );
+
+
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX6  (X0Y14)
+
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx6_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX6_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX6_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX6_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX6_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX6_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX6_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX6_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX6_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX6_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX6_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX6_RXN_IN),
+      .RXP_IN                         (GTX6_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX6_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX6_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX6_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX6_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX6_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX6_TXN_OUT),
+      .TXP_OUT                        (GTX6_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[10]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX6_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo10_out)
+      );
 
 
 
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX7  (X0Y15)
+
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx7_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX7_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX7_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX7_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX7_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX7_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX7_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX7_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX7_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX7_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX7_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX7_RXN_IN),
+      .RXP_IN                         (GTX7_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX7_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX7_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX7_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX7_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX7_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX7_TXN_OUT),
+      .TXP_OUT                        (GTX7_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[12]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX7_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo12_out)
+      );
+
+
+
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX8  (X0Y16)
+
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx8_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX8_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX8_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX8_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX8_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX8_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX8_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX8_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX8_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX8_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX8_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX8_RXN_IN),
+      .RXP_IN                         (GTX8_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX8_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX8_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX8_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX8_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX8_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX8_TXN_OUT),
+      .TXP_OUT                        (GTX8_TXP_OUT),
+       //-------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[7]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX8_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo7_out)
+     );
+
+
+
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX9  (X0Y17)
+
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx9_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX9_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX9_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX9_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX9_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX9_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX9_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX9_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX9_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX9_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX9_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX9_RXN_IN),
+      .RXP_IN                         (GTX9_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX9_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX9_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX9_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX9_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX9_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX9_TXN_OUT),
+      .TXP_OUT                        (GTX9_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[8]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX9_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo8_out)
+      );
+
+
+
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX10  (X0Y18)
+
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx10_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX10_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX10_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX10_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX10_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX10_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX10_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX10_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX10_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX10_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX10_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX10_RXN_IN),
+      .RXP_IN                         (GTX10_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX10_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX10_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX10_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX10_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX10_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX10_TXN_OUT),
+      .TXP_OUT                        (GTX10_TXP_OUT),
+      //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[9]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX10_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo9_out)
+      );
+
+
+
+   //_________________________________________________________________________
+   //_________________________________________________________________________
+   //GTX11  (X0Y19)
+
+   MGT_32GBPS_16BIT_1TO12_GTX #
+     (
+      // Simulation attributes
+      .GTX_SIM_GTXRESET_SPEEDUP   (WRAPPER_SIM_GTXRESET_SPEEDUP),
+      
+      // Share RX PLL parameter
+      .GTX_TX_CLK_SOURCE           ("TXPLL"),
+      // Save power parameter
+      .GTX_POWER_SAVE              (10'b0000110000)
+      )
+   gtx11_mgt_32gbps_16bit_1to12_i
+     (
+      //---------------------- Loopback and Powerdown Ports ----------------------
+      .RXPOWERDOWN_IN                 (GTX11_RXPOWERDOWN_IN),
+      //--------------------- Receive Ports - 8b10b Decoder ----------------------
+      .RXCHARISK_OUT                  (GTX11_RXCHARISK_OUT),
+      .RXDISPERR_OUT                  (GTX11_RXDISPERR_OUT),
+      .RXNOTINTABLE_OUT               (GTX11_RXNOTINTABLE_OUT),
+      //----------------- Receive Ports - Clock Correction Ports -----------------
+      .RXCLKCORCNT_OUT                (GTX11_RXCLKCORCNT_OUT),
+      //------------- Receive Ports - Comma Detection and Alignment --------------
+      .RXENMCOMMAALIGN_IN             (GTX11_RXENMCOMMAALIGN_IN),
+      .RXENPCOMMAALIGN_IN             (GTX11_RXENPCOMMAALIGN_IN),
+      //----------------- Receive Ports - RX Data Path interface -----------------
+      .RXDATA_OUT                     (GTX11_RXDATA_OUT),
+      .RXRECCLK_OUT                   (GTX11_RXRECCLK_OUT),
+      .RXUSRCLK2_IN                   (GTX11_RXUSRCLK2_IN),
+      //----- Receive Ports - RX Driver,OOB signalling,Coupling and Eq.,CDR ------
+      .RXN_IN                         (GTX11_RXN_IN),
+      .RXP_IN                         (GTX11_RXP_IN),
+      //---------------------- Receive Ports - RX PLL Ports ----------------------
+      .GTXRXRESET_IN                  (GTX11_GTXRXRESET_IN),
+      .MGTREFCLKRX_IN                 ({tied_to_ground_i , GTX11_MGTREFCLKRX_IN}),
+      .PLLRXRESET_IN                  (GTX11_PLLRXRESET_IN),
+      .RXPLLLKDET_OUT                 (GTX11_RXPLLLKDET_OUT),
+      .RXRESETDONE_OUT                (GTX11_RXRESETDONE_OUT),
+      //-------------- Transmit Ports - TX Driver and OOB signaling --------------
+      .TXN_OUT                        (GTX11_TXN_OUT),
+      .TXP_OUT                        (GTX11_TXP_OUT),
+       //--------------------- Receive Ports - PRBS Detection ---------------------
+      .PRBSCNTRESET_IN                 (PRBS_RST),
+      .ENPRBSTST_IN                    (enprbstst_in),
+      .RXPRBSERR_OUT                   (rxprbserr_out[6]),
+      //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
+      .DCLK_IN                         (GTX11_RXUSRCLK2_IN),
+      .DEN_IN                          (PRBS_RD_EN),
+      .DRPDO_OUT                       (drpdo6_out)
+     );
+
+   
+   // PRBS signals
+   //assign enprbstst_in = {2'b00, PRBS_EN};  //PRBS-7
+//   assign enprbstst_in = {PRBS_EN, 2'b00};  //PRBS-31
+   assign enprbstst_in = PRBS_EN ? PRBS_TYPE : 3'b000;
+   always @*
+     begin
+	case (PRBS_FIBER_SEL)
+	  4'h1:   PRBS_ERR_CNT_OUT <= drpdo1_out; 
+	  4'h2:   PRBS_ERR_CNT_OUT <= drpdo2_out; 
+	  4'h3:   PRBS_ERR_CNT_OUT <= drpdo3_out; 
+	  4'h4:   PRBS_ERR_CNT_OUT <= drpdo4_out; 
+	  4'h5:   PRBS_ERR_CNT_OUT <= drpdo5_out; 
+	  4'h6:   PRBS_ERR_CNT_OUT <= drpdo6_out; 
+	  4'h7:   PRBS_ERR_CNT_OUT <= drpdo7_out; 
+	  4'h8:   PRBS_ERR_CNT_OUT <= drpdo8_out; 
+	  4'h9:   PRBS_ERR_CNT_OUT <= drpdo9_out; 
+	  4'ha:   PRBS_ERR_CNT_OUT <= drpdo10_out;
+	  4'hb:   PRBS_ERR_CNT_OUT <= drpdo11_out;
+	  4'hc:   PRBS_ERR_CNT_OUT <= drpdo12_out;
+	  default: PRBS_ERR_CNT_OUT<= 16'hffff;
+	endcase     
+	case (PRBS_FIBER_SEL)
+	  4'h1:   RXPRBSERR <= rxprbserr_out[1];
+	  4'h2:   RXPRBSERR <= rxprbserr_out[2];
+	  4'h3:   RXPRBSERR <= rxprbserr_out[3];
+	  4'h4:   RXPRBSERR <= rxprbserr_out[4];
+	  4'h5:   RXPRBSERR <= rxprbserr_out[5];
+	  4'h6:   RXPRBSERR <= rxprbserr_out[6];
+	  4'h7:   RXPRBSERR <= rxprbserr_out[7];
+	  4'h8:   RXPRBSERR <= rxprbserr_out[8];
+	  4'h9:   RXPRBSERR <= rxprbserr_out[9];
+	  4'ha:   RXPRBSERR <= rxprbserr_out[10];
+	  4'hb:   RXPRBSERR <= rxprbserr_out[11];
+	  4'hc:   RXPRBSERR <= rxprbserr_out[12];
+	  default: RXPRBSERR <= 1'b1;
+	endcase 
+     end
+   
 endmodule
 
-    
+

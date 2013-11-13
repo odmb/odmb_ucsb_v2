@@ -9,6 +9,7 @@
 -- Device 6 => BPI_PORT
 -- Device 7 => SYSTEM_MON
 -- Device 8 => LVDBMON
+-- Device 9 => SYSTEM_TEST
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -47,6 +48,7 @@ entity ODMB_VME is
 
 -- Clock
 
+    clk160 : in std_logic;              -- For dcfeb prbs (160MHz)
     clk80  : in std_logic;              -- For testctrl (80MHz)
     clk    : in std_logic;              -- NEW (fastclk -> 40MHz)
     clk_s1 : in std_logic;              -- NEW (midclk -> fastclk/4 -> 10MHz)
@@ -198,17 +200,26 @@ entity ODMB_VME is
     BPI_CFG_REG_WE : in std_logic;
     BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
 
+    -- DDU/PC/DCFEB COMMON PRBS
+    PRBS_TYPE : out std_logic_vector(2 downto 0);
+
     -- DDU PRBS signals
     DDU_PRBS_EN      : out std_logic;
     DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
-    DDU_PRBS_RD_EN   : out std_logic;
     DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
     -- PC PRBS signals
     PC_PRBS_EN      : out std_logic;
     PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
-    PC_PRBS_RD_EN   : out std_logic;
     PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
+
+    -- DCFEB PRBS signals
+    DCFEB_PRBS_FIBER_SEL : out std_logic_vector(3 downto 0);
+    DCFEB_PRBS_EN        : out std_logic;
+    DCFEB_PRBS_RST       : out std_logic;
+    DCFEB_PRBS_RD_EN     : out std_logic;
+    DCFEB_RXPRBSERR      : in  std_logic;
+    DCFEB_PRBS_ERR_CNT   : in  std_logic_vector(15 downto 0);
 
     -- OTMB PRBS signals
     OTMB_TX : in  std_logic_vector(48 downto 0);
@@ -439,6 +450,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       OUTDATA : out std_logic_vector(15 downto 0);
       DTACK   : out std_logic;
 
+      SLOWCLK   : in std_logic;
       FASTCLK : in std_logic;
       RST     : in std_logic;
 
@@ -493,22 +505,32 @@ architecture ODMB_VME_architecture of ODMB_VME is
       WRITER  : in std_logic;
       SLOWCLK : in std_logic;
       CLK     : in std_logic;
+      CLK160  : in std_logic;
       RST     : in std_logic;
 
       OUTDATA : out std_logic_vector(15 downto 0);
       DTACK   : out std_logic;
 
+      -- DDU/PC/DCFEB COMMON PRBS
+      PRBS_TYPE : out std_logic_vector(2 downto 0);
+
       -- DDU PRBS signals
       DDU_PRBS_EN      : out std_logic;
       DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
-      DDU_PRBS_RD_EN   : out std_logic;
       DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
       -- PC PRBS signals
       PC_PRBS_EN      : out std_logic;
       PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
-      PC_PRBS_RD_EN   : out std_logic;
       PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
+
+      -- DCFEB PRBS signals
+      DCFEB_PRBS_FIBER_SEL : out std_logic_vector(3 downto 0);
+      DCFEB_PRBS_EN        : out std_logic;
+      DCFEB_PRBS_RST       : out std_logic;
+      DCFEB_PRBS_RD_EN     : out std_logic;
+      DCFEB_RXPRBSERR      : in  std_logic;
+      DCFEB_PRBS_ERR_CNT   : in  std_logic_vector(15 downto 0);
 
       -- OTMB PRBS signals
       OTMB_TX : in  std_logic_vector(48 downto 0);
@@ -551,7 +573,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       WRITE_B           : in  std_logic;  -- read/write_bar
       INDATA            : in  std_logic_vector(15 downto 0);  -- data from VME writes to be provided to BPI interface
       OUTDATA           : out std_logic_vector(15 downto 0);  -- data from BPI interface to VME buss for reads
-      DTACK           : out std_logic;  -- DTACK bar
+      DTACK             : out std_logic;  -- DTACK bar
       -- BPI PORT signals
       BPI_RST           : out std_logic;  -- Resets BPI interface state machines
       BPI_CMD_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data for command FIFO
@@ -943,7 +965,7 @@ begin
       WRITE_B           => vme_write_b,  -- read/write_bar
       INDATA            => vme_data_in,  -- data from VME writes to be provided to BPI interface
       OUTDATA           => outdata_bpi_port,  -- data from BPI interface to VME buss for reads
-      DTACK           => dtack_dev(6),  -- DTACK bar
+      DTACK             => dtack_dev(6),  -- DTACK bar
       -- BPI controls
       BPI_RST           => BPI_RST,     -- Resets BPI interface state machines
       BPI_CMD_FIFO_DATA => VME_BPI_CMD_FIFO_DATA,  -- Data for command FIFO
@@ -973,6 +995,7 @@ begin
       OUTDATA => outdata_sysmon,
       DTACK   => dtack_dev(7),
 
+      SLOWCLK   => clk_s2,
       FASTCLK => clk,
       RST     => rst,
 
@@ -1025,22 +1048,32 @@ begin
       WRITER  => vme_write_b,
       SLOWCLK => clk_s2,
       CLK     => clk,
+      CLK160  => clk_s3,
       RST     => rst,
 
       OUTDATA => outdata_systest,
       DTACK   => dtack_dev(9),
 
+      -- DDU/PC/DCFEB COMMON PRBS
+      PRBS_TYPE => PRBS_TYPE,
+
       -- DDU PRBS signals
       DDU_PRBS_EN      => DDU_PRBS_EN,
       DDU_PRBS_TST_CNT => DDU_PRBS_TST_CNT,
-      DDU_PRBS_RD_EN   => DDU_PRBS_RD_EN,
       DDU_PRBS_ERR_CNT => DDU_PRBS_ERR_CNT,
 
       -- PC PRBS signals
       PC_PRBS_EN      => PC_PRBS_EN,
       PC_PRBS_TST_CNT => PC_PRBS_TST_CNT,
-      PC_PRBS_RD_EN   => PC_PRBS_RD_EN,
       PC_PRBS_ERR_CNT => PC_PRBS_ERR_CNT,
+
+      -- DCFEB PRBS signals
+      DCFEB_PRBS_FIBER_SEL => DCFEB_PRBS_FIBER_SEL,
+      DCFEB_PRBS_EN        => DCFEB_PRBS_EN,
+      DCFEB_PRBS_RST       => DCFEB_PRBS_RST,
+      DCFEB_PRBS_RD_EN     => DCFEB_PRBS_RD_EN,
+      DCFEB_RXPRBSERR      => DCFEB_RXPRBSERR,
+      DCFEB_PRBS_ERR_CNT   => DCFEB_PRBS_ERR_CNT,
 
       --OTMB_PRBS signals
       OTMB_TX => OTMB_TX,
@@ -1180,7 +1213,7 @@ begin
                       dtack_dev(6) or dtack_dev(7) or dtack_dev(8) or
                       dtack_dev(9));
 
-  
+
 
 end ODMB_VME_architecture;
 

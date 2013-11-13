@@ -51,6 +51,15 @@ module dmb_receiver #(
     input 	      FIFO_VME_MODE,
     input [7:1]       FIFO_RST,
     input [7:1]       FIFO_SEL,
+    // PRBS signals
+    input [2:0]       PRBS_TYPE,
+    input [3:0]       PRBS_FIBER_SEL,
+    input 	      PRBS_EN,
+    input 	      PRBS_RST, 
+    input 	      PRBS_RD_EN,
+    output 	      RXPRBSERR, 
+    output [15:0]     PRBS_ERR_CNT_OUT,
+    // to here.
     input [7:1]       RD_EN_FF,
     input [7:1]       WR_EN_FF,
     input [15:0]      FF_DATA_IN,
@@ -117,7 +126,7 @@ module dmb_receiver #(
    wire [7:1] 	      rderr_ff,rderrb_ff;
    wire [7:1] 	      wrerr_ff,wrerrb_ff;
    wire [7:1] 	      fifo_reset;
-   
+
    wire 	      clk_ds_i;
    integer 	      index;
    
@@ -247,10 +256,20 @@ module dmb_receiver #(
 	      )
 	   mgt_32gbps_16bit_1to12_i
 	     (
+
+	      .PRBS_TYPE        (PRBS_TYPE),
+	      .PRBS_FIBER_SEL	(PRBS_FIBER_SEL),
+	      .PRBS_EN          (PRBS_EN),
+	      .PRBS_RST         (PRBS_RST),
+	      .PRBS_RD_EN       (PRBS_RD_EN),
+	      .RXPRBSERR        (RXPRBSERR),
+	      .PRBS_ERR_CNT_OUT (PRBS_ERR_CNT_OUT),
+
               //_____________________________________________________________________
               //_____________________________________________________________________
               //GTX0  (X0Y8) fiber 05
 
+	      
               //---------------------- Loopback and Powerdown Ports ----------------------
               .GTX0_RXPOWERDOWN_IN            (2'b00),
               //--------------------- Receive Ports - 8b10b Decoder ----------------------
@@ -278,7 +297,6 @@ module dmb_receiver #(
               //-------------- Transmit Ports - TX Driver and OOB signaling --------------
               .GTX0_TXN_OUT                   (DAQ_TX_N[5]),
               .GTX0_TXP_OUT                   (DAQ_TX_P[5]),
-
 
               //_____________________________________________________________________
               //_____________________________________________________________________
@@ -669,6 +687,8 @@ module dmb_receiver #(
               //_____________________________________________________________________
               //_____________________________________________________________________
               //GTX0  (X0Y8) fiber 05
+	      .FIBER_SEL(FIBER_SEL),
+	      .DRPDO_OUT(PRBS_ERR_CNT_OUT),
 
               //---------------------- Loopback and Powerdown Ports ----------------------
               .GTX0_RXPOWERDOWN_IN            (2'b00),

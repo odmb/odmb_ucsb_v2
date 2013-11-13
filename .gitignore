@@ -15,6 +15,7 @@ iseconfig/
 _xmsgs/
 _ngo/
 xst/
+ipcore_dir/*.*
 *.syr
 *.map
 *.mrp
@@ -53,6 +54,11 @@ xst/
 *.mcs
 *.cfi
 *.prm
+
+### Chip Scope Pro ###
+*.cpj
+*.cgc
+*.cgp
 
 ### Other ###
 *~

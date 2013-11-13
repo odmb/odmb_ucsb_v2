@@ -1,0 +1,34 @@
+
+
+W 3000 280 set muxes
+W 3100 1  set loopback
+W 401c 0 unkill everything
+W 4004 1 Set OTMB delay
+W 400c 2 Set ALCT delay
+W 4028 4 Set number of dummy words
+W 3010 10 Request packet
+R 530c 0 Read number of words in DDU_TX FIFO
+R 530c 0 Read number of words in DDU_TX FIFO
+R 530c 0 Read number of words in DDU_TX FIFO
+
+
+W  9300   2       Selects PRBS-15
+R  9304   0       Reads PRBS type
+
+W  9204   3       Selects PRBS fiber 7
+R  9208   0       Reads selected fiber
+R  920C   0       Reads number of PRBS errors
+
+W  9200   1       Checks 1 million bits
+R  920C   0       Reads number of PRBS errors
+
+W  9204   4       Selects PRBS fiber 7
+R  920C   0       Reads number of PRBS errors
+W  9204   5       Selects PRBS fiber 7
+R  920C   0       Reads number of PRBS errors
+W  9204   6       Selects PRBS fiber 7
+R  920C   0       Reads number of PRBS errors
+W  9204   7       Selects PRBS fiber 7
+R  920C   0       Reads number of PRBS errors
+W  9204   8       Selects PRBS fiber 7
+R  920C   0       Reads number of PRBS errors

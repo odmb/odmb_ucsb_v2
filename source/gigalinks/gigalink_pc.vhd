@@ -53,9 +53,9 @@ entity GIGALINK_PC is
     RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
 
     -- PRBS signals
-    PRBS_EN         : in  std_logic;
+     PRBS_TYPE       : in std_logic_vector(2 downto 0);
+   PRBS_EN         : in  std_logic;
     PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
-    PRBS_RD_EN      : in  std_logic;
     PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
     );
 end GIGALINK_PC;
@@ -361,7 +361,7 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
   signal   prbs_reset_pulse  : std_logic;
   signal   prbs_rd_en_inner  : std_logic;
   constant prbs_rst_cycles   : integer := 1;
-  constant prbs_length       : integer := 127;
+  constant prbs_length       : integer := 10001;
   signal   prbs_en_cnt       : integer;
   signal   prbs_rst_cnt      : integer;
   signal   prbs_rd_en_cnt    : integer;
@@ -668,6 +668,7 @@ begin
 
   prbs_err_cnt_rst  <= prbs_reset_pulse and not prbs_init_pulse;
   prbs_rd_en_inner  <= prbs_en_pulse and not prbs_rd_en_pulse;
-  gtx0_enprbstst_in <= "00" & prbs_en_pulse;
+--  gtx0_enprbstst_in <= prbs_en_pulse & "00";
+  gtx0_enprbstst_in <= PRBS_TYPE when (prbs_en_pulse = '1') else "000";  
 
 end GIGALINK_PC_ARCH;
