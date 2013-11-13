@@ -319,6 +319,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Clock
 
+      clk160 : in std_logic;            -- For dcfeb prbs (160MHz)
       clk80  : in std_logic;            -- For testctrl (80MHz)
       clk    : in std_logic;            -- fpgaclk (40MHz)
       clk_s1 : in std_logic;            -- midclk (10MHz) 
@@ -469,17 +470,26 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       VAUXP : in std_logic_vector(15 downto 0);
       VAUXN : in std_logic_vector(15 downto 0);
 
+      -- DDU/PC/DCFEB COMMON PRBS
+      PRBS_TYPE : out std_logic_vector(2 downto 0);
+
       -- DDU PRBS signals
       DDU_PRBS_EN      : out std_logic;
       DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
-      DDU_PRBS_RD_EN   : out std_logic;
       DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
       -- PC PRBS signals
       PC_PRBS_EN      : out std_logic;
       PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
-      PC_PRBS_RD_EN   : out std_logic;
       PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
+
+      -- DCFEB PRBS signals
+      DCFEB_PRBS_FIBER_SEL : out std_logic_vector(3 downto 0);
+      DCFEB_PRBS_EN        : out std_logic;
+      DCFEB_PRBS_RST       : out std_logic;
+      DCFEB_PRBS_RD_EN     : out std_logic;
+      DCFEB_RXPRBSERR      : in  std_logic;
+      DCFEB_PRBS_ERR_CNT   : in  std_logic_vector(15 downto 0);
 
       -- OTMB PRBS signals
       OTMB_TX : in  std_logic_vector(48 downto 0);
@@ -491,6 +501,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   component ODMB_CTRL is
     port (
+      CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       clk40  : in std_logic;
       clk80  : in std_logic;
       clk160 : in std_logic;
@@ -686,9 +697,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       RX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0);
 
       -- PRBS signals
+      PRBS_TYPE       : in  std_logic_vector(2 downto 0);
       PRBS_EN         : in  std_logic;
       PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
-      PRBS_RD_EN      : in  std_logic;
       PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
       );
   end component;
@@ -729,9 +740,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
 
       -- PRBS signals
+      PRBS_TYPE       : in  std_logic_vector(2 downto 0);
       PRBS_EN         : in  std_logic;
       PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
-      PRBS_RD_EN      : in  std_logic;
       PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
       );
   end component;
@@ -791,7 +802,17 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       FF_STATUS              : out std_logic_vector(15 downto 0);
       DMBVME_CLK_S2          : in  std_logic;
       DAQ_RX_125REFCLK       : in  std_logic;
-      DAQ_RX_160REFCLK_115_0 : in  std_logic
+      DAQ_RX_160REFCLK_115_0 : in  std_logic;
+
+      -- PRBS signals
+      PRBS_TYPE        : in  std_logic_vector(2 downto 0);
+      PRBS_FIBER_SEL   : in  std_logic_vector(3 downto 0);
+      PRBS_EN          : in  std_logic;
+      PRBS_RST         : in  std_logic;
+      PRBS_RD_EN       : in  std_logic;
+      RXPRBSERR        : out std_logic;
+      PRBS_ERR_CNT_OUT : out std_logic_vector(15 downto 0)
+
       );
   end component;
 
@@ -918,7 +939,13 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       DOUT : out std_logic
       );
   end component;
-
+  
+component csp_controller is
+  port (
+    CONTROL0 : inout STD_LOGIC_VECTOR ( 35 downto 0 ) 
+  );
+  end component;
+  
   constant NFIFO : integer := 4;
 
 -- Global signals
@@ -1291,23 +1318,39 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal vauxp : std_logic_vector(15 downto 0);
   signal vauxn : std_logic_vector(15 downto 0);
 
+  -- DDU/PC/DCFEB COMMON PRBS
+  signal prbs_type : std_logic_vector(2 downto 0);
+
   -- DDU PRBS
   signal ddu_prbs_en         : std_logic;
   signal ddu_prbs_en_tst_cnt : std_logic_vector(15 downto 0);
-  signal ddu_prbs_rd_en      : std_logic;
   signal ddu_prbs_err_cnt    : std_logic_vector(15 downto 0);
 
   -- PC PRBS
   signal pc_prbs_en         : std_logic;
   signal pc_prbs_en_tst_cnt : std_logic_vector(15 downto 0);
-  signal pc_prbs_rd_en      : std_logic;
   signal pc_prbs_err_cnt    : std_logic_vector(15 downto 0);
+
+  -- DCFEB PRBS
+  signal dcfeb_prbs_fiber_sel : std_logic_vector(3 downto 0);
+  signal dcfeb_prbs_en        : std_logic;
+  signal dcfeb_prbs_rst       : std_logic;
+  signal dcfeb_prbs_rd_en     : std_logic;
+  signal dcfeb_rxprbserr      : std_logic;
+  signal dcfeb_prbs_err_cnt   : std_logic_vector(15 downto 0);
 
   signal otmb_rx : std_logic_vector(5 downto 0);
   signal otmb_tx : std_logic_vector(48 downto 0);
+
+  signal csp_control_fsm_port_la_ctrl : STD_LOGIC_VECTOR(35 downto 0); -- bgb logic analyzer control signals
   
 begin
-
+  
+csp_controller_pm : csp_controller
+  port map (
+    CONTROL0 => csp_control_fsm_port_la_ctrl
+);
+  
   MBV : ODMB_VME
     port map (
 
@@ -1335,6 +1378,7 @@ begin
 
 -- Clock
 
+      clk160 => clk160,                 -- for dcfeb prbs (160 MHz)
       clk80  => clk80,                  -- for testctrl (80MHz)
       clk    => clk40,                  -- fpgaclk (40MHz)
       clk_s1 => clk10,                  -- midclk (10MHz) 
@@ -1485,17 +1529,25 @@ begin
       VAUXP => vauxp,
       VAUXN => vauxn,
 
+      PRBS_TYPE => prbs_type,
+
       -- DDU PRBS signals
       DDU_PRBS_EN      => ddu_prbs_en,
       DDU_PRBS_TST_CNT => ddu_prbs_en_tst_cnt,
-      DDU_PRBS_RD_EN   => ddu_prbs_rd_en,
       DDU_PRBS_ERR_CNT => ddu_prbs_err_cnt,
 
       -- PC PRBS signals
       PC_PRBS_EN      => pc_prbs_en,
       PC_PRBS_TST_CNT => pc_prbs_en_tst_cnt,
-      PC_PRBS_RD_EN   => pc_prbs_rd_en,
       PC_PRBS_ERR_CNT => pc_prbs_err_cnt,
+
+      -- DCFEB PRBS signals
+      DCFEB_PRBS_FIBER_SEL => dcfeb_prbs_fiber_sel,
+      DCFEB_PRBS_EN        => dcfeb_prbs_en,
+      DCFEB_PRBS_RST       => dcfeb_prbs_rst,
+      DCFEB_PRBS_RD_EN     => dcfeb_prbs_rd_en,
+      DCFEB_RXPRBSERR      => dcfeb_rxprbserr,
+      DCFEB_PRBS_ERR_CNT   => dcfeb_prbs_err_cnt,
 
       -- OTMB PRBS signals
       OTMB_TX => OTMB_TX,
@@ -1505,6 +1557,7 @@ begin
   MBC : ODMB_CTRL
     port map (
 
+      CSP_CONTROL_FSM_PORT_LA_CTRL => csp_control_fsm_port_la_ctrl,
       clk40  => clk40,
       clk80  => clk80,
       clk160 => clk160,
@@ -1650,7 +1703,7 @@ begin
   GIGALINK_DDU_PM : gigalink_ddu
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
-      REF_CLK_80 => gl0_clk,            -- 80 MHz for DDU data rate
+      REF_CLK_80 => dduclk,             -- 80 MHz for DDU data rate
       RST        => opt_reset,
       -- Transmitter signals
       TXD        => gtx0_data,          -- Data to be transmitted
@@ -1678,9 +1731,9 @@ begin
       RX_FIFO_WRD_CNT => ddu_rx_fifo_wrd_cnt,
 
       -- DDU PRBS signals
+      PRBS_TYPE       => prbs_type,
       PRBS_EN         => ddu_prbs_en,
       PRBS_EN_TST_CNT => ddu_prbs_en_tst_cnt,
-      PRBS_RD_EN      => ddu_prbs_rd_en,
       PRBS_ERR_CNT    => ddu_prbs_err_cnt
       );
 
@@ -1724,9 +1777,9 @@ begin
       RX_FIFO_WRD_CNT  => pc_rx_fifo_wrd_cnt,
 
       -- PC PRBS signals
+      PRBS_TYPE       => prbs_type,
       PRBS_EN         => pc_prbs_en,
       PRBS_EN_TST_CNT => pc_prbs_en_tst_cnt,
-      PRBS_RD_EN      => pc_prbs_rd_en,
       PRBS_ERR_CNT    => pc_prbs_err_cnt
       );
 
@@ -1798,7 +1851,17 @@ begin
       FF_DATA_IN    => ff_data_in,
       FF_DATA_OUT   => TFF_DOUT,
       FF_WRD_CNT    => TFF_WRD_CNT,
-      FF_STATUS     => ff_status
+      FF_STATUS     => ff_status,
+
+      -- PRBS signals
+      PRBS_TYPE        => prbs_type,
+      PRBS_FIBER_SEL   => dcfeb_prbs_fiber_sel,
+      PRBS_EN          => dcfeb_prbs_en,
+      PRBS_RST         => dcfeb_prbs_rst,
+      PRBS_RD_EN       => dcfeb_prbs_rd_en,
+      RXPRBSERR        => dcfeb_rxprbserr,
+      PRBS_ERR_CNT_OUT => dcfeb_prbs_err_cnt
+
       );
 
 --------------------------------  DCFEB data  -------------------------------
@@ -2738,7 +2801,8 @@ begin
                          alct_fifo_data_in,
                          alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
                          v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
-                         otmb_lct_rqst, otmb_ext_trig, raw_l1a, L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT)
+                         otmb_lct_rqst, otmb_ext_trig, raw_l1a, L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT,
+                         dcfeb_prbs_en, dcfeb_prbs_rst, dcfeb_prbs_rd_en, dcfeb_rxprbserr)
   begin
     case tp_sel_reg is
       when x"0000" =>
@@ -2980,6 +3044,12 @@ begin
         tph(28) <= raw_lct(1);
         tph(41) <= rawlct(1);
         tph(42) <= int_l1a_match(1);
+
+      when x"002D" =>
+        tph(27) <= dcfeb_prbs_en;
+        tph(28) <= dcfeb_prbs_rst;
+        tph(41) <= dcfeb_prbs_rd_en;
+        tph(42) <= dcfeb_rxprbserr;
 
       when others =>
         tph(27) <= int_l1a;

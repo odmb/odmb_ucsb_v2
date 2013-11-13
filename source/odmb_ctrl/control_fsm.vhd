@@ -10,12 +10,18 @@ use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.and_reduce;
 use ieee.std_logic_misc.or_reduce;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
 entity CONTROL_FSM is
   generic (
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );  
   port (
+
+-- Chip Scope Pro Logic Analyzer control
+
+    CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 
     RST    : in std_logic;
     CLKCMS : in std_logic;
@@ -75,6 +81,15 @@ architecture CONTROL_arch of CONTROL_FSM is
       );
   end component;
 
+  component csp_control_fsm_la is
+    port (
+      CLK     : in    std_logic := 'X';
+      DATA    : in    std_logic_vector (127 downto 0);
+      TRIG0   : in    std_logic_vector (7 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
+      );
+  end component;
+
   signal fifo_pop_80 : std_logic := '0';
 
   type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
@@ -102,19 +117,51 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal dev_cnt_en                        : std_logic                     := '0';
   signal dev_cnt                           : integer range 1 to 9          := 9;
   signal reg_crc                           : std_logic_vector(23 downto 0) := (others => '0');
-  signal q_datain_last, dav_inner : std_logic;
-  signal dout_inner : std_logic_vector(15 downto 0);
+
+  signal q_datain_last : std_logic;
+
+  --Declaring Logic Analyzer signals -- bgb
+  signal control_fsm_la_data : std_logic_vector(127 downto 0);
+  signal control_fsm_la_trig : std_logic_vector(7 downto 0);
+
+  signal expect_pckt                     : std_logic                     := '0';
+  signal dav_inner                       : std_logic                     := '0';
+  signal dout_inner                      : std_logic_vector(15 downto 0) := (others => '0');
+  signal oefifo_b_inner, renfifo_b_inner : std_logic_vector(NFEB+2 downto 1);
+  signal fifo_pop_inner, eof_inner       : std_logic                     := '0';
+
+  signal dev_cnt_svl, hdr_tail_cnt_svl : std_logic_vector(4 downto 0) := (others => '0');
+
+  signal current_state_svl, next_state_svl : std_logic_vector(3 downto 0) := (others => '0');
+
 begin
-  -- Needed because DATAIN_LAST does not arrive during the last word
-  FDLAST : FD port map(q_datain_last, clk, DATAIN_LAST); 
-  FDDAV : FD port map(DAV, clk, dav_inner);
-  GEN_DOUT : for index in 0 to 15 generate
-  begin
-    FDDOUT : FD port map(DOUT(index), clk, dout_inner(index));
-  end generate GEN_DOUT;
-  
+
+  -- csp ILA core
+  csp_control_fsm_la_pm : csp_control_fsm_la
+    port map (
+      CONTROL => CSP_CONTROL_FSM_PORT_LA_CTRL,
+      CLK     => CLK,
+      DATA    => control_fsm_la_data,
+      TRIG0   => control_fsm_la_trig
+      );
+
+  expect_pckt         <= or_reduce(cafifo_l1a_match);
+  dev_cnt_svl         <= std_logic_vector(to_unsigned(dev_cnt, 5));
+  hdr_tail_cnt_svl    <= std_logic_vector(to_unsigned(hdr_tail_cnt, 5));
+-- trigger assignments (8 bits)
+  control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & "00000";
+  control_fsm_la_data <= "0" & x"000000000000"
+                         & next_state_svl & eof_inner & fifo_pop_inner & fifo_pop_80
+                         & oefifo_b_inner & renfifo_b_inner & dout_inner(15 downto 0)
+                         & hdr_tail_cnt_rst & hdr_tail_cnt_en & dev_cnt_en
+                         & cafifo_l1a_dav & cafifo_l1a_match & q_datain_last & expect_pckt
+                         & hdr_tail_cnt_svl & dev_cnt_svl & current_state_svl & dav_inner;
+
+-- Needed because DATAIN_LAST does not arrive during the last word
+  FDLAST : FD port map(q_datain_last, clk, DATAIN_LAST);
+
 -- Get a 40 MHz pulse for FIFO_POP
-  PULSE_FIFO_POP : PULSE_EDGE port map(FIFO_POP, open, CLKCMS, RST, 1, fifo_pop_80);
+  PULSE_FIFO_POP : PULSE_EDGE port map(fifo_pop_inner, open, CLKCMS, RST, 1, fifo_pop_80);
 
   control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en)
   begin
@@ -143,14 +190,36 @@ begin
     end if;
   end process;
 
-  control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav, hdr_word, hdr_tail_cnt,
-                               dev_cnt, DATAIN, q_datain_last, tail_word, clk)
+  with control_current_state select
+    current_state_svl <= x"1" when IDLE,
+    x"2"                      when HDR,
+    x"3"                      when WAIT_ALCT_OTMB,
+    x"4"                      when TX_ALCT_OTMB,
+    x"5"                      when WAIT_DCFEB,
+    x"6"                      when TX_DCFEB,
+    x"7"                      when TAIL,
+    x"8"                      when WAIT_IDLE,
+    x"0"                      when others;
+  
+  with control_next_state select
+    next_state_svl <= x"1" when IDLE,
+    x"2"                   when HDR,
+    x"3"                   when WAIT_ALCT_OTMB,
+    x"4"                   when TX_ALCT_OTMB,
+    x"5"                   when WAIT_DCFEB,
+    x"6"                   when TX_DCFEB,
+    x"7"                   when TAIL,
+    x"8"                   when WAIT_IDLE,
+    x"0"                   when others;
+  
+  control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav, hdr_word,
+                               hdr_tail_cnt, dev_cnt, DATAIN, q_datain_last, tail_word)
   begin
-    DOUT_INNER             <= (others => '0');
-    DAV_INNER              <= '0';
-    OEFIFO_B         <= (others => '1');
-    RENFIFO_B        <= (others => '1');
-    EOF              <= '0';
+    dout_inner       <= (others => '0');
+    dav_inner        <= '0';
+    oefifo_b_inner   <= (others => '1');
+    renfifo_b_inner  <= (others => '1');
+    eof_inner        <= '0';
     fifo_pop_80      <= '0';
     hdr_tail_cnt_rst <= '0';
     hdr_tail_cnt_en  <= '0';
@@ -166,8 +235,8 @@ begin
         end if;
         
       when HDR =>
-        DOUT_INNER            <= hdr_word(hdr_tail_cnt);
-        DAV_INNER             <= '1';
+        dout_inner      <= hdr_word(hdr_tail_cnt);
+        dav_inner       <= '1';
         hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_ALCT_OTMB;
@@ -183,17 +252,18 @@ begin
             control_next_state <= WAIT_DCFEB;
           end if;
         elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then
-          control_next_state <= TX_ALCT_OTMB;
-          OEFIFO_B(dev_cnt)  <= '0';
+          control_next_state       <= TX_ALCT_OTMB;
+          oefifo_b_inner(dev_cnt)  <= '0';
+          renfifo_b_inner(dev_cnt) <= '0';
         else
           control_next_state <= WAIT_ALCT_OTMB;
         end if;
         
       when TX_ALCT_OTMB =>
-        DOUT_INNER               <= DATAIN;
-        DAV_INNER                <= '1';
-        OEFIFO_B(dev_cnt)  <= '0';
-        RENFIFO_B(dev_cnt) <= '0'; 
+        dout_inner               <= DATAIN;
+        dav_inner                <= '1';
+        oefifo_b_inner(dev_cnt)  <= '0';
+        renfifo_b_inner(dev_cnt) <= '0';
         if(q_datain_last = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt = 9) then
@@ -212,17 +282,18 @@ begin
             control_next_state <= TAIL;
           end if;
         elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then
-          control_next_state <= TX_DCFEB;
-          OEFIFO_B(dev_cnt)  <= '0';
+          control_next_state       <= TX_DCFEB;
+          oefifo_b_inner(dev_cnt)  <= '0';
+          renfifo_b_inner(dev_cnt) <= '0';
         else
           control_next_state <= WAIT_DCFEB;
         end if;
 
       when TX_DCFEB =>
-        DOUT_INNER               <= DATAIN;
-        DAV_INNER                <= '1';
-        OEFIFO_B(dev_cnt)  <= '0';
-        RENFIFO_B(dev_cnt) <= '0';
+        dout_inner               <= DATAIN;
+        dav_inner                <= '1';
+        oefifo_b_inner(dev_cnt)  <= '0';
+        renfifo_b_inner(dev_cnt) <= '0';
         if(q_datain_last = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt /= 7) then
@@ -230,20 +301,22 @@ begin
           else
             control_next_state <= TAIL;
           end if;
+        else
+          control_next_state <= TX_DCFEB;
         end if;
 
       when TAIL =>
-        DOUT_INNER            <= tail_word(hdr_tail_cnt);
-        DAV_INNER             <= '1';
+        dout_inner      <= tail_word(hdr_tail_cnt);
+        dav_inner       <= '1';
         hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
-          hdr_tail_cnt_rst   <= '1';
           control_next_state <= WAIT_IDLE;
-          EOF                <= '1';
+          eof_inner          <= '1';
           fifo_pop_80        <= '1';
+          hdr_tail_cnt_rst   <= '1';
         else
           control_next_state <= TAIL;
-          EOF                <= '0';
+          eof_inner          <= '0';
           fifo_pop_80        <= '0';
         end if;
         
@@ -258,6 +331,13 @@ begin
 
     end case;
   end process;
+
+  DAV       <= dav_inner;
+  DOUT      <= dout_inner;
+  OEFIFO_B  <= oefifo_b_inner;
+  RENFIFO_B <= renfifo_b_inner;
+  FIFO_POP  <= fifo_pop_inner;
+  EOF       <= eof_inner;
 
   hdr_word(1) <= x"9" & cafifo_l1a_cnt(11 downto 0);
   hdr_word(2) <= x"9" & cafifo_l1a_cnt(23 downto 12);

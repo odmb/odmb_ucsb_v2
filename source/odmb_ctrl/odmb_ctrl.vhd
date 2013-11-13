@@ -13,6 +13,9 @@ entity ODMB_CTRL is
     );  
   port (
 
+-- Chip Scope Pro Logic Analyzer control
+    CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+
     clk40  : in std_logic;
     clk80  : in std_logic;
     clk160 : in std_logic;
@@ -442,17 +445,18 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       );
   end component;
 
- component CONTROL_FSM is
+  component CONTROL_FSM is
     generic (
       NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
       );  
     port (
-
-      RST    : in std_logic;
-      CLKCMS : in std_logic;
-      CLK    : in std_logic;
-      STATUS : in std_logic_vector(47 downto 0);
-      L1ARST : in std_logic;
+-- Chip Scope Pro Logic Analyzer control
+      CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      RST                          : in    std_logic;
+      CLKCMS                       : in    std_logic;
+      CLK                          : in    std_logic;
+      STATUS                       : in    std_logic_vector(47 downto 0);
+      L1ARST                       : in    std_logic;
 
 -- From DMB_VME
       RDFFNXT : in std_logic;
@@ -856,14 +860,16 @@ begin
       cafifo_rd_addr => cafifo_rd_addr
       );
 
-  CONTROL_PM : CONTROL
+  CONTROL_FSM_PM : CONTROL_FSM
+    --CONTROL_PM : CONTROL
     generic map(NFEB => NFEB)
     port map(
-      CLK    => dduclk,                 -- CLKDDU?
-      CLKCMS => clk40,
-      RST    => l1acnt_rst,
-      STATUS => status,
-      L1ARST => l1arst,                 -- from CCBCODE
+      CSP_CONTROL_FSM_PORT_LA_CTRL => CSP_CONTROL_FSM_PORT_LA_CTRL,
+      CLK                          => dduclk,  -- CLKDDU?
+      CLKCMS                       => clk40,
+      RST                          => l1acnt_rst,
+      STATUS                       => status,
+      L1ARST                       => l1arst,  -- from CCBCODE
 
 -- From DMB_VME
       RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
@@ -903,52 +909,53 @@ begin
       cafifo_bx_cnt    => cafifo_bx_cnt_out
       );
 
-  CONTROL_FSM_PM : CONTROL_FSM
-    generic map(NFEB => NFEB)
-    port map(
-      CLK    => dduclk,                 -- CLKDDU?
-      CLKCMS => clk40,
-      RST    => l1acnt_rst,
-      STATUS => status,
-      L1ARST => l1arst,                 -- from CCBCODE
+--  CONTROL_FSM_PM : CONTROL_FSM
+--  --CONTROL_PM : CONTROL
+--    generic map(NFEB => NFEB)
+--    port map(
+--      CLK    => dduclk,                 -- CLKDDU?
+--      CLKCMS => clk40,
+--      RST    => l1acnt_rst,
+--      STATUS => status,
+--      L1ARST => l1arst,                 -- from CCBCODE
 
--- From DMB_VME
-      RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
+---- From DMB_VME
+--      RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
 
--- to GigaBit Link
-      DOUT => open,
-      DAV  => open,
+---- to GigaBit Link
+--      DOUT => open,
+--      DAV  => open,
 
--- to Data FIFOs
-      OEFIFO_B  => open,
-      RENFIFO_B => open,
+---- to Data FIFOs
+--      OEFIFO_B  => open,
+--      RENFIFO_B => open,
 
--- from Data FIFOs
-      FFOR_B      => fifo_empty_b,
-      DATAIN      => fifo_out(15 downto 0),
-      DATAIN_LAST => fifo_eof,
+---- from Data FIFOs
+--      FFOR_B      => fifo_empty_b,
+--      DATAIN      => fifo_out(15 downto 0),
+--      DATAIN_LAST => fifo_eof,
 
--- From JTAGCOM
-      JOEF => joef,                     -- from LOADFIFO
+---- From JTAGCOM
+--      JOEF => joef,                     -- from LOADFIFO
 
--- From CONFREG and GA
-      DAQMBID => daqmbid,
+---- From CONFREG and GA
+--      DAQMBID => daqmbid,
 
--- FROM SW1
-      GIGAEN => LOGICH,
+---- FROM SW1
+--      GIGAEN => LOGICH,
 
--- TO CAFIFO
-      FIFO_POP => open,
+---- TO CAFIFO
+--      FIFO_POP => open,
 
--- TO PCFIFO
-      EOF => open,
+---- TO PCFIFO
+--      EOF => open,
 
--- FROM CAFIFO
-      cafifo_l1a_dav   => cafifo_l1a_dav_out,
-      cafifo_l1a_match => cafifo_l1a_match_out_inner,
-      cafifo_l1a_cnt   => cafifo_l1a_cnt_out,
-      cafifo_bx_cnt    => cafifo_bx_cnt_out
-      );
+---- FROM CAFIFO
+--      cafifo_l1a_dav   => cafifo_l1a_dav_out,
+--      cafifo_l1a_match => cafifo_l1a_match_out_inner,
+--      cafifo_l1a_cnt   => cafifo_l1a_cnt_out,
+--      cafifo_bx_cnt    => cafifo_bx_cnt_out
+--      );
   
   PCFIFO_PM : pcfifo
     generic map (NFIFO => NFIFO)
