@@ -9,7 +9,7 @@ use ieee.numeric_std.all;
 use unisim.vcomponents.all;
 use hdlmacro.hdlmacro.all;
 
-entity BPI_PORT is  
+entity BPI_PORT is
   port (
     CLK : in std_logic;                 -- SLOWCLK
     RST : in std_logic;
@@ -17,12 +17,12 @@ entity BPI_PORT is
     DEVICE  : in std_logic;
     STROBE  : in std_logic;
     COMMAND : in std_logic_vector(9 downto 0);
-    WRITE_B : in std_logic;           
+    WRITE_B : in std_logic;
 
     INDATA  : in  std_logic_vector(15 downto 0);
     OUTDATA : out std_logic_vector(15 downto 0);
 
-    DTACK : out std_logic;       
+    DTACK : out std_logic;
 
     -- BPI controls
     BPI_RST           : out std_logic;
@@ -38,14 +38,17 @@ entity BPI_PORT is
     BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);
     BPI_STATUS        : in  std_logic_vector(15 downto 0);
     BPI_TIMER         : in  std_logic_vector(31 downto 0);
-    BPI_MODE          : out std_logic;
+    BPI_MODE          : out std_logic_vector(1 downto 0);
     BPI_CFG_DATA_SEL  : out std_logic;
     BPI_CFG_REG0      : in  std_logic_vector(15 downto 0);
     BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
     BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
     BPI_CFG_REG3      : in  std_logic_vector(15 downto 0);
+    BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0);
+    BPI_CFG_REG_WE    : out std_logic_vector(3 downto 0);
     BPI_CFG_BUSY      : in  std_logic;
     BPI_DONE          : in  std_logic
+
     );
 end BPI_PORT;
 
@@ -63,25 +66,31 @@ architecture BPI_PORT_Arch of BPI_PORT is
       );
   end component;
 
-  signal cmddev                                 : unsigned(12 downto 0);
-  signal bpi_mode_inner, bpi_cfg_data_sel_inner : std_logic;
+  signal cmddev                 : unsigned(12 downto 0);
+  signal bpi_cfg_data_sel_inner : std_logic;
+  signal bpi_mode_inner         : std_logic_vector(1 downto 0);
 
-  signal d_dtack, q_dtack       : std_logic;
-  signal w_ctrl_reg, r_ctrl_reg : std_logic;
-  signal r_cfg_reg              : std_logic;
-  signal send_bpi_rst           : std_logic;
-  signal send_bpi_dsbl          : std_logic;
-  signal r_rbk_fifo_nw          : std_logic;
-  signal r_bpi_status           : std_logic;
-  signal r_bpi_timer_l          : std_logic;
-  signal r_bpi_timer_h          : std_logic;
+  signal d_dtack, q_dtack             : std_logic;
+  signal w_ctrl_reg, r_ctrl_reg       : std_logic;
+  signal w_cfg_reg, d_dtack_w_cfg_reg : std_logic;
+  signal r_cfg_reg                    : std_logic;
+  signal send_bpi_rst                 : std_logic;
+  signal send_bpi_dsbl                : std_logic;
+  signal r_rbk_fifo_nw                : std_logic;
+  signal r_bpi_status                 : std_logic;
+  signal r_bpi_timer_l                : std_logic;
+  signal r_bpi_timer_h                : std_logic;
 
-  signal send_bpi_enbl,d_dtack_send_bpi_enbl,q_dtack_send_bpi_enbl: std_logic;
-  signal rst_send_bpi_enbl,dd_dtack_send_bpi_enbl,ddd_dtack_send_bpi_enbl: std_logic;
-  signal send_bpi_cfg_ul,d_dtack_send_bpi_cfg_ul,q_dtack_send_bpi_cfg_ul: std_logic;
-  signal send_bpi_cfg_dl,d_dtack_send_bpi_cfg_dl,q_dtack_send_bpi_cfg_dl: std_logic;
-  signal w_cmd_fifo, d_dtack_w_cmd_fifo, q_dtack_w_cmd_fifo : std_logic;
-  signal r_rbk_fifo, d_dtack_r_rbk_fifo, q_dtack_r_rbk_fifo : std_logic;
+  signal send_bpi_enbl, d_dtack_send_bpi_enbl, q_dtack_send_bpi_enbl        : std_logic;
+  signal rst_send_bpi_enbl, dd_dtack_send_bpi_enbl, ddd_dtack_send_bpi_enbl : std_logic;
+  signal send_bpi_cfg_ul, d_dtack_send_bpi_cfg_ul, q_dtack_send_bpi_cfg_ul  : std_logic;
+  signal send_bpi_cfg_dl, d_dtack_send_bpi_cfg_dl, q_dtack_send_bpi_cfg_dl  : std_logic;
+  signal w_cmd_fifo, d_dtack_w_cmd_fifo                 : std_logic;
+  signal d_dtack_w_ctrl_reg, q_dtack_w_ctrl_reg                             : std_logic;
+  signal d_dtack_r_ctrl_reg, q_dtack_r_ctrl_reg                             : std_logic;
+  signal r_rbk_fifo, d_dtack_r_rbk_fifo                                                       : std_logic;
+
+  signal d_write_cfg_reg : std_logic_vector(3 downto 0);
 
   signal bpi_cfg_reg_sel : std_logic_vector(1 downto 0);
   signal out_ctrl_reg    : std_logic_vector(15 downto 0);
@@ -106,50 +115,47 @@ begin  --Architecture
   R_BPI_STATUS    <= '1' when (CMDDEV = x"1038") else '0';  -- COMMAND = 0x00E
   R_BPI_TIMER_L   <= '1' when (CMDDEV = x"103C") else '0';  -- COMMAND = 0x00F
   R_BPI_TIMER_H   <= '1' when (CMDDEV = x"1040") else '0';  -- COMMAND = 0x010
+  W_CFG_REG       <= '1' when (CMDDEV = X"1044") else '0';  -- COMMAND = 0X011
 
 -- Generate DTACK
 
   D_DTACK <= '1' when ((W_CTRL_REG = '1' or R_CTRL_REG = '1' or R_CFG_REG = '1' or
                         SEND_BPI_RST = '1' or SEND_BPI_DSBL = '1' or R_RBK_FIFO_NW = '1' or
-                        R_BPI_STATUS = '1' or R_BPI_TIMER_L = '1' or R_BPI_TIMER_H = '1')
+                        R_BPI_STATUS = '1' or R_BPI_TIMER_L = '1' or R_BPI_TIMER_H = '1' or
+                        W_CFG_REG = '1' or W_CMD_FIFO = '1' or R_RBK_FIFO = '1')
                        and STROBE = '1') else '0';
+  
   FD_DTACK : FD port map (Q_DTACK, CLK, D_DTACK);
-  --DTACK_INNER <= '0' when (Q_DTACK = '1') else 'Z';
 
   D_DTACK_SEND_BPI_CFG_UL <= '1' when (SEND_BPI_CFG_UL = '1' and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
   FD_DTACK_SEND_BPI_CFG_UL : FD port map (Q_DTACK_SEND_BPI_CFG_UL, CLK, D_DTACK_SEND_BPI_CFG_UL);
-  --DTACK_INNER             <= '0' when (Q_DTACK_SEND_BPI_CFG_UL = '1') else 'Z';
 
   D_DTACK_SEND_BPI_CFG_DL <= '1' when (SEND_BPI_CFG_DL = '1' and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
   FD_DTACK_SEND_BPI_CFG_DL : FD port map (Q_DTACK_SEND_BPI_CFG_DL, CLK, D_DTACK_SEND_BPI_CFG_DL);
-  --DTACK_INNER             <= '0' when (Q_DTACK_SEND_BPI_CFG_DL = '1') else 'Z';
 
   DDD_DTACK_SEND_BPI_ENBL <= SEND_BPI_ENBL and STROBE;
   FD_DD_SEND_BPI_ENBL : FD port map(DD_DTACK_SEND_BPI_ENBL, CLK, DDD_DTACK_SEND_BPI_ENBL);
-  FD_D_SEND_BPI_ENBL : FDC port map(D_DTACK_SEND_BPI_ENBL, DD_DTACK_SEND_BPI_ENBL, RST_SEND_BPI_ENBL, '1');
-  FD_SEND_BPI_ENBL : FD port map(Q_DTACK_SEND_BPI_ENBL, CLK, D_DTACK_SEND_BPI_ENBL);
-  RST_SEND_BPI_ENBL <= BPI_DONE and Q_DTACK_SEND_BPI_ENBL;
-  --DTACK_INNER           <= '0' when (Q_DTACK_SEND_BPI_ENBL = '1') else 'Z';
+  FD_D_SEND_BPI_ENBL  : FDC port map(D_DTACK_SEND_BPI_ENBL, DD_DTACK_SEND_BPI_ENBL, RST_SEND_BPI_ENBL, '1');
+  FD_SEND_BPI_ENBL    : FD port map(Q_DTACK_SEND_BPI_ENBL, CLK, D_DTACK_SEND_BPI_ENBL);
+  RST_SEND_BPI_ENBL       <= BPI_DONE and Q_DTACK_SEND_BPI_ENBL;
 
-  D_DTACK_W_CMD_FIFO <= '1' when (W_CMD_FIFO = '1' and STROBE = '1') else '0';
-  FD_DTACK_W_CMD_FIFO : FD port map (Q_DTACK_W_CMD_FIFO, CLK, D_DTACK_W_CMD_FIFO);
-  --DTACK_INNER        <= '0' when (Q_DTACK_W_CMD_FIFO = '1') else 'Z';
-
-  D_DTACK_R_RBK_FIFO <= '1' when (R_RBK_FIFO = '1' and STROBE = '1') else '0';
-  FD_DTACK_R_RBK_FIFO : FD port map (Q_DTACK_R_RBK_FIFO, CLK, D_DTACK_R_RBK_FIFO);
-  --DTACK_INNER        <= '0' when (Q_DTACK_R_RBK_FIFO = '1') else 'Z';
+  --d_dtack signals for pulse commands
+  d_dtack_w_cmd_fifo <= '1' when (w_cmd_fifo = '1' and strobe = '1') else '0';
+  d_dtack_r_rbk_fifo <= '1' when (r_rbk_fifo = '1' and strobe = '1') else '0';
+  d_dtack_w_cfg_reg <= '1' when (w_cfg_reg = '1' and strobe = '1') else '0';
 
   DTACK <= Q_DTACK or Q_DTACK_SEND_BPI_CFG_UL or Q_DTACK_SEND_BPI_CFG_DL or
-           Q_DTACK_SEND_BPI_ENBL or Q_DTACK_W_CMD_FIFO or Q_DTACK_R_RBK_FIFO;
+           Q_DTACK_SEND_BPI_ENBL;
 
 -- CTRL_REG
 
-  FDCE_B3 : FDPE port map (BPI_MODE_INNER, STROBE, W_CTRL_REG, INDATA(3), RST);
+  FDCE_B4 : FDCE port map (bpi_mode_inner(1), STROBE, W_CTRL_REG, RST, INDATA(4));
+  FDCE_B3 : FDCE port map (bpi_mode_inner(0), STROBE, W_CTRL_REG, RST, INDATA(3));
   FDCE_B2 : FDCE port map (BPI_CFG_DATA_SEL_INNER, STROBE, W_CTRL_REG, RST, INDATA(2));
   FDCE_B1 : FDCE port map (BPI_CFG_REG_SEL(1), STROBE, W_CTRL_REG, RST, INDATA(1));
   FDCE_B0 : FDCE port map (BPI_CFG_REG_SEL(0), STROBE, W_CTRL_REG, RST, INDATA(0));
 
-  BPI_MODE         <= BPI_MODE_INNER;
+  BPI_MODE         <= bpi_mode_inner;
   BPI_CFG_DATA_SEL <= BPI_CFG_DATA_SEL_INNER;
 
 -- PULSE COMMANDS
@@ -164,7 +170,7 @@ begin  --Architecture
   PULSE_BPI_DSBL : PULSE_EDGE port map(BPI_DSBL, open, CLK, RST, 1, SEND_BPI_DSBL);
 
 -- Generate OUTDATA
-  OUT_CTRL_REG <= x"000" & BPI_MODE_INNER & BPI_CFG_DATA_SEL_INNER & BPI_CFG_REG_SEL;
+  OUT_CTRL_REG <= "000" & x"00" & BPI_MODE_INNER & BPI_CFG_DATA_SEL_INNER & BPI_CFG_REG_SEL;
 
   OUTDATA <= BPI_CFG_REG0 when (STROBE = '1' and R_CFG_REG = '1' and (BPI_CFG_REG_SEL = "00")) else
              BPI_CFG_REG1              when (STROBE = '1' and R_CFG_REG = '1' and (BPI_CFG_REG_SEL = "01")) else
@@ -177,6 +183,22 @@ begin  --Architecture
              BPI_TIMER(31 downto 16)   when (STROBE = '1' and R_BPI_TIMER_H = '1')                          else
              OUT_CTRL_REG              when (STROBE = '1' and R_CTRL_REG = '1')                             else
              (others => 'Z');
+
+-- Generate BPI_CFG_REG_WE and BPI_CFG_REG_IN
+
+  d_write_cfg_reg(0) <= '1' when ((D_DTACK_W_CFG_REG = '1') and (BPI_CFG_REG_SEL = "00")) else '0';
+  PULSE_BPI_REG0_WE : PULSE_EDGE port map(BPI_CFG_REG_WE(0), open, CLK, RST, 1, D_WRITE_CFG_REG(0));
+
+  d_write_cfg_reg(1) <= '1' when ((D_DTACK_W_CFG_REG = '1') and (BPI_CFG_REG_SEL = "01")) else '0';
+  PULSE_BPI_REG1_WE : PULSE_EDGE port map(BPI_CFG_REG_WE(1), open, CLK, RST, 1, D_WRITE_CFG_REG(1));
+
+  d_write_cfg_reg(2) <= '1' when ((D_DTACK_W_CFG_REG = '1') and (BPI_CFG_REG_SEL = "10")) else '0';
+  PULSE_BPI_REG2_WE : PULSE_EDGE port map(BPI_CFG_REG_WE(2), open, CLK, RST, 1, D_WRITE_CFG_REG(2));
+
+  d_write_cfg_reg(3) <= '1' when ((D_DTACK_W_CFG_REG = '1') and (BPI_CFG_REG_SEL = "11")) else '0';
+  PULSE_BPI_REG3_WE : PULSE_EDGE port map(BPI_CFG_REG_WE(3), open, CLK, RST, 1, D_WRITE_CFG_REG(3));
+
+  BPI_CFG_REG_IN <= INDATA;
 
 -- Generate CMD_FIFO INPUT DATA
   FDCE_GEN : for i in 0 to 15 generate

@@ -1,0 +1,283 @@
+w 6020 0      ## BPI reset 
+w 6010 8      ## Set BPI mode to "01" (Command FIFO loaded via VME, CFG_REGs loaded via CC/PROM)
+w 6024 0      ## Disable parser
+	      
+r 6038 0      ## Read status register
+	      
+w 602c 1a     ## Stop timer
+w 602c 1b     ## Reset timer
+w 602c 19     ## Start timer
+	      
+w 602c ff7    ## CMD = Load address - Bank address = 0xF - Block address = 0x7E
+w 602c 0      ## Word address = 0x0
+	      
+w 602c 14     ## Unlock block
+w 602c a      ## Erase block
+	      
+w 6028 0      ## Enable parser	      
+w 6024 0      ## Disable parser
+
+r 6038 0      ## Read status register
+
+w 602c 1ec    ## CMD = Buffer program [0x0C] Number of words to shift = 15 [16 words]
+w 602c ff00
+w 602c ff01
+w 602c ff02
+w 602c ff03
+w 602c ff04
+w 602c ff05
+w 602c ff06
+w 602c ff07
+w 602c ff08
+w 602c ff09
+w 602c ff0a
+w 602c ff0b
+w 602c ff0c
+w 602c ff0d
+w 602c ff0e
+w 602c ff0f
+
+w 6028 0      ## Enable parser
+w 6024 0      ## Disable parser
+
+r 6038 0      ## Read status register
+
+r 6034 0      ## Read number of words in READBACK FIFO
+
+w 602c ff7    ## CMD = Load address - Bank address = 0xF - Block address = 0x7E
+w 602c 0      ## Word address = 0x0
+
+w 602c 1e4    ## CMD = Read_N [0x16] Number of words to read = 15 [16 words]
+
+w 6028 0      ## Enable parser
+w 6024 0      ## Disable parser
+
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+
+r 6034 0      ## Read number of words in READBACK FIFO
+
+==================================================================================================
+== Read_CFG_REGs(expected_values=fffx)
+==================================================================================================
+
+r 4000 0      ## Read_CFG_REG0
+r 4004 0      ## Read_CFG_REG1
+r 4008 0      ## Read_CFG_REG2
+r 400C 0      ## Read_CFG_REG3
+r 4010 0      ## Read_CFG_REG4
+r 4014 0      ## Read_CFG_REG5
+r 4018 0      ## Read_CFG_REG6
+r 401C 0      ## Read_CFG_REG7
+r 4020 0      ## Read_CFG_REG8
+r 4024 0      ## Read_CFG_REG9
+r 4028 0      ## Read_CFG_REGA
+r 402C 0      ## Read_CFG_REGB
+r 4030 0      ## Read_CFG_REGC
+r 4034 0      ## Read_CFG_REGD
+r 4038 0      ## Read_CFG_REGE
+r 403C 0      ## Read_CFG_REGF
+
+==================================================================================================
+== Load_CFG_REGISTERS_from_PROM 
+==================================================================================================
+
+==  Select_BPI mode 
+
+w 6010 0      ## Set BPI mode to "00" (Command FIFO loaded via CC, CFG_REGs loaded via CC?PROM)
+
+== Upload_Flash_PROM_To_CFG_Regs 
+
+w 6018 0      ## Upload_Flash_PROM_To_CFG_Regs
+
+== Read Read-Back FIFO 
+
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+
+r 6034 0      ## Read number of words in READBACK FIFO
+
+==================================================================================================
+== Read_CFG_REGs(expected_values=ff0x)
+==================================================================================================
+
+r 4000 0      ## Read_CFG_REG0
+r 4004 0      ## Read_CFG_REG1
+r 4008 0      ## Read_CFG_REG2
+r 400C 0      ## Read_CFG_REG3
+r 4010 0      ## Read_CFG_REG4
+r 4014 0      ## Read_CFG_REG5
+r 4018 0      ## Read_CFG_REG6
+r 401C 0      ## Read_CFG_REG7
+r 4020 0      ## Read_CFG_REG8
+r 4024 0      ## Read_CFG_REG9
+r 4028 0      ## Read_CFG_REGA
+r 402C 0      ## Read_CFG_REGB
+r 4030 0      ## Read_CFG_REGC
+r 4034 0      ## Read_CFG_REGD
+r 4038 0      ## Read_CFG_REGE
+r 403C 0      ## Read_CFG_REGF
+
+==================================================================================================
+== Write_CFG_REGs
+==================================================================================================
+
+==  Select_BPI mode 
+
+w 6010 10      ## Set BPI mode to "10" (Command FIFO loaded via CC, CFG_REGs loaded via VME)
+
+w 4000 ee00   ## Select_CFG_REG0 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4004 ee01   ## Select_CFG_REG1 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4008 ee02   ## Select_CFG_REG2 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 400C ee03   ## Select_CFG_REG3 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4010 ee04   ## Select_CFG_REG4 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4014 ee05   ## Select_CFG_REG5 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4018 ee06   ## Select_CFG_REG6 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 401C ee07   ## Select_CFG_REG7 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4020 ee08   ## Select_CFG_REG8 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4024 ee09   ## Select_CFG_REG9 (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4028 ee0a   ## Select_CFG_REGA (BPI mode = 10 -> CFG Registers loaded via VME]
+w 402C ee0b   ## Select_CFG_REGB (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4030 ee0c   ## Select_CFG_REGC (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4034 ee0d   ## Select_CFG_REGD (BPI mode = 10 -> CFG Registers loaded via VME]
+w 4038 ee0e   ## Select_CFG_REGE (BPI mode = 10 -> CFG Registers loaded via VME]
+w 403C ee0f   ## Select_CFG_REGF (BPI mode = 10 -> CFG Registers loaded via VME]
+
+==================================================================================================
+== Read_CFG_REGs(expected_values=ee0x)
+==================================================================================================
+
+r 4000 0      ## Read_CFG_REG0
+r 4004 0      ## Read_CFG_REG1
+r 4008 0      ## Read_CFG_REG2
+r 400C 0      ## Read_CFG_REG3
+r 4010 0      ## Read_CFG_REG4
+r 4014 0      ## Read_CFG_REG5
+r 4018 0      ## Read_CFG_REG6
+r 401C 0      ## Read_CFG_REG7
+r 4020 0      ## Read_CFG_REG8
+r 4024 0      ## Read_CFG_REG9
+r 4028 0      ## Read_CFG_REGA
+r 402C 0      ## Read_CFG_REGB
+r 4030 0      ## Read_CFG_REGC
+r 4034 0      ## Read_CFG_REGD
+r 4038 0      ## Read_CFG_REGE
+r 403C 0      ## Read_CFG_REGF
+
+==================================================================================================
+== Load PROM from CFG_CONTROLLER 
+==================================================================================================
+
+W  601C  0	    Download CFG Regs to Flash PROM
+
+==================================================================================================
+== Read PROM
+==================================================================================================
+
+w 6010 8      ## 
+w 602c ff7    ## CMD = Load address - Bank address = 0xF - Block address = 0x7E
+w 602c 0      ## Word address = 0x0
+
+w 602c 1e4    ## CMD = Read_N [0x16] Number of words to read = 15 [16 words]
+
+w 6028 0      ## Enable parser
+w 6024 0      ## Disable parser
+
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+r 6034 0      ## Read number of words in READBACK FIFO
+
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+r 6030 0      ## Read one word from READBACK FIFO
+
+r 6034 0      ## Read number of words in READBACK FIFO
+

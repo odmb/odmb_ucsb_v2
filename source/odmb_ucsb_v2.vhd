@@ -292,7 +292,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   component ODMB_VME is
     port (
-
+      CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 -- VME signals
 
       vme_addr        : in  std_logic_vector (23 downto 1);  -- adr(23 downto 1)
@@ -502,10 +502,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   component ODMB_CTRL is
     port (
       CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
-      clk40  : in std_logic;
-      clk80  : in std_logic;
-      clk160 : in std_logic;
-      reset  : in std_logic;
+      clk40                        : in    std_logic;
+      clk80                        : in    std_logic;
+      clk160                       : in    std_logic;
+      reset                        : in    std_logic;
 
       ga : in std_logic_vector(4 downto 0);
 
@@ -939,13 +939,14 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       DOUT : out std_logic
       );
   end component;
-  
-component csp_controller is
-  port (
-    CONTROL0 : inout STD_LOGIC_VECTOR ( 35 downto 0 ) 
-  );
+
+  component csp_controller is
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0);
+      CONTROL1 : inout std_logic_vector (35 downto 0)
+      );
   end component;
-  
+
   constant NFIFO : integer := 4;
 
 -- Global signals
@@ -1342,17 +1343,22 @@ component csp_controller is
   signal otmb_rx : std_logic_vector(5 downto 0);
   signal otmb_tx : std_logic_vector(48 downto 0);
 
-  signal csp_control_fsm_port_la_ctrl : STD_LOGIC_VECTOR(35 downto 0); -- bgb logic analyzer control signals
+  signal csp_control_fsm_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
+  signal csp_system_test_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
+  
   
 begin
   
-csp_controller_pm : csp_controller
-  port map (
-    CONTROL0 => csp_control_fsm_port_la_ctrl
-);
-  
+  csp_controller_pm : csp_controller
+    port map (
+      CONTROL0 => csp_control_fsm_port_la_ctrl,
+      CONTROL1 => csp_system_test_port_la_ctrl
+      );
+
   MBV : ODMB_VME
     port map (
+
+      CSP_SYSTEM_TEST_PORT_LA_CTRL => csp_system_test_port_la_ctrl,
 
       vme_addr        => vme_addr,            -- input
       vme_data_in     => vme_data_in,         -- input
@@ -1558,10 +1564,10 @@ csp_controller_pm : csp_controller
     port map (
 
       CSP_CONTROL_FSM_PORT_LA_CTRL => csp_control_fsm_port_la_ctrl,
-      clk40  => clk40,
-      clk80  => clk80,
-      clk160 => clk160,
-      reset  => reset,
+      clk40                        => clk40,
+      clk80                        => clk80,
+      clk160                       => clk160,
+      reset                        => reset,
 
       ga => vme_ga,
 
@@ -2419,7 +2425,7 @@ csp_controller_pm : csp_controller
 
   BPI_ctrl_i : BPI_ctrl
     port map (
-      CLK               => clk2p5,      -- 40 MHz clock
+      CLK               => clk40,      -- 40 MHz clock
       CLK1MHZ           => clk1mhz,     --  1 MHz clock for timers
       RST               => reset,
 -- Interface Signals to/from VME interface
@@ -2449,7 +2455,7 @@ csp_controller_pm : csp_controller
 
   bpi_interface_i : bpi_interface
     port map (
-      CLK          => clk2p5,           -- 40 MHz clock
+      CLK          => clk40,           -- 40 MHz clock
       RST          => reset,
       ADDR         => bpi_addr,         -- Bank/Array Address 
       CMD_DATA_OUT => bpi_data_to,  -- Command or Data being written to FLASH device

@@ -46,6 +46,7 @@ signal read_status_reg : std_logic_vector(NBK-1 downto 0);
 signal read_elec_sig : std_logic_vector(NBK-1 downto 0);
 signal read_array : std_logic_vector(NBK-1 downto 0);
 signal program : std_logic_vector(NBK-1 downto 0);
+signal buffer_program : std_logic_vector(NBK-1 downto 0);
 
 constant lock_unlock_code : std_logic_vector(15 downto 0)         := "0000000001100000"; -- 0x0060
 constant unlock_confirm_code : std_logic_vector(15 downto 0)      := "0000000011010000"; -- 0x00D0
@@ -55,6 +56,7 @@ constant read_status_reg_code : std_logic_vector(15 downto 0)     := "0000000001
 constant read_elec_sig_code : std_logic_vector(15 downto 0)       := "0000000010010000"; -- 0x0090
 constant read_array_code : std_logic_vector(15 downto 0)          := "0000000011111111"; -- 0x00ff
 constant program_code : std_logic_vector(15 downto 0)             := "0000000001000000"; -- 0x0040
+constant buffer_program_code : std_logic_vector(15 downto 0)      := "0000000011101000"; -- 0x00e8
 
 
 signal bk_index : integer := 0; -- bank address (0 -> 15)
@@ -87,6 +89,19 @@ signal latched_addr : std_logic_vector(22 downto 0);
 
 signal addr_cnt_out : std_logic_vector(22 downto 0);
 
+type state_type is (AG_IDLE, AG_RUN);
+type state_array_type is array (NBK-1 downto 0) of state_type;
+signal next_state, current_state : state_array_type;
+signal ag_ld : std_logic_vector(NBK-1 downto 0);
+signal ag_en : std_logic_vector(NBK-1 downto 0);
+signal ag_lw : std_logic_vector(NBK-1 downto 0);
+type integer_array is array (NBK-1 downto 0) of integer;
+signal ag_ad_cnt_out : integer_array;
+signal ag_nw_cnt_out : integer_array;
+
+signal int_addr : integer;
+signal int_data : integer;
+
 begin
 
   bk_index <= to_integer(unsigned(latched_addr(22 downto 19)));
@@ -94,7 +109,10 @@ begin
 
   wd_index <= to_integer(unsigned(latched_addr(3 downto 0)));
 
-block_status_proc: process (rst, command_reg, bl_index)
+  int_addr <= to_integer(unsigned(addr(15 downto 0)));
+  int_data <= to_integer(unsigned(data(15 downto 0)));
+
+block_status_proc: process (rst, command_reg, bl_index, bk_index)
 
 begin
 
@@ -105,7 +123,7 @@ begin
     end if;
   end loop;
     
-  for i in 0 to NBK-1 loop
+  for i in 0 to NBL-1 loop
     if (command_reg(bk_index) = unlock_confirm_code) and (i = bl_index) then 
       block_status(i)(15 downto 1) <= (others => '0');
       block_status(i)(0) <= '0';
@@ -206,6 +224,12 @@ begin
       program(i) <= '0';
     end if; 
     
+    if (command_reg(i) = buffer_program_code) then  -- 0xe8
+      buffer_program(i) <= '1';
+    else
+      buffer_program(i) <= '0';
+    end if; 
+    
   end loop;
     
 
@@ -241,32 +265,118 @@ begin
     
 end process;
 
-cnt_proc: process (clk, le_b, addr)
+-- Address Generator for Buffer_Program and Read_N
 
-variable addr_cnt_data : std_logic_vector(22 downto 0);
+ag_fsm_state_regs : process (next_state, rst, we_b)
+
+  begin
+  
+    for i in 0 to NBK-1 loop
+
+    if (rst = '1') then
+      current_state(i) <= AG_IDLE;
+    elsif rising_edge(we_b) then
+      current_state(i) <= next_state(i);
+    end if;
+
+    end loop;
+
+  end process;
+
+
+ag_fsm_comb_logic : process(current_state, ag_nw_cnt_out, command_reg)
+
+  begin
+    
+    for i in 0 to NBK-1 loop
+
+    case current_state(i) is
+
+      when AG_IDLE =>
+        ag_en(i) <= '0';
+        ag_lw(i) <= '0';
+        if (command_reg(i) = buffer_program_code) then
+          ag_ld(i) <= '1';
+          next_state(i) <= AG_RUN;
+        else
+          ag_ld(i) <= '0';
+          next_state(i) <= AG_IDLE;
+        end if;
+      
+      when AG_RUN =>
+        ag_ld(i) <= '0';
+        ag_en(i) <= '1';
+        if (ag_nw_cnt_out(i) = 0) then
+          ag_lw(i) <= '1';
+          next_state(i) <= AG_IDLE;
+        else
+          ag_lw(i) <= '0';
+          next_state(i) <= AG_RUN;
+        end if;
+
+      when others =>
+        ag_ld(i) <= '0';
+        ag_en(i) <= '0';
+        ag_lw(i) <= '0';
+        next_state(i) <= AG_IDLE;
+        
+    end case;
+    
+    end loop;
+
+  end process;
+
+ag_ad_cnt_proc: process (rst, we_b, int_addr, ag_ld, ag_en)
+
+variable ag_ad_cnt_data : integer_array;
 
 begin
 
+  for i in 0 to NBK-1 loop
+
 	if (rst = '1') then
-		addr_cnt_data := (OTHERS => '0');
-	elsif (rising_edge(clk)) then
---		if (le_b = '0') then
---			addr_cnt_data := addr;
---		elsif (we_b = '0') or (oe_b = '0') then    
---			addr_cnt_data := addr_cnt_data + 1;
---		end if;              
-		if (cs_b = '0') and (le_b = '0') then
-			addr_cnt_data := addr;
+		ag_ad_cnt_data(i) := 0;
+	elsif (rising_edge(we_b)) then
+		if (ag_ld(i) = '1') then
+			ag_ad_cnt_data(i) := int_addr;
+		elsif (ag_en(i) = '1') then
+			ag_ad_cnt_data(i) := ag_ad_cnt_data(i) + 1;
 		end if;              
 	end if; 
 
-	addr_cnt_out <= addr_cnt_data;
+	ag_ad_cnt_out(i) <= ag_ad_cnt_data(i);
 	
+  end loop;
+
+end process;
+
+ag_nw_cnt_proc: process (rst, we_b, int_data, ag_ld, ag_en)
+
+variable ag_nw_cnt_data : integer_array;
+
+begin
+
+  for i in 0 to NBK-1 loop
+
+	if (rst = '1') then
+		ag_nw_cnt_data(i) := 0;
+	elsif (rising_edge(we_b)) then
+		if (ag_ld(i) = '1') then
+			ag_nw_cnt_data(i) := int_data;
+		elsif (ag_en(i) = '1') then
+			ag_nw_cnt_data(i) := ag_nw_cnt_data(i) - 1;
+		end if;              
+	end if; 
+
+	ag_nw_cnt_out(i) <= ag_nw_cnt_data(i);
+	
+  end loop;
+
 end process;
 
 -- Memory
 	
-mem_proc: process (clk, cs_b, we_b, oe_b, bk_index, bl_index, command_reg, program_done, data, rst)
+mem_proc: process (clk, cs_b, we_b, oe_b, bk_index, bl_index, command_reg, program_done, data, rst,ag_en,ag_lw)
 
 begin
 
@@ -288,13 +398,21 @@ begin
     
 -- Bank Write
 
-  if (command_reg(bk_index) = program_code) and (block_status(bl_index)(0) = '0') and (program_done(bk_index) = '0') and (cs_b = '0') and (we_b = '0') and (rising_edge(clk)) then
-    prom_data(bl_index)(wd_index) <= data;
-    program_done(bk_index) <= '1';
+  if (rising_edge(we_b)) then
+		if ((command_reg(bk_index) = program_code) and (block_status(bl_index)(0) = '0') and (program_done(bk_index) = '0')) then
+      prom_data(bl_index)(wd_index) <= data;
+      program_done(bk_index) <= '1';
+    elsif ((command_reg(bk_index) = buffer_program_code) and (ag_en(bk_index) = '1') and (block_status(bl_index)(0) = '0') and (program_done(bk_index) = '0')) then
+--      prom_data(bl_index)(ag_ad_cnt_out(bk_index)) <= data;
+      prom_data(bl_index)(wd_index) <= data;
+      program_done(bk_index) <= ag_lw(bk_index);
+	  end if; 
 	end if; 
 
   for i in 0 to NBK-1 loop
     if rising_edge(we_b) and (i = bk_index) and ((command_reg(i) = program_code) and (data_in = read_array_code)) then
+      program_done(i) <= '0';
+    elsif rising_edge(we_b) and (i = bk_index) and ((command_reg(i) = buffer_program_code) and (data_in = read_array_code)) then
       program_done(i) <= '0';
     end if;
   end loop;

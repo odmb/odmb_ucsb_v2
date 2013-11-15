@@ -10,6 +10,9 @@ use unisim.vcomponents.all;
 
 entity SYSTEM_TEST is
   port (
+
+    CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+
     DEVICE  : in std_logic;
     COMMAND : in std_logic_vector(9 downto 0);
     INDATA  : in std_logic_vector(15 downto 0);
@@ -51,6 +54,16 @@ entity SYSTEM_TEST is
 end SYSTEM_TEST;
 
 architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
+
+  component csp_systemtest_la is
+    port (
+      CLK     : in std_logic := 'X';
+      DATA    : in std_logic_vector (127 downto 0);
+      TRIG0   : in std_logic_vector (7 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
+      );
+  end component;
+
   component PULSE_EDGE is
     port (
       DOUT   : out std_logic;
@@ -95,23 +108,23 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   signal prbs_type_inner          : std_logic_vector(2 downto 0);
 
   -- DCFEB PRBS
-  constant dcfeb_prbs_rst_cycles                  : integer := 1;
-  constant dcfeb_prbs_lock                        : integer := 20000000;
-  constant dcfeb_prbs_length                      : integer := 119; -- 10^10 at 1.25 MHZ
-                                                                   
-  signal   w_dcfeb_prbs_en, r_dcfeb_prbs_err_cnt  : std_logic;
-  signal   w_dcfeb_prbs_fiber, r_dcfeb_prbs_fiber : std_logic;
-  signal   r_dcfeb_prbs_edge                      : std_logic;
-  signal   dcfeb_prbs_fiber_sel_inner             : std_logic_vector (3 downto 0);
-  signal   dcfeb_prbs_rst_cnt                     : integer;
-  signal   dcfeb_prbs_seq_cnt                     : std_logic_vector (15 downto 0);
-  signal   dcfeb_prbs_en_cnt                      : integer;
-  signal   dcfeb_prbs_rd_en_cnt                   : integer;
-  signal   dcfeb_prbserr_edge_cnt                 : std_logic_vector (15 downto 0);  -- counting the edges
-  signal   dcfeb_prbs_init_pulse                  : std_logic;
-  signal   dcfeb_prbs_reset_pulse                 : std_logic;
-  signal   dcfeb_prbs_rd_en_pulse                 : std_logic;
-  signal   dcfeb_prbs_en_pulse                    : std_logic;
+  constant dcfeb_prbs_rst_cycles : integer := 1;
+  constant dcfeb_prbs_lock       : integer := 20000000;
+  constant dcfeb_prbs_length     : integer := 119;  -- 10^10 at 1.25 MHZ
+
+  signal w_dcfeb_prbs_en, r_dcfeb_prbs_err_cnt  : std_logic;
+  signal w_dcfeb_prbs_fiber, r_dcfeb_prbs_fiber : std_logic;
+  signal r_dcfeb_prbs_edge                      : std_logic;
+  signal dcfeb_prbs_fiber_sel_inner             : std_logic_vector (3 downto 0);
+  signal dcfeb_prbs_rst_cnt                     : integer;
+  signal dcfeb_prbs_seq_cnt                     : std_logic_vector (15 downto 0);
+  signal dcfeb_prbs_en_cnt                      : integer;
+  signal dcfeb_prbs_rd_en_cnt                   : integer;
+  signal dcfeb_prbserr_edge_cnt                 : std_logic_vector (15 downto 0);  -- counting the edges
+  signal dcfeb_prbs_init_pulse                  : std_logic;
+  signal dcfeb_prbs_reset_pulse                 : std_logic;
+  signal dcfeb_prbs_rd_en_pulse                 : std_logic;
+  signal dcfeb_prbs_en_pulse                    : std_logic;
 
   signal start_otmb_prbs_rx                     : std_logic;
   signal pulse_otmb_prbs_tx_end                 : std_logic;
@@ -129,16 +142,36 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   signal otmb_prbs_rx_sequences                 : std_logic_vector (15 downto 0);
   signal otmb_prbs_rx_en, otmb_prbs_rx_en_b     : std_logic;
   signal otmb_prbs_rx                           : std_logic;
+  signal otmb_rx_inner                          : std_logic_vector (5 downto 0);
   signal otmb_tx_err_cnt                        : integer;
   signal q_otmb_prbs_tx_en, q_otmb_prbs_tx_en_b : std_logic;
   signal qq_otmb_prbs_tx_en                     : std_logic;
   signal mux_otmb_tx                            : std_logic_vector(48 downto 0);
   signal q_otmb_tx                              : std_logic_vector(48 downto 0);
+  signal otmb_prbs_cnt_rst                      : std_logic;
+  signal w_otmb_prbs_cnt_rst                    : std_logic;
 
   signal otmb_tx_good_cnt, otmb_tx_good_cnt_int : integer;
-  signal otmb_prbs_tx_en_cnt, otmb_test         : std_logic_vector (15 downto 0);
+  signal otmb_prbs_tx_en_cnt         : std_logic_vector (15 downto 0);
   signal r_otmb_prbs_en_cnt                     : std_logic;
+  constant otmb_prbs_length     : integer := 10000;
+
+
+  -- Declare the csp stuff here
+  signal system_test_la_data : std_logic_vector(127 downto 0);
+  signal system_test_la_trig : std_logic_vector(7 downto 0);
+  
 begin
+
+-- csp ILA core
+  csp_systemtest_la_pm : csp_systemtest_la
+    port map (
+      CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
+      CLK     => CLK,                   -- Good ol' 40MHz clock here
+      DATA    => system_test_la_data,
+      TRIG0   => system_test_la_trig
+      );
+
   cmddev             <= "000" & DEVICE & COMMAND & "00";
   w_ddu_prbs_en      <= '1' when (cmddev = x"1000" and STROBE = '1' and WRITER = '0') else '0';
   r_ddu_prbs_err_cnt <= '1' when (cmddev = x"100C" and STROBE = '1' and WRITER = '1') else '0';
@@ -159,6 +192,7 @@ begin
   r_otmb_prbs_en_cnt   <= '1' when (cmddev = x"1404" and STROBE = '1' and WRITER = '1') else '0';
   r_otmb_prbs_good_cnt <= '1' when (cmddev = x"1408" and STROBE = '1' and WRITER = '1') else '0';
   r_otmb_prbs_err_cnt  <= '1' when (cmddev = x"140C" and STROBE = '1' and WRITER = '1') else '0';
+  w_otmb_prbs_cnt_rst  <= '1' when (cmddev = x"1410" and STROBE = '1' and WRITER = '0') else '0';  
 
   STROBE_PE : PULSE_EDGE port map(strobe_pulse, open, SLOWCLK, RST, 1, STROBE);
 
@@ -191,9 +225,8 @@ begin
              x"000" & dcfeb_prbs_fiber_sel_inner                     when (r_dcfeb_prbs_fiber = '1')   else
              dcfeb_prbserr_edge_cnt                                  when (r_dcfeb_prbs_edge = '1')    else
              otmb_prbs_tx_en_cnt                                     when (r_otmb_prbs_en_cnt = '1')   else
-             std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16)) when (r_otmb_prbs_good_cnt = '1') else
-             --std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))      when (r_otmb_prbs_err_cnt = '1')  else
-             otmb_test                                               when (r_otmb_prbs_err_cnt = '1')  else
+             std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16)) when (r_otmb_prbs_good_cnt = '1') else
+             std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))      when (r_otmb_prbs_err_cnt = '1')  else
              x"000" & '0' & prbs_type_inner                          when (r_prbs_type = '1')          else
              (others => 'L');
 
@@ -202,7 +235,7 @@ begin
                              w_dcfeb_prbs_en or r_dcfeb_prbs_err_cnt or r_dcfeb_prbs_edge or
                              w_dcfeb_prbs_fiber or r_dcfeb_prbs_fiber or
                              w_prbs_type or r_prbs_type or
-                             r_otmb_prbs_good_cnt or r_otmb_prbs_err_cnt);
+                             r_otmb_prbs_good_cnt or r_otmb_prbs_err_cnt or w_otmb_prbs_cnt_rst);
 
   -- DCFEB PRBS signals
   dcfeb_prbs_rst_cnt   <= dcfeb_prbs_lock+dcfeb_prbs_rst_cycles;
@@ -221,7 +254,7 @@ begin
   DCFEB_PRBS_RD_EN <= dcfeb_prbs_en_pulse and not dcfeb_prbs_rd_en_pulse;
 
   -- OTMB PRBS RX test
-  otmb_prbs_rx_cycles <= 127*to_integer(unsigned(otmb_prbs_rx_sequences));
+  otmb_prbs_rx_cycles <= otmb_prbs_length*to_integer(unsigned(otmb_prbs_rx_sequences));
 
   FD_OTMB_START    : FD port map(start_otmb_prbs_rx, CLK, w_otmb_prbs_en);
   PULSEOTMB_EN     : PULSE_EDGE port map(otmb_prbs_rx_en, open, CLK, RST, otmb_prbs_rx_cycles, start_otmb_prbs_rx);
@@ -230,7 +263,8 @@ begin
   otmb_prbs_rx_rst  <= pulse_otmb_prbs_rx_end or RST;
 
   PRBS_GEN_PM : PRBS_GEN port map(otmb_prbs_rx, CLK, otmb_prbs_rx_rst, otmb_prbs_rx_en);
-  OTMB_RX <= (0 => otmb_prbs_rx_en, others => otmb_prbs_rx);
+  otmb_rx_inner <= (0 => otmb_prbs_rx_en, others => otmb_prbs_rx);
+  OTMB_RX       <= otmb_rx_inner;
 
   -- OTMB PRBS TX test
   otmb_prbs_tx_en   <= q_otmb_tx(48);
@@ -239,44 +273,61 @@ begin
   PULSEOTMB_TX_RST : PULSE_EDGE port map(pulse_otmb_prbs_tx_end, open, SLOWCLK, RST, 2, otmb_prbs_tx_en_b);
   otmb_prbs_tx_rst  <= pulse_otmb_prbs_tx_end or RST;
 
-  PE_EN  : PULSE_EDGE port map (q_otmb_prbs_tx_en, open, CLK, RST, 64, otmb_prbs_tx_en);
+  PE_EN  : PULSE_EDGE port map (q_otmb_prbs_tx_en, open, CLK, RST, 50, otmb_prbs_tx_en);
   q_otmb_prbs_tx_en_b <= not q_otmb_prbs_tx_en;
-  PE_EN2 : PULSE_EDGE port map (qq_otmb_prbs_tx_en, open, CLK, RST, 64, q_otmb_prbs_tx_en_b);
+  PE_EN2 : PULSE_EDGE port map (qq_otmb_prbs_tx_en, open, CLK, RST, 100, q_otmb_prbs_tx_en_b);
   mux_otmb_tx         <= not q_otmb_tx when qq_otmb_prbs_tx_en = '1' else q_otmb_tx;
 
   PRBS_GEN_TX_PM   : PRBS_GEN port map(otmb_prbs_tx, CLK, otmb_prbs_tx_rst, otmb_prbs_tx_en);
   FD_OTMB_PRBS_TX  : FD port map(q_otmb_prbs_tx, CLK, otmb_prbs_tx);
   GEN_OTMB_PRBS_TX : for index in 48 downto 0 generate
-    FD_OTMB_TX : FD port map(q_otmb_tx(index), CLK, otmb_tx(index));
+    FD_OTMB_TX : FD port map(q_otmb_tx(index), CLK, OTMB_TX(index));
     otmb_prbs_tx_xor(index) <= mux_otmb_tx(index) xor otmb_prbs_tx;
   end generate GEN_OTMB_PRBS_TX;
   otmb_prbs_tx_err <= or_reduce(otmb_prbs_tx_xor(47 downto 0));
 
+  CNT_RST : PULSE_EDGE port map(otmb_prbs_cnt_rst, open, CLK, RST, 2, w_otmb_prbs_cnt_rst);
+  
   prbs_tx_cnt_proc : process (CLK, otmb_prbs_tx_err, RST, otmb_prbs_tx_en)
     variable bit : std_logic;
   begin
-    if (RST = '1') then
+    if (RST = '1' or otmb_prbs_cnt_rst = '1') then
       otmb_tx_err_cnt      <= 0;
       otmb_tx_good_cnt_int <= 0;
       otmb_tx_good_cnt     <= 0;
-      otmb_test            <= (others => '0');
-    elsif (otmb_prbs_tx_en = '1' and otmb_prbs_tx_en'event) then
-      otmb_tx_err_cnt      <= 0;
-      otmb_tx_good_cnt_int <= 0;
-      otmb_tx_good_cnt     <= 0;
-      otmb_test            <= (others => '0');
     elsif (falling_edge(CLK) and otmb_prbs_tx_en = '1') then
-      otmb_test <= otmb_test + 1;
       if otmb_prbs_tx_err = '1' then
         otmb_tx_err_cnt <= otmb_tx_err_cnt + 1;
       else
         otmb_tx_good_cnt_int <= otmb_tx_good_cnt_int + 1;
-        if otmb_tx_good_cnt_int = 127 then
+        if otmb_tx_good_cnt_int = otmb_prbs_length then
           otmb_tx_good_cnt <= otmb_tx_good_cnt + 1;
-          --       otmb_tx_good_cnt_int <= 0;
+          otmb_tx_good_cnt_int <= 0;
         end if;
       end if;
+    else
+      otmb_tx_good_cnt_int <= otmb_tx_good_cnt_int;
+      otmb_tx_good_cnt     <= otmb_tx_good_cnt;
+      otmb_tx_err_cnt      <= otmb_tx_err_cnt;
     end if;
   end process;
+
+  -- trigger assignment for csp (8 bits)
+  system_test_la_trig <= otmb_prbs_tx_en & "0000000";  -- to start with, anyhow.
+  system_test_la_data <= "00" & x"00000"
+                         & otmb_prbs_rx_rst & otmb_prbs_tx_rst  -- 2
+                         & otmb_prbs_tx & otmb_prbs_rx          -- 4
+                         & start_otmb_prbs_rx & otmb_prbs_rx_en & otmb_prbs_tx_en & otmb_prbs_tx_err  -- 8
+                         & otmb_rx_inner(5 downto 0)   -- 14
+                         & OTMB_TX(47 downto 44)       -- 18
+                         & OTMB_TX(1 downto 0)         -- 20
+                         & mux_otmb_tx(47 downto 44)   -- 24
+                         & mux_otmb_tx(1 downto 0)     -- 26
+                         & otmb_prbs_tx_en_cnt(15 downto 0)     -- 42
+                         & x"0000"      -- 58
+                         & std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  -- 74
+                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16))  -- 90
+                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16));  -- 106
+  
 
 end SYSTEM_TEST_Arch;
