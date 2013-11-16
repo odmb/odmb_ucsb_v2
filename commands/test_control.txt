@@ -2,6 +2,7 @@
 
 W 3000 280 set muxes
 W 3100 1  set loopback
+w 6010 10  This allows Device 4 to work
 W 401c 0 unkill everything
 W 4004 1 Set OTMB delay
 W 400c 2 Set ALCT delay

@@ -67,7 +67,7 @@ begin
   bpi_cfg_reg_init(4)  <= x"aa04";
   bpi_cfg_reg_init(5)  <= x"aa05";
   bpi_cfg_reg_init(6)  <= x"aa06";
-  bpi_cfg_reg_init(7)  <= x"aa07";
+  bpi_cfg_reg_init(7)  <= x"FFFF";
   bpi_cfg_reg_init(8)  <= x"aa08";
   bpi_cfg_reg_init(9)  <= FW_VERSION;
   bpi_cfg_reg_init(10) <= NWORDS_DUMMY;

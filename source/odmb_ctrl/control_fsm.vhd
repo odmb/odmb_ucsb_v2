@@ -116,6 +116,8 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal hdr_tail_cnt                      : integer range 1 to 8          := 1;
   signal dev_cnt_en                        : std_logic                     := '0';
   signal dev_cnt                           : integer range 1 to 9          := 9;
+  signal tx_cnt_en, tx_cnt_rst             : std_logic                     := '0';
+  signal tx_cnt                            : integer range 1 to 3          := 1;
   signal reg_crc                           : std_logic_vector(23 downto 0) := (others => '0');
 
   signal q_datain_last : std_logic;
@@ -163,7 +165,7 @@ begin
 -- Get a 40 MHz pulse for FIFO_POP
   PULSE_FIFO_POP : PULSE_EDGE port map(fifo_pop_inner, open, CLKCMS, RST, 1, fifo_pop_80);
 
-  control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en)
+  control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en, tx_cnt, tx_cnt_en)
   begin
     if (RST = '1') then
       control_current_state <= IDLE;
@@ -186,6 +188,11 @@ begin
         else
           dev_cnt <= dev_cnt + 1;
         end if;
+      end if;
+      if(tx_cnt_rst = '1') then
+        tx_cnt <= 1;
+      elsif(tx_cnt_en = '1' and tx_cnt < 3) then
+        tx_cnt <= tx_cnt+1;
       end if;
     end if;
   end process;
@@ -213,7 +220,7 @@ begin
     x"0"                   when others;
   
   control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav, hdr_word,
-                               hdr_tail_cnt, dev_cnt, DATAIN, q_datain_last, tail_word)
+                               hdr_tail_cnt, dev_cnt, tx_cnt, DATAIN, q_datain_last, tail_word)
   begin
     dout_inner       <= (others => '0');
     dav_inner        <= '0';
@@ -224,6 +231,8 @@ begin
     hdr_tail_cnt_rst <= '0';
     hdr_tail_cnt_en  <= '0';
     dev_cnt_en       <= '0';
+    tx_cnt_rst       <= '0';
+    tx_cnt_en        <= '0';
 
     case control_current_state is
       when IDLE =>
@@ -291,11 +300,17 @@ begin
 
       when TX_DCFEB =>
         dout_inner               <= DATAIN;
-        dav_inner                <= '1';
         oefifo_b_inner(dev_cnt)  <= '0';
         renfifo_b_inner(dev_cnt) <= '0';
+        tx_cnt_en                <= '1';
+        if (tx_cnt = 3) then
+          dav_inner <= '1';
+        else
+          dav_inner <= '0';
+        end if;
         if(q_datain_last = '1') then
           dev_cnt_en <= '1';
+          tx_cnt_rst <= '1';
           if (dev_cnt /= 7) then
             control_next_state <= WAIT_DCFEB;
           else

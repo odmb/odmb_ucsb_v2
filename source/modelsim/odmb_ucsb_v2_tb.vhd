@@ -552,8 +552,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-  signal otmb      : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
-  signal alct      : std_logic_vector(17 downto 0) := "000000000000000000";  -- in
+  signal otmb      : std_logic_vector(17 downto 0) := (others => '1');  -- in
+  signal alct      : std_logic_vector(17 downto 0) := (others => '1');  -- in
   signal otmbffclk : std_logic                     := '0';  -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
