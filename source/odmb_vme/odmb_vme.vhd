@@ -1137,7 +1137,7 @@ begin
   -- TD
   DEV6_BPI_PORT : BPI_PORT
     port map (
-      CLK               => clk_s2,      -- 2.5MHz clock
+      CLK               => clk,        -- 2.5MHz clock
       RST               => rst,         -- system reset
       -- VME selection/control
       DEVICE            => device(6),  -- 1 bit indicating this device has been selected

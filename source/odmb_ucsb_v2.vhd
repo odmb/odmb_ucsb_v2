@@ -2422,12 +2422,12 @@ begin
   vme_dtack_v6_b <= int_vme_dtack_v6_b;
 
 
-
+  bpi_rst <= reset or vme_bpi_rst;
   BPI_ctrl_i : BPI_ctrl
     port map (
       CLK               => clk40,      -- 40 MHz clock
       CLK1MHZ           => clk1mhz,     --  1 MHz clock for timers
-      RST               => reset,
+      RST               => bpi_rst,
 -- Interface Signals to/from VME interface
       BPI_CMD_FIFO_DATA => bpi_cmd_fifo_data,  -- Data for command FIFO
       BPI_WE            => bpi_we,  -- Command FIFO write enable  (pulse one clock cycle for one write)

@@ -149,7 +149,7 @@ begin  --Architecture
 
 -- CTRL_REG
 
-  FDCE_B4 : FDCE port map (bpi_mode_inner(1), STROBE, W_CTRL_REG, RST, INDATA(4));
+  FDPE_B4 : FDPE port map (bpi_mode_inner(1), STROBE, W_CTRL_REG, INDATA(4), RST);
   FDCE_B3 : FDCE port map (bpi_mode_inner(0), STROBE, W_CTRL_REG, RST, INDATA(3));
   FDCE_B2 : FDCE port map (BPI_CFG_DATA_SEL_INNER, STROBE, W_CTRL_REG, RST, INDATA(2));
   FDCE_B1 : FDCE port map (BPI_CFG_REG_SEL(1), STROBE, W_CTRL_REG, RST, INDATA(1));
@@ -165,7 +165,7 @@ begin  --Architecture
 
   PULSE_CFG_UL   : PULSE_EDGE port map(BPI_CFG_UL, open, CLK, RST, 1, SEND_BPI_CFG_UL);
   PULSE_CFG_DL   : PULSE_EDGE port map(BPI_CFG_DL, open, CLK, RST, 1, SEND_BPI_CFG_DL);
-  PULSE_BPI_RST  : PULSE_EDGE port map(BPI_RST, open, CLK, RST, 1, SEND_BPI_RST);
+  PULSE_BPI_RST  : PULSE_EDGE port map(BPI_RST, open, CLK, RST, 10, SEND_BPI_RST);
   PULSE_BPI_ENBL : PULSE_EDGE port map(BPI_ENBL, open, CLK, RST, 1, SEND_BPI_ENBL);
   PULSE_BPI_DSBL : PULSE_EDGE port map(BPI_DSBL, open, CLK, RST, 1, SEND_BPI_DSBL);
 
