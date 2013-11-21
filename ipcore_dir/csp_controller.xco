@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 12.4
-# Date: Wed Nov 13 20:45:42 2013
+# Date: Tue Nov 19 20:26:29 2013
 #
 ##############################################################
 #
@@ -37,11 +37,11 @@ SELECT ICON_(ChipScope_Pro_-_Integrated_Controller) family Xilinx,_Inc. 1.04.a
 # BEGIN Parameters
 CSET component_name=csp_controller
 CSET enable_jtag_bufg=true
-CSET number_control_ports=2
+CSET number_control_ports=3
 CSET use_ext_bscan=false
 CSET use_softbscan=false
 CSET use_unused_bscan=false
 CSET user_scan_chain=USER1
 # END Parameters
 GENERATE
-# CRC: c5386351
+# CRC: 7240431b

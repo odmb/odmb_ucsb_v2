@@ -24,6 +24,7 @@ entity ODMB_VME is
     CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
 -- VME signals
 
+    cmd_adrs        : out std_logic_vector(15 downto 0);
     vme_addr        : in  std_logic_vector (23 downto 1);  -- adr(23 downto 1)
     vme_data_in     : in  std_logic_vector (15 downto 0);  -- data(15 downto 0)
     vme_data_out    : out std_logic_vector (15 downto 0);  -- data(15 downto 0)
@@ -388,7 +389,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
   --    CRATEID      : out std_logic_vector(7 downto 0)
   --    );
   --end component;
-  
+
   component VMECONFREGS_BPI is
     port (
       SLOWCLK : in std_logic;
@@ -417,14 +418,14 @@ architecture ODMB_VME_architecture of ODMB_VME is
       NWORDS_DUMMY : out std_logic_vector(15 downto 0);
       KILL         : out std_logic_vector(NFEB+2 downto 1);
       CRATEID      : out std_logic_vector(7 downto 0);
-      
+
       -- From BPI_PORT
       BPI_MODE : in std_logic_vector(1 downto 0);
 
 -- From BPI_CFG_CONTROLLER
-      CC_CFG_REG_IN : in std_logic_vector(15 downto 0); 
+      CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
       CC_CFG_REG_WE : in std_logic_vector(15 downto 0);
-    
+
 -- To BPI_CFG_CONTROLLER
       CFG_REG0 : out std_logic_vector(15 downto 0);
       CFG_REG1 : out std_logic_vector(15 downto 0);
@@ -442,11 +443,11 @@ architecture ODMB_VME_architecture of ODMB_VME is
       CFG_REGD : out std_logic_vector(15 downto 0);
       CFG_REGE : out std_logic_vector(15 downto 0);
       CFG_REGF : out std_logic_vector(15 downto 0)
- 
-  );
+
+      );
   end component;
 
-  
+
   component TESTFIFOS is
     generic (
       NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
@@ -656,8 +657,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
       BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG3      : in  std_logic_vector(15 downto 0);
-    BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0);
-    BPI_CFG_REG_WE    : out std_logic_vector(3 downto 0);      
+      BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0);
+      BPI_CFG_REG_WE    : out std_logic_vector(3 downto 0);
       BPI_CFG_BUSY      : in  std_logic;
       BPI_DONE          : in  std_logic
       );
@@ -739,7 +740,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       bpi_cmd_fifo_in  : out std_logic_vector(15 downto 0)
       );
   end component;
-  
+
   component COMMAND_MODULE is
     port (
       FASTCLK : in std_logic;
@@ -823,7 +824,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
   signal outdata_lvdbmon : std_logic_vector(15 downto 0);
 
-  signal cmd_adrs : std_logic_vector(15 downto 0);
 
   signal outdata_vmemon      : std_logic_vector(15 downto 0);
   signal outdata_vmeconfregs : std_logic_vector(15 downto 0);
@@ -868,12 +868,12 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_cfg_data_sel                            : std_logic;
 
 -- TD
-  signal  VME_BPI_CFG_REG_IN : std_logic_vector(15 downto 0);
-  signal  VME_BPI_CFG_REG_WE_VEC : std_logic_vector(3 downto 0);
-  signal  CC_BPI_CFG_REG_IN : std_logic_vector(15 downto 0);
-  signal  CC_BPI_CFG_REG_WE_VEC : std_logic_vector(15 downto 0);  
-  signal  SEL_BPI_CFG_REG_IN : std_logic_vector(15 downto 0);
-  
+  signal VME_BPI_CFG_REG_IN     : std_logic_vector(15 downto 0);
+  signal VME_BPI_CFG_REG_WE_VEC : std_logic_vector(3 downto 0);
+  signal CC_BPI_CFG_REG_IN      : std_logic_vector(15 downto 0);
+  signal CC_BPI_CFG_REG_WE_VEC  : std_logic_vector(15 downto 0);
+  signal SEL_BPI_CFG_REG_IN     : std_logic_vector(15 downto 0);
+
   signal dtack_dev : std_logic_vector(9 downto 0);
 
 begin
@@ -1027,7 +1027,7 @@ begin
   --    CRATEID      => CRATEID
   --    );
 
-    DEV4_VMECONFREGS : VMECONFREGS_BPI
+  DEV4_VMECONFREGS : VMECONFREGS_BPI
     port map (
       SLOWCLK => CLK_S2,
       CLK     => clk,
@@ -1054,14 +1054,14 @@ begin
       NWORDS_DUMMY => NWORDS_DUMMY,
       KILL         => KILL,
       CRATEID      => CRATEID,
-      
+
       -- From BPI_PORT
       BPI_MODE => BPI_MODE,
 
 -- From BPI_CFG_CONTROLLER
-      CC_CFG_REG_IN => CC_BPI_CFG_REG_IN, 
+      CC_CFG_REG_IN => CC_BPI_CFG_REG_IN,
       CC_CFG_REG_WE => CC_BPI_CFG_REG_WE_VEC,
-    
+
 -- To BPI_CFG_CONTROLLER
       CFG_REG0 => CFG_REG0,
       CFG_REG1 => CFG_REG1,
@@ -1079,7 +1079,7 @@ begin
       CFG_REGD => CFG_REGd,
       CFG_REGE => CFG_REGe,
       CFG_REGF => CFG_REGf
- 
+
       );
 
 
@@ -1137,7 +1137,7 @@ begin
   -- TD
   DEV6_BPI_PORT : BPI_PORT
     port map (
-      CLK               => clk,        -- 2.5MHz clock
+      CLK               => clk,         -- 2.5MHz clock
       RST               => rst,         -- system reset
       -- VME selection/control
       DEVICE            => device(6),  -- 1 bit indicating this device has been selected
@@ -1149,7 +1149,7 @@ begin
       DTACK             => dtack_dev(6),  -- DTACK bar
       -- BPI controls
       BPI_RST           => BPI_RST,     -- Resets BPI interface state machines
-      BPI_CMD_FIFO_DATA => VME_BPI_CMD_FIFO_DATA,  -- Data for command FIFO
+      BPI_CMD_FIFO_DATA => VME_BPI_CMD_FIFO_DATA,   -- Data for command FIFO
       BPI_WE            => VME_BPI_WE,  -- Command FIFO write enable  (pulse one clock cycle for one write)
       BPI_RE            => BPI_RE,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
       BPI_DSBL          => VME_BPI_DSBL,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
@@ -1167,8 +1167,8 @@ begin
       BPI_CFG_REG1      => CFG_REG1,
       BPI_CFG_REG2      => CFG_REG2,
       BPI_CFG_REG3      => CFG_REG3,
-      BPI_CFG_REG_IN    => VME_BPI_CFG_REG_IN, -- not used any more
-      BPI_CFG_REG_WE    => VME_BPI_CFG_REG_WE_VEC, -- not used any more
+      BPI_CFG_REG_IN    => VME_BPI_CFG_REG_IN,      -- not used any more
+      BPI_CFG_REG_WE    => VME_BPI_CFG_REG_WE_VEC,  -- not used any more
       BPI_CFG_BUSY      => BPI_CFG_BUSY,
       BPI_DONE          => BPI_CFG_DONE
       );
@@ -1378,7 +1378,7 @@ begin
 
   BPI_CC_PM : BPI_CFG_CONTROLLER_16_RH
     port map (
---      CLK => clk_s2,
+      --CLK => clk_s2,
       CLK => clk,
       RST => rst,
 

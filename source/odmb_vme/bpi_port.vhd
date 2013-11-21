@@ -85,10 +85,10 @@ architecture BPI_PORT_Arch of BPI_PORT is
   signal rst_send_bpi_enbl, dd_dtack_send_bpi_enbl, ddd_dtack_send_bpi_enbl : std_logic;
   signal send_bpi_cfg_ul, d_dtack_send_bpi_cfg_ul, q_dtack_send_bpi_cfg_ul  : std_logic;
   signal send_bpi_cfg_dl, d_dtack_send_bpi_cfg_dl, q_dtack_send_bpi_cfg_dl  : std_logic;
-  signal w_cmd_fifo, d_dtack_w_cmd_fifo                 : std_logic;
+  signal w_cmd_fifo, d_dtack_w_cmd_fifo                                     : std_logic;
   signal d_dtack_w_ctrl_reg, q_dtack_w_ctrl_reg                             : std_logic;
   signal d_dtack_r_ctrl_reg, q_dtack_r_ctrl_reg                             : std_logic;
-  signal r_rbk_fifo, d_dtack_r_rbk_fifo                                                       : std_logic;
+  signal r_rbk_fifo, d_dtack_r_rbk_fifo, q_dtack_r_rbk_fifo, q_dtack_r_rbk_fifo_b                 : std_logic;
 
   signal d_write_cfg_reg : std_logic_vector(3 downto 0);
 
@@ -122,7 +122,7 @@ begin  --Architecture
   D_DTACK <= '1' when ((W_CTRL_REG = '1' or R_CTRL_REG = '1' or R_CFG_REG = '1' or
                         SEND_BPI_RST = '1' or SEND_BPI_DSBL = '1' or R_RBK_FIFO_NW = '1' or
                         R_BPI_STATUS = '1' or R_BPI_TIMER_L = '1' or R_BPI_TIMER_H = '1' or
-                        W_CFG_REG = '1' or W_CMD_FIFO = '1' or R_RBK_FIFO = '1')
+                        W_CFG_REG = '1' or W_CMD_FIFO = '1')
                        and STROBE = '1') else '0';
   
   FD_DTACK : FD port map (Q_DTACK, CLK, D_DTACK);
@@ -140,12 +140,14 @@ begin  --Architecture
   RST_SEND_BPI_ENBL       <= BPI_DONE and Q_DTACK_SEND_BPI_ENBL;
 
   --d_dtack signals for pulse commands
-  d_dtack_w_cmd_fifo <= '1' when (w_cmd_fifo = '1' and strobe = '1') else '0';
-  d_dtack_r_rbk_fifo <= '1' when (r_rbk_fifo = '1' and strobe = '1') else '0';
-  d_dtack_w_cfg_reg <= '1' when (w_cfg_reg = '1' and strobe = '1') else '0';
+  d_dtack_w_cmd_fifo <= '1' when (w_cmd_fifo = '1' and STROBE = '1') else '0';
+  d_dtack_w_cfg_reg  <= '1' when (w_cfg_reg = '1' and STROBE = '1')  else '0';
+  d_dtack_r_rbk_fifo <= '1' when (r_rbk_fifo = '1' and STROBE = '1') else '0';
+  FD_DTACK_RBKFIFO : FD port map (q_dtack_r_rbk_fifo, CLK, d_dtack_r_rbk_fifo);
+  q_dtack_r_rbk_fifo_b <= not q_dtack_r_rbk_fifo;
 
-  DTACK <= Q_DTACK or Q_DTACK_SEND_BPI_CFG_UL or Q_DTACK_SEND_BPI_CFG_DL or
-           Q_DTACK_SEND_BPI_ENBL;
+  DTACK <= q_dtack or q_dtack_send_bpi_cfg_ul or q_dtack_send_bpi_cfg_dl or
+           q_dtack_send_bpi_enbl or q_dtack_r_rbk_fifo;
 
 -- CTRL_REG
 
@@ -161,7 +163,7 @@ begin  --Architecture
 -- PULSE COMMANDS
 
   PULSE_BPI_WE : PULSE_EDGE port map(BPI_WE, open, CLK, RST, 1, D_DTACK_W_CMD_FIFO);
-  PULSE_BPI_RE : PULSE_EDGE port map(BPI_RE, open, CLK, RST, 1, D_DTACK_R_RBK_FIFO);
+  PULSE_BPI_RE : PULSE_EDGE port map(BPI_RE, open, CLK, RST, 1, q_dtack_r_rbk_fifo_b);
 
   PULSE_CFG_UL   : PULSE_EDGE port map(BPI_CFG_UL, open, CLK, RST, 1, SEND_BPI_CFG_UL);
   PULSE_CFG_DL   : PULSE_EDGE port map(BPI_CFG_DL, open, CLK, RST, 1, SEND_BPI_CFG_DL);

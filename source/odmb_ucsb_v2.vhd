@@ -232,69 +232,12 @@ end ODMB_UCSB_V2;
 
 architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
-  component bpi_ctrl
-    port(
-      CLK               : in  std_logic;  -- 40 MHz clock
-      CLK1MHZ           : in  std_logic;  --  1 MHz clock for timers
-      RST               : in  std_logic;
---      Interface Signals to/from VME interface
-      BPI_CMD_FIFO_DATA : in  std_logic_vector(15 downto 0);  -- Data for command FIFO
-      BPI_WE            : in  std_logic;  -- Command FIFO write enable  (pulse one clock cycle for one write)
-      BPI_RE            : in  std_logic;  -- Read back FIFO read enable  (pulse one clock cycle for one read)
-      BPI_DSBL          : in  std_logic;  -- Disable parsing of BPI commands in the command FIFO (while being filled)
-      BPI_ENBL          : in  std_logic;  -- Enable  parsing of BPI commands in the command FIFO
-      BPI_RBK_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data on output of the Read back FIFO
-      BPI_RBK_WRD_CNT   : out std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
-      BPI_STATUS        : out std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
-      BPI_TIMER         : out std_logic_vector(31 downto 0);  -- General timer
--- Signals to/from low level BPI interface
-      BPI_BUSY          : in  std_logic;  --  
-      BPI_DATA_FROM     : in  std_logic_vector(15 downto 0);  -- 
-      BPI_LOAD_DATA     : in  std_logic;  --  
-      BPI_ACTIVE        : out std_logic;  --  
-      BPI_OP            : out std_logic_vector(1 downto 0);   -- 
-      BPI_ADDR          : out std_logic_vector(22 downto 0);  -- 
-      BPI_DATA_TO       : out std_logic_vector(15 downto 0);  -- 
-      BPI_EXECUTE       : out std_logic;
--- Guido Aug 26
-      BPI_CFG_DONE      : out std_logic;
-      BPI_CFG_REG_WE    : out std_logic;
-      BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0)
-      );
-  end component;
-
-  component bpi_interface
-    port(
-      CLK          : in    std_logic;   -- 40 MHz clock
-      RST          : in    std_logic;
-      ADDR         : in    std_logic_vector(22 downto 0);  -- Bank/Array Address 
-      CMD_DATA_OUT : in    std_logic_vector(15 downto 0);  -- Command or Data being written to FLASH device
-      OP           : in    std_logic_vector(1 downto 0);  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
-      EXECUTE      : in    std_logic;   -- 
-      DATA_IN      : out   std_logic_vector(15 downto 0);  -- Data read from FLASH device
-      LOAD_DATA    : out   std_logic;  -- Clock enable signal for capturing Data read from FLASH device
-      BUSY         : out   std_logic;  -- Operation in progress signal (not ready)
--- signals for Dual purpose data lines
-      BPI_ACTIVE   : in    std_logic;  -- set to 1 when data lines are for BPI communications.
-      DUAL_DATA    : in    std_logic_vector(15 downto 0);  -- Data provided for non BPI communications
--- external connections cooresponding to I/O pins
-      BPI_AD       : inout std_logic_vector(22 downto 0);  -- 
-      CFG_DAT      : inout std_logic_vector(15 downto 0);  -- 
-      RS0          : out   std_logic;   -- 
-      RS1          : out   std_logic;   -- 
-      FCS_B        : out   std_logic;   -- 
-      FOE_B        : out   std_logic;   -- 
-      FWE_B        : out   std_logic;   -- 
-      FLATCH_B     : out   std_logic    -- 
-      );
-  end component;
-
-
   component ODMB_VME is
     port (
       CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 -- VME signals
 
+      cmd_adrs        : out std_logic_vector(15 downto 0);
       vme_addr        : in  std_logic_vector (23 downto 1);  -- adr(23 downto 1)
       vme_data_in     : in  std_logic_vector (15 downto 0);  -- data_in(15 downto 0)
       vme_data_out    : out std_logic_vector (15 downto 0);  -- data_out(15 downto 0)
@@ -940,10 +883,82 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       );
   end component;
 
+  component bpi_ctrl
+    port(
+      CLK               : in  std_logic;  -- 40 MHz clock
+      CLK1MHZ           : in  std_logic;  --  1 MHz clock for timers
+      RST               : in  std_logic;
+--      Interface Signals to/from VME interface
+      BPI_CMD_FIFO_DATA : in  std_logic_vector(15 downto 0);  -- Data for command FIFO
+      BPI_WE            : in  std_logic;  -- Command FIFO write enable  (pulse one clock cycle for one write)
+      BPI_RE            : in  std_logic;  -- Read back FIFO read enable  (pulse one clock cycle for one read)
+      BPI_DSBL          : in  std_logic;  -- Disable parsing of BPI commands in the command FIFO (while being filled)
+      BPI_ENBL          : in  std_logic;  -- Enable  parsing of BPI commands in the command FIFO
+      BPI_RBK_FIFO_DATA : out std_logic_vector(15 downto 0);  -- Data on output of the Read back FIFO
+      BPI_RBK_WRD_CNT   : out std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
+      BPI_STATUS        : out std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
+      BPI_TIMER         : out std_logic_vector(31 downto 0);  -- General timer
+-- Signals to/from low level BPI interface
+      BPI_BUSY          : in  std_logic;  --  
+      BPI_DATA_FROM     : in  std_logic_vector(15 downto 0);  -- 
+      BPI_LOAD_DATA     : in  std_logic;  --  
+      BPI_ACTIVE        : out std_logic;  --  
+      BPI_OP            : out std_logic_vector(1 downto 0);   -- 
+      BPI_ADDR          : out std_logic_vector(22 downto 0);  -- 
+      BPI_DATA_TO       : out std_logic_vector(15 downto 0);  -- 
+      BPI_EXECUTE       : out std_logic;
+-- Guido Aug 26
+      BPI_CFG_DONE      : out std_logic;
+      BPI_CFG_REG_WE    : out std_logic;
+      BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0)
+      );
+  end component;
+
+  component bpi_interface
+    port(
+      CLK          : in    std_logic;   -- 40 MHz clock
+      RST          : in    std_logic;
+      ADDR         : in    std_logic_vector(22 downto 0);  -- Bank/Array Address 
+      CMD_DATA_OUT : in    std_logic_vector(15 downto 0);  -- Command or Data being written to FLASH device
+      OP           : in    std_logic_vector(1 downto 0);  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
+      EXECUTE      : in    std_logic;   -- 
+      DATA_IN      : out   std_logic_vector(15 downto 0);  -- Data read from FLASH device
+      LOAD_DATA    : out   std_logic;  -- Clock enable signal for capturing Data read from FLASH device
+      BUSY         : out   std_logic;  -- Operation in progress signal (not ready)
+-- signals for Dual purpose data lines
+      BPI_ACTIVE   : in    std_logic;  -- set to 1 when data lines are for BPI communications.
+      DUAL_DATA    : in    std_logic_vector(15 downto 0);  -- Data provided for non BPI communications
+-- external connections cooresponding to I/O pins
+      bpi_ad_out_r : out   std_logic_vector(22 downto 0);  -- 
+      data_out_i   : out   std_logic_vector(15 downto 0);  -- 
+      PROM_CONTROL : out   std_logic_vector(5 downto 0);  -- 
+      BPI_AD       : inout std_logic_vector(22 downto 0);  -- 
+      CFG_DAT      : inout std_logic_vector(15 downto 0);  -- 
+      RS0          : out   std_logic;   -- 
+      RS1          : out   std_logic;   -- 
+      FCS_B        : out   std_logic;   -- 
+      FOE_B        : out   std_logic;   -- 
+      FWE_B        : out   std_logic;   -- 
+      FLATCH_B     : out   std_logic    -- 
+      );
+  end component;
+
+
+-- Adding csp for bpi signals here
+  component csp_bpi_la is
+    port(
+      CLK     : in    std_logic := 'X';
+      DATA    : in    std_logic_vector (299 downto 0);
+      TRIG0   : in    std_logic_vector (15 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
+      );
+  end component;
+
   component csp_controller is
     port (
       CONTROL0 : inout std_logic_vector (35 downto 0);
-      CONTROL1 : inout std_logic_vector (35 downto 0)
+      CONTROL1 : inout std_logic_vector (35 downto 0);
+      CONTROL2 : inout std_logic_vector (35 downto 0)
       );
   end component;
 
@@ -964,6 +979,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- VME Signals
 
+  signal cmd_adrs     : std_logic_vector (15 downto 0);
   signal vme_data_out : std_logic_vector (15 downto 0);
   signal vme_data_in  : std_logic_vector (15 downto 0);
   signal vme_tovme_b  : std_logic;
@@ -1309,7 +1325,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_op            : std_logic_vector(1 downto 0);
   signal bpi_addr          : std_logic_vector(22 downto 0);
   signal bpi_data_to       : std_logic_vector(15 downto 0);
-  signal dual_data_leds    : std_logic_vector(15 downto 0);
+  signal dual_data_leds    : std_logic_vector(15 downto 0) := (others => '0');
 
   signal bpi_cfg_done   : std_logic;
   signal bpi_cfg_reg_we : std_logic;
@@ -1345,14 +1361,23 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   signal csp_control_fsm_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
   signal csp_system_test_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
-  
+  signal csp_bpi_port_la_ctrl         : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
+  -- since we're at the top level, let's make the other signals for the csp thingy.
+  signal csp_bpi_port_la_data         : std_logic_vector(299 downto 0);
+  signal csp_bpi_port_la_trig         : std_logic_vector(15 downto 0);
+  -- prom_inners for this csp operation
+  signal prom_control : std_logic_vector(5 downto 0);
+  signal prom_a_out : std_logic_vector(22 downto 0);
+  signal prom_d_out : std_logic_vector(15 downto 0);
+
   
 begin
   
   csp_controller_pm : csp_controller
     port map (
       CONTROL0 => csp_control_fsm_port_la_ctrl,
-      CONTROL1 => csp_system_test_port_la_ctrl
+      CONTROL1 => csp_system_test_port_la_ctrl,
+      CONTROL2 => csp_bpi_port_la_ctrl
       );
 
   MBV : ODMB_VME
@@ -1360,6 +1385,7 @@ begin
 
       CSP_SYSTEM_TEST_PORT_LA_CTRL => csp_system_test_port_la_ctrl,
 
+      cmd_adrs        => cmd_adrs,            -- output
       vme_addr        => vme_addr,            -- input
       vme_data_in     => vme_data_in,         -- input
       vme_data_out    => vme_data_out,        -- output
@@ -2231,7 +2257,6 @@ begin
     VME_BUF       : IOBUF port map (O => vme_data_in(I), IO => vme_data(I), I => vme_data_out(I), T => vme_tovme_b);
   end generate GEN_15;
 
-
 -- From OT1 (GigaBit Link)
   gl0_rx_ibuf_p : IBUF port map (O => gl0_rx_buf_p, I => gl0_rx_p);
   gl0_rx_ibuf_n : IBUF port map (O => gl0_rx_buf_n, I => gl0_rx_n);
@@ -2421,11 +2446,12 @@ begin
 
   vme_dtack_v6_b <= int_vme_dtack_v6_b;
 
-
-  bpi_rst <= reset or vme_bpi_rst;
+  --bpi_rst <= reset or vme_bpi_rst;
+  bpi_rst <= reset;
   BPI_ctrl_i : BPI_ctrl
     port map (
-      CLK               => clk40,      -- 40 MHz clock
+--      CLK               => clk2p5,      -- 40 MHz clock
+      CLK               => clk40,
       CLK1MHZ           => clk1mhz,     --  1 MHz clock for timers
       RST               => bpi_rst,
 -- Interface Signals to/from VME interface
@@ -2455,8 +2481,9 @@ begin
 
   bpi_interface_i : bpi_interface
     port map (
-      CLK          => clk40,           -- 40 MHz clock
-      RST          => reset,
+      --CLK          => clk2p5,           -- 40 MHz clock
+      CLK          => clk40,
+      RST          => bpi_rst,
       ADDR         => bpi_addr,         -- Bank/Array Address 
       CMD_DATA_OUT => bpi_data_to,  -- Command or Data being written to FLASH device
       OP           => bpi_op,  -- Operation: 00-standby, 01-write, 10-read, 11-not allowed(standby)
@@ -2468,6 +2495,9 @@ begin
       BPI_ACTIVE   => bpi_active,  -- set to 1 when data lines are for BPI communications.
       DUAL_DATA    => dual_data_leds,  -- Data provided for non BPI communications
 -- external connections cooresponding to I/O pins
+      bpi_ad_out_r => prom_a_out,
+      data_out_i   => prom_d_out,
+      PROM_CONTROL => prom_control,
       BPI_AD       => prom_a,
       CFG_DAT      => prom_d,
       RS0          => prom_a_21_rs0,
@@ -2477,6 +2507,34 @@ begin
       FWE_B        => prom_we_b,
       FLATCH_B     => prom_le_b
       );
+
+  csp_bpi_la_pm : csp_bpi_la
+    port map (
+      CONTROL => csp_bpi_port_la_ctrl,
+      CLK     => clk80,
+      DATA    => csp_bpi_port_la_data,
+      TRIG0   => csp_bpi_port_la_trig
+      );
+
+  csp_bpi_port_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
+
+  csp_bpi_port_la_data <= x"00"
+                          & clk40 & clk2p5                         -- [291:290]
+                          & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
+                          & cmd_adrs    -- [284:269]
+                          & vme_data_in  -- [268:253]
+                          & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
+                          & bpi_cfg_reg_we & bpi_cfg_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
+                          & bpi_op & bpi_cfg_reg_in                -- [240:223]
+                          & bpi_status & bpi_timer                 -- [222:175]
+                          & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]
+                          & bpi_cmd_fifo_data & bpi_rbk_fifo_data  -- [140:109]
+                          & bpi_data_from & bpi_data_to            -- [108:77]
+                          & dual_data_leds                         -- [76:61]
+                          & x"0000"                                -- [60:45]
+                          & prom_control -- [44:39]
+                          & prom_a_out  -- [38:16]
+                          & prom_d_out;  -- [15:0]
 
 ------------------------------------  Monitoring  ------------------------------------
 ---------------------------------------------------------------------------------------

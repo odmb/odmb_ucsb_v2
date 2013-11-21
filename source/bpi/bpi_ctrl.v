@@ -31,7 +31,7 @@ module BPI_ctrl (
 	 input BPI_RE,                   // Read back FIFO read enable  (pulse one clock cycle for one read)
    input BPI_DSBL,                 // Disable parsing of BPI commands in the command FIFO (while being filled)
    input BPI_ENBL,                 // Enable  parsing of BPI commands in the command FIFO
-	 output reg [15:0] BPI_RBK_FIFO_DATA,// Data on output of the Read back FIFO
+	 output [15:0] BPI_RBK_FIFO_DATA,// Data on output of the Read back FIFO
 	 output [10:0] BPI_RBK_WRD_CNT,  // Word count of the Read back FIFO (number of available reads)
 	 output reg [15:0] BPI_STATUS,   // FIFO status bits and latest value of the PROM status register. 
 	 output reg [31:0] BPI_TIMER,    // General timer
@@ -247,7 +247,7 @@ reg [15:0] rbkbuf0,rbkbuf1,rbkbuf2,rbkbuf3,rbkbuf4,rbkbuf5,rbkbuf6,rbkbuf7;
 reg pe_in_suspense;
 
 // latch for 40MHz BPI operation
-wire [15:0] INT_BPI_RBK_FIFO_DATA;
+// wire [15:0] bpi_rbk_fifo_data;
 
 assign bpi_wrt_data = BPI_CMD_FIFO_DATA;
 assign bpi_wrena = BPI_WE;
@@ -885,7 +885,7 @@ end
    ) BPI_rbk_FIFO_data_i (
       .ALMOSTEMPTY(bpi_rbk_amt), // 1-bit output almost empty
       .ALMOSTFULL(bpi_rbk_afl),   // 1-bit output almost full
-      .DO(INT_BPI_RBK_FIFO_DATA),                   // Output data, width defined by DATA_WIDTH parameter
+      .DO(BPI_RBK_FIFO_DATA),                   // Output data, width defined by DATA_WIDTH parameter
       .EMPTY(bpi_rbk_mt),             // 1-bit output empty
       .FULL(bpi_rbk_full),               // 1-bit output full
       .RDCOUNT(bpi_rbk_rdcnt),         // Output read count, width determined by FIFO depth
@@ -901,11 +901,13 @@ end
    );
 
 // latch for 40MHz BPI operation
+/* -----\/----- EXCLUDED -----\/-----
 always @(posedge CLK)
 begin
 	if(BPI_RE)
   BPI_RBK_FIFO_DATA <= INT_BPI_RBK_FIFO_DATA;
 end
+ -----/\----- EXCLUDED -----/\----- */
 
 BPI_cmd_parser_FSM BPI_cmd_parser_FSM_i(
 	.ACK(fsm_ack),
