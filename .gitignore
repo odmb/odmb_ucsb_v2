@@ -16,6 +16,8 @@ _xmsgs/
 _ngo/
 xst/
 ipcore_dir/*.*
+!ipcore_dir/*.vhd
+!ipcore_dire/*.xco
 *.syr
 *.map
 *.mrp

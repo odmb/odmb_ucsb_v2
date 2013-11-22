@@ -20,22 +20,22 @@ w 6024 0      ## Disable parser
 r 6038 0      ## Read status register
 
 w 602c 1ec    ## CMD = Buffer program [0x0C] Number of words to shift = 15 [16 words]
-w 602c ff00
-w 602c ff01
-w 602c ff02
-w 602c ff03
-w 602c ff04
-w 602c ff05
-w 602c ff06
-w 602c ff07
-w 602c ff08
-w 602c ff09
-w 602c ff0a
-w 602c ff0b
-w 602c ff0c
-w 602c ff0d
-w 602c ff0e
 w 602c ff0f
+w 602c ff0e
+w 602c ff0d
+w 602c ff0c
+w 602c ff0b
+w 602c ff0a
+w 602c ff09
+w 602c ff08
+w 602c ff07
+w 602c ff06
+w 602c ff05
+w 602c ff04
+w 602c ff03
+w 602c ff02
+w 602c ff01
+w 602c ff00
 
 w 6028 0      ## Enable parser
 w 6024 0      ## Disable parser

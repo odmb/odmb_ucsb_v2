@@ -1,19 +1,22 @@
--- VMECONFREGS: Assign values to registers used in ODMB_CTRL
+-- VMECONFREGS_BPI: Assign values to registers used in ODMB_CTRL
 
 library ieee;
 library work;
 library unisim;
 use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
 
-entity VMECONFREGS is
+entity VMECONFREGS_BPI is
   generic (
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );    
   port (
 
     SLOWCLK : in std_logic;
+    CLK     : in std_logic;
     RST     : in std_logic;
 
     DEVICE  : in std_logic;
@@ -37,335 +40,216 @@ entity VMECONFREGS is
 
     NWORDS_DUMMY : out std_logic_vector(15 downto 0);
     KILL         : out std_logic_vector(NFEB+2 downto 1);
-    CRATEID      : out std_logic_vector(7 downto 0)
+    CRATEID      : out std_logic_vector(7 downto 0);
+
+-- From BPI_PORT
+    BPI_MODE : in std_logic_vector(1 downto 0);
+
+-- From BPI_CFG_CONTROLLER
+    CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
+    CC_CFG_REG_WE : in std_logic_vector(15 downto 0);
+
+-- To BPI_CFG_CONTROLLER
+    CFG_REG0 : out std_logic_vector(15 downto 0);
+    CFG_REG1 : out std_logic_vector(15 downto 0);
+    CFG_REG2 : out std_logic_vector(15 downto 0);
+    CFG_REG3 : out std_logic_vector(15 downto 0);
+    CFG_REG4 : out std_logic_vector(15 downto 0);
+    CFG_REG5 : out std_logic_vector(15 downto 0);
+    CFG_REG6 : out std_logic_vector(15 downto 0);
+    CFG_REG7 : out std_logic_vector(15 downto 0);
+    CFG_REG8 : out std_logic_vector(15 downto 0);
+    CFG_REG9 : out std_logic_vector(15 downto 0);
+    CFG_REGA : out std_logic_vector(15 downto 0);
+    CFG_REGB : out std_logic_vector(15 downto 0);
+    CFG_REGC : out std_logic_vector(15 downto 0);
+    CFG_REGD : out std_logic_vector(15 downto 0);
+    CFG_REGE : out std_logic_vector(15 downto 0);
+    CFG_REGF : out std_logic_vector(15 downto 0)
+
     );
-end VMECONFREGS;
+end VMECONFREGS_BPI;
 
 
 
-architecture VMECONFREGS_Arch of VMECONFREGS is
+architecture VMECONFREGS_BPI_Arch of VMECONFREGS_BPI is
 
-  signal DTACK_INNER : std_logic;
-  signal CMDDEV      : unsigned(12 downto 0);
+  component bpi_cfg_registers_16_rh is
+    port(
 
-  constant FW_VERSION                                   : std_logic_vector(15 downto 0) := x"010C";
-  signal   OUT_FW_VERSION                               : std_logic_vector(15 downto 0) := (others => '0');
-  signal   R_FW_VERSION, D_R_FW_VERSION, Q_R_FW_VERSION : std_logic                     := '0';
+      clk : in std_logic;
+      rst : in std_logic;
 
-  signal OUT_LCT_L1A                         : std_logic_vector(15 downto 0) := (others => '0');
-  signal LCT_L1A_DLY_INNER                   : std_logic_vector(5 downto 0);
-  signal W_LCT_L1A, D_W_LCT_L1A, Q_W_LCT_L1A : std_logic                     := '0';
-  signal R_LCT_L1A, D_R_LCT_L1A, Q_R_LCT_L1A : std_logic                     := '0';
+      bpi_cfg_reg_we : in std_logic_vector(15 downto 0);
 
-  signal OUT_OTMB_PUSH                             : std_logic_vector(15 downto 0) := (others => '0');
-  signal OTMB_PUSH_DLY_INNER                       : std_logic_vector(4 downto 0);
-  signal W_OTMB_PUSH, D_W_OTMB_PUSH, Q_W_OTMB_PUSH : std_logic                     := '0';
-  signal R_OTMB_PUSH, D_R_OTMB_PUSH, Q_R_OTMB_PUSH : std_logic                     := '0';
+      bpi_cfg_reg_in : in std_logic_vector(15 downto 0);
 
-  signal OUT_PUSH                   : std_logic_vector(15 downto 0) := (others => '0');
-  signal PUSH_DLY_INNER             : std_logic_vector(4 downto 0);
-  signal W_PUSH, D_W_PUSH, Q_W_PUSH : std_logic                     := '0';
-  signal R_PUSH, D_R_PUSH, Q_R_PUSH : std_logic                     := '0';
+      bpi_cfg_reg0 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg1 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg2 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg3 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg4 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg5 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg6 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg7 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg8 : out std_logic_vector(15 downto 0);
+      bpi_cfg_reg9 : out std_logic_vector(15 downto 0);
+      bpi_cfg_regA : out std_logic_vector(15 downto 0);
+      bpi_cfg_regB : out std_logic_vector(15 downto 0);
+      bpi_cfg_regC : out std_logic_vector(15 downto 0);
+      bpi_cfg_regD : out std_logic_vector(15 downto 0);
+      bpi_cfg_regE : out std_logic_vector(15 downto 0);
+      bpi_cfg_regF : out std_logic_vector(15 downto 0)
 
-  signal OUT_ALCT_PUSH                             : std_logic_vector(15 downto 0) := (others => '0');
-  signal ALCT_PUSH_DLY_INNER                       : std_logic_vector(4 downto 0);
-  signal W_ALCT_PUSH, D_W_ALCT_PUSH, Q_W_ALCT_PUSH : std_logic                     := '0';
-  signal R_ALCT_PUSH, D_R_ALCT_PUSH, Q_R_ALCT_PUSH : std_logic                     := '0';
+      );
 
-  signal OUT_INJ_DLY                         : std_logic_vector(15 downto 0) := (others => '0');
-  signal INJ_DLY_INNER                       : std_logic_vector(4 downto 0);
-  signal W_INJ_DLY, D_W_INJ_DLY, Q_W_INJ_DLY : std_logic                     := '0';
-  signal R_INJ_DLY, D_R_INJ_DLY, Q_R_INJ_DLY : std_logic                     := '0';
+  end component;
 
-  signal OUT_EXT_DLY                         : std_logic_vector(15 downto 0) := (others => '0');
-  signal EXT_DLY_INNER                       : std_logic_vector(4 downto 0);
-  signal W_EXT_DLY, D_W_EXT_DLY, Q_W_EXT_DLY : std_logic                     := '0';
-  signal R_EXT_DLY, D_R_EXT_DLY, Q_R_EXT_DLY : std_logic                     := '0';
+  signal CMDDEV : std_logic_vector(15 downto 0);
 
-  signal OUT_CALLCT_DLY                               : std_logic_vector(15 downto 0) := (others => '0');
-  signal CALLCT_DLY_INNER                             : std_logic_vector(3 downto 0);
-  signal W_CALLCT_DLY, D_W_CALLCT_DLY, Q_W_CALLCT_DLY : std_logic                     := '0';
-  signal R_CALLCT_DLY, D_R_CALLCT_DLY, Q_R_CALLCT_DLY : std_logic                     := '0';
+  signal INNER_CFG_REG0, INNER_CFG_REG1 : std_logic_vector(15 downto 0) := (others => '0');
+  signal INNER_CFG_REG2, INNER_CFG_REG3 : std_logic_vector(15 downto 0) := (others => '0');
+  signal INNER_CFG_REG4, INNER_CFG_REG5 : std_logic_vector(15 downto 0) := (others => '0');
+  signal INNER_CFG_REG6, INNER_CFG_REG7 : std_logic_vector(15 downto 0) := (others => '0');
+  signal INNER_CFG_REG8, INNER_CFG_REG9 : std_logic_vector(15 downto 0) := (others => '0');
+  signal INNER_CFG_REGA, INNER_CFG_REGB : std_logic_vector(15 downto 0) := (others => '0');
+  signal INNER_CFG_REGC, INNER_CFG_REGD : std_logic_vector(15 downto 0) := (others => '0');
+  signal INNER_CFG_REGE, INNER_CFG_REGF : std_logic_vector(15 downto 0) := (others => '0');
 
-  constant NWORDS_DUMMY_DEF                                       : std_logic_vector(15 downto 0) := x"0008";
-  signal   OUT_NWORDS_DUMMY                                       : std_logic_vector(15 downto 0);
-  signal   NWORDS_DUMMY_INNER, NWORDS_DUMMY_RST, NWORDS_DUMMY_PRE : std_logic_vector(15 downto 0);
-  signal   W_NWORDS_DUMMY, D_W_NWORDS_DUMMY, Q_W_NWORDS_DUMMY     : std_logic;
-  signal   R_NWORDS_DUMMY, D_R_NWORDS_DUMMY, Q_R_NWORDS_DUMMY     : std_logic;
+  signal CFG_REG_IN, VME_CFG_REG_WE : std_logic_vector(15 downto 0) := (others => '0');
+  signal CFG_REG_WE                 : std_logic_vector(15 downto 0) := (others => '0');
+  signal CFG_REG_RE                 : std_logic_vector(15 downto 0) := (others => '0');
+  signal CFG_REG_CK                 : std_logic;
 
-  signal OUT_KILL                   : std_logic_vector(15 downto 0) := (others => '0');
-  signal KILL_INNER                 : std_logic_vector(NFEB+2 downto 1);
-  signal W_KILL, D_W_KILL, Q_W_KILL : std_logic                     := '0';
-  signal R_KILL, D_R_KILL, Q_R_KILL : std_logic                     := '0';
+  signal d_dtack : std_logic;
 
-  signal OUT_CRATEID                         : std_logic_vector(15 downto 0) := (others => '0');
-  signal CRATEID_INNER                       : std_logic_vector(7 downto 0);
-  signal W_CRATEID, D_W_CRATEID, Q_W_CRATEID : std_logic                     := '0';
-  signal R_CRATEID, D_R_CRATEID, Q_R_CRATEID : std_logic                     := '0';
-
+  type     cfg_reg_mask_array is array (0 to 15) of std_logic_vector(15 downto 0);
+  constant cfg_reg_mask : cfg_reg_mask_array := (x"003F", x"001F", x"001F", x"001F", x"001F",
+                                                 x"001F", x"000F", x"01FF", x"00ff", x"ffff",
+                                                 x"ffff", x"ffff", x"ffff", x"ffff", x"ffff", x"ffff");
+  
 begin  --Architecture
 
+
+  BPI_CFG_REGS_PM : bpi_cfg_registers_16_rh
+    port map(
+
+      clk => CFG_REG_CK,
+      rst => RST,
+
+      bpi_cfg_reg_we => CFG_REG_WE,
+
+      bpi_cfg_reg_in => CFG_REG_IN,
+
+      bpi_cfg_reg0 => INNER_CFG_REG0,  -- CMDDEV = x"1000" => LCT_L1A_DLY (6 bits)
+      bpi_cfg_reg1 => INNER_CFG_REG1,  -- CMDDEV = x"1004" => OTMB_PUSH_DLY (5 bits)
+      bpi_cfg_reg2 => INNER_CFG_REG2,  -- CMDDEV = x"1008" => PUSH_DLY (5 bits)
+      bpi_cfg_reg3 => INNER_CFG_REG3,  -- CMDDEV = x"100C" => ALCT_PUSH_DLY (5 bits)
+      bpi_cfg_reg4 => INNER_CFG_REG4,   -- CMDDEV = x"1010" => INJ_DLY (5 bits)
+      bpi_cfg_reg5 => INNER_CFG_REG5,   -- CMDDEV = x"1014" => EXT_DLY (5 bits)
+      bpi_cfg_reg6 => INNER_CFG_REG6,  -- CMDDEV = x"1018" => CALLCT_DLY (4 bits)
+      bpi_cfg_reg7 => INNER_CFG_REG7,   -- CMDDEV = x"101C" => KILL (9 bits)
+      bpi_cfg_reg8 => INNER_CFG_REG8,   -- CMDDEV = x"1020" => CRATEID (8 bits)
+      bpi_cfg_reg9 => INNER_CFG_REG9,  -- CMDDEV = x"1024" => FW_VERSION (16 bits) - READ ONLY
+      bpi_cfg_regA => INNER_CFG_REGA,  -- CMDDEV = x"1028" => NWORDS_DUMMY (16 bits)
+      bpi_cfg_regB => INNER_CFG_REGB,   -- CMDDEV = x"102C" => NOT USED
+      bpi_cfg_regC => INNER_CFG_REGC,   -- CMDDEV = x"1030" => NOT USED
+      bpi_cfg_regD => INNER_CFG_REGD,   -- CMDDEV = x"1034" => NOT USED
+      bpi_cfg_regE => INNER_CFG_REGE,   -- CMDDEV = x"1038" => NOT USED
+      bpi_cfg_regF => INNER_CFG_REGF    -- CMDDEV = x"103C" => NOT USED
+
+      );
+
+  LCT_L1A_DLY   <= INNER_CFG_REG0(5 downto 0);
+  OTMB_PUSH_DLY <= INNER_CFG_REG1(4 downto 0);
+  PUSH_DLY      <= INNER_CFG_REG2(4 downto 0);
+  ALCT_PUSH_DLY <= INNER_CFG_REG3(4 downto 0);
+  INJ_DLY       <= INNER_CFG_REG4(4 downto 0);
+  EXT_DLY       <= INNER_CFG_REG5(4 downto 0);
+  CALLCT_DLY    <= INNER_CFG_REG6(3 downto 0);
+  KILL          <= INNER_CFG_REG7(8 downto 0);
+  CRATEID       <= INNER_CFG_REG8(7 downto 0);
+  NWORDS_DUMMY  <= INNER_CFG_REGA(15 downto 0);
+
+  CFG_REG0 <= INNER_CFG_REG0;
+  CFG_REG1 <= INNER_CFG_REG1;
+  CFG_REG2 <= INNER_CFG_REG2;
+  CFG_REG3 <= INNER_CFG_REG3;
+  CFG_REG4 <= INNER_CFG_REG4;
+  CFG_REG5 <= INNER_CFG_REG5;
+  CFG_REG6 <= INNER_CFG_REG6;
+  CFG_REG7 <= INNER_CFG_REG7;
+  CFG_REG8 <= INNER_CFG_REG8;
+  CFG_REG9 <= INNER_CFG_REG9;
+  CFG_REGA <= INNER_CFG_REGA;
+  CFG_REGB <= INNER_CFG_REGB;
+  CFG_REGC <= INNER_CFG_REGC;
+  CFG_REGD <= INNER_CFG_REGD;
+  CFG_REGE <= INNER_CFG_REGE;
+  CFG_REGF <= INNER_CFG_REGF;
+
 -- Decode instruction
-  CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input  
+  CMDDEV <= "000" & DEVICE & COMMAND & "00";  -- Variable that looks like the VME commands we input  
 
-  W_LCT_L1A      <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
-  W_OTMB_PUSH    <= '1' when (CMDDEV = x"1004" and WRITER = '0') else '0';
-  W_PUSH         <= '1' when (CMDDEV = x"1008" and WRITER = '0') else '0';
-  W_ALCT_PUSH    <= '1' when (CMDDEV = x"100C" and WRITER = '0') else '0';
-  W_INJ_DLY      <= '1' when (CMDDEV = x"1010" and WRITER = '0') else '0';
-  W_EXT_DLY      <= '1' when (CMDDEV = x"1014" and WRITER = '0') else '0';
-  W_CALLCT_DLY   <= '1' when (CMDDEV = x"1018" and WRITER = '0') else '0';
-  W_KILL         <= '1' when (CMDDEV = x"101C" and WRITER = '0') else '0';
-  W_CRATEID      <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
-  W_NWORDS_DUMMY <= '1' when (CMDDEV = x"1028" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(0)  <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(1)  <= '1' when (CMDDEV = x"1004" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(2)  <= '1' when (CMDDEV = x"1008" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(3)  <= '1' when (CMDDEV = x"100C" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(4)  <= '1' when (CMDDEV = x"1010" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(5)  <= '1' when (CMDDEV = x"1014" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(6)  <= '1' when (CMDDEV = x"1018" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(7)  <= '1' when (CMDDEV = x"101C" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(8)  <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(9)  <= '1' when (CMDDEV = x"1024" and WRITER = '0') else '0';  -- FW_VERSION (16 bits) - READ ONLY
+  VME_CFG_REG_WE(10) <= '1' when (CMDDEV = x"1028" and WRITER = '0') else '0';
+  VME_CFG_REG_WE(11) <= '1' when (CMDDEV = x"102C" and WRITER = '0') else '0';  -- NOT USED
+  VME_CFG_REG_WE(12) <= '1' when (CMDDEV = x"1030" and WRITER = '0') else '0';  -- NOT USED
+  VME_CFG_REG_WE(13) <= '1' when (CMDDEV = x"1034" and WRITER = '0') else '0';  -- NOT USED
+  VME_CFG_REG_WE(14) <= '1' when (CMDDEV = x"1038" and WRITER = '0') else '0';  -- NOT USED
+  VME_CFG_REG_WE(15) <= '1' when (CMDDEV = x"103C" and WRITER = '0') else '0';  -- NOT USED
 
-  R_LCT_L1A      <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
-  R_OTMB_PUSH    <= '1' when (CMDDEV = x"1004" and WRITER = '1') else '0';
-  R_PUSH         <= '1' when (CMDDEV = x"1008" and WRITER = '1') else '0';
-  R_ALCT_PUSH    <= '1' when (CMDDEV = x"100C" and WRITER = '1') else '0';
-  R_INJ_DLY      <= '1' when (CMDDEV = x"1010" and WRITER = '1') else '0';
-  R_EXT_DLY      <= '1' when (CMDDEV = x"1014" and WRITER = '1') else '0';
-  R_CALLCT_DLY   <= '1' when (CMDDEV = x"1018" and WRITER = '1') else '0';
-  R_KILL         <= '1' when (CMDDEV = x"101C" and WRITER = '1') else '0';
-  R_CRATEID      <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
-  R_FW_VERSION   <= '1' when (CMDDEV = x"1024" and WRITER = '1') else '0';
-  R_NWORDS_DUMMY <= '1' when (CMDDEV = x"1028" and WRITER = '1') else '0';
+  CFG_REG_CK <= STROBE         when (BPI_MODE(1) = '1') else CLK;
+  CFG_REG_WE <= VME_CFG_REG_WE when (BPI_MODE(1) = '1') else CC_CFG_REG_WE;
+  CFG_REG_IN <= INDATA         when (BPI_MODE(1) = '1') else CC_CFG_REG_IN;
 
--- Write LCT_L1A_DLY
-  GEN_LCT_L1A_DLY : for I in 5 downto 0 generate
-  begin
-    FD_W_LCT_L1A : FDCE port map(LCT_L1A_DLY_INNER(I), STROBE, W_LCT_L1A, RST, INDATA(I));
-  end generate GEN_LCT_L1A_DLY;
-  LCT_L1A_DLY <= LCT_L1A_DLY_INNER;
-  D_W_LCT_L1A <= '1' when (STROBE = '1' and W_LCT_L1A = '1') else '0';
-  FD_DTACK_LCT_L1A : FD port map(Q_W_LCT_L1A, SLOWCLK, D_W_LCT_L1A);
-  --DTACK_INNER <= '0' when (Q_W_LCT_L1A = '1')                else 'Z';
+  CFG_REG_RE(0)  <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
+  CFG_REG_RE(1)  <= '1' when (CMDDEV = x"1004" and WRITER = '1') else '0';
+  CFG_REG_RE(2)  <= '1' when (CMDDEV = x"1008" and WRITER = '1') else '0';
+  CFG_REG_RE(3)  <= '1' when (CMDDEV = x"100C" and WRITER = '1') else '0';
+  CFG_REG_RE(4)  <= '1' when (CMDDEV = x"1010" and WRITER = '1') else '0';
+  CFG_REG_RE(5)  <= '1' when (CMDDEV = x"1014" and WRITER = '1') else '0';
+  CFG_REG_RE(6)  <= '1' when (CMDDEV = x"1018" and WRITER = '1') else '0';
+  CFG_REG_RE(7)  <= '1' when (CMDDEV = x"101C" and WRITER = '1') else '0';
+  CFG_REG_RE(8)  <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
+  CFG_REG_RE(9)  <= '1' when (CMDDEV = x"1024" and WRITER = '1') else '0';  -- FW_VERSION (16 bits) - READ ONLY
+  CFG_REG_RE(10) <= '1' when (CMDDEV = x"1028" and WRITER = '1') else '0';
+  CFG_REG_RE(11) <= '1' when (CMDDEV = x"102C" and WRITER = '1') else '0';  -- NOT USED
+  CFG_REG_RE(12) <= '1' when (CMDDEV = x"1030" and WRITER = '1') else '0';  -- NOT USED
+  CFG_REG_RE(13) <= '1' when (CMDDEV = x"1034" and WRITER = '1') else '0';  -- NOT USED
+  CFG_REG_RE(14) <= '1' when (CMDDEV = x"1038" and WRITER = '1') else '0';  -- NOT USED
+  CFG_REG_RE(15) <= '1' when (CMDDEV = x"103C" and WRITER = '1') else '0';  -- NOT USED
 
--- Read LCT_L1A_DLY
-  OUT_LCT_L1A(15 downto 6) <= (others => '0');
-  OUT_LCT_L1A(5 downto 0)  <= LCT_L1A_DLY_INNER when (STROBE = '1' and R_LCT_L1A = '1') else
-                              (others => 'Z');
+-- Output Multiplexer 
 
-  D_R_LCT_L1A <= '1' when (STROBE = '1' and R_LCT_L1A = '1') else '0';
-  FD_R_LCT_L1A : FD port map(Q_R_LCT_L1A, SLOWCLK, D_R_LCT_L1A);
-  --DTACK_INNER <= '0' when (Q_R_LCT_L1A = '1')                else 'Z';
-
--- Write OTMB_PUSH_DLY
-  GEN_OTMB_PUSH_DLY : for I in 4 downto 0 generate
-  begin
-    FD_W_OTMB_PUSH : FDCE port map(OTMB_PUSH_DLY_INNER(I), STROBE, W_OTMB_PUSH, RST, INDATA(I));
-  end generate GEN_OTMB_PUSH_DLY;
-  OTMB_PUSH_DLY <= OTMB_PUSH_DLY_INNER;
-  D_W_OTMB_PUSH <= '1' when (STROBE = '1' and W_OTMB_PUSH = '1') else '0';
-  FD_DTACK_OTMB_PUSH : FD port map(Q_W_OTMB_PUSH, SLOWCLK, D_W_OTMB_PUSH);
-  --DTACK_INNER   <= '0' when (Q_W_OTMB_PUSH = '1')                else 'Z';
-
--- Read OTMB_PUSH_DLY
-  OUT_OTMB_PUSH(15 downto 5) <= (others => '0');
-  OUT_OTMB_PUSH(4 downto 0)  <= OTMB_PUSH_DLY_INNER when (STROBE = '1' and R_OTMB_PUSH = '1') else
-                                (others => 'Z');
-
-  D_R_OTMB_PUSH <= '1' when (STROBE = '1' and R_OTMB_PUSH = '1') else '0';
-  FD_R_OTMB_PUSH : FD port map(Q_R_OTMB_PUSH, SLOWCLK, D_R_OTMB_PUSH);
-  --DTACK_INNER   <= '0' when (Q_R_OTMB_PUSH = '1')                else 'Z';
-
--- Write PUSH_DLY
-  GEN_PUSH_DLY : for I in 4 downto 0 generate
-  begin
-    FD_W_PUSH : FDCE port map(PUSH_DLY_INNER(I), STROBE, W_PUSH, RST, INDATA(I));
-  end generate GEN_PUSH_DLY;
-  PUSH_DLY <= PUSH_DLY_INNER;
-  D_W_PUSH <= '1' when (STROBE = '1' and W_PUSH = '1') else '0';
-  FD_DTACK_PUSH : FD port map(Q_W_PUSH, SLOWCLK, D_W_PUSH);
-  --DTACK_INNER <= '0' when (Q_W_PUSH = '1')                else 'Z';
-
--- Read PUSH_DLY
-  OUT_PUSH(15 downto 5) <= (others => '0');
-  OUT_PUSH(4 downto 0)  <= PUSH_DLY_INNER when (STROBE = '1' and R_PUSH = '1') else
-                           (others => 'Z');
-
-  D_R_PUSH <= '1' when (STROBE = '1' and R_PUSH = '1') else '0';
-  FD_R_PUSH : FD port map(Q_R_PUSH, SLOWCLK, D_R_PUSH);
-  --DTACK_INNER <= '0' when (Q_R_PUSH = '1')                else 'Z';
-
--- Write ALCT_PUSH_DLY
-  GEN_ALCT_PUSH_DLY : for I in 4 downto 0 generate
-  begin
-    FD_W_ALCT_PUSH : FDCE port map(ALCT_PUSH_DLY_INNER(I), STROBE, W_ALCT_PUSH, RST, INDATA(I));
-  end generate GEN_ALCT_PUSH_DLY;
-  ALCT_PUSH_DLY <= ALCT_PUSH_DLY_INNER;
-  D_W_ALCT_PUSH <= '1' when (STROBE = '1' and W_ALCT_PUSH = '1') else '0';
-  FD_DTACK_ALCT_PUSH : FD port map(Q_W_ALCT_PUSH, SLOWCLK, D_W_ALCT_PUSH);
-  --DTACK_INNER   <= '0' when (Q_W_ALCT_PUSH = '1')                else 'Z';
-
--- Read ALCT_PUSH_DLY
-  OUT_ALCT_PUSH(15 downto 5) <= (others => '0');
-  OUT_ALCT_PUSH(4 downto 0)  <= ALCT_PUSH_DLY_INNER when (STROBE = '1' and R_ALCT_PUSH = '1') else
-                                (others => 'Z');
-
-  D_R_ALCT_PUSH <= '1' when (STROBE = '1' and R_ALCT_PUSH = '1') else '0';
-  FD_R_ALCT_PUSH : FD port map(Q_R_ALCT_PUSH, SLOWCLK, D_R_ALCT_PUSH);
-  --DTACK_INNER   <= '0' when (Q_R_ALCT_PUSH = '1')                else 'Z';
-
--- Write INJ_DLY
-  GEN_INJ_DLY : for I in 4 downto 0 generate
-  begin
-    FD_W_INJ_DLY : FDCE port map(INJ_DLY_INNER(I), STROBE, W_INJ_DLY, RST, INDATA(I));
-  end generate GEN_INJ_DLY;
-  INJ_DLY     <= INJ_DLY_INNER;
-  D_W_INJ_DLY <= '1' when (STROBE = '1' and W_INJ_DLY = '1') else '0';
-  FD_DTACK_INJ_DLY : FD port map(Q_W_INJ_DLY, SLOWCLK, D_W_INJ_DLY);
-  --DTACK_INNER <= '0' when (Q_W_INJ_DLY = '1')                else 'Z';
-
--- Read INJ_DLY
-  OUT_INJ_DLY(15 downto 5) <= (others => '0');
-  OUT_INJ_DLY(4 downto 0)  <= INJ_DLY_INNER when (STROBE = '1' and R_INJ_DLY = '1') else
-                              (others => 'Z');
-
-  D_R_INJ_DLY <= '1' when (STROBE = '1' and R_INJ_DLY = '1') else '0';
-  FD_R_INJ_DLY : FD port map(Q_R_INJ_DLY, SLOWCLK, D_R_INJ_DLY);
-  --DTACK_INNER <= '0' when (Q_R_INJ_DLY = '1')                else 'Z';
-
--- Write EXT_DLY
-  GEN_EXT_DLY : for I in 4 downto 0 generate
-  begin
-    FD_W_EXT_DLY : FDCE port map(EXT_DLY_INNER(I), STROBE, W_EXT_DLY, RST, INDATA(I));
-  end generate GEN_EXT_DLY;
-  EXT_DLY     <= EXT_DLY_INNER;
-  D_W_EXT_DLY <= '1' when (STROBE = '1' and W_EXT_DLY = '1') else '0';
-  FD_DTACK_EXT_DLY : FD port map(Q_W_EXT_DLY, SLOWCLK, D_W_EXT_DLY);
-  --DTACK_INNER <= '0' when (Q_W_EXT_DLY = '1')                else 'Z';
-
--- Read EXT_DLY
-  OUT_EXT_DLY(15 downto 5) <= (others => '0');
-  OUT_EXT_DLY(4 downto 0)  <= EXT_DLY_INNER when (STROBE = '1' and R_EXT_DLY = '1') else
-                              (others => 'Z');
-
-  D_R_EXT_DLY <= '1' when (STROBE = '1' and R_EXT_DLY = '1') else '0';
-  FD_R_EXT_DLY : FD port map(Q_R_EXT_DLY, SLOWCLK, D_R_EXT_DLY);
-  --DTACK_INNER <= '0' when (Q_R_EXT_DLY = '1')                else 'Z';
-
--- Write CALLCT_DLY
-  GEN_CALLCT_DLY : for I in 3 downto 0 generate
-  begin
-    FD_W_CALLCT_DLY : FDCE port map(CALLCT_DLY_INNER(I), STROBE, W_CALLCT_DLY, RST, INDATA(I));
-  end generate GEN_CALLCT_DLY;
-  CALLCT_DLY     <= CALLCT_DLY_INNER;
-  D_W_CALLCT_DLY <= '1' when (STROBE = '1' and W_CALLCT_DLY = '1') else '0';
-  FD_DTACK_CALLCT_DLY : FD port map(Q_W_CALLCT_DLY, SLOWCLK, D_W_CALLCT_DLY);
-  --DTACK_INNER    <= '0' when (Q_W_CALLCT_DLY = '1')                else 'Z';
-
--- Read CALLCT_DLY
-  OUT_CALLCT_DLY(15 downto 4) <= (others => '0');
-  OUT_CALLCT_DLY(3 downto 0)  <= CALLCT_DLY_INNER when (STROBE = '1' and R_CALLCT_DLY = '1') else
-                                 (others => 'Z');
-
-  D_R_CALLCT_DLY <= '1' when (STROBE = '1' and R_CALLCT_DLY = '1') else '0';
-  FD_R_CALLCT_DLY : FD port map(Q_R_CALLCT_DLY, SLOWCLK, D_R_CALLCT_DLY);
-  --DTACK_INNER    <= '0' when (Q_R_CALLCT_DLY = '1')                else 'Z';
-
--- Write NWORDS_DUMMY
-  GEN_NWORDS_DUMMY : for I in 15 downto 0 generate
-  begin
-    NWORDS_DUMMY_PRE(I) <= RST when NWORDS_DUMMY_DEF(I) = '1' else '0';
-    NWORDS_DUMMY_RST(I) <= RST when NWORDS_DUMMY_DEF(I) = '0' else '0';
-    FD_W_NWORDS_DUMMY : FDCPE port map(NWORDS_DUMMY_INNER(I), STROBE, W_NWORDS_DUMMY,
-                                       NWORDS_DUMMY_RST(I), INDATA(I), NWORDS_DUMMY_PRE(I));
-  end generate GEN_NWORDS_DUMMY;
-  NWORDS_DUMMY     <= NWORDS_DUMMY_INNER;
-  D_W_NWORDS_DUMMY <= '1' when (STROBE = '1' and W_NWORDS_DUMMY = '1') else '0';
-  FD_DTACK_NWORDS_DUMMY : FD port map(Q_W_NWORDS_DUMMY, SLOWCLK, D_W_NWORDS_DUMMY);
-  --DTACK_INNER      <= '0' when (Q_W_NWORDS_DUMMY = '1')                else 'Z';
-
--- Read NWORDS_DUMMY
-  OUT_NWORDS_DUMMY <= NWORDS_DUMMY_INNER when (STROBE = '1' and R_NWORDS_DUMMY = '1') else
-                      (others => 'Z');
-
-  D_R_NWORDS_DUMMY <= '1' when (STROBE = '1' and R_NWORDS_DUMMY = '1') else '0';
-  FD_R_NWORDS_DUMMY : FD port map(Q_R_NWORDS_DUMMY, SLOWCLK, D_R_NWORDS_DUMMY);
-  --DTACK_INNER      <= '0' when (Q_R_NWORDS_DUMMY = '1')                else 'Z';
-
--- Write KILL
-  GEN_KILL : for I in NFEB+2 downto 1 generate
-  begin
-    FD_W_KILL : FDPE port map(KILL_INNER(I), STROBE, W_KILL, INDATA(I-1), RST);
-  end generate GEN_KILL;
-  KILL     <= KILL_INNER;
-  D_W_KILL <= '1' when (STROBE = '1' and W_KILL = '1') else '0';
-  FD_DTACK_KILL : FD port map(Q_W_KILL, SLOWCLK, D_W_KILL);
-  --DTACK_INNER <= '0' when (Q_W_KILL = '1')                else 'Z';
-
--- Read KILL
-  OUT_KILL(15 downto NFEB+2) <= (others => '0');
-  OUT_KILL(NFEB+1 downto 0)  <= KILL_INNER when (STROBE = '1' and R_KILL = '1') else
-                                (others => 'Z');
-
-  D_R_KILL <= '1' when (STROBE = '1' and R_KILL = '1') else '0';
-  FD_R_KILL : FD port map(Q_R_KILL, SLOWCLK, D_R_KILL);
-  --DTACK_INNER <= '0' when (Q_R_KILL = '1')                else 'Z';
-
--- Write CRATEID
-  GEN_CRATEID : for I in 7 downto 0 generate
-  begin
-    FD_W_CRATEID : FDCE port map(CRATEID_INNER(I), STROBE, W_CRATEID, RST, INDATA(I));
-  end generate GEN_CRATEID;
-  CRATEID     <= CRATEID_INNER;
-  D_W_CRATEID <= '1' when (STROBE = '1' and W_CRATEID = '1') else '0';
-  FD_DTACK_CRATEID : FD port map(Q_W_CRATEID, SLOWCLK, D_W_CRATEID);
-  --DTACK_INNER <= '0' when (Q_W_CRATEID = '1')                else 'Z';
-
--- Read CRATEID
-  OUT_CRATEID(15 downto 8) <= (others => '0');
-  OUT_CRATEID(7 downto 0)  <= CRATEID_INNER when (STROBE = '1' and R_CRATEID = '1') else
-                              (others => 'Z');
-
-  D_R_CRATEID <= '1' when (STROBE = '1' and R_CRATEID = '1') else '0';
-  FD_R_CRATEID : FD port map(Q_R_CRATEID, SLOWCLK, D_R_CRATEID);
-  --DTACK_INNER <= '0' when (Q_R_CRATEID = '1')                else 'Z';
-
--- Read FW_VERSION
-  OUT_FW_VERSION <= FW_VERSION when (STROBE = '1' and R_FW_VERSION = '1') else (others => 'Z');
-
-  D_R_FW_VERSION <= '1' when (STROBE = '1' and R_FW_VERSION = '1') else '0';
-  FD_R_FW_VERSION : FD port map(Q_R_FW_VERSION, SLOWCLK, D_R_FW_VERSION);
-  --DTACK_INNER    <= '0' when (Q_R_FW_VERSION = '1')                else 'Z';
-
--- General assignments
-  OUTDATA <= OUT_LCT_L1A when R_LCT_L1A = '1' else
-             OUT_OTMB_PUSH    when R_OTMB_PUSH = '1'    else
-             OUT_PUSH         when R_PUSH = '1'         else
-             OUT_ALCT_PUSH    when R_ALCT_PUSH = '1'    else
-             OUT_INJ_DLY      when R_INJ_DLY = '1'      else
-             OUT_EXT_DLY      when R_EXT_DLY = '1'      else
-             OUT_CALLCT_DLY   when R_CALLCT_DLY = '1'   else
-             OUT_KILL         when R_KILL = '1'         else
-             OUT_FW_VERSION   when R_FW_VERSION = '1'   else
-             OUT_CRATEID      when R_CRATEID = '1'      else
-             OUT_NWORDS_DUMMY when R_NWORDS_DUMMY = '1' else
+  OUTDATA <= (INNER_CFG_REG0 and cfg_reg_mask(0)) when CFG_REG_RE(0) = '1' else
+             (INNER_CFG_REG1 and cfg_reg_mask(1))  when CFG_REG_RE(1) = '1'  else
+             (INNER_CFG_REG2 and cfg_reg_mask(2))  when CFG_REG_RE(2) = '1'  else
+             (INNER_CFG_REG3 and cfg_reg_mask(3))  when CFG_REG_RE(3) = '1'  else
+             (INNER_CFG_REG4 and cfg_reg_mask(4))  when CFG_REG_RE(4) = '1'  else
+             (INNER_CFG_REG5 and cfg_reg_mask(5))  when CFG_REG_RE(5) = '1'  else
+             (INNER_CFG_REG6 and cfg_reg_mask(6))  when CFG_REG_RE(6) = '1'  else
+             (INNER_CFG_REG7 and cfg_reg_mask(7))  when CFG_REG_RE(7) = '1'  else
+             (INNER_CFG_REG8 and cfg_reg_mask(8))  when CFG_REG_RE(8) = '1'  else
+             (INNER_CFG_REG9 and cfg_reg_mask(9))  when CFG_REG_RE(9) = '1'  else
+             (INNER_CFG_REGA and cfg_reg_mask(10)) when CFG_REG_RE(10) = '1' else
+             (INNER_CFG_REGB and cfg_reg_mask(11)) when CFG_REG_RE(11) = '1' else
+             (INNER_CFG_REGC and cfg_reg_mask(12)) when CFG_REG_RE(12) = '1' else
+             (INNER_CFG_REGD and cfg_reg_mask(13)) when CFG_REG_RE(13) = '1' else
+             (INNER_CFG_REGE and cfg_reg_mask(14)) when CFG_REG_RE(14) = '1' else
+             (INNER_CFG_REGF and cfg_reg_mask(15)) when CFG_REG_RE(15) = '1' else
              (others => 'L');
-  
-  DTACK_INNER <= '1' when (Q_W_LCT_L1A = '1') or
-                 (Q_R_LCT_L1A = '1') or
-                 (Q_W_OTMB_PUSH = '1') or
-                 (Q_R_OTMB_PUSH = '1') or
-                 (Q_W_PUSH = '1') or
-                 (Q_R_PUSH = '1') or
-                 (Q_W_ALCT_PUSH = '1') or
-                 (Q_R_ALCT_PUSH = '1') or
-                 (Q_W_INJ_DLY = '1') or
-                 (Q_R_INJ_DLY = '1') or
-                 (Q_W_EXT_DLY = '1') or
-                 (Q_R_EXT_DLY = '1') or
-                 (Q_W_CALLCT_DLY = '1') or
-                 (Q_R_CALLCT_DLY = '1') or
-                 (Q_W_NWORDS_DUMMY = '1') or
-                 (Q_R_NWORDS_DUMMY = '1') or
-                 (Q_W_KILL = '1') or
-                 (Q_R_KILL = '1') or
-                 (Q_W_CRATEID = '1') or
-                 (Q_R_CRATEID = '1') or
-                 (Q_R_FW_VERSION = '1') else '0';
-  
-  DTACK <= DTACK_INNER;
-  
-end VMECONFREGS_Arch;
+
+  d_dtack <= STROBE and (or_reduce(cfg_reg_we) or or_reduce(cfg_reg_re));
+  FD_DTACK : FD port map (DTACK, CLK, d_dtack);
+
+end VMECONFREGS_BPI_Arch;
