@@ -5,8 +5,9 @@ library work;
 library unisim;
 use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_misc.or_reduce;
+use ieee.std_logic_misc.all;
 
 entity VMECONFREGS_BPI is
   generic (
@@ -104,7 +105,7 @@ architecture VMECONFREGS_BPI_Arch of VMECONFREGS_BPI is
 
   end component;
 
-  signal CMDDEV      : unsigned(12 downto 0);
+  signal CMDDEV : std_logic_vector(15 downto 0);
 
   signal INNER_CFG_REG0, INNER_CFG_REG1 : std_logic_vector(15 downto 0) := (others => '0');
   signal INNER_CFG_REG2, INNER_CFG_REG3 : std_logic_vector(15 downto 0) := (others => '0');
@@ -115,12 +116,17 @@ architecture VMECONFREGS_BPI_Arch of VMECONFREGS_BPI is
   signal INNER_CFG_REGC, INNER_CFG_REGD : std_logic_vector(15 downto 0) := (others => '0');
   signal INNER_CFG_REGE, INNER_CFG_REGF : std_logic_vector(15 downto 0) := (others => '0');
 
-  signal CFG_REG_IN, VME_CFG_REG_WE           : std_logic_vector(15 downto 0) := (others => '0');
-  signal CFG_REG_WE : std_logic_vector(15 downto 0) := (others => '0');
-  signal CFG_REG_RE : std_logic_vector(15 downto 0) := (others => '0');
-  signal CFG_REG_CK                           : std_logic;
+  signal CFG_REG_IN, VME_CFG_REG_WE : std_logic_vector(15 downto 0) := (others => '0');
+  signal CFG_REG_WE                 : std_logic_vector(15 downto 0) := (others => '0');
+  signal CFG_REG_RE                 : std_logic_vector(15 downto 0) := (others => '0');
+  signal CFG_REG_CK                 : std_logic;
 
   signal d_dtack : std_logic;
+
+  type     cfg_reg_mask_array is array (0 to 15) of std_logic_vector(15 downto 0);
+  constant cfg_reg_mask : cfg_reg_mask_array := (x"003F", x"001F", x"001F", x"001F", x"001F",
+                                                 x"001F", x"000F", x"01FF", x"00ff", x"ffff",
+                                                 x"ffff", x"ffff", x"ffff", x"ffff", x"ffff", x"ffff");
   
 begin  --Architecture
 
@@ -183,7 +189,7 @@ begin  --Architecture
   CFG_REGF <= INNER_CFG_REGF;
 
 -- Decode instruction
-  CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input  
+  CMDDEV <= "000" & DEVICE & COMMAND & "00";  -- Variable that looks like the VME commands we input  
 
   VME_CFG_REG_WE(0)  <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
   VME_CFG_REG_WE(1)  <= '1' when (CMDDEV = x"1004" and WRITER = '0') else '0';
@@ -225,22 +231,22 @@ begin  --Architecture
 
 -- Output Multiplexer 
 
-  OUTDATA <= INNER_CFG_REG0 when CFG_REG_RE(0) = '1' else
-             INNER_CFG_REG1 when CFG_REG_RE(1) = '1'  else
-             INNER_CFG_REG2 when CFG_REG_RE(2) = '1'  else
-             INNER_CFG_REG3 when CFG_REG_RE(3) = '1'  else
-             INNER_CFG_REG4 when CFG_REG_RE(4) = '1'  else
-             INNER_CFG_REG5 when CFG_REG_RE(5) = '1'  else
-             INNER_CFG_REG6 when CFG_REG_RE(6) = '1'  else
-             INNER_CFG_REG7 when CFG_REG_RE(7) = '1'  else
-             INNER_CFG_REG8 when CFG_REG_RE(8) = '1'  else
-             INNER_CFG_REG9 when CFG_REG_RE(9) = '1'  else
-             INNER_CFG_REGA when CFG_REG_RE(10) = '1' else
-             INNER_CFG_REGB when CFG_REG_RE(11) = '1' else
-             INNER_CFG_REGC when CFG_REG_RE(12) = '1' else
-             INNER_CFG_REGD when CFG_REG_RE(13) = '1' else
-             INNER_CFG_REGE when CFG_REG_RE(14) = '1' else
-             INNER_CFG_REGF when CFG_REG_RE(15) = '1' else
+  OUTDATA <= (INNER_CFG_REG0 and cfg_reg_mask(0)) when CFG_REG_RE(0) = '1' else
+             (INNER_CFG_REG1 and cfg_reg_mask(1))  when CFG_REG_RE(1) = '1'  else
+             (INNER_CFG_REG2 and cfg_reg_mask(2))  when CFG_REG_RE(2) = '1'  else
+             (INNER_CFG_REG3 and cfg_reg_mask(3))  when CFG_REG_RE(3) = '1'  else
+             (INNER_CFG_REG4 and cfg_reg_mask(4))  when CFG_REG_RE(4) = '1'  else
+             (INNER_CFG_REG5 and cfg_reg_mask(5))  when CFG_REG_RE(5) = '1'  else
+             (INNER_CFG_REG6 and cfg_reg_mask(6))  when CFG_REG_RE(6) = '1'  else
+             (INNER_CFG_REG7 and cfg_reg_mask(7))  when CFG_REG_RE(7) = '1'  else
+             (INNER_CFG_REG8 and cfg_reg_mask(8))  when CFG_REG_RE(8) = '1'  else
+             (INNER_CFG_REG9 and cfg_reg_mask(9))  when CFG_REG_RE(9) = '1'  else
+             (INNER_CFG_REGA and cfg_reg_mask(10)) when CFG_REG_RE(10) = '1' else
+             (INNER_CFG_REGB and cfg_reg_mask(11)) when CFG_REG_RE(11) = '1' else
+             (INNER_CFG_REGC and cfg_reg_mask(12)) when CFG_REG_RE(12) = '1' else
+             (INNER_CFG_REGD and cfg_reg_mask(13)) when CFG_REG_RE(13) = '1' else
+             (INNER_CFG_REGE and cfg_reg_mask(14)) when CFG_REG_RE(14) = '1' else
+             (INNER_CFG_REGF and cfg_reg_mask(15)) when CFG_REG_RE(15) = '1' else
              (others => 'L');
 
   d_dtack <= STROBE and (or_reduce(cfg_reg_we) or or_reduce(cfg_reg_re));

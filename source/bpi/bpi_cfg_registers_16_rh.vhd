@@ -50,7 +50,7 @@ architecture bpi_cfg_regs_architecture of bpi_cfg_registers_16_rh is
   type   rh_reg_init is array (15 downto 0) of std_logic_vector(15 downto 0);
   signal bpi_cfg_reg_init : rh_reg_init;
 
-  constant FW_VERSION   : std_logic_vector(15 downto 0) := x"F200";
+  constant FW_VERSION   : std_logic_vector(15 downto 0) := x"0200";
   constant NWORDS_DUMMY : std_logic_vector(15 downto 0) := x"0008";
 
   constant CFG_REG_MASK       : std_logic_vector(15 downto 0) := x"fdff";  -- CFG_REG9 never enabled for write
