@@ -1,35 +1,62 @@
 
+W  3000  280	Select dummy DCFEBs and internally generated triggers and PEDESTAL
 
-W 3000 280 set muxes
-W 3100 1  set loopback
-w 6010 10  This allows Device 4 to work
-W 401c 0 unkill everything
-W 4004 1 Set OTMB delay
-W 400c 2 Set ALCT delay
-W 4028 4 Set number of dummy words
-W 3010 10 Request packet
-R 530c 0 Read number of words in DDU_TX FIFO
-R 530c 0 Read number of words in DDU_TX FIFO
-R 530c 0 Read number of words in DDU_TX FIFO
+W  4000  C	Set LCT_L1A_DLY   
+W  4004  1	Set TMB_PUSH_DLY
+W  400C  2	Set ALCT_PUSH_DLY
+W  401C  0	Do not Kill anything
+W  4028  40	Number of dummy words
+W  4008  0      Set PUSH_DLY
+
+W  20  	 1  	Select FIFO [Time stamp LSB]
+W  8	 10	Write Time stamp LSB
+W  8	 20	Write Time stamp LSB
+W  8	 25	Write Time stamp LSB
 
 
-W  9300   2       Selects PRBS-15
-R  9304   0       Reads PRBS type
+W  8	 80	Write Time stamp LSB
+W  8	 83	Write Time stamp LSB
+W  8	 84	Write Time stamp LSB
+W  8	 90	Write Time stamp LSB
+W  8	 93	Write Time stamp LSB
+W  8	 94	Write Time stamp LSB
+W  8	 95	Write Time stamp LSB
+W  8	 98	Write Time stamp LSB
+W  8	 99	Write Time stamp LSB
 
-W  9204   3       Selects PRBS fiber 7
-R  9208   0       Reads selected fiber
-R  920C   0       Reads number of PRBS errors
 
-W  9200   1       Checks 1 million bits
-R  920C   0       Reads number of PRBS errors
+W  20  	 4  	Select FIFO [Triggers]
+W  8	 FF	LCTs on all DCFEBs
+W  8	 5	LCTs on all DCFEBs
+W  8	 5	LCTs on DCFEB 1
 
-W  9204   4       Selects PRBS fiber 7
-R  920C   0       Reads number of PRBS errors
-W  9204   5       Selects PRBS fiber 7
-R  920C   0       Reads number of PRBS errors
-W  9204   6       Selects PRBS fiber 7
-R  920C   0       Reads number of PRBS errors
-W  9204   7       Selects PRBS fiber 7
-R  920C   0       Reads number of PRBS errors
-W  9204   8       Selects PRBS fiber 7
-R  920C   0       Reads number of PRBS errors
+W  8	 400	L1A
+W  8	 100	OTMBDAV
+W  8	 200	ALCTDAV
+W  8	 400	L1A
+W  8	 100	OTMBDAV
+W  8	 200	ALCTDAV
+W  8	 400	L1A
+W  8	 100	OTMBDAV
+W  8	 200	ALCTDAV
+
+W  0030  4	Start 4 Test Runs
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   
+W  4000  C	Set LCT_L1A_DLY   

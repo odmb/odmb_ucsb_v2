@@ -493,7 +493,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
       cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
       cafifo_l1a_cnt   : in std_logic_vector(23 downto 0);
-      cafifo_bx_cnt    : in std_logic_vector(11 downto 0)
+      cafifo_bx_cnt    : in std_logic_vector(11 downto 0);
+      cafifo_lost_pckt : in std_logic_vector(NFEB+2 downto 1)
       );
   end component;
 
@@ -540,6 +541,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       cafifo_l1a_cnt   : out std_logic_vector(23 downto 0);
       cafifo_l1a_dav   : out std_logic_vector(NFEB+2 downto 1);
       cafifo_bx_cnt    : out std_logic_vector(11 downto 0);
+      cafifo_lost_pckt : out std_logic_vector(NFEB+2 downto 1);
 
       ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
       dcfeb_l1a_dav7     : out std_logic;
@@ -668,6 +670,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   signal cafifo_l1a_cnt_out         : std_logic_vector(23 downto 0);
   signal cafifo_l1a_dav_out         : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_bx_cnt_out          : std_logic_vector(11 downto 0);
+  signal cafifo_lost_pckt_out       : std_logic_vector(NFEB+2 downto 1);
 
 -- CONTROL outputs
   signal cafifo_pop           : std_logic := '0';
@@ -852,6 +855,7 @@ begin
       cafifo_l1a_cnt   => cafifo_l1a_cnt_out,
       cafifo_l1a_dav   => cafifo_l1a_dav_out,
       cafifo_bx_cnt    => cafifo_bx_cnt_out,
+      cafifo_lost_pckt => cafifo_lost_pckt_out,
 
       ext_dcfeb_l1a_cnt7 => ext_dcfeb_l1a_cnt7,
       dcfeb_l1a_dav7     => dcfeb_l1a_dav7,
@@ -906,7 +910,8 @@ begin
       cafifo_l1a_dav   => cafifo_l1a_dav_out,
       cafifo_l1a_match => cafifo_l1a_match_out_inner,
       cafifo_l1a_cnt   => cafifo_l1a_cnt_out,
-      cafifo_bx_cnt    => cafifo_bx_cnt_out
+      cafifo_bx_cnt    => cafifo_bx_cnt_out,
+      cafifo_lost_pckt => cafifo_lost_pckt_out
       );
 
 --  CONTROL_FSM_PM : CONTROL_FSM

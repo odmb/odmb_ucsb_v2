@@ -64,7 +64,8 @@ entity CONTROL_FSM is
     cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
     cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
     cafifo_l1a_cnt   : in std_logic_vector(23 downto 0);
-    cafifo_bx_cnt    : in std_logic_vector(11 downto 0)
+    cafifo_bx_cnt    : in std_logic_vector(11 downto 0);
+    cafifo_lost_pckt : in std_logic_vector(NFEB+2 downto 1)
     );
 end CONTROL_FSM;
 
@@ -100,11 +101,8 @@ architecture CONTROL_arch of CONTROL_FSM is
   constant ovlp             : std_logic_vector(5 downto 1)      := "00000";
   constant sync             : std_logic_vector(3 downto 0)      := "0000";
   constant alct_to_end      : std_logic                         := '0';
-  constant alct_to_start    : std_logic                         := '0';
   constant otmb_to_end      : std_logic                         := '0';
-  constant otmb_to_start    : std_logic                         := '0';
   constant dcfeb_to_end     : std_logic_vector(NFEB downto 1)   := (others => '0');
-  constant dcfeb_to_start   : std_logic_vector(NFEB downto 1)   := (others => '0');
   constant data_fifo_full   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
@@ -255,12 +253,14 @@ begin
         end if;
         
       when WAIT_ALCT_OTMB =>
-        if(cafifo_l1a_match(dev_cnt) = '0') then
+        if(cafifo_l1a_match(dev_cnt) = '0' or cafifo_lost_pckt(dev_cnt) = '1') then
           dev_cnt_en <= '1';
-          if (dev_cnt = 8) then
+          if (dev_cnt = 9) then
+            control_next_state <= WAIT_ALCT_OTMB;
+          else
             control_next_state <= WAIT_DCFEB;
           end if;
-        elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then
+        elsif(cafifo_l1a_dav(dev_cnt) = '1') then
           control_next_state       <= TX_ALCT_OTMB;
           oefifo_b_inner(dev_cnt)  <= '0';
           renfifo_b_inner(dev_cnt) <= '0';
@@ -285,12 +285,14 @@ begin
         end if;
 
       when WAIT_DCFEB =>
-        if(cafifo_l1a_match(dev_cnt) = '0') then
+        if(cafifo_l1a_match(dev_cnt) = '0' or cafifo_lost_pckt(dev_cnt) = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt = 7) then
             control_next_state <= TAIL;
+          else
+            control_next_state <= WAIT_DCFEB;
           end if;
-        elsif(cafifo_l1a_match(dev_cnt) = cafifo_l1a_dav(dev_cnt)) then
+        elsif(cafifo_l1a_dav(dev_cnt) = '1') then
           control_next_state       <= TX_DCFEB;
           oefifo_b_inner(dev_cnt)  <= '0';
           renfifo_b_inner(dev_cnt) <= '0';
@@ -365,8 +367,8 @@ begin
 
   tail_word(1) <= x"F" & alct_to_end & cafifo_bx_cnt(4 downto 0) & cafifo_l1a_cnt(5 downto 0);
   tail_word(2) <= x"F" & ovlp & dcfeb_to_end;
-  tail_word(3) <= x"F" & data_fifo_full(3 downto 1) & otmb_to_start & dmb_l1pipe;
-  tail_word(4) <= x"F" & alct_to_start & dcfeb_to_start & data_fifo_full(7 downto 4);
+  tail_word(3) <= x"F" & data_fifo_full(3 downto 1) & cafifo_lost_pckt(8) & dmb_l1pipe;
+  tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1) & data_fifo_full(7 downto 4);
   tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & data_fifo_half(NFEB+2 downto NFEB+1) & otmb_to_end & data_fifo_half(NFEB downto 1);
   tail_word(6) <= x"E" & DAQMBID(11 downto 0);
   tail_word(7) <= x"E" & REG_CRC(22) & REG_CRC(10 downto 0);

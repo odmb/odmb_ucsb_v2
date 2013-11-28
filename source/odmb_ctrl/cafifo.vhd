@@ -17,9 +17,9 @@ use hdlmacro.hdlmacro.all;
 
 entity cafifo is
   generic (
-    NFEB      : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
+    NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
     CAFIFO_SIZE : integer range 1 to 64 := 32  -- Number of CAFIFO words
-    );  
+    );
   port(
 
     clk        : in std_logic;
@@ -58,6 +58,7 @@ entity cafifo is
     cafifo_l1a_cnt   : out std_logic_vector(23 downto 0);
     cafifo_l1a_dav   : out std_logic_vector(NFEB+2 downto 1);
     cafifo_bx_cnt    : out std_logic_vector(11 downto 0);
+    cafifo_lost_pckt : out std_logic_vector(NFEB+2 downto 1);
 
     ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
     dcfeb_l1a_dav7     : out std_logic;
@@ -79,52 +80,67 @@ architecture cafifo_architecture of cafifo is
 
   signal dcfeb_dv : std_logic_vector(NFEB downto 1);
 
-  type rx_state_type is (RX_IDLE, RX_HEADER1, RX_HEADER2, RX_DW);
-  type rx_state_array_type is array (NFEB+2 downto 1) of rx_state_type;
+  type   rx_state_type is (RX_IDLE, RX_HEADER1, RX_HEADER2, RX_DW);
+  type   rx_state_array_type is array (NFEB+2 downto 1) of rx_state_type;
   signal rx_next_state, rx_current_state : rx_state_array_type;
 
   signal dcfeb_l1a_dav : std_logic_vector(NFEB downto 1);
 
   signal l1a_cnt_out : std_logic_vector(23 downto 0);
 
-  type state_type is (FIFO_EMPTY, FIFO_NOT_EMPTY, FIFO_FULL);
+  type   state_type is (FIFO_EMPTY, FIFO_NOT_EMPTY, FIFO_FULL);
   signal next_state, current_state : state_type;
 
-  type dcfeb_l1a_cnt_array_type is array (NFEB downto 1) of std_logic_vector(11 downto 0);
+  type   dcfeb_l1a_cnt_array_type is array (NFEB downto 1) of std_logic_vector(11 downto 0);
   signal dcfeb_l1a_cnt     : dcfeb_l1a_cnt_array_type;
   signal reg_dcfeb_l1a_cnt : dcfeb_l1a_cnt_array_type;
 
-  type ext_dcfeb_l1a_cnt_array_type is array (NFEB downto 1) of std_logic_vector(23 downto 0);
+  type   ext_dcfeb_l1a_cnt_array_type is array (NFEB downto 1) of std_logic_vector(23 downto 0);
   signal ext_dcfeb_l1a_cnt : ext_dcfeb_l1a_cnt_array_type;
 
-  type l1a_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(23 downto 0);
+  type   l1a_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(23 downto 0);
   signal l1a_cnt : l1a_cnt_array_type;
 
-  type bx_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(15 downto 0);
+  type   bx_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(15 downto 0);
   signal bx_cnt : bx_cnt_array_type;
 
-  type l1a_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(NFEB+2 downto 1);
-  signal l1a_match : l1a_array_type;
-  signal l1a_dav, reg_l1a_dav   : l1a_array_type;
+  type   l1a_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(NFEB+2 downto 1);
+  signal l1a_match            : l1a_array_type;
+  signal l1a_dav, reg_l1a_dav : l1a_array_type;
 
-  type wrd_cnt_array_type is array (NFEB+2 downto 1) of std_logic_vector(8 downto 0);
+  type   wrd_cnt_array_type is array (NFEB+2 downto 1) of std_logic_vector(8 downto 0);
   signal l1acnt_dav_fifo_rd_cnt, l1acnt_dav_fifo_wr_cnt : wrd_cnt_array_type;
 
   signal l1acnt_dav_fifo_empty, l1acnt_dav_fifo_full  : std_logic_vector(NFEB+2 downto 1);
   signal l1acnt_dav_fifo_wr_en, l1acnt_dav_fifo_rd_en : std_logic_vector(NFEB+2 downto 1);
 
-  type fifo_data_array_type is array (NFEB+2 downto 1) of std_logic_vector(23 downto 0);
+  type   fifo_data_array_type is array (NFEB+2 downto 1) of std_logic_vector(23 downto 0);
   signal l1acnt_dav_fifo_in, l1acnt_dav_fifo_out : fifo_data_array_type;
 
-  constant logich                                                         : std_logic := '1';
-  signal bx_cnt_clr, bx_cnt_a_tc, bx_cnt_b_tc, bx_cnt_a_ceo, bx_cnt_b_ceo : std_logic;
-  signal bx_cnt_out, bx_cnt_inner                                         : std_logic_vector(15 downto 0);
-  signal bx_orbit, bx_cnt_rst, bx_cnt_rst_rst                             : std_logic;
-  
+  constant logich                                                           : std_logic := '1';
+  signal   bx_cnt_clr, bx_cnt_a_tc, bx_cnt_b_tc, bx_cnt_a_ceo, bx_cnt_b_ceo : std_logic;
+  signal   bx_cnt_out, bx_cnt_inner                                         : std_logic_vector(15 downto 0);
+  signal   bx_orbit, bx_cnt_rst, bx_cnt_rst_rst                             : std_logic;
 
-  
+  type   timeout_state is (IDLE, COUNT, WAIT_IDLE);
+  type   timeout_state_vec is array (NFEB+2 downto 1) of timeout_state;
+  signal timeout_current_state, timeout_next_state : timeout_state_vec;
+
+  type     timeout_array is array (NFEB+2 downto 1) of integer range 0 to 800;
+  signal   timeout_cnt                     : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+  --constant timeout_max : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
+  constant timeout_max                     : timeout_array := (480, 680, 18, 18, 18, 18, 18, 18, 18);
+                                        -- count to these numbers before
+                                        -- timeout (7 us, 12 us)
+  signal   timeout_cnt_en, timeout_cnt_rst : std_logic_vector(NFEB+2 downto 1);
+  signal   lost_pckt, reg_lost_pckt        : l1a_array_type;
+  signal   l1a_dav_en                      : std_logic_vector(NFEB+2 downto 1);
+  signal   lost_pckt_en                    : std_logic_vector(NFEB+2 downto 1);
+  signal   wait_cnt                        : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+  signal   wait_cnt_en, wait_cnt_rst       : std_logic_vector(NFEB+2 downto 1);
+
 begin
-  
+
   cafifo_wr_addr <= std_logic_vector(to_unsigned(wr_addr_out, cafifo_wr_addr'length));
   cafifo_rd_addr <= std_logic_vector(to_unsigned(rd_addr_out, cafifo_rd_addr'length));
 
@@ -135,7 +151,7 @@ begin
   BX_CNT_OUT(11 downto 0) <= BX_CNT_INNER(11 downto 0);
 
 -- Generate BX_ORBIT (3563 bunch crossings) / Generate BX_CNT_RST (page 5)
---  BX_ORBIT <= '1' when (conv_integer(BX_CNT) = 3563) else '0';
+-- BX_ORBIT <= '1' when (conv_integer(BX_CNT) = 3563) else '0';
 -- 2048 + 1024 = 3072 + 256 = 3328 + 128 = 3456 + 64 = 3520 + 32 = 3552 + 11 = 3563
   BX_ORBIT <= '1' when (BX_CNT_OUT = "0000110111101011") else '0';
   FDCORBIT : FDC port map(BX_CNT_RST, CLK, BX_CNT_RST_RST, BX_ORBIT);
@@ -171,7 +187,7 @@ begin
       end if;
       ext_dcfeb_l1a_cnt(index_dcfeb) <= reg_dcfeb_l1a_cnt(index_dcfeb) & dcfeb_l1a_cnt(index_dcfeb);
     end loop;
-    
+
   end process;
 
 
@@ -182,7 +198,7 @@ begin
   cafifo_wren <= or_reduce(l1a_match_in);  -- Avoids empty packets
   cafifo_rden <= pop;
 
--- RX FSMs 
+-- RX FSMs
 
   rx_fsm_regs : process (rx_next_state, rst, dcfebclk)
   begin
@@ -206,15 +222,15 @@ begin
           else
             rx_next_state(dcfeb_index) <= RX_IDLE;
           end if;
-          
+
         when RX_HEADER1 =>
-          dcfeb_l1a_dav(dcfeb_index) <= '1';  
+          dcfeb_l1a_dav(dcfeb_index) <= '1';
           rx_next_state(dcfeb_index) <= RX_HEADER2;
-          
+
         when RX_HEADER2 =>
           dcfeb_l1a_dav(dcfeb_index) <= '0';
           rx_next_state(dcfeb_index) <= RX_DW;
-          
+
         when RX_DW =>
           dcfeb_l1a_dav(dcfeb_index) <= '0';
           if (dcfeb_dv(dcfeb_index) = '1') then
@@ -226,12 +242,12 @@ begin
         when others =>
           dcfeb_l1a_dav(dcfeb_index) <= '0';
           rx_next_state(dcfeb_index) <= RX_IDLE;
-          
+
       end case;
     end loop;
   end process;
 
--------------------- L1A Counter --------------------
+-------------------- L1A Counter        --------------------
 
   l1a_counter : process (clk, l1a, l1acnt_rst)
     variable l1a_cnt_data : std_logic_vector(23 downto 0);
@@ -246,7 +262,7 @@ begin
     l1a_cnt_out <= l1a_cnt_data + 1;
   end process;
 
----------------------- Memory ----------------------
+---------------------- Memory           ----------------------
 
   l1a_cnt_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_cnt_out)
   begin
@@ -293,12 +309,12 @@ begin
 
   cafifo_l1a_match <= l1a_match(rd_addr_out);
 
----------------------------  GENERATE DAVS  -------------------------------
+--------------------------- GENERATE DAVS and LOSTS  -------------------------------
 
   GEN_L1ACNT_DAV : for dev in 1 to NFEB+2 generate
     l1acnt_dav_fifo_wr_en(dev) <= l1a_match_in(dev);
     l1acnt_dav_fifo_in(dev)    <= l1a_cnt_out;
-    FIFORD : FD port map(l1acnt_dav_fifo_rd_en(dev), clk, eof_data(dev));
+    --FIFORD       : FD port map(l1acnt_dav_fifo_rd_en(dev), clk, l1acnt_dav_fifo_rd_en_d(dev));
 
     L1ACNT_DAV_FIFO : FIFO_DUALCLOCK_MACRO
       generic map (
@@ -330,11 +346,84 @@ begin
     GEN_L1A_DAV : for index in 0 to CAFIFO_SIZE-1 generate
       FDDAV : FD port map(reg_l1a_dav(index)(dev), dcfebclk, l1a_dav(index)(dev));
       l1a_dav(index)(dev) <= '0' when (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) else
-                             '1' when (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and eof_data(dev) = '1') else
+                             '1' when (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and l1a_dav_en(dev) = '1') else
                              reg_l1a_dav(index)(dev);
-    end generate GEN_L1A_DAV;
+      FDLOST : FD port map(reg_lost_pckt(index)(dev), dcfebclk, lost_pckt(index)(dev));
+      lost_pckt(index)(dev) <= '0' when (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) else
+                               '1' when (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and lost_pckt_en(dev) = '1') else
+                               reg_lost_pckt(index)(dev);
 
-    cafifo_l1a_dav(dev) <= l1a_dav(rd_addr_out)(dev);
+    end generate GEN_L1A_DAV;
+    CAFIFO_L1A_DAV(dev)   <= l1a_dav(rd_addr_out)(dev);
+    CAFIFO_LOST_PCKT(dev) <= lost_pckt(rd_addr_out)(dev);
+
+    -- Timeouts handled by this FSM
+    timeout_fsm_regs : process (timeout_next_state(dev), RST, CLK, timeout_cnt_en(dev),
+                                timeout_cnt_rst(dev), wait_cnt_en(dev), wait_cnt_rst(dev))
+    begin
+      if (RST = '1') then
+        timeout_cnt(dev)           <= 0;
+        timeout_current_state(dev) <= IDLE;
+        wait_cnt(dev)              <= 0;
+      elsif rising_edge(CLK) then
+        timeout_current_state(dev) <= timeout_next_state(dev);
+        if (timeout_cnt_rst(dev) = '1') then
+          timeout_cnt(dev) <= 0;
+        elsif(timeout_cnt_en(dev) = '1') then
+          timeout_cnt(dev) <= timeout_cnt(dev) +1;
+        end if;
+        if (wait_cnt_rst(dev) = '1') then
+          wait_cnt(dev) <= 0;
+        elsif (wait_cnt_en(dev) = '1') then
+          wait_cnt(dev) <= wait_cnt(dev)+1;
+        end if;
+      end if;
+    end process;
+
+    timeout_fsm_logic : process (timeout_current_state(dev), timeout_cnt(dev), eof_data(dev),
+                                 l1acnt_dav_fifo_empty(dev), wait_cnt(dev))
+    begin
+      timeout_cnt_en(dev)        <= '0';
+      timeout_cnt_rst(dev)       <= '0';
+      lost_pckt_en(dev)          <= '0';
+      l1a_dav_en(dev)            <= '0';
+      l1acnt_dav_fifo_rd_en(dev) <= '0';
+      wait_cnt_en(dev)           <= '0';
+      wait_cnt_rst(dev)          <= '0';
+
+      case timeout_current_state(dev) is
+        when IDLE =>
+          wait_cnt_rst(dev) <= '1';
+          if (l1acnt_dav_fifo_empty(dev) = '0') then
+            timeout_next_state(dev) <= COUNT;
+          else
+            timeout_next_state(dev) <= IDLE;
+          end if;
+        when COUNT =>
+          timeout_cnt_en(dev) <= '1';
+          if (eof_data(dev) = '1' or timeout_cnt(dev) = timeout_max(dev)) then
+            timeout_next_state(dev) <= WAIT_IDLE;
+            if (eof_data(dev) = '1') then
+              l1a_dav_en(dev) <= '1';
+            else
+              lost_pckt_en(dev) <= '1';
+            end if;
+          else
+            timeout_next_state(dev) <= COUNT;
+          end if;
+        when WAIT_IDLE =>
+          timeout_cnt_rst(dev) <= '1';
+          wait_cnt_en(dev)     <= '1';
+          if (wait_cnt(dev) = 1) then
+            l1acnt_dav_fifo_rd_en(dev) <= '1';
+          end if;
+          if (wait_cnt(dev) = 3) then
+            timeout_next_state(dev) <= IDLE;
+          else
+            timeout_next_state(dev) <= WAIT_IDLE;
+          end if;
+      end case;
+    end process;
 
   end generate GEN_L1ACNT_DAV;
 
@@ -369,7 +458,7 @@ begin
     rd_addr_out <= addr_rd_data;
   end process;
 
--- FSM 
+-- FSM
   fsm_regs : process (next_state, rst, clk)
   begin
     if (rst = '1') then
@@ -394,7 +483,7 @@ begin
           wr_addr_en <= '0';
           rd_addr_en <= '0';
         end if;
-        
+
       when FIFO_NOT_EMPTY =>
         cafifo_empty <= '0';
         cafifo_full  <= '0';
@@ -423,7 +512,7 @@ begin
           wr_addr_en <= '0';
           rd_addr_en <= '0';
         end if;
-        
+
       when FIFO_FULL =>
         cafifo_empty <= '0';
         cafifo_full  <= '1';
@@ -442,7 +531,8 @@ begin
         cafifo_full  <= '0';
         wr_addr_en   <= '0';
         rd_addr_en   <= '0';
-        
+
     end case;
   end process;
+
 end cafifo_architecture;
