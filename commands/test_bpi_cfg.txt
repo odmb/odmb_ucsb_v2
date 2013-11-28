@@ -1,5 +1,8 @@
+r 6038
+r 6038
+r 6038
+r 6038
 w 6020 0      ## BPI reset 
-w 6010 8      ## Set BPI mode to "01" (Command FIFO loaded via VME, CFG_REGs loaded via CC/PROM)
 w 6024 0      ## Disable parser
 	      
 r 6038 0      ## Read status register
@@ -113,10 +116,6 @@ r 403C 0      ## Read_CFG_REGF
 == Load_CFG_REGISTERS_from_PROM 
 ==================================================================================================
 
-==  Select_BPI mode 
-
-w 6010 0      ## Set BPI mode to "00" (Command FIFO loaded via CC, CFG_REGs loaded via CC?PROM)
-
 == Upload_Flash_PROM_To_CFG_Regs 
 
 w 6018 0      ## Upload_Flash_PROM_To_CFG_Regs
@@ -186,8 +185,6 @@ r 403C 0      ## Read_CFG_REGF
 
 ==  Select_BPI mode 
 
-w 6010 10      ## Set BPI mode to "10" (Command FIFO loaded via CC, CFG_REGs loaded via VME)
-
 w 4000 ee00   ## Select_CFG_REG0 (BPI mode = 10 -> CFG Registers loaded via VME]
 w 4004 ee01   ## Select_CFG_REG1 (BPI mode = 10 -> CFG Registers loaded via VME]
 w 4008 ee02   ## Select_CFG_REG2 (BPI mode = 10 -> CFG Registers loaded via VME]
@@ -236,7 +233,6 @@ W  601C  0	    Download CFG Regs to Flash PROM
 == Read PROM
 ==================================================================================================
 
-w 6010 8      ## 
 w 602c ff7    ## CMD = Load address - Bank address = 0xF - Block address = 0x7E
 w 602c 0      ## Word address = 0x0
 

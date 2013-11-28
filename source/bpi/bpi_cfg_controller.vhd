@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.STD_LOGIC_1164.all;
 
-entity bpi_cfg_controller_16_rh is
+entity bpi_cfg_controller is
   port(
     clk : in std_logic;
     rst : in std_logic;
@@ -32,13 +32,13 @@ entity bpi_cfg_controller_16_rh is
     bpi_cfg_reg_we_i : in  std_logic;
     bpi_cfg_reg_we_o : out std_logic_vector(15 downto 0);
     bpi_cfg_busy     : out std_logic;
-    bpi_cfg_data_sel : in  std_logic;
+--    bpi_cfg_data_sel : in  std_logic;
     bpi_cmd_fifo_we  : out std_logic;
     bpi_cmd_fifo_in  : out std_logic_vector(15 downto 0)
     );
-end bpi_cfg_controller_16_rh;
+end bpi_cfg_controller;
 
-architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller_16_rh is
+architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
 
   type state_type is (IDLE, BPI_DISABLE, BPI_FIFO_LOAD_DL, BPI_ENABLE_DL, BPI_WAIT4DONE_DL,
                       BPI_FIFO_LOAD_UL, BPI_ENABLE_UL, BPI_WAIT4DONE_UL);

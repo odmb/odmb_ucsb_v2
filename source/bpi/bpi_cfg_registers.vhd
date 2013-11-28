@@ -4,15 +4,15 @@ use IEEE.STD_LOGIC_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 use ieee.std_logic_unsigned.all;
+library hdlmacro;
+use hdlmacro.hdlmacro.all;
 
-entity bpi_cfg_registers_16_rh is
+entity bpi_cfg_registers is
   port(
-
-    clk : in std_logic;
     rst : in std_logic;
 
+    clk            : in std_logic;
     bpi_cfg_reg_we : in std_logic_vector(15 downto 0);
-
     bpi_cfg_reg_in : in std_logic_vector(15 downto 0);
 
     bpi_cfg_reg0 : out std_logic_vector(15 downto 0);
@@ -31,12 +31,10 @@ entity bpi_cfg_registers_16_rh is
     bpi_cfg_regD : out std_logic_vector(15 downto 0);
     bpi_cfg_regE : out std_logic_vector(15 downto 0);
     bpi_cfg_regF : out std_logic_vector(15 downto 0)
-
     );
+end bpi_cfg_registers;
 
-end bpi_cfg_registers_16_rh;
-
-architecture bpi_cfg_regs_architecture of bpi_cfg_registers_16_rh is
+architecture bpi_cfg_regs_architecture of bpi_cfg_registers is
 
   type   cfg_reg_data is array (15 downto 0) of std_logic_vector(15 downto 0);
 -- signal bpi_cfg_reg_in_prom : cfg_reg_data;

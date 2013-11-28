@@ -235,6 +235,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   component ODMB_VME is
     port (
       CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      CSP_BPI_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 -- VME signals
 
       cmd_adrs        : out std_logic_vector(15 downto 0);
@@ -403,6 +404,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
 
+      BPI_CFG_UL_BUGGER : out std_logic;
+      BPI_CFG_DL_BUGGER : out std_logic;
       BPI_CFG_DONE   : in std_logic;
       BPI_CFG_REG_WE : in std_logic;
       BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
@@ -958,7 +961,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
     port (
       CONTROL0 : inout std_logic_vector (35 downto 0);
       CONTROL1 : inout std_logic_vector (35 downto 0);
-      CONTROL2 : inout std_logic_vector (35 downto 0)
+      CONTROL2 : inout std_logic_vector (35 downto 0);
+      CONTROL3 : inout std_logic_vector (35 downto 0)
       );
   end component;
 
@@ -1331,6 +1335,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_cfg_reg_we : std_logic;
   signal bpi_cfg_reg_in : std_logic_vector(15 downto 0);
 
+signal bpi_cfg_ul_pulse : std_logic;
+  signal bpi_cfg_dl_pulse : std_logic;
+  
   -- SYSMON
   signal vauxp : std_logic_vector(15 downto 0);
   signal vauxn : std_logic_vector(15 downto 0);
@@ -1361,10 +1368,12 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   signal csp_control_fsm_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
   signal csp_system_test_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
+  signal csp_bpi_la_ctrl         : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
   signal csp_bpi_port_la_ctrl         : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
+  
   -- since we're at the top level, let's make the other signals for the csp thingy.
-  signal csp_bpi_port_la_data         : std_logic_vector(299 downto 0);
-  signal csp_bpi_port_la_trig         : std_logic_vector(15 downto 0);
+  signal csp_bpi_la_data         : std_logic_vector(299 downto 0);
+  signal csp_bpi_la_trig         : std_logic_vector(15 downto 0);
   -- prom_inners for this csp operation
   signal prom_control : std_logic_vector(5 downto 0);
   signal prom_a_out : std_logic_vector(22 downto 0);
@@ -1377,14 +1386,16 @@ begin
     port map (
       CONTROL0 => csp_control_fsm_port_la_ctrl,
       CONTROL1 => csp_system_test_port_la_ctrl,
-      CONTROL2 => csp_bpi_port_la_ctrl
+      CONTROL2 => csp_bpi_la_ctrl,
+      CONTROL3 => csp_bpi_port_la_ctrl
       );
 
   MBV : ODMB_VME
     port map (
 
       CSP_SYSTEM_TEST_PORT_LA_CTRL => csp_system_test_port_la_ctrl,
-
+      CSP_BPI_PORT_LA_CTRL => csp_bpi_port_la_ctrl,
+   
       cmd_adrs        => cmd_adrs,            -- output
       vme_addr        => vme_addr,            -- input
       vme_data_in     => vme_data_in,         -- input
@@ -1551,6 +1562,8 @@ begin
       BPI_STATUS        => bpi_status,  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         => bpi_timer,   -- General timer
 
+      BPI_CFG_UL_BUGGER => bpi_cfg_ul_pulse,
+      BPI_CFG_DL_BUGGER => bpi_cfg_dl_pulse,
       BPI_CFG_DONE   => bpi_cfg_done,
       BPI_CFG_REG_WE => bpi_cfg_reg_we,
       BPI_CFG_REG_IN => bpi_cfg_reg_in,
@@ -2446,8 +2459,8 @@ begin
 
   vme_dtack_v6_b <= int_vme_dtack_v6_b;
 
-  --bpi_rst <= reset or vme_bpi_rst;
-  bpi_rst <= reset;
+  bpi_rst <= reset or vme_bpi_rst;
+--  bpi_rst <= reset;
   BPI_ctrl_i : BPI_ctrl
     port map (
 --      CLK               => clk2p5,      -- 40 MHz clock
@@ -2510,16 +2523,16 @@ begin
 
   csp_bpi_la_pm : csp_bpi_la
     port map (
-      CONTROL => csp_bpi_port_la_ctrl,
+      CONTROL => csp_bpi_la_ctrl,
       CLK     => clk80,
-      DATA    => csp_bpi_port_la_data,
-      TRIG0   => csp_bpi_port_la_trig
+      DATA    => csp_bpi_la_data,
+      TRIG0   => csp_bpi_la_trig
       );
 
-  csp_bpi_port_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
+  csp_bpi_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
 
-  csp_bpi_port_la_data <= x"00"
-                          & clk40 & clk2p5                         -- [291:290]
+  csp_bpi_la_data <= "00" & x"0"
+                          & bpi_cfg_ul_pulse & bpi_cfg_dl_pulse &clk40 & clk2p5  -- [293:290]
                           & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
                           & cmd_adrs    -- [284:269]
                           & vme_data_in  -- [268:253]

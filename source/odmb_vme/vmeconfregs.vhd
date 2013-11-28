@@ -1,4 +1,4 @@
--- VMECONFREGS_BPI: Assign values to registers used in ODMB_CTRL
+-- VMECONFREGS: Assign values to registers used in ODMB_CTRL
 
 library ieee;
 library work;
@@ -9,7 +9,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 
-entity VMECONFREGS_BPI is
+entity VMECONFREGS is
   generic (
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );    
@@ -43,7 +43,8 @@ entity VMECONFREGS_BPI is
     CRATEID      : out std_logic_vector(7 downto 0);
 
 -- From BPI_PORT
-    BPI_MODE : in std_logic_vector(1 downto 0);
+    BPI_CFG_UL_PULSE : in std_logic;
+    BPI_CFG_DL_PULSE : in std_logic;
 
 -- From BPI_CFG_CONTROLLER
     CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
@@ -66,22 +67,18 @@ entity VMECONFREGS_BPI is
     CFG_REGD : out std_logic_vector(15 downto 0);
     CFG_REGE : out std_logic_vector(15 downto 0);
     CFG_REGF : out std_logic_vector(15 downto 0)
-
     );
-end VMECONFREGS_BPI;
+end VMECONFREGS;
 
 
+architecture VMECONFREGS_Arch of VMECONFREGS is
 
-architecture VMECONFREGS_BPI_Arch of VMECONFREGS_BPI is
-
-  component bpi_cfg_registers_16_rh is
+  component bpi_cfg_registers is
     port(
-
-      clk : in std_logic;
       rst : in std_logic;
 
+      clk            : in std_logic;
       bpi_cfg_reg_we : in std_logic_vector(15 downto 0);
-
       bpi_cfg_reg_in : in std_logic_vector(15 downto 0);
 
       bpi_cfg_reg0 : out std_logic_vector(15 downto 0);
@@ -100,9 +97,7 @@ architecture VMECONFREGS_BPI_Arch of VMECONFREGS_BPI is
       bpi_cfg_regD : out std_logic_vector(15 downto 0);
       bpi_cfg_regE : out std_logic_vector(15 downto 0);
       bpi_cfg_regF : out std_logic_vector(15 downto 0)
-
       );
-
   end component;
 
   signal CMDDEV : std_logic_vector(15 downto 0);
@@ -123,22 +118,25 @@ architecture VMECONFREGS_BPI_Arch of VMECONFREGS_BPI is
 
   signal d_dtack : std_logic;
 
-  type     cfg_reg_mask_array is array (0 to 15) of std_logic_vector(15 downto 0);
+  type cfg_reg_mask_array is array (0 to 15) of std_logic_vector(15 downto 0);
   constant cfg_reg_mask : cfg_reg_mask_array := (x"003F", x"001F", x"001F", x"001F", x"001F",
                                                  x"001F", x"000F", x"01FF", x"00ff", x"ffff",
                                                  x"ffff", x"ffff", x"ffff", x"ffff", x"ffff", x"ffff");
-  
+
 begin  --Architecture
 
 
-  BPI_CFG_REGS_PM : bpi_cfg_registers_16_rh
+  CFG_REG_CK <= STROBE         when (BPI_CFG_UL_PULSE = '0') else CLK;
+  CFG_REG_WE <= VME_CFG_REG_WE when (BPI_CFG_UL_PULSE = '0') else CC_CFG_REG_WE;
+  CFG_REG_IN <= INDATA         when (BPI_CFG_UL_PULSE = '0') else CC_CFG_REG_IN;
+  
+  
+  BPI_CFG_REGS_PM : bpi_cfg_registers
     port map(
-
-      clk => CFG_REG_CK,
       rst => RST,
 
+      clk            => CFG_REG_CK,
       bpi_cfg_reg_we => CFG_REG_WE,
-
       bpi_cfg_reg_in => CFG_REG_IN,
 
       bpi_cfg_reg0 => INNER_CFG_REG0,  -- CMDDEV = x"1000" => LCT_L1A_DLY (6 bits)
@@ -157,7 +155,6 @@ begin  --Architecture
       bpi_cfg_regD => INNER_CFG_REGD,   -- CMDDEV = x"1034" => NOT USED
       bpi_cfg_regE => INNER_CFG_REGE,   -- CMDDEV = x"1038" => NOT USED
       bpi_cfg_regF => INNER_CFG_REGF    -- CMDDEV = x"103C" => NOT USED
-
       );
 
   LCT_L1A_DLY   <= INNER_CFG_REG0(5 downto 0);
@@ -208,10 +205,6 @@ begin  --Architecture
   VME_CFG_REG_WE(14) <= '1' when (CMDDEV = x"1038" and WRITER = '0') else '0';  -- NOT USED
   VME_CFG_REG_WE(15) <= '1' when (CMDDEV = x"103C" and WRITER = '0') else '0';  -- NOT USED
 
-  CFG_REG_CK <= STROBE         when (BPI_MODE(1) = '1') else CLK;
-  CFG_REG_WE <= VME_CFG_REG_WE when (BPI_MODE(1) = '1') else CC_CFG_REG_WE;
-  CFG_REG_IN <= INDATA         when (BPI_MODE(1) = '1') else CC_CFG_REG_IN;
-
   CFG_REG_RE(0)  <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
   CFG_REG_RE(1)  <= '1' when (CMDDEV = x"1004" and WRITER = '1') else '0';
   CFG_REG_RE(2)  <= '1' when (CMDDEV = x"1008" and WRITER = '1') else '0';
@@ -252,4 +245,4 @@ begin  --Architecture
   d_dtack <= STROBE and (or_reduce(cfg_reg_we) or or_reduce(cfg_reg_re));
   FD_DTACK : FD port map (DTACK, CLK, d_dtack);
 
-end VMECONFREGS_BPI_Arch;
+end VMECONFREGS_Arch;

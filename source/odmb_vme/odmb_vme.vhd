@@ -22,6 +22,7 @@ entity ODMB_VME is
     );  
   port (
     CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
+    CSP_BPI_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 -- VME signals
 
     cmd_adrs        : out std_logic_vector(15 downto 0);
@@ -195,8 +196,10 @@ entity ODMB_VME is
     BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
     BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
     BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
-
+    
 -- Guido - Aug 26
+    BPI_CFG_UL_BUGGER : out std_logic;
+    BPI_CFG_DL_BUGGER : out std_logic;
     BPI_CFG_DONE   : in std_logic;
     BPI_CFG_REG_WE : in std_logic;
     BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
@@ -390,7 +393,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
   --    );
   --end component;
 
-  component VMECONFREGS_BPI is
+  component VMECONFREGS is
     port (
       SLOWCLK : in std_logic;
       CLK     : in std_logic;
@@ -420,7 +423,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
       CRATEID      : out std_logic_vector(7 downto 0);
 
       -- From BPI_PORT
-      BPI_MODE : in std_logic_vector(1 downto 0);
+      BPI_CFG_UL_PULSE : in std_logic;
+      BPI_CFG_DL_PULSE : in std_logic;
 
 -- From BPI_CFG_CONTROLLER
       CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
@@ -625,7 +629,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
   component BPI_PORT is
     
     port (
-
+      CSP_BPI_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      
       CLK               : in  std_logic;  -- 40MHz clock
       RST               : in  std_logic;  -- system reset
       -- VME selection/control
@@ -651,8 +656,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
       -- General timer
       BPI_TIMER         : in  std_logic_vector(31 downto 0);
 -- Guido - Aug 26
-      BPI_MODE          : out std_logic_vector(1 downto 0);  -- 0 -> FILL PROM with CFG_REG values, 1 -> FILL PROM from VME
-      BPI_CFG_DATA_SEL  : out std_logic;
+      BPI_CFG_UL_PULSE  : out std_logic;
+      BPI_CFG_DL_PULSE  : out std_logic;
+--      BPI_CFG_DATA_SEL  : out std_logic;
       BPI_CFG_REG0      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
       BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
@@ -704,7 +710,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
   --    );
   --end component;
 
-  component BPI_CFG_CONTROLLER_16_RH is
+  component BPI_CFG_CONTROLLER is
     port(
 
       clk : in std_logic;
@@ -735,7 +741,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       bpi_cfg_reg_we_i : in  std_logic;
       bpi_cfg_reg_we_o : out std_logic_vector(15 downto 0);
       bpi_cfg_busy     : out std_logic;
-      bpi_cfg_data_sel : in  std_logic;
+--      bpi_cfg_data_sel : in  std_logic;
       bpi_cmd_fifo_we  : out std_logic;
       bpi_cmd_fifo_in  : out std_logic_vector(15 downto 0)
       );
@@ -863,9 +869,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_cfg_dl                                  : std_logic                    := '0';
   signal bpi_cfg_ul                                  : std_logic                    := '0';
   signal bpi_cfg_reg_we_vec                          : std_logic_vector(3 downto 0) := "0000";
-  signal bpi_mode                                    : std_logic_vector(1 downto 0);
+  signal bpi_cfg_ul_pulse, bpi_cfg_dl_pulse          : std_logic;  -- TD
   signal bpi_cfg_busy                                : std_logic;
-  signal bpi_cfg_data_sel                            : std_logic;
+--  signal bpi_cfg_data_sel                            : std_logic;
 
 -- TD
   signal VME_BPI_CFG_REG_IN     : std_logic_vector(15 downto 0);
@@ -995,39 +1001,10 @@ begin
       ODMB_DATA     => odmb_data,
       TXDIFFCTRL    => txdiffctrl,      -- Controls the TX voltage swing
       LOOPBACK      => loopback         -- For internal loopback tests
-
       );
 
 
-  --DEV4_VMECONFREGS : VMECONFREGS
-  --  port map (
-  --    SLOWCLK => CLK_S2,
-  --    RST     => RST,
-
-  --    DEVICE  => DEVICE(4),
-  --    STROBE  => STROBE,
-  --    COMMAND => CMD,
-  --    WRITER  => VME_WRITE_B,
-
-  --    INDATA  => VME_DATA_IN,
-  --    OUTDATA => OUTDATA_VMECONFREGS,
-
-  --    DTACK         => DTACK_DEV(4),
-  --    ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-  --    OTMB_PUSH_DLY => OTMB_PUSH_DLY,
-  --    PUSH_DLY      => PUSH_DLY,
-  --    LCT_L1A_DLY   => LCT_L1A_DLY,
-
-  --    INJ_DLY    => INJ_DLY,
-  --    EXT_DLY    => EXT_DLY,
-  --    CALLCT_DLY => CALLCT_DLY,
-
-  --    NWORDS_DUMMY => NWORDS_DUMMY,
-  --    KILL         => KILL,
-  --    CRATEID      => CRATEID
-  --    );
-
-  DEV4_VMECONFREGS : VMECONFREGS_BPI
+  DEV4_VMECONFREGS : VMECONFREGS
     port map (
       SLOWCLK => CLK_S2,
       CLK     => clk,
@@ -1056,7 +1033,8 @@ begin
       CRATEID      => CRATEID,
 
       -- From BPI_PORT
-      BPI_MODE => BPI_MODE,
+      BPI_CFG_UL_PULSE => bpi_cfg_ul_pulse,
+      BPI_CFG_DL_PULSE => bpi_cfg_dl_pulse,
 
 -- From BPI_CFG_CONTROLLER
       CC_CFG_REG_IN => CC_BPI_CFG_REG_IN,
@@ -1079,7 +1057,6 @@ begin
       CFG_REGD => CFG_REGd,
       CFG_REGE => CFG_REGe,
       CFG_REGF => CFG_REGf
-
       );
 
 
@@ -1137,6 +1114,8 @@ begin
   -- TD
   DEV6_BPI_PORT : BPI_PORT
     port map (
+      CSP_BPI_PORT_LA_CTRL => CSP_BPI_PORT_LA_CTRL,
+
       CLK               => clk,         -- 2.5MHz clock
       RST               => rst,         -- system reset
       -- VME selection/control
@@ -1161,8 +1140,9 @@ begin
       BPI_STATUS        => BPI_STATUS,  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         => BPI_TIMER,   -- General timer
 -- Guido - Aug 26
-      BPI_MODE          => BPI_MODE,  -- 0 -> FILL PROM with CFG_REG values, 1 -> FILL PROM from VME
-      BPI_CFG_DATA_SEL  => BPI_CFG_DATA_SEL,  -- CFG_REG values into PROM: 0 -> constants stored in CFG_CONTROLLER, 1 -> CFG_REG values
+      BPI_CFG_UL_PULSE  => bpi_cfg_ul_pulse,  -- TD
+      BPI_CFG_DL_PULSE  => bpi_cfg_dl_pulse,
+--      BPI_CFG_DATA_SEL  => BPI_CFG_DATA_SEL,  -- CFG_REG values into PROM: 0 -> constants stored in CFG_CONTROLLER, 1 -> CFG_REG values
       BPI_CFG_REG0      => CFG_REG0,
       BPI_CFG_REG1      => CFG_REG1,
       BPI_CFG_REG2      => CFG_REG2,
@@ -1376,7 +1356,7 @@ begin
 
   CC_BPI_CFG_REG_IN <= BPI_CFG_REG_IN;
 
-  BPI_CC_PM : BPI_CFG_CONTROLLER_16_RH
+  BPI_CC_PM : BPI_CFG_CONTROLLER
     port map (
       --CLK => clk_s2,
       CLK => clk,
@@ -1407,18 +1387,20 @@ begin
       bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
       bpi_cfg_reg_we_o => CC_BPI_CFG_REG_WE_VEC,
       bpi_cfg_busy     => BPI_CFG_BUSY,
-      bpi_cfg_data_sel => BPI_CFG_DATA_SEL,
+--      bpi_cfg_data_sel => BPI_CFG_DATA_SEL,
       bpi_cmd_fifo_we  => CC_BPI_WE,
       bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
       );
 
 
-  BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (BPI_MODE(0) = '1') else CC_BPI_CMD_FIFO_DATA;
-  BPI_WE            <= VME_BPI_WE            when (BPI_MODE(0) = '1') else CC_BPI_WE;
-  BPI_DSBL          <= VME_BPI_DSBL          when (BPI_MODE(0) = '1') else CC_BPI_DSBL;
-  BPI_ENBL          <= VME_BPI_ENBL          when (BPI_MODE(0) = '1') else CC_BPI_ENBL;
-
-
+  BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_CMD_FIFO_DATA;
+  BPI_WE            <= VME_BPI_WE            when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_WE;
+  BPI_DSBL          <= VME_BPI_DSBL          when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_DSBL;
+  BPI_ENBL          <= VME_BPI_ENBL          when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_ENBL;
+  
+  BPI_CFG_UL_BUGGER <= bpi_cfg_ul_pulse;
+  BPI_CFG_DL_BUGGER <= bpi_cfg_dl_pulse;
+  
   vme_doe_b       <= doe_b;
   vme_doe         <= not doe_b;
   vme_tovme_b     <= tovme_b;
