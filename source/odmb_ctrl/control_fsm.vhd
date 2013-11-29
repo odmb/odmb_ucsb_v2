@@ -150,12 +150,15 @@ begin
   hdr_tail_cnt_svl    <= std_logic_vector(to_unsigned(hdr_tail_cnt, 5));
 -- trigger assignments (8 bits)
   control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & "00000";
-  control_fsm_la_data <= "0" & x"000000000000"
-                         & next_state_svl & eof_inner & fifo_pop_inner & fifo_pop_80
-                         & oefifo_b_inner & renfifo_b_inner & dout_inner(15 downto 0)
-                         & hdr_tail_cnt_rst & hdr_tail_cnt_en & dev_cnt_en
-                         & cafifo_l1a_dav & cafifo_l1a_match & q_datain_last & expect_pckt
-                         & hdr_tail_cnt_svl & dev_cnt_svl & current_state_svl & dav_inner;
+  control_fsm_la_data <= "000" & x"0000000"
+                         & FFOR_B & cafifo_lost_pckt -- [96:79]
+                         & next_state_svl & eof_inner & fifo_pop_inner & fifo_pop_80 -- [78:72]
+                         & oefifo_b_inner & renfifo_b_inner & dout_inner -- [71:38]
+                         & hdr_tail_cnt_rst & hdr_tail_cnt_en & dev_cnt_en -- [37:35]
+                         & cafifo_l1a_dav & cafifo_l1a_match -- [34:17]
+                         & q_datain_last & expect_pckt    -- [16:15]
+                         & hdr_tail_cnt_svl & dev_cnt_svl -- [14:5]
+                         & current_state_svl & dav_inner; -- [4:0]
 
 -- Needed because DATAIN_LAST does not arrive during the last word
   FDLAST : FD port map(q_datain_last, clk, DATAIN_LAST);

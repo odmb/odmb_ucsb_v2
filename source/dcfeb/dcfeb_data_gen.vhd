@@ -5,6 +5,7 @@ library unisim;
 library unimacro;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 
@@ -31,9 +32,9 @@ architecture dcfeb_data_gen_architecture of dcfeb_data_gen is
 
   signal next_state, current_state : state_type;
 
-  signal   dw_cnt_en, dw_cnt_rst : std_logic;
-  signal   l1a_cnt_out           : std_logic_vector(23 downto 0);
-  signal   dw_cnt_out            : std_logic_vector(15 downto 0);
+  signal dw_cnt_en, dw_cnt_rst : std_logic;
+  signal l1a_cnt_out           : std_logic_vector(23 downto 0);
+  signal dw_cnt_out            : std_logic_vector(15 downto 0);
 
   signal tx_start, tx_start_d : std_logic;
 
@@ -54,6 +55,7 @@ architecture dcfeb_data_gen_architecture of dcfeb_data_gen is
   signal l1a_cnt_fifo_wr_en : std_logic;
   signal l1a_cnt_fifo_rd_en : std_logic;
 
+  signal l1a_cnt_int : integer;
 begin
 
   -- L1A counter
@@ -74,12 +76,13 @@ begin
   l1a_cnt_l_fifo_in <= "000000" & l1a_cnt_out(11 downto 0);
   l1a_cnt_h_fifo_in <= "000000" & l1a_cnt_out(23 downto 12);
 
+  l1a_cnt_int <= to_integer(unsigned(l1a_cnt_out));
   l1a_cnt_fifo_ctrl : process (clk, l1a_match, rst)
   begin
     if (rst = '1') then
       l1a_cnt_fifo_wr_en <= '0';
     elsif (rising_edge(clk)) then
-      if (l1a_match = '1') then
+      if (l1a_match = '1' and ((l1a_cnt_int mod 2) /= 0)) then
         l1a_cnt_fifo_wr_en <= '1';
       else
         l1a_cnt_fifo_wr_en <= '0';
@@ -159,7 +162,7 @@ begin
       );
 
 
--- FSM 
+-- FSM
   tx_start_d <= not l1a_cnt_h_fifo_empty;
   FD_TX : FD port map(tx_start, clk, tx_start_d);
 
@@ -187,7 +190,7 @@ begin
           next_state         <= IDLE;
           l1a_cnt_fifo_rd_en <= '0';
         end if;
-        
+
       when TX_HEADER1 =>
         l1a_cnt_fifo_rd_en <= '0';
         dcfeb_data         <= dcfeb_addr & l1a_cnt_h_fifo_out(11 downto 0);
@@ -199,7 +202,7 @@ begin
         else
           next_state <= TX_HEADER1;
         end if;
-        
+
       when TX_HEADER2 =>
         l1a_cnt_fifo_rd_en <= '0';
         dcfeb_data         <= dcfeb_addr & l1a_cnt_l_fifo_out(11 downto 0);
@@ -207,7 +210,7 @@ begin
         dw_cnt_en          <= '0';
         dw_cnt_rst         <= '0';
         next_state         <= TX_DATA;
-        
+
       when TX_DATA =>
         l1a_cnt_fifo_rd_en <= '0';
         dcfeb_data         <= dcfeb_addr & l1a_cnt_l_fifo_out(7 downto 0) & dw_cnt_out(3 downto 0);
@@ -231,5 +234,5 @@ begin
         next_state         <= IDLE;
     end case;
   end process;
-  
+
 end dcfeb_data_gen_architecture;

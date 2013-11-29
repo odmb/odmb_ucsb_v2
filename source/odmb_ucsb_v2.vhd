@@ -2059,7 +2059,7 @@ begin
       DI    => otmb_fifo_data_in,       -- Input data
       RDCLK => dduclk,                  -- Input read clock
       RDEN  => data_fifo_re(NFEB+1),    -- Input read enable
-      RST   => reset,                   -- Input reset
+      RST   => l1acnt_rst,                   -- Input reset
       WRCLK => clk40,                   -- Input write clock
       WREN  => otmb_fifo_data_valid     -- Input write enable
       );

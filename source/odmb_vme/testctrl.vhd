@@ -14,10 +14,11 @@ entity TESTCTRL is
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );
   port (
-    CLK     : in std_logic;
-    DDUCLK  : in std_logic;
-    SLOWCLK : in std_logic;
-    RST     : in std_logic;
+    CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    CLK                          : in    std_logic;
+    DDUCLK                       : in    std_logic;
+    SLOWCLK                      : in    std_logic;
+    RST                          : in    std_logic;
 
     DEVICE  : in std_logic;
     STROBE  : in std_logic;
@@ -40,6 +41,15 @@ entity TESTCTRL is
 end TESTCTRL;
 
 architecture TESTCTRL_Arch of TESTCTRL is
+
+  component csp_systemtest_la is
+    port (
+      CLK     : in std_logic := 'X';
+      DATA    : in std_logic_vector (127 downto 0);
+      TRIG0   : in std_logic_vector (7 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
+      );
+  end component;
 
   component PULSE_EDGE is
     port (
@@ -70,7 +80,7 @@ architecture TESTCTRL_Arch of TESTCTRL is
   signal I1_FIFO_RD_EN, I2_FIFO_RD_EN, I3_FIFO_RD_EN, C_FIFO_RD_EN, FIFO_RD : std_logic_vector(3 downto 0);
   signal I1_FIFO_WR_EN, I2_FIFO_WR_EN, I3_FIFO_WR_EN, C_FIFO_WR_EN, FIFO_WR : std_logic_vector(3 downto 0);
 
-  signal I1_INDATA, I2_INDATA, FIFO_WR_DATA : std_logic_vector(15 downto 0);
+  signal FIFO_WR_DATA : std_logic_vector(15 downto 0);
 
   signal event_rd : std_logic;
 
@@ -121,7 +131,10 @@ architecture TESTCTRL_Arch of TESTCTRL is
   signal field_data                  : std_logic_vector(15 downto 0) := (others => '0');
   signal r_field, d_dtack_field_nrep : std_logic                     := '0';
 
-
+  -- Declare the csp stuff here
+  signal testctrl_la_data : std_logic_vector(127 downto 0);
+  signal testctrl_la_trig : std_logic_vector(7 downto 0);
+  
 begin  --Architecture
 
 -- FSR(0) -> select fifo(0) (tc_fifo_ts_l)
@@ -240,10 +253,8 @@ begin  --Architecture
 
   CREATE_FIFO_WR_DATA : for I in 15 downto 0 generate
   begin
-    FD_INDATA_I1   : FD port map (I1_INDATA(I), STROBE, INDATA(I));
-    FD_INDATA_I1I2 : FD port map (I2_INDATA(I), SLOWCLK, I1_INDATA(I));
+    FD_INDATA_I1   : FD port map (FIFO_WR_DATA(I), STROBE, INDATA(I));
   end generate CREATE_FIFO_WR_DATA;
-  FIFO_WR_DATA <= I2_INDATA;
 
 
   CREATE_FIFO_WR_EN : for I in 3 downto 0 generate
@@ -429,4 +440,22 @@ begin  --Architecture
                   OTMB_DAV_CNT_OUT when (TRG_CNT_SEL = "1010") else
                   (others => '0');
 
+-- Chip ScopePro ILA core
+  csp_systemtest_la_pm : csp_systemtest_la
+    port map (
+      CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
+      CLK     => CLK,                   -- Good ol' 40MHz clock here
+      DATA    => testctrl_la_data,
+      TRIG0   => testctrl_la_trig
+      );
+
+  testctrl_la_trig <= tc_run_inner & "0000000";
+  testctrl_la_data <= "000" & x"000"
+                      & L1A_INNER & ALCT_DAV_INNER & OTMB_DAV_INNER & LCT_INNER(7 downto 1) -- [112:103]
+                      & tc_fifo_wr_en(0) & tc_fifo_rd_en(0) & tc_fifo_empty(0) -- [102:100]
+                      & tc_fifo_in(0) & tc_fifo_out(0) -- [99:68]
+                      & tc_fifo_wr_en(2) & tc_fifo_rd_en(2) & tc_fifo_empty(2) -- [67:65]
+                      & tc_fifo_in(2) & tc_fifo_out(2) -- [64:33]
+                      & ts_cnt_out(15 downto 0)  -- [32:17]
+                      & tc_run_inner & nrep_data;  -- [16:0]
 end TESTCTRL_Arch;
