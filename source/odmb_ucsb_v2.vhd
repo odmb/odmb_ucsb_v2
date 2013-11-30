@@ -406,7 +406,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       BPI_CFG_UL_BUGGER : out std_logic;
       BPI_CFG_DL_BUGGER : out std_logic;
-      BPI_CFG_DONE   : in std_logic;
+      BPI_DONE   : in std_logic;
       BPI_CFG_REG_WE : in std_logic;
       BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
 
@@ -911,7 +911,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       BPI_DATA_TO       : out std_logic_vector(15 downto 0);  -- 
       BPI_EXECUTE       : out std_logic;
 -- Guido Aug 26
-      BPI_CFG_DONE      : out std_logic;
+      BPI_DONE      : out std_logic;
       BPI_CFG_REG_WE    : out std_logic;
       BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0)
       );
@@ -1312,6 +1312,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_rst           : std_logic;
   signal vme_bpi_rst       : std_logic;
   signal clk1mhz           : std_logic;
+  signal counter_clk1mhz : integer := 0;
   signal bpi_we            : std_logic;
   signal bpi_re            : std_logic;
   signal bpi_dsbl          : std_logic;
@@ -1331,7 +1332,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_data_to       : std_logic_vector(15 downto 0);
   signal dual_data_leds    : std_logic_vector(15 downto 0) := (others => '0');
 
-  signal bpi_cfg_done   : std_logic;
+  signal bpi_done   : std_logic;
   signal bpi_cfg_reg_we : std_logic;
   signal bpi_cfg_reg_in : std_logic_vector(15 downto 0);
 
@@ -1564,7 +1565,7 @@ begin
 
       BPI_CFG_UL_BUGGER => bpi_cfg_ul_pulse,
       BPI_CFG_DL_BUGGER => bpi_cfg_dl_pulse,
-      BPI_CFG_DONE   => bpi_cfg_done,
+      BPI_DONE   => bpi_done,
       BPI_CFG_REG_WE => bpi_cfg_reg_we,
       BPI_CFG_REG_IN => bpi_cfg_reg_in,
 
@@ -2335,6 +2336,16 @@ begin
       else
         counter_clk <= counter_clk + 1;
       end if;
+      if counter_clk1mhz = 20 then
+        counter_clk1mhz <= 1;
+        if clk1mhz = '1' then
+          clk1mhz <= '0';
+        else
+          clk1mhz <= '1';
+        end if;
+      else
+        counter_clk1mhz <= counter_clk1mhz + 1;
+      end if;
     end if;
   end process Divide_Frequency;
   clk1_inv <= not clk1;
@@ -2487,7 +2498,7 @@ begin
       BPI_DATA_TO       => bpi_data_to,  -- Command or Data being written to FLASH device
       BPI_EXECUTE       => bpi_execute,
       -- Guido - Aug 26
-      BPI_CFG_DONE      => bpi_cfg_done,
+      BPI_DONE      => bpi_done,
       BPI_CFG_REG_WE    => bpi_cfg_reg_we,
       BPI_CFG_REG_IN    => bpi_cfg_reg_in
       );
@@ -2537,7 +2548,7 @@ begin
                           & cmd_adrs    -- [284:269]
                           & vme_data_in  -- [268:253]
                           & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
-                          & bpi_cfg_reg_we & bpi_cfg_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
+                          & bpi_cfg_reg_we & bpi_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
                           & bpi_op & bpi_cfg_reg_in                -- [240:223]
                           & bpi_status & bpi_timer                 -- [222:175]
                           & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]

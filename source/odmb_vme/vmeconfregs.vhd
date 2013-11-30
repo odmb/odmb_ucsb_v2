@@ -116,7 +116,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal CFG_REG_RE                 : std_logic_vector(15 downto 0) := (others => '0');
   signal CFG_REG_CK                 : std_logic;
 
-  signal d_dtack : std_logic;
+  signal dd_dtack, d_dtack, q_dtack : std_logic;
 
   type cfg_reg_mask_array is array (0 to 15) of std_logic_vector(15 downto 0);
   constant cfg_reg_mask : cfg_reg_mask_array := (x"003F", x"001F", x"001F", x"001F", x"001F",
@@ -242,7 +242,9 @@ begin  --Architecture
              (INNER_CFG_REGF and cfg_reg_mask(15)) when CFG_REG_RE(15) = '1' else
              (others => 'L');
 
-  d_dtack <= STROBE and (or_reduce(cfg_reg_we) or or_reduce(cfg_reg_re));
-  FD_DTACK : FD port map (DTACK, CLK, d_dtack);
+  dd_dtack <= STROBE and (or_reduce(cfg_reg_we) or or_reduce(cfg_reg_re));
+  FD_D_DTACK : FDC port map(d_dtack, dd_dtack, q_dtack, '1');
+  FD_Q_DTACK : FD port map(q_dtack, SLOWCLK, d_dtack);
+  DTACK <= q_dtack;
 
 end VMECONFREGS_Arch;

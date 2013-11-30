@@ -1,6 +1,9 @@
-library IEEE;
-use IEEE.STD_LOGIC_UNSIGNED.all;
-use IEEE.STD_LOGIC_1164.all;
+-- BPI_CFG_CONTROLLER: Sends the instructions to BPI_CTRL that Upload and Dowload
+-- configuration registers to the PROM
+
+library ieee;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_1164.all;
 
 entity bpi_cfg_controller is
   port(
@@ -9,7 +12,7 @@ entity bpi_cfg_controller is
 
     bpi_cfg_ul_start : in std_logic;
     bpi_cfg_dl_start : in std_logic;
-    bpi_cfg_done     : in std_logic;
+    bpi_done     : in std_logic;
     bpi_cfg_reg0     : in std_logic_vector(15 downto 0);
     bpi_cfg_reg1     : in std_logic_vector(15 downto 0);
     bpi_cfg_reg2     : in std_logic_vector(15 downto 0);
@@ -32,7 +35,6 @@ entity bpi_cfg_controller is
     bpi_cfg_reg_we_i : in  std_logic;
     bpi_cfg_reg_we_o : out std_logic_vector(15 downto 0);
     bpi_cfg_busy     : out std_logic;
---    bpi_cfg_data_sel : in  std_logic;
     bpi_cmd_fifo_we  : out std_logic;
     bpi_cmd_fifo_in  : out std_logic_vector(15 downto 0)
     );
@@ -201,7 +203,7 @@ begin
     end if;
   end process;
 
-  fsm_logic : process (bpi_cfg_ul, bpi_cfg_dl, bpi_cfg_done, cnt_out, current_state)
+  fsm_logic : process (bpi_cfg_ul, bpi_cfg_dl, bpi_done, cnt_out, current_state)
   begin
     bpi_en              <= '0';
     bpi_dis             <= '0';
@@ -272,7 +274,7 @@ begin
 
       when BPI_WAIT4DONE_UL =>
         bpi_cfg_busy        <= '1';
-        if (bpi_cfg_done = '1') then
+        if (bpi_done = '1') then
           bpi_cfg_ul_reset <= '1';
           next_state       <= IDLE;
         else
@@ -282,7 +284,7 @@ begin
 
       when BPI_WAIT4DONE_DL =>
         bpi_cfg_busy        <= '1';
-        if (bpi_cfg_done = '1') then
+        if (bpi_done = '1') then
           bpi_cfg_dl_reset <= '1';
           next_state       <= IDLE;
         else

@@ -22,7 +22,7 @@ entity ODMB_VME is
     );  
   port (
     CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
-    CSP_BPI_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    CSP_BPI_PORT_LA_CTRL         : inout std_logic_vector(35 downto 0);
 -- VME signals
 
     cmd_adrs        : out std_logic_vector(15 downto 0);
@@ -196,13 +196,13 @@ entity ODMB_VME is
     BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);  -- Word count of the Read back FIFO (number of available reads)
     BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
     BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
-    
+
 -- Guido - Aug 26
     BPI_CFG_UL_BUGGER : out std_logic;
     BPI_CFG_DL_BUGGER : out std_logic;
-    BPI_CFG_DONE   : in std_logic;
-    BPI_CFG_REG_WE : in std_logic;
-    BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
+    BPI_DONE          : in  std_logic;
+    BPI_CFG_REG_WE    : in  std_logic;
+    BPI_CFG_REG_IN    : in  std_logic_vector(15 downto 0);
 
     -- DDU/PC/DCFEB COMMON PRBS
     PRBS_TYPE : out std_logic_vector(2 downto 0);
@@ -241,10 +241,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );    
     port (
       CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
-      CLK     : in std_logic;
-      DDUCLK  : in std_logic;
-      SLOWCLK : in std_logic;
-      RST     : in std_logic;
+      CLK                          : in    std_logic;
+      DDUCLK                       : in    std_logic;
+      SLOWCLK                      : in    std_logic;
+      RST                          : in    std_logic;
 
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
@@ -631,9 +631,11 @@ architecture ODMB_VME_architecture of ODMB_VME is
     
     port (
       CSP_BPI_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
-      
-      CLK               : in  std_logic;  -- 40MHz clock
-      RST               : in  std_logic;  -- system reset
+
+      SLOWCLK : in std_logic;
+      CLK     : in std_logic;           -- 40MHz clock
+      RST     : in std_logic;           -- system reset
+
       -- VME selection/control
       DEVICE            : in  std_logic;  -- 1 bit indicating this device has been selected
       STROBE            : in  std_logic;  -- Data strobe synchronized to rising or falling edge of clock and asynchronously cleared
@@ -656,60 +658,12 @@ architecture ODMB_VME_architecture of ODMB_VME is
       BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
       -- General timer
       BPI_TIMER         : in  std_logic_vector(31 downto 0);
--- Guido - Aug 26
       BPI_CFG_UL_PULSE  : out std_logic;
       BPI_CFG_DL_PULSE  : out std_logic;
---      BPI_CFG_DATA_SEL  : out std_logic;
-      BPI_CFG_REG0      : in  std_logic_vector(15 downto 0);
-      BPI_CFG_REG1      : in  std_logic_vector(15 downto 0);
-      BPI_CFG_REG2      : in  std_logic_vector(15 downto 0);
-      BPI_CFG_REG3      : in  std_logic_vector(15 downto 0);
-      BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0);
-      BPI_CFG_REG_WE    : out std_logic_vector(3 downto 0);
       BPI_CFG_BUSY      : in  std_logic;
       BPI_DONE          : in  std_logic
       );
   end component;
-
-  --component BPI_CFG_CONTROLLER is
-  --  port(
-
-  --    clk : in std_logic;
-  --    rst : in std_logic;
-
-  --    bpi_cfg_ul_start : in std_logic;
-  --    bpi_cfg_dl_start : in std_logic;
-  --    bpi_cfg_done     : in std_logic;
-  --    bpi_cfg_reg0     : in std_logic_vector(15 downto 0);
-  --    bpi_cfg_reg1     : in std_logic_vector(15 downto 0);
-  --    bpi_cfg_reg2     : in std_logic_vector(15 downto 0);
-  --    bpi_cfg_reg3     : in std_logic_vector(15 downto 0);
-
-  --    bpi_dis          : out std_logic;
-  --    bpi_en           : out std_logic;
-  --    bpi_cfg_reg_we_i : in  std_logic;
-  --    bpi_cfg_reg_we_o : out std_logic_vector(3 downto 0);
-  --    bpi_cfg_busy     : out std_logic;
-  --    bpi_cfg_data_sel : in  std_logic;
-  --    bpi_cmd_fifo_we  : out std_logic;
-  --    bpi_cmd_fifo_in  : out std_logic_vector(15 downto 0)
-  --    );
-  --end component;
-
-  --component bpi_cfg_registers is
-  --  port(
-  --    clk : in std_logic;
-  --    rst : in std_logic;
-
-  --    bpi_cfg_reg_we : in std_logic_vector(3 downto 0);
-  --    bpi_cfg_reg_in : in std_logic_vector(15 downto 0);
-
-  --    bpi_cfg_reg0 : out std_logic_vector(15 downto 0);
-  --    bpi_cfg_reg1 : out std_logic_vector(15 downto 0);
-  --    bpi_cfg_reg2 : out std_logic_vector(15 downto 0);
-  --    bpi_cfg_reg3 : out std_logic_vector(15 downto 0)
-  --    );
-  --end component;
 
   component BPI_CFG_CONTROLLER is
     port(
@@ -719,7 +673,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       bpi_cfg_ul_start : in std_logic;
       bpi_cfg_dl_start : in std_logic;
-      bpi_cfg_done     : in std_logic;
+      bpi_done         : in std_logic;
       bpi_cfg_reg0     : in std_logic_vector(15 downto 0);
       bpi_cfg_reg1     : in std_logic_vector(15 downto 0);
       bpi_cfg_reg2     : in std_logic_vector(15 downto 0);
@@ -875,8 +829,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
 --  signal bpi_cfg_data_sel                            : std_logic;
 
 -- TD
-  signal VME_BPI_CFG_REG_IN     : std_logic_vector(15 downto 0);
-  signal VME_BPI_CFG_REG_WE_VEC : std_logic_vector(3 downto 0);
   signal CC_BPI_CFG_REG_IN      : std_logic_vector(15 downto 0);
   signal CC_BPI_CFG_REG_WE_VEC  : std_logic_vector(15 downto 0);
   signal SEL_BPI_CFG_REG_IN     : std_logic_vector(15 downto 0);
@@ -889,10 +841,10 @@ begin
     generic map (NFEB => NFEB)
     port map (
       CSP_SYSTEM_TEST_PORT_LA_CTRL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
-      CLK     => clk,
-      DDUCLK  => dduclk,
-      SLOWCLK => clk_s2,
-      RST     => rst,
+      CLK                          => clk,
+      DDUCLK                       => dduclk,
+      SLOWCLK                      => clk_s2,
+      RST                          => rst,
 
       DEVICE  => device(0),
       STROBE  => strobe,
@@ -1110,15 +1062,14 @@ begin
       TFF_RST     => TFF_RST,
       TFF_SEL     => TFF_SEL,
       TFF_RDEN    => TFF_RDEN
-
       );
 
-  -- TD
   DEV6_BPI_PORT : BPI_PORT
     port map (
       CSP_BPI_PORT_LA_CTRL => CSP_BPI_PORT_LA_CTRL,
 
-      CLK               => clk,         -- 2.5MHz clock
+      SLOWCLK           => clk_s2,      -- 2.5MHz clock
+      CLK               => clk,         -- 40MHz clock
       RST               => rst,         -- system reset
       -- VME selection/control
       DEVICE            => device(6),  -- 1 bit indicating this device has been selected
@@ -1141,18 +1092,10 @@ begin
       BPI_RBK_WRD_CNT   => BPI_RBK_WRD_CNT,  -- Word count of the Read back FIFO (number of available reads)
       BPI_STATUS        => BPI_STATUS,  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         => BPI_TIMER,   -- General timer
--- Guido - Aug 26
-      BPI_CFG_UL_PULSE  => bpi_cfg_ul_pulse,  -- TD
+      BPI_CFG_UL_PULSE  => bpi_cfg_ul_pulse, 
       BPI_CFG_DL_PULSE  => bpi_cfg_dl_pulse,
---      BPI_CFG_DATA_SEL  => BPI_CFG_DATA_SEL,  -- CFG_REG values into PROM: 0 -> constants stored in CFG_CONTROLLER, 1 -> CFG_REG values
-      BPI_CFG_REG0      => CFG_REG0,
-      BPI_CFG_REG1      => CFG_REG1,
-      BPI_CFG_REG2      => CFG_REG2,
-      BPI_CFG_REG3      => CFG_REG3,
-      BPI_CFG_REG_IN    => VME_BPI_CFG_REG_IN,      -- not used any more
-      BPI_CFG_REG_WE    => VME_BPI_CFG_REG_WE_VEC,  -- not used any more
       BPI_CFG_BUSY      => BPI_CFG_BUSY,
-      BPI_DONE          => BPI_CFG_DONE
+      BPI_DONE          => BPI_DONE
       );
 
   DEV7_SYSMON : SYSTEM_MON
@@ -1319,43 +1262,6 @@ begin
 
   PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
 
-  --BPI_CR_PM : BPI_CFG_REGISTERS
-  --  port map (
-  --    clk => clk_s2,
-  --    rst => rst,
-
-  --    bpi_cfg_reg_we => BPI_CFG_REG_WE_VEC,
-  --    bpi_cfg_reg_in => BPI_CFG_REG_IN,
-
-  --    bpi_cfg_reg0 => CFG_REG0,
-  --    bpi_cfg_reg1 => CFG_REG1,
-  --    bpi_cfg_reg2 => CFG_REG2,
-  --    bpi_cfg_reg3 => CFG_REG3
-  --    );
-
-  --BPI_CC_PM : BPI_CFG_CONTROLLER
-  --  port map (
-  --    CLK => clk_s2,
-  --    RST => rst,
-
-  --    bpi_cfg_dl_start => BPI_CFG_DL,
-  --    bpi_cfg_ul_start => BPI_CFG_UL,
-  --    bpi_cfg_done     => BPI_CFG_DONE,
-  --    bpi_cfg_reg0     => CFG_REG0,
-  --    bpi_cfg_reg1     => CFG_REG1,
-  --    bpi_cfg_reg2     => CFG_REG2,
-  --    bpi_cfg_reg3     => CFG_REG3,
-
-  --    bpi_dis          => CC_BPI_DSBL,
-  --    bpi_en           => CC_BPI_ENBL,
-  --    bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
-  --    bpi_cfg_reg_we_o => BPI_CFG_REG_WE_VEC,
-  --    bpi_cfg_busy     => BPI_CFG_BUSY,
-  --    bpi_cfg_data_sel => BPI_CFG_DATA_SEL,
-  --    bpi_cmd_fifo_we  => CC_BPI_WE,
-  --    bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
-  --    );
-
   CC_BPI_CFG_REG_IN <= BPI_CFG_REG_IN;
 
   BPI_CC_PM : BPI_CFG_CONTROLLER
@@ -1366,7 +1272,7 @@ begin
 
       bpi_cfg_dl_start => BPI_CFG_DL,
       bpi_cfg_ul_start => BPI_CFG_UL,
-      bpi_cfg_done     => BPI_CFG_DONE,
+      bpi_done         => BPI_DONE,
       bpi_cfg_reg0     => CFG_REG0,
       bpi_cfg_reg1     => CFG_REG1,
       bpi_cfg_reg2     => CFG_REG2,
@@ -1389,7 +1295,6 @@ begin
       bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
       bpi_cfg_reg_we_o => CC_BPI_CFG_REG_WE_VEC,
       bpi_cfg_busy     => BPI_CFG_BUSY,
---      bpi_cfg_data_sel => BPI_CFG_DATA_SEL,
       bpi_cmd_fifo_we  => CC_BPI_WE,
       bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
       );
@@ -1399,10 +1304,10 @@ begin
   BPI_WE            <= VME_BPI_WE            when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_WE;
   BPI_DSBL          <= VME_BPI_DSBL          when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_DSBL;
   BPI_ENBL          <= VME_BPI_ENBL          when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_ENBL;
-  
+
   BPI_CFG_UL_BUGGER <= bpi_cfg_ul_pulse;
   BPI_CFG_DL_BUGGER <= bpi_cfg_dl_pulse;
-  
+
   vme_doe_b       <= doe_b;
   vme_doe         <= not doe_b;
   vme_tovme_b     <= tovme_b;

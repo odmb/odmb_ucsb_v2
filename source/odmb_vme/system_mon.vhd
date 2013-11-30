@@ -34,11 +34,12 @@ architecture SYSTEM_MON_ARCH of SYSTEM_MON is
       );
   end component;
 
-  signal drdy       : std_logic;
-  signal den        : std_logic;
-  signal q_strobe   : std_logic;
-  signal q2_strobe  : std_logic;
-  signal drdy_pulse : std_logic;
+  signal drdy      : std_logic;
+  signal den       : std_logic;
+  signal q_strobe  : std_logic;
+  signal q2_strobe : std_logic;
+
+  signal dd_dtack, d_dtack, q_dtack, rst_dtack : std_logic;
 
   signal outdata_inner : std_logic_vector(15 downto 0);
   
@@ -102,7 +103,11 @@ begin
   den <= '1' when (device = '1' and WRITER = '1' and q2_strobe = '0' and q_strobe = '1')
          else '0';
 
-  --DTACK when OUTDATA contains valid data (signalled by drdy)
-  DRDY_PE : PULSE_EDGE port map(drdy_pulse, open, SLOWCLK, RST, 1, DRDY);
-  DTACK <= '1' when (device = '1' and drdy_pulse = '1' and STROBE = '1') else '0';
+  --DTACK when OUTDATA contains valid data 
+  dd_dtack  <= device and strobe;
+  FD_D_DTACK : FDC port map(d_dtack, dd_dtack, rst_dtack, '1');
+  FD_Q_DTACK : FD port map(q_dtack, SLOWCLK, d_dtack);
+  rst_dtack <= q_dtack and drdy;
+  DTACK     <= q_dtack;
+  
 end SYSTEM_MON_ARCH;
