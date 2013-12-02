@@ -14,9 +14,9 @@
 library ieee;
 library work;
 use ieee.std_logic_1164.all;
-use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
+use ieee.numeric_std.all;
 use work.ucsb_types.all;
 
 entity ODMB_VME is
@@ -643,7 +643,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
       bpi_cfg_ul_start : in std_logic;
       bpi_cfg_dl_start : in std_logic;
       bpi_done         : in std_logic;
-
+      --bpi_status       : in std_logic_vector(15 downto 0);
+      
       bpi_dis          : out std_logic;
       bpi_en           : out std_logic;
       bpi_cfg_reg_we_i : in  std_logic;
@@ -684,22 +685,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
-  component vme_outdata_sel is
-    port (
-      device          : in  std_logic_vector(9 downto 0);
-      device0_outdata : in  std_logic_vector(15 downto 0);
-      device1_outdata : in  std_logic_vector(15 downto 0);
-      device2_outdata : in  std_logic_vector(15 downto 0);
-      device3_outdata : in  std_logic_vector(15 downto 0);
-      device4_outdata : in  std_logic_vector(15 downto 0);
-      device5_outdata : in  std_logic_vector(15 downto 0);
-      device6_outdata : in  std_logic_vector(15 downto 0);
-      device7_outdata : in  std_logic_vector(15 downto 0);
-      device8_outdata : in  std_logic_vector(15 downto 0);
-      device9_outdata : in  std_logic_vector(15 downto 0);
-      outdata         : out std_logic_vector(15 downto 0)
-      );
-  end component;
 
   component PULSE_EDGE is
     port (
@@ -725,26 +710,12 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal diagout_command : std_logic_vector(19 downto 0);
   signal led_command     : std_logic_vector(2 downto 0);
 
-  signal outdata_cfebjtag : std_logic_vector(15 downto 0);
   signal led_cfebjtag     : std_logic;
 
-  signal outdata_odmbjtag : std_logic_vector(15 downto 0);
   signal led_odmbjtag     : std_logic;
 
   signal outdata_mbcjtag : std_logic_vector(15 downto 0);
   signal led_mbcjtag     : std_logic;
-
-  signal outdata_lvdbmon : std_logic_vector(15 downto 0);
-
-
-  signal outdata_vmemon      : std_logic_vector(15 downto 0);
-  signal outdata_vmeconfregs : std_logic_vector(15 downto 0);
-  signal outdata_testfifos   : std_logic_vector(15 downto 0);
-  signal outdata_sysmon      : std_logic_vector(15 downto 0);
-  signal outdata_bpi_port    : std_logic_vector(15 downto 0);
-
-  signal outdata_testctrl : std_logic_vector(15 downto 0);
-  signal outdata_systest  : std_logic_vector(15 downto 0);
 
   -- VMECONFREGS
   signal bpi_cfg_regs       : cfg_regs_array;
@@ -761,7 +732,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_cfg_ul_pulse, bpi_cfg_dl_pulse          : std_logic;  -- TD
   signal bpi_cfg_busy                                : std_logic;
 
-  signal dtack_dev : std_logic_vector(9 downto 0);
+  signal dtack_dev   : std_logic_vector(9 downto 0);
+  type dev_array is array(0 to 9) of std_logic_vector(15 downto 0);
+  signal dev_outdata : dev_array;
+  signal device_index : integer range 0 to 9;
 
 begin
 
@@ -779,7 +753,7 @@ begin
       COMMAND => cmd,
 
       INDATA  => vme_data_in,
-      OUTDATA => outdata_testctrl,
+      OUTDATA => dev_outdata(0),
 
       DTACK => dtack_dev(0),
 
@@ -804,7 +778,7 @@ begin
       WRITER  => vme_write_b,
 
       INDATA  => vme_data_in,
-      OUTDATA => outdata_cfebjtag,
+      OUTDATA => dev_outdata(1),
 
       DTACK => dtack_dev(1),
 
@@ -830,7 +804,7 @@ begin
       WRITER  => vme_write_b,
 
       INDATA  => vme_data_in,
-      OUTDATA => outdata_odmbjtag,
+      OUTDATA => dev_outdata(2),
 
       DTACK => dtack_dev(2),
 
@@ -859,7 +833,7 @@ begin
       WRITER  => vme_write_b,
 
       INDATA  => vme_data_in,
-      OUTDATA => outdata_vmemon,
+      OUTDATA => dev_outdata(3),
 
       DTACK => dtack_dev(3),
 
@@ -901,7 +875,7 @@ begin
         WRITER  => VME_WRITE_B,
 
         INDATA  => VME_DATA_IN,
-        OUTDATA => OUTDATA_VMECONFREGS,
+        OUTDATA => DEV_OUTDATA(4),
 
         DTACK         => DTACK_DEV(4),
         ALCT_PUSH_DLY => ALCT_PUSH_DLY,
@@ -942,7 +916,7 @@ begin
       WRITER  => VME_WRITE_B,
 
       INDATA  => VME_DATA_IN,
-      OUTDATA => OUTDATA_TESTFIFOS,
+      OUTDATA => DEV_OUTDATA(5),
 
       DTACK => DTACK_DEV(5),
 
@@ -993,7 +967,7 @@ begin
       COMMAND           => cmd,         -- command portionn of VME address
       WRITE_B           => vme_write_b,  -- read/write_bar
       INDATA            => vme_data_in,  -- data from VME writes to be provided to BPI interface
-      OUTDATA           => outdata_bpi_port,  -- data from BPI interface to VME buss for reads
+      OUTDATA           => dev_outdata(6),  -- data from BPI interface to VME buss for reads
       DTACK             => dtack_dev(6),  -- DTACK bar
       -- BPI controls
       BPI_RST           => BPI_RST,     -- Resets BPI interface state machines
@@ -1016,7 +990,7 @@ begin
 
   DEV7_SYSMON : SYSTEM_MON
     port map(
-      OUTDATA => outdata_sysmon,
+      OUTDATA => dev_outdata(7),
       DTACK   => dtack_dev(7),
 
       SLOWCLK => clk_s2,
@@ -1046,7 +1020,7 @@ begin
       WRITER  => vme_write_b,
 
       INDATA  => vme_data_in,
-      OUTDATA => outdata_lvdbmon,
+      OUTDATA => dev_outdata(8),
 
       DTACK => dtack_dev(8),
 
@@ -1077,7 +1051,7 @@ begin
       CLK160  => clk_s3,
       RST     => rst,
 
-      OUTDATA => outdata_systest,
+      OUTDATA => dev_outdata(9),
       DTACK   => dtack_dev(9),
 
       -- DDU/PC/DCFEB COMMON PRBS
@@ -1160,21 +1134,6 @@ begin
       LED     => led_command
       );
 
-  VME_OUT_SEL_PM : vme_outdata_sel
-    port map (
-      device          => device,
-      device0_outdata => outdata_testctrl,
-      device1_outdata => outdata_cfebjtag,
-      device2_outdata => outdata_odmbjtag,
-      device3_outdata => outdata_vmemon,
-      device4_outdata => outdata_vmeconfregs,
-      device5_outdata => outdata_testfifos,
-      device6_outdata => outdata_bpi_port,
-      device7_outdata => outdata_sysmon,
-      device8_outdata => outdata_lvdbmon,
-      device9_outdata => outdata_systest,
-      outdata         => vme_data_out
-      );
 
   BPI_CFG_CONTROLLER_PM : BPI_CFG_CONTROLLER
     generic map(NREGS => NREGS)
@@ -1190,7 +1149,8 @@ begin
       bpi_cfg_dl_start => BPI_CFG_DL,
       bpi_cfg_ul_start => BPI_CFG_UL,
       bpi_done         => BPI_DONE,
-
+      --bpi_status       => BPI_STATUS,
+      
       bpi_dis          => CC_BPI_DSBL,
       bpi_en           => CC_BPI_ENBL,
       bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
@@ -1199,6 +1159,8 @@ begin
       bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
       );
 
+  device_index <= to_integer(unsigned(vme_addr(15 downto 12)));
+  vme_data_out <= dev_outdata(device_index);
 
   BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_CMD_FIFO_DATA;
   BPI_WE            <= VME_BPI_WE            when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_WE;
