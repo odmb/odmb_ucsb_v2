@@ -12,13 +12,17 @@
 -- Device 9 => SYSTEM_TEST
 
 library ieee;
+library work;
 use ieee.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
+use work.ucsb_types.all;
 
 entity ODMB_VME is
   generic (
-    NFEB : integer range 1 to 7 := 7    -- Number of DCFEBS
+    NREGS : integer := 16;              -- Number of Configuration registers
+    NFEB  : integer := 7                -- Number of DCFEBS
     );  
   port (
     CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
@@ -364,52 +368,26 @@ architecture ODMB_VME_architecture of ODMB_VME is
   end component;
 
 
-  --component VMECONFREGS is
-  --  port (
-  --    SLOWCLK : in std_logic;
-  --    RST     : in std_logic;
-
-  --    DEVICE  : in std_logic;
-  --    STROBE  : in std_logic;
-  --    COMMAND : in std_logic_vector(9 downto 0);
-  --    WRITER  : in std_logic;
-
-  --    INDATA  : in  std_logic_vector(15 downto 0);
-  --    OUTDATA : out std_logic_vector(15 downto 0);
-
-  --    DTACK : out std_logic;
-
-  --    ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-  --    OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
-  --    PUSH_DLY      : out std_logic_vector(4 downto 0);
-  --    LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
-
-  --    INJ_DLY    : out std_logic_vector(4 downto 0);
-  --    EXT_DLY    : out std_logic_vector(4 downto 0);
-  --    CALLCT_DLY : out std_logic_vector(3 downto 0);
-
-  --    NWORDS_DUMMY : out std_logic_vector(15 downto 0);
-  --    KILL         : out std_logic_vector(NFEB+2 downto 1);
-  --    CRATEID      : out std_logic_vector(7 downto 0)
-  --    );
-  --end component;
-
   component VMECONFREGS is
+    generic (
+      NREGS : integer := 15;            -- Number of Configuration registers
+      NFEB  : integer := 7              -- Number of DCFEBs
+      );    
     port (
       SLOWCLK : in std_logic;
       CLK     : in std_logic;
       RST     : in std_logic;
 
-      DEVICE  : in std_logic;
-      STROBE  : in std_logic;
-      COMMAND : in std_logic_vector(9 downto 0);
-      WRITER  : in std_logic;
+      DEVICE  : in  std_logic;
+      STROBE  : in  std_logic;
+      COMMAND : in  std_logic_vector(9 downto 0);
+      WRITER  : in  std_logic;
+      DTACK   : out std_logic;
 
       INDATA  : in  std_logic_vector(15 downto 0);
       OUTDATA : out std_logic_vector(15 downto 0);
 
-      DTACK : out std_logic;
-
+-- Configuration registers    
       ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
       OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
       PUSH_DLY      : out std_logic_vector(4 downto 0);
@@ -423,32 +401,16 @@ architecture ODMB_VME_architecture of ODMB_VME is
       KILL         : out std_logic_vector(NFEB+2 downto 1);
       CRATEID      : out std_logic_vector(7 downto 0);
 
-      -- From BPI_PORT
+-- From BPI_PORT
       BPI_CFG_UL_PULSE : in std_logic;
       BPI_CFG_DL_PULSE : in std_logic;
 
--- From BPI_CFG_CONTROLLER
+-- From BPI_CTRL
       CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
-      CC_CFG_REG_WE : in std_logic_vector(15 downto 0);
 
--- To BPI_CFG_CONTROLLER
-      CFG_REG0 : out std_logic_vector(15 downto 0);
-      CFG_REG1 : out std_logic_vector(15 downto 0);
-      CFG_REG2 : out std_logic_vector(15 downto 0);
-      CFG_REG3 : out std_logic_vector(15 downto 0);
-      CFG_REG4 : out std_logic_vector(15 downto 0);
-      CFG_REG5 : out std_logic_vector(15 downto 0);
-      CFG_REG6 : out std_logic_vector(15 downto 0);
-      CFG_REG7 : out std_logic_vector(15 downto 0);
-      CFG_REG8 : out std_logic_vector(15 downto 0);
-      CFG_REG9 : out std_logic_vector(15 downto 0);
-      CFG_REGA : out std_logic_vector(15 downto 0);
-      CFG_REGB : out std_logic_vector(15 downto 0);
-      CFG_REGC : out std_logic_vector(15 downto 0);
-      CFG_REGD : out std_logic_vector(15 downto 0);
-      CFG_REGE : out std_logic_vector(15 downto 0);
-      CFG_REGF : out std_logic_vector(15 downto 0)
-
+-- From/to BPI_CFG_CONTROLLER
+      CC_CFG_REG_WE : in  integer range 0 to NREGS;
+      BPI_CFG_REGS  : out cfg_regs_array
       );
   end component;
 
@@ -666,37 +628,26 @@ architecture ODMB_VME_architecture of ODMB_VME is
   end component;
 
   component BPI_CFG_CONTROLLER is
+    generic (
+      NREGS : integer := 15             -- Number of Configuration registers
+      );  
     port(
-
       clk : in std_logic;
       rst : in std_logic;
 
+-- From VMECONFREGS
+      bpi_cfg_reg_we_o : out integer range 0 to NREGS;
+      bpi_cfg_regs     : in  cfg_regs_array;
+
+-- From/to BPI_PORT and BPI_CTRL  
       bpi_cfg_ul_start : in std_logic;
       bpi_cfg_dl_start : in std_logic;
       bpi_done         : in std_logic;
-      bpi_cfg_reg0     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg1     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg2     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg3     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg4     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg5     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg6     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg7     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg8     : in std_logic_vector(15 downto 0);
-      bpi_cfg_reg9     : in std_logic_vector(15 downto 0);
-      bpi_cfg_rega     : in std_logic_vector(15 downto 0);
-      bpi_cfg_regb     : in std_logic_vector(15 downto 0);
-      bpi_cfg_regc     : in std_logic_vector(15 downto 0);
-      bpi_cfg_regd     : in std_logic_vector(15 downto 0);
-      bpi_cfg_rege     : in std_logic_vector(15 downto 0);
-      bpi_cfg_regf     : in std_logic_vector(15 downto 0);
 
       bpi_dis          : out std_logic;
       bpi_en           : out std_logic;
       bpi_cfg_reg_we_i : in  std_logic;
-      bpi_cfg_reg_we_o : out std_logic_vector(15 downto 0);
       bpi_cfg_busy     : out std_logic;
---      bpi_cfg_data_sel : in  std_logic;
       bpi_cmd_fifo_we  : out std_logic;
       bpi_cmd_fifo_in  : out std_logic_vector(15 downto 0)
       );
@@ -795,43 +746,20 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal outdata_testctrl : std_logic_vector(15 downto 0);
   signal outdata_systest  : std_logic_vector(15 downto 0);
 
-  signal test_reg0 : std_logic_vector(15 downto 0) := x"fff0";
-  signal test_reg1 : std_logic_vector(15 downto 0) := x"fff1";
-  signal test_reg2 : std_logic_vector(15 downto 0) := x"fff2";
-  signal test_reg3 : std_logic_vector(15 downto 0) := x"fff3";
-
-  signal cfg_reg0 : std_logic_vector(15 downto 0) := x"ff00";
-  signal cfg_reg1 : std_logic_vector(15 downto 0) := x"ff01";
-  signal cfg_reg2 : std_logic_vector(15 downto 0) := x"ff02";
-  signal cfg_reg3 : std_logic_vector(15 downto 0) := x"ff03";
-  signal cfg_reg4 : std_logic_vector(15 downto 0) := x"ff04";
-  signal cfg_reg5 : std_logic_vector(15 downto 0) := x"ff05";
-  signal cfg_reg6 : std_logic_vector(15 downto 0) := x"ff06";
-  signal cfg_reg7 : std_logic_vector(15 downto 0) := x"ff07";
-  signal cfg_reg8 : std_logic_vector(15 downto 0) := x"ff08";
-  signal cfg_reg9 : std_logic_vector(15 downto 0) := x"ff09";
-  signal cfg_rega : std_logic_vector(15 downto 0) := x"ff0a";
-  signal cfg_regb : std_logic_vector(15 downto 0) := x"ff0b";
-  signal cfg_regc : std_logic_vector(15 downto 0) := x"ff0c";
-  signal cfg_regd : std_logic_vector(15 downto 0) := x"ff0d";
-  signal cfg_rege : std_logic_vector(15 downto 0) := x"ff0e";
-  signal cfg_regf : std_logic_vector(15 downto 0) := x"ff0f";
+  -- VMECONFREGS
+  signal bpi_cfg_regs       : cfg_regs_array;
+  signal cc_bpi_cfg_reg_we  : integer range 0 to NREGS;
+  signal cc_bpi_cfg_reg_in  : std_logic_vector(15 downto 0);
+  signal sel_bpi_cfg_reg_in : std_logic_vector(15 downto 0);
 
   signal vme_bpi_cmd_fifo_data, cc_bpi_cmd_fifo_data : std_logic_vector(15 downto 0);
   signal vme_bpi_we, cc_bpi_we                       : std_logic;
   signal vme_bpi_dsbl, cc_bpi_dsbl                   : std_logic;
   signal vme_bpi_enbl, cc_bpi_enbl                   : std_logic;
-  signal bpi_cfg_dl                                  : std_logic                    := '0';
-  signal bpi_cfg_ul                                  : std_logic                    := '0';
-  signal bpi_cfg_reg_we_vec                          : std_logic_vector(3 downto 0) := "0000";
+  signal bpi_cfg_dl                                  : std_logic := '0';
+  signal bpi_cfg_ul                                  : std_logic := '0';
   signal bpi_cfg_ul_pulse, bpi_cfg_dl_pulse          : std_logic;  -- TD
   signal bpi_cfg_busy                                : std_logic;
---  signal bpi_cfg_data_sel                            : std_logic;
-
--- TD
-  signal CC_BPI_CFG_REG_IN      : std_logic_vector(15 downto 0);
-  signal CC_BPI_CFG_REG_WE_VEC  : std_logic_vector(15 downto 0);
-  signal SEL_BPI_CFG_REG_IN     : std_logic_vector(15 downto 0);
 
   signal dtack_dev : std_logic_vector(9 downto 0);
 
@@ -959,59 +887,47 @@ begin
 
 
   DEV4_VMECONFREGS : VMECONFREGS
-    port map (
-      SLOWCLK => CLK_S2,
-      CLK     => clk,
-      RST     => RST,
+    generic map (
+      NREGS => NREGS,
+      NFEB  => NFEB
+      ) port map (
+        SLOWCLK => CLK_S2,
+        CLK     => clk,
+        RST     => RST,
 
-      DEVICE  => DEVICE(4),
-      STROBE  => STROBE,
-      COMMAND => CMD,
-      WRITER  => VME_WRITE_B,
+        DEVICE  => DEVICE(4),
+        STROBE  => STROBE,
+        COMMAND => CMD,
+        WRITER  => VME_WRITE_B,
 
-      INDATA  => VME_DATA_IN,
-      OUTDATA => OUTDATA_VMECONFREGS,
+        INDATA  => VME_DATA_IN,
+        OUTDATA => OUTDATA_VMECONFREGS,
 
-      DTACK         => DTACK_DEV(4),
-      ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      OTMB_PUSH_DLY => OTMB_PUSH_DLY,
-      PUSH_DLY      => PUSH_DLY,
-      LCT_L1A_DLY   => LCT_L1A_DLY,
+        DTACK         => DTACK_DEV(4),
+        ALCT_PUSH_DLY => ALCT_PUSH_DLY,
+        OTMB_PUSH_DLY => OTMB_PUSH_DLY,
+        PUSH_DLY      => PUSH_DLY,
+        LCT_L1A_DLY   => LCT_L1A_DLY,
 
-      INJ_DLY    => INJ_DLY,
-      EXT_DLY    => EXT_DLY,
-      CALLCT_DLY => CALLCT_DLY,
+        INJ_DLY    => INJ_DLY,
+        EXT_DLY    => EXT_DLY,
+        CALLCT_DLY => CALLCT_DLY,
 
-      NWORDS_DUMMY => NWORDS_DUMMY,
-      KILL         => KILL,
-      CRATEID      => CRATEID,
+        NWORDS_DUMMY => NWORDS_DUMMY,
+        KILL         => KILL,
+        CRATEID      => CRATEID,
 
-      -- From BPI_PORT
-      BPI_CFG_UL_PULSE => bpi_cfg_ul_pulse,
-      BPI_CFG_DL_PULSE => bpi_cfg_dl_pulse,
+        -- From BPI_PORT
+        BPI_CFG_UL_PULSE => bpi_cfg_ul_pulse,
+        BPI_CFG_DL_PULSE => bpi_cfg_dl_pulse,
 
--- From BPI_CFG_CONTROLLER
-      CC_CFG_REG_IN => CC_BPI_CFG_REG_IN,
-      CC_CFG_REG_WE => CC_BPI_CFG_REG_WE_VEC,
+        -- From BPI_CTRL
+        CC_CFG_REG_IN => BPI_CFG_REG_IN,
 
--- To BPI_CFG_CONTROLLER
-      CFG_REG0 => CFG_REG0,
-      CFG_REG1 => CFG_REG1,
-      CFG_REG2 => CFG_REG2,
-      CFG_REG3 => CFG_REG3,
-      CFG_REG4 => CFG_REG4,
-      CFG_REG5 => CFG_REG5,
-      CFG_REG6 => CFG_REG6,
-      CFG_REG7 => CFG_REG7,
-      CFG_REG8 => CFG_REG8,
-      CFG_REG9 => CFG_REG9,
-      CFG_REGA => CFG_REGa,
-      CFG_REGB => CFG_REGb,
-      CFG_REGC => CFG_REGc,
-      CFG_REGD => CFG_REGd,
-      CFG_REGE => CFG_REGe,
-      CFG_REGF => CFG_REGf
-      );
+        -- From/to BPI_CFG_CONTROLLER
+        CC_CFG_REG_WE => CC_BPI_CFG_REG_WE,
+        BPI_CFG_REGS  => bpi_cfg_regs
+        );
 
 
   DEV5_TESTFIFOS : TESTFIFOS
@@ -1081,7 +997,7 @@ begin
       DTACK             => dtack_dev(6),  -- DTACK bar
       -- BPI controls
       BPI_RST           => BPI_RST,     -- Resets BPI interface state machines
-      BPI_CMD_FIFO_DATA => VME_BPI_CMD_FIFO_DATA,   -- Data for command FIFO
+      BPI_CMD_FIFO_DATA => VME_BPI_CMD_FIFO_DATA,  -- Data for command FIFO
       BPI_WE            => VME_BPI_WE,  -- Command FIFO write enable  (pulse one clock cycle for one write)
       BPI_RE            => BPI_RE,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
       BPI_DSBL          => VME_BPI_DSBL,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
@@ -1092,7 +1008,7 @@ begin
       BPI_RBK_WRD_CNT   => BPI_RBK_WRD_CNT,  -- Word count of the Read back FIFO (number of available reads)
       BPI_STATUS        => BPI_STATUS,  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         => BPI_TIMER,   -- General timer
-      BPI_CFG_UL_PULSE  => bpi_cfg_ul_pulse, 
+      BPI_CFG_UL_PULSE  => bpi_cfg_ul_pulse,
       BPI_CFG_DL_PULSE  => bpi_cfg_dl_pulse,
       BPI_CFG_BUSY      => BPI_CFG_BUSY,
       BPI_DONE          => BPI_DONE
@@ -1260,40 +1176,24 @@ begin
       outdata         => vme_data_out
       );
 
-  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
-
-  CC_BPI_CFG_REG_IN <= BPI_CFG_REG_IN;
-
-  BPI_CC_PM : BPI_CFG_CONTROLLER
+  BPI_CFG_CONTROLLER_PM : BPI_CFG_CONTROLLER
+    generic map(NREGS => NREGS)
     port map (
-      --CLK => clk_s2,
       CLK => clk,
       RST => rst,
 
+-- From/to VMECONFREGS
+      bpi_cfg_reg_we_o => CC_BPI_CFG_REG_WE,
+      bpi_cfg_regs     => bpi_CFG_REGS,
+
+-- From/to BPI_PORT and BPI_CTRL  
       bpi_cfg_dl_start => BPI_CFG_DL,
       bpi_cfg_ul_start => BPI_CFG_UL,
       bpi_done         => BPI_DONE,
-      bpi_cfg_reg0     => CFG_REG0,
-      bpi_cfg_reg1     => CFG_REG1,
-      bpi_cfg_reg2     => CFG_REG2,
-      bpi_cfg_reg3     => CFG_REG3,
-      bpi_cfg_reg4     => CFG_REG4,
-      bpi_cfg_reg5     => CFG_REG5,
-      bpi_cfg_reg6     => CFG_REG6,
-      bpi_cfg_reg7     => CFG_REG7,
-      bpi_cfg_reg8     => CFG_REG8,
-      bpi_cfg_reg9     => CFG_REG9,
-      bpi_cfg_rega     => CFG_REGa,
-      bpi_cfg_regb     => CFG_REGb,
-      bpi_cfg_regc     => CFG_REGc,
-      bpi_cfg_regd     => CFG_REGd,
-      bpi_cfg_rege     => CFG_REGe,
-      bpi_cfg_regf     => CFG_REGf,
 
       bpi_dis          => CC_BPI_DSBL,
       bpi_en           => CC_BPI_ENBL,
       bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
-      bpi_cfg_reg_we_o => CC_BPI_CFG_REG_WE_VEC,
       bpi_cfg_busy     => BPI_CFG_BUSY,
       bpi_cmd_fifo_we  => CC_BPI_WE,
       bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
@@ -1308,6 +1208,8 @@ begin
   BPI_CFG_UL_BUGGER <= bpi_cfg_ul_pulse;
   BPI_CFG_DL_BUGGER <= bpi_cfg_dl_pulse;
 
+  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
+
   vme_doe_b       <= doe_b;
   vme_doe         <= not doe_b;
   vme_tovme_b     <= tovme_b;
@@ -1317,13 +1219,10 @@ begin
   vme_sysfail_out <= '0';
   ext_vme_ga      <= vme_gap & vme_ga;
 
--- From/To LVMB
-  pon_oe_b <= '0';
 
-  vme_dtack_b <= not (dtack_dev(0) or dtack_dev(1) or dtack_dev(2) or
-                      dtack_dev(3) or dtack_dev(4) or dtack_dev(5) or
-                      dtack_dev(6) or dtack_dev(7) or dtack_dev(8) or
-                      dtack_dev(9));
+  PON_OE_B <= '0';                      -- To LVMB
+
+  VME_DTACK_B <= not or_reduce(dtack_dev);
 
 
 
