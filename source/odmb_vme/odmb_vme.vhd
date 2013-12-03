@@ -643,7 +643,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       bpi_cfg_ul_start : in std_logic;
       bpi_cfg_dl_start : in std_logic;
       bpi_done         : in std_logic;
-      --bpi_status       : in std_logic_vector(15 downto 0);
+      bpi_status       : in std_logic_vector(15 downto 0);
       
       bpi_dis          : out std_logic;
       bpi_en           : out std_logic;
@@ -733,9 +733,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_cfg_busy                                : std_logic;
 
   signal dtack_dev   : std_logic_vector(9 downto 0);
-  type dev_array is array(0 to 9) of std_logic_vector(15 downto 0);
+  type dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
   signal dev_outdata : dev_array;
-  signal device_index : integer range 0 to 9;
+  signal device_index : integer range 0 to 15;
+  signal cmd_adrs_inner : std_logic_vector (17 downto 2);
 
 begin
 
@@ -1128,7 +1129,7 @@ begin
       DEVICE  => device,
       STROBE  => strobe,
       COMMAND => cmd,
-      ADRS    => cmd_adrs,
+      ADRS    => cmd_adrs_inner,
 
       DIAGOUT => diagout_command,
       LED     => led_command
@@ -1149,7 +1150,7 @@ begin
       bpi_cfg_dl_start => BPI_CFG_DL,
       bpi_cfg_ul_start => BPI_CFG_UL,
       bpi_done         => BPI_DONE,
-      --bpi_status       => BPI_STATUS,
+      bpi_status       => BPI_STATUS,
       
       bpi_dis          => CC_BPI_DSBL,
       bpi_en           => CC_BPI_ENBL,
@@ -1159,9 +1160,10 @@ begin
       bpi_cmd_fifo_in  => CC_BPI_CMD_FIFO_DATA
       );
 
-  device_index <= to_integer(unsigned(vme_addr(15 downto 12)));
+  device_index <= to_integer(unsigned(cmd_adrs_inner(15 downto 12)));
   vme_data_out <= dev_outdata(device_index);
-
+  cmd_adrs <= cmd_adrs_inner;
+  
   BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_CMD_FIFO_DATA;
   BPI_WE            <= VME_BPI_WE            when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_WE;
   BPI_DSBL          <= VME_BPI_DSBL          when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_DSBL;

@@ -23,6 +23,7 @@ entity bpi_cfg_controller is
     bpi_cfg_ul_start : in std_logic;
     bpi_cfg_dl_start : in std_logic;
     bpi_done         : in std_logic;
+    bpi_status       : in std_logic_vector(15 downto 0);
 
     bpi_dis          : out std_logic;
     bpi_en           : out std_logic;
@@ -36,21 +37,22 @@ end bpi_cfg_controller;
 architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
 
   type state_type is (IDLE, BPI_DISABLE, BPI_FIFO_LOAD_DL, BPI_ENABLE_DL, BPI_WAIT4DONE_DL,
-                      BPI_FIFO_LOAD_UL, BPI_ENABLE_UL, BPI_WAIT4DONE_UL);
+                      BPI_FIFO_LOAD_UL, BPI_ENABLE_UL, BPI_WAIT4DONE_UL, BPI_FIFO_LOAD_ER,
+                      BPI_ENABLE_ER, BPI_WAIT4DONE_ER);
   signal next_state, current_state : state_type;
 
---  constant NW_DL : integer := 25;       -- 4xN_REGS
--- GM, TD: change to reflect commenting out set array mode.  And unlock executed outside via VME
-  constant NW_DL : integer := NREGS+4;  -- 4xN_REGS
---  constant NW_UL : integer := 15;       -- 3xN_REGS
--- GM, TD: change to reflect commenting out set array mode.
-  constant NW_UL : integer := 4;        -- 3xN_REGS
+  constant NW_ER : integer := 4;        -- 4 erase commands to parse
+  constant NW_DL : integer := NREGS+4;
+  constant NW_UL : integer := 4;
 
   type   fifo_data_dl is array (0 to NW_DL-1) of std_logic_vector(15 downto 0);
   signal bpi_cmd_fifo_data_dl : fifo_data_dl;
 
   type   fifo_data_ul is array (NW_UL-1 downto 0) of std_logic_vector(15 downto 0);
   signal bpi_cmd_fifo_data_ul : fifo_data_ul;
+
+  type   fifo_data_er is array (0 to NW_ER) of std_logic_vector(15 downto 0);
+  signal bpi_cmd_fifo_data_er : fifo_data_er;
 
   signal cnt_en, cnt_res : std_logic;
   signal cnt_out         : integer;
@@ -66,30 +68,22 @@ architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
 
 begin
 
+-- Unlock-erase assignments (setting up for DL to PROM)
+  bpi_cmd_fifo_data_er(0) <= x"0ff7";   -- bank/block address
+  bpi_cmd_fifo_data_er(1) <= x"0000";   -- block offset
+  bpi_cmd_fifo_data_er(2) <= x"0014";   -- unlock (?)
+  bpi_cmd_fifo_data_er(3) <= x"000a";   -- erase (?)
+
 -- Download Assignments (Configuration Registers to PROM)
-
--- GM, TD: Unlock and erase of block 126 executed via VME.  
---  bpi_cmd_fifo_data_dl(0) <= x"0017";   -- Load Address in Bank 0 / Block 0
---  bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
---  bpi_cmd_fifo_data_dl(2) <= x"0014";   -- Unlock Bank 0 / Block 0
-
---  GM, TD: Set read array mode doesn't seem to be needed.
---  bpi_cmd_fifo_data_dl(3) <= x"0017";  -- Load Address in Bank 0 / Block 0
---  bpi_cmd_fifo_data_dl(4) <= x"0000";  -- Set Offset = 0 
---  bpi_cmd_fifo_data_dl(5) <= x"0005";  -- Set Read Array Mode
-
--- GM, TD: Block 0 replaced by block 127 (parameter block) --> FD7 replaces 017
   bpi_cmd_fifo_data_dl(0) <= x"0ff7";   -- Load Address in Bank 0 / Block 127
   bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
   bpi_cmd_fifo_data_dl(2) <= x"01ec";   -- Buffer_Program - N = 16
   GEN_DATA : for index in 0 to NREGS-1 generate
     bpi_cmd_fifo_data_dl(index+3) <= bpi_cfg_regs(index);  -- Set data
   end generate GEN_DATA;
-
   bpi_cmd_fifo_data_dl(NREGS+3) <= x"0005";  -- Set Read Array Mode
 
 -- Upload Assignments (PROM to Configuration Registers)
--- GM, TD: Block 0 replaced by block 127 (parameter block) --> FD7 replaces 017
   bpi_cmd_fifo_data_ul(0) <= x"0ff7";   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(1) <= x"0000";   -- Set Offset = 0 
   bpi_cmd_fifo_data_ul(2) <= x"01e4";   -- Read_N - N = 16
@@ -103,7 +97,7 @@ begin
     elsif (rising_edge(bpi_cfg_ul_start)) then
       bpi_cfg_ul <= '1';
     end if;
-    
+
     if (rst = '1') or (bpi_cfg_dl_reset = '1') then
       bpi_cfg_dl <= '0';
     elsif (rising_edge(bpi_cfg_dl_start)) then
@@ -150,7 +144,7 @@ begin
     end if;
   end process;
 
-  fsm_logic : process (bpi_cfg_ul, bpi_cfg_dl, bpi_done, cnt_out, current_state)
+  fsm_logic : process (bpi_cfg_ul, bpi_cfg_dl, bpi_done, cnt_out, bpi_status, current_state)
   begin
     bpi_en              <= '0';
     bpi_dis             <= '0';
@@ -179,7 +173,64 @@ begin
         if (bpi_cfg_ul = '1') then
           next_state <= BPI_FIFO_LOAD_UL;
         elsif (bpi_cfg_dl = '1') then
+          next_state <= BPI_FIFO_LOAD_ER;
+        end if;
+
+      when BPI_FIFO_LOAD_ER =>
+        bpi_cfg_busy <= '1';
+        cnt_en       <= '1';
+        if (cnt_out < NW_ER) then
+          bpi_cmd_fifo_we <= '1';
+          bpi_cmd_fifo_in <= bpi_cmd_fifo_data_er(cnt_out);
+          next_state      <= BPI_FIFO_LOAD_ER;
+        else
+          bpi_cmd_fifo_we <= '0';
+          bpi_cmd_fifo_in <= (others => '0');
+          next_state      <= BPI_ENABLE_ER;
+        end if;
+        
+      when BPI_ENABLE_ER =>
+        bpi_en       <= '1';
+        bpi_cfg_busy <= '1';
+        cnt_res      <= '1';            -- Reset counter for DL
+        next_state   <= BPI_WAIT4DONE_ER;
+
+      when BPI_WAIT4DONE_ER =>
+        bpi_cfg_busy <= '1';
+        if (bpi_status(7) = '1') then
           next_state <= BPI_FIFO_LOAD_DL;
+          bpi_dis    <= '1';
+          cnt_en     <= '1';
+        else
+          next_state <= BPI_WAIT4DONE_ER;
+        end if;
+        
+      when BPI_FIFO_LOAD_DL =>
+        bpi_cfg_busy <= '1';
+        cnt_en       <= '1';
+        if (cnt_out < NW_DL) then
+          bpi_cmd_fifo_we <= '1';
+          bpi_cmd_fifo_in <= bpi_cmd_fifo_data_dl(cnt_out);
+          next_state      <= BPI_FIFO_LOAD_DL;
+        else
+          bpi_cmd_fifo_we <= '0';
+          bpi_cmd_fifo_in <= (others => '0');
+          next_state      <= BPI_ENABLE_DL;
+        end if;
+
+      when BPI_ENABLE_DL =>
+        bpi_en       <= '1';
+        bpi_cfg_busy <= '1';
+        next_state   <= BPI_WAIT4DONE_DL;
+
+      when BPI_WAIT4DONE_DL =>
+        bpi_cfg_busy <= '1';
+        if (bpi_done = '1') then
+          bpi_cfg_dl_reset <= '1';
+          next_state       <= IDLE;
+        else
+          bpi_cfg_dl_reset <= '0';
+          next_state       <= BPI_WAIT4DONE_DL;
         end if;
 
       when BPI_FIFO_LOAD_UL =>
@@ -195,29 +246,11 @@ begin
           next_state      <= BPI_ENABLE_UL;
         end if;
 
-      when BPI_FIFO_LOAD_DL =>
-        bpi_cfg_busy <= '1';
-        cnt_en       <= '1';
-        if (cnt_out < NW_DL) then
-          bpi_cmd_fifo_we <= '1';
-          bpi_cmd_fifo_in <= bpi_cmd_fifo_data_dl(cnt_out);
-          next_state      <= BPI_FIFO_LOAD_DL;
-        else
-          bpi_cmd_fifo_we <= '0';
-          bpi_cmd_fifo_in <= (others => '0');
-          next_state      <= BPI_ENABLE_DL;
-        end if;
-
       when BPI_ENABLE_UL =>
         bpi_en              <= '1';
         bpi_cfg_busy        <= '1';
         bpi_cfg_reg_sel_rst <= '1';
         next_state          <= BPI_WAIT4DONE_UL;
-
-      when BPI_ENABLE_DL =>
-        bpi_en       <= '1';
-        bpi_cfg_busy <= '1';
-        next_state   <= BPI_WAIT4DONE_DL;
 
       when BPI_WAIT4DONE_UL =>
         bpi_cfg_busy <= '1';
@@ -227,16 +260,6 @@ begin
         else
           bpi_cfg_ul_reset <= '0';
           next_state       <= BPI_WAIT4DONE_UL;
-        end if;
-
-      when BPI_WAIT4DONE_DL =>
-        bpi_cfg_busy <= '1';
-        if (bpi_done = '1') then
-          bpi_cfg_dl_reset <= '1';
-          next_state       <= IDLE;
-        else
-          bpi_cfg_dl_reset <= '0';
-          next_state       <= BPI_WAIT4DONE_DL;
         end if;
 
     end case;

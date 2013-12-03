@@ -98,7 +98,7 @@ architecture BPI_PORT_Arch of BPI_PORT is
 
   signal out_ctrl_reg                                   : std_logic_vector(15 downto 0);
   signal bpi_cfg_ul_pulse_inner, bpi_cfg_dl_pulse_inner : std_logic;  --TD
-  signal bpi_done_pulse                                 : std_logic;
+  signal bpi_done_pulse, bpi_cfg_busy_b                 : std_logic;
 
   signal bpi_port_csp_data                  : std_logic_vector(127 downto 0);
   signal bpi_port_csp_trig                  : std_logic_vector(7 downto 0);
@@ -142,7 +142,7 @@ begin  --Architecture
   FD_D_CFG_UL_DL : FDC port map(D_DTACK_CFG_UL_DL, DD_DTACK_CFG_UL_DL, RST_CFG_UL_DL, '1');
   FD_CFG_UL_DL   : FD port map(Q_DTACK_CFG_UL_DL, SLOWCLK, D_DTACK_CFG_UL_DL);
   BPI_DONE_PE    : PULSE_EDGE port map(bpi_done_pulse, open, clk, rst, 3, BPI_DONE);
-  RST_CFG_UL_DL      <= bpi_done_pulse and Q_DTACK_CFG_UL_DL;
+  RST_CFG_UL_DL      <= not BPI_CFG_BUSY and Q_DTACK_CFG_UL_DL;
 
   -- DTACK for bpi_enbl
   dd_dtack_send_bpi_enbl <= send_bpi_enbl and STROBE;
@@ -161,9 +161,10 @@ begin  --Architecture
 
 
   -- Setting MUXes for Upload and Download CFG registers
-  start_ul <= SEND_BPI_CFG_UL or rst_cfg_ul_pulse;
+  start_ul       <= SEND_BPI_CFG_UL or rst_cfg_ul_pulse;
+  bpi_cfg_busy_b <= not BPI_CFG_BUSY;
   FDCP_TEST_UL : FDCP port map (bpi_cfg_ul_pulse_inner, BPI_DONE, RST, '0', start_ul);
-  FDCP_TEST_DL : FDCP port map (bpi_cfg_dl_pulse_inner, BPI_DONE, RST, '0', SEND_BPI_CFG_DL);
+  FDCP_TEST_DL : FDCP port map (bpi_cfg_dl_pulse_inner, bpi_cfg_busy_b, RST, '0', SEND_BPI_CFG_DL);
 
   -- Upload config from PROM on RST
   rst_b            <= not RST;
