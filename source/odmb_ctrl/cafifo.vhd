@@ -195,7 +195,8 @@ begin
   dcfeb_l1a_dav7     <= dcfeb_l1a_dav(7);
 
   --cafifo_wren <= l1a;
-  cafifo_wren <= or_reduce(l1a_match_in);  -- Avoids empty packets
+  --cafifo_wren <= or_reduce(l1a_match_in);  -- Avoids empty packets
+  cafifo_wren <= or_reduce(l1a_match_in) when (cafifo_full='0') else '0';  -- Avoids empty packets
   cafifo_rden <= pop;
 
 -- RX FSMs
@@ -488,7 +489,7 @@ begin
         cafifo_empty <= '0';
         cafifo_full  <= '0';
         if (cafifo_wren = '1' and cafifo_rden = '0') then
-          if (wr_addr_out = rd_addr_out-1) then
+          if ((wr_addr_out = rd_addr_out-1) or (wr_addr_out=CAFIFO_SIZE-1 and rd_addr_out=0)) then
             next_state <= FIFO_FULL;
           else
             next_state <= FIFO_NOT_EMPTY;
