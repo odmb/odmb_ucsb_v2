@@ -4,6 +4,7 @@
 library ieee;
 library work;
 use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use work.ucsb_types.all;
 
@@ -77,7 +78,8 @@ begin
 -- Download Assignments (Configuration Registers to PROM)
   bpi_cmd_fifo_data_dl(0) <= x"0ff7";   -- Load Address in Bank 0 / Block 127
   bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
-  bpi_cmd_fifo_data_dl(2) <= x"01ec";   -- Buffer_Program - N = 16
+  bpi_cmd_fifo_data_dl(2) <= std_logic_vector(to_unsigned(NREGS-1, 11)) & "01100";  -- Buffer_Program N = NREGS-1
+  --bpi_cmd_fifo_data_dl(2) <= x"01ec";   -- Buffer_Program - N = 16
   GEN_DATA : for index in 0 to NREGS-1 generate
     bpi_cmd_fifo_data_dl(index+3) <= bpi_cfg_regs(index);  -- Set data
   end generate GEN_DATA;
