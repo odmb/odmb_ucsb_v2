@@ -52,6 +52,7 @@ entity VMECONFREGS is
     CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
 
 -- From/to BPI_CFG_CONTROLLER
+    BPI_CFG_BUSY  : in  std_logic;
     CC_CFG_REG_WE : in  integer range 0 to NREGS;
     BPI_CFG_REGS  : out cfg_regs_array
     );
@@ -102,7 +103,7 @@ begin
   NWORDS_DUMMY  <= cfg_regs(10)(15 downto 0);
 
   -- Writing to registers
-  vme_cfg_reg_we <= cfg_reg_index when (DEVICE = '1' and WRITER = '0') else NREGS;
+  vme_cfg_reg_we <= cfg_reg_index when (DEVICE = '1' and WRITER = '0' and BPI_CFG_BUSY = '0') else NREGS;
 
   cfg_reg_we  <= vme_cfg_reg_we when (bpi_cfg_ul_pulse = '0') else cc_cfg_reg_we;
   cfg_reg_clk <= STROBE         when (bpi_cfg_ul_pulse = '0') else CLK;

@@ -409,6 +409,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
 
 -- From/to BPI_CFG_CONTROLLER
+      BPI_CFG_BUSY  : in  std_logic;
       CC_CFG_REG_WE : in  integer range 0 to NREGS;
       BPI_CFG_REGS  : out cfg_regs_array
       );
@@ -644,7 +645,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       bpi_cfg_dl_start : in std_logic;
       bpi_done         : in std_logic;
       bpi_status       : in std_logic_vector(15 downto 0);
-      
+
       bpi_dis          : out std_logic;
       bpi_en           : out std_logic;
       bpi_cfg_reg_we_i : in  std_logic;
@@ -710,9 +711,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal diagout_command : std_logic_vector(19 downto 0);
   signal led_command     : std_logic_vector(2 downto 0);
 
-  signal led_cfebjtag     : std_logic;
+  signal led_cfebjtag : std_logic;
 
-  signal led_odmbjtag     : std_logic;
+  signal led_odmbjtag : std_logic;
 
   signal outdata_mbcjtag : std_logic_vector(15 downto 0);
   signal led_mbcjtag     : std_logic;
@@ -732,10 +733,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_cfg_ul_pulse, bpi_cfg_dl_pulse          : std_logic;  -- TD
   signal bpi_cfg_busy                                : std_logic;
 
-  signal dtack_dev   : std_logic_vector(9 downto 0);
-  type dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
-  signal dev_outdata : dev_array;
-  signal device_index : integer range 0 to 15;
+  signal dtack_dev      : std_logic_vector(9 downto 0);
+  type   dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
+  signal dev_outdata    : dev_array;
+  signal device_index   : integer range 0 to 15;
   signal cmd_adrs_inner : std_logic_vector (17 downto 2);
 
 begin
@@ -900,6 +901,7 @@ begin
         CC_CFG_REG_IN => BPI_CFG_REG_IN,
 
         -- From/to BPI_CFG_CONTROLLER
+        BPI_CFG_BUSY  => bpi_cfg_busy,
         CC_CFG_REG_WE => CC_BPI_CFG_REG_WE,
         BPI_CFG_REGS  => bpi_cfg_regs
         );
@@ -1151,7 +1153,7 @@ begin
       bpi_cfg_ul_start => BPI_CFG_UL,
       bpi_done         => BPI_DONE,
       bpi_status       => BPI_STATUS,
-      
+
       bpi_dis          => CC_BPI_DSBL,
       bpi_en           => CC_BPI_ENBL,
       bpi_cfg_reg_we_i => BPI_CFG_REG_WE,
@@ -1162,8 +1164,8 @@ begin
 
   device_index <= to_integer(unsigned(cmd_adrs_inner(15 downto 12)));
   vme_data_out <= dev_outdata(device_index);
-  cmd_adrs <= cmd_adrs_inner;
-  
+  cmd_adrs     <= cmd_adrs_inner;
+
   BPI_CMD_FIFO_DATA <= VME_BPI_CMD_FIFO_DATA when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_CMD_FIFO_DATA;
   BPI_WE            <= VME_BPI_WE            when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_WE;
   BPI_DSBL          <= VME_BPI_DSBL          when (RST = '0' and BPI_CFG_UL_PULSE = '0' and BPI_CFG_DL_PULSE = '0') else CC_BPI_DSBL;

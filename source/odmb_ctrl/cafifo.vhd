@@ -128,8 +128,8 @@ architecture cafifo_architecture of cafifo is
 
   type     timeout_array is array (NFEB+2 downto 1) of integer range 0 to 800;
   signal   timeout_cnt                     : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  --constant timeout_max : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
-  constant timeout_max                     : timeout_array := (70, 70, 18, 18, 18, 18, 18, 18, 18);
+  constant timeout_max : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
+  --constant timeout_max                     : timeout_array := (70, 70, 18, 18, 18, 18, 18, 18, 18);
                                         -- count to these numbers before
                                         -- timeout (7 us, 12 us)
   signal   timeout_cnt_en, timeout_cnt_rst : std_logic_vector(NFEB+2 downto 1);

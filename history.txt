@@ -7,6 +7,12 @@
 =                                                                    =
 ======================================================================
 
+V02-00: 3 December 2013, Manuel
+--------------------------------
+Storage of configuration registers to PROM.
+Re-write of CONTROL and inclusion of timeouts.
+Addition of ChipScope Pro.
+
 V01-0B: 30 October 2013, Manuel
 --------------------------------
 Added capability to split packets larger than 4096 words in PCFIFO.

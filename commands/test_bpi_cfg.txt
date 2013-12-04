@@ -51,7 +51,7 @@ r 403C 0      ## Read_CFG_REGF
 == Load PROM from CFG_CONTROLLER 
 ==================================================================================================
 
-W  601C  0	    Download CFG Regs to Flash PROM
+W  6000  0	    Download CFG Regs to Flash PROM
 
 w 4000 ee10   ## Select_CFG_REG0 (BPI mode = 10 -> CFG Registers loaded via VME]
 w 4004 ee11   ## Select_CFG_REG1 (BPI mode = 10 -> CFG Registers loaded via VME]
@@ -70,7 +70,7 @@ w 4034 ee1d   ## Select_CFG_REGD (BPI mode = 10 -> CFG Registers loaded via VME]
 w 4038 ee1e   ## Select_CFG_REGE (BPI mode = 10 -> CFG Registers loaded via VME]
 w 403C ee1f   ## Select_CFG_REGF (BPI mode = 10 -> CFG Registers loaded via VME]
 
-W 6018 0            Upload CFG Regs from PROM
+W 6004 0            Upload CFG Regs from PROM
 
 ==================================================================================================
 == Read_CFG_REGs(expected_values=ee1x)

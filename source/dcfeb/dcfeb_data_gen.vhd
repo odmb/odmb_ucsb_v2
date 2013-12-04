@@ -82,7 +82,8 @@ begin
     if (rst = '1') then
       l1a_cnt_fifo_wr_en <= '0';
     elsif (rising_edge(clk)) then
-      if (l1a_match = '1' and ((l1a_cnt_int mod 2) /= 0)) then
+      --if (l1a_match = '1' and ((l1a_cnt_int mod 2) /= 0)) then
+      if (l1a_match = '1') then
         l1a_cnt_fifo_wr_en <= '1';
       else
         l1a_cnt_fifo_wr_en <= '0';
