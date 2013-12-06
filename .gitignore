@@ -16,9 +16,6 @@ iseconfig/
 _xmsgs/
 _ngo/
 xst/
-ipcore_dir/*.*
-!ipcore_dir/*.vhd
-!ipcore_dire/*.xco
 *.syr
 *.map
 *.mrp
@@ -57,6 +54,11 @@ ipcore_dir/*.*
 *.mcs
 *.cfi
 *.prm
+ipcore_dir/*.*
+!ipcore_dir/*.vhd
+!ipcore_dir/*.xco
+!ipcore_dir/*.ngc
+!ipcore_dir/*.xise
 
 ### Chip Scope Pro ###
 *.cpj
