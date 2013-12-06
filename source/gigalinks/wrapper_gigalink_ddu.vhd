@@ -128,7 +128,8 @@ entity WRAPPER_GIGALINK_DDU is
       GTX0_TXRESETDONE_OUT   : out std_logic;
       -- PRBS Ports --------------------------------------------------------------
       GTX0_PRBSCNTRESET_IN   : in  std_logic;
-      GTX0_ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+      GTX0_ENTXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
+      GTX0_ENRXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
       -- DRP Ports ---------------------------------------------------------------
       GTX0_DCLK_IN           : in  std_logic;
       GTX0_DEN_IN            : in  std_logic;
@@ -212,7 +213,8 @@ architecture RTL of WRAPPER_GIGALINK_DDU is
         TXRESETDONE_OUT   : out std_logic;
         -- PRBS Ports --------------------------------------------------------------
         PRBSCNTRESET_IN   : in  std_logic;
-        ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+        ENTXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
+        ENRXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
         -- DRP Ports ---------------------------------------------------------------
         DCLK_IN           : in  std_logic;
         DEN_IN            : in  std_logic;
@@ -297,7 +299,8 @@ begin
       TXRESETDONE_OUT   => GTX0_TXRESETDONE_OUT,
       -- PRBS Ports --------------------------------------------------------------
       PRBSCNTRESET_IN   => GTX0_PRBSCNTRESET_IN,
-      ENPRBSTST_IN      => GTX0_ENPRBSTST_IN,
+      ENTXPRBSTST_IN    => GTX0_ENTXPRBSTST_IN,
+      ENRXPRBSTST_IN    => GTX0_ENRXPRBSTST_IN,
       -- DRP Ports ---------------------------------------------------------------
       DCLK_IN           => GTX0_DCLK_IN,
       DEN_IN            => GTX0_DEN_IN,

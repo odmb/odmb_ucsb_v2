@@ -29,12 +29,14 @@ entity SYSTEM_TEST is
     PRBS_TYPE : out std_logic_vector(2 downto 0);
 
     -- DDU PRBS signals
-    DDU_PRBS_EN      : out std_logic;
+    DDU_PRBS_TX_EN   : out std_logic;
+    DDU_PRBS_RX_EN   : out std_logic;
     DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
     DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
     -- PC PRBS signals
-    PC_PRBS_EN      : out std_logic;
+    PC_PRBS_TX_EN   : out std_logic;
+    PC_PRBS_RX_EN   : out std_logic;
     PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
     PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
@@ -56,9 +58,9 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
 
   component csp_systemtest_la is
     port (
-      CLK     : in std_logic := 'X';
-      DATA    : in std_logic_vector (127 downto 0);
-      TRIG0   : in std_logic_vector (7 downto 0);
+      CLK     : in    std_logic := 'X';
+      DATA    : in    std_logic_vector (127 downto 0);
+      TRIG0   : in    std_logic_vector (7 downto 0);
       CONTROL : inout std_logic_vector (35 downto 0)
       );
   end component;
@@ -98,7 +100,8 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   end component;
 
   signal cmddev                                : std_logic_vector (15 downto 0);
-  signal w_ddu_prbs_en, w_pc_prbs_en           : std_logic;
+  signal w_ddu_prbs_tx_en, w_pc_prbs_tx_en     : std_logic;
+  signal w_ddu_prbs_rx_en, w_pc_prbs_rx_en     : std_logic;
   signal r_ddu_prbs_err_cnt, r_pc_prbs_err_cnt : std_logic;
   signal strobe_pulse                          : std_logic;
 
@@ -150,10 +153,10 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   signal otmb_prbs_cnt_rst                      : std_logic;
   signal w_otmb_prbs_cnt_rst                    : std_logic;
 
-  signal otmb_tx_good_cnt, otmb_tx_good_cnt_int : integer;
-  signal otmb_prbs_tx_en_cnt         : std_logic_vector (15 downto 0);
-  signal r_otmb_prbs_en_cnt                     : std_logic;
-  constant otmb_prbs_length     : integer := 10000;
+  signal   otmb_tx_good_cnt, otmb_tx_good_cnt_int : integer;
+  signal   otmb_prbs_tx_en_cnt                    : std_logic_vector (15 downto 0);
+  signal   r_otmb_prbs_en_cnt                     : std_logic;
+  constant otmb_prbs_length                       : integer := 10000;
 
 
   -- Declare the csp stuff here
@@ -163,36 +166,41 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
 begin
 
   cmddev             <= "000" & DEVICE & COMMAND & "00";
-  w_ddu_prbs_en      <= '1' when (cmddev = x"1000" and STROBE = '1' and WRITER = '0') else '0';
-  r_ddu_prbs_err_cnt <= '1' when (cmddev = x"100C" and WRITER = '1') else '0';
+  w_ddu_prbs_tx_en   <= '1' when (cmddev = x"1000" and STROBE = '1' and WRITER = '0') else '0';
+  w_ddu_prbs_rx_en   <= '1' when (cmddev = x"1004" and STROBE = '1' and WRITER = '0') else '0';
+  r_ddu_prbs_err_cnt <= '1' when (cmddev = x"100C" and WRITER = '1')                  else '0';
 
-  w_pc_prbs_en      <= '1' when (cmddev = x"1100" and STROBE = '1' and WRITER = '0') else '0';
-  r_pc_prbs_err_cnt <= '1' when (cmddev = x"110C" and WRITER = '1') else '0';
+  w_pc_prbs_tx_en   <= '1' when (cmddev = x"1100" and STROBE = '1' and WRITER = '0') else '0';
+  w_pc_prbs_rx_en   <= '1' when (cmddev = x"1104" and STROBE = '1' and WRITER = '0') else '0';
+  r_pc_prbs_err_cnt <= '1' when (cmddev = x"110C" and WRITER = '1')                  else '0';
 
   w_dcfeb_prbs_en      <= '1' when (cmddev = x"1200" and STROBE = '1' and WRITER = '0') else '0';
   w_dcfeb_prbs_fiber   <= '1' when (cmddev = x"1204" and STROBE = '1' and WRITER = '0') else '0';
-  r_dcfeb_prbs_fiber   <= '1' when (cmddev = x"1204" and WRITER = '1') else '0';
-  r_dcfeb_prbs_edge    <= '1' when (cmddev = x"1208" and WRITER = '1') else '0';
-  r_dcfeb_prbs_err_cnt <= '1' when (cmddev = x"120C" and WRITER = '1') else '0';
+  r_dcfeb_prbs_fiber   <= '1' when (cmddev = x"1204" and WRITER = '1')                  else '0';
+  r_dcfeb_prbs_edge    <= '1' when (cmddev = x"1208" and WRITER = '1')                  else '0';
+  r_dcfeb_prbs_err_cnt <= '1' when (cmddev = x"120C" and WRITER = '1')                  else '0';
 
   w_prbs_type <= '1' when (cmddev = x"1300" and STROBE = '1' and WRITER = '0') else '0';
-  r_prbs_type <= '1' when (cmddev = x"1300" and WRITER = '1') else '0';
+  r_prbs_type <= '1' when (cmddev = x"1300" and WRITER = '1')                  else '0';
 
   w_otmb_prbs_en       <= '1' when (cmddev = x"1400" and STROBE = '1' and WRITER = '0') else '0';
-  r_otmb_prbs_en_cnt   <= '1' when (cmddev = x"1404" and WRITER = '1') else '0';
-  r_otmb_prbs_good_cnt <= '1' when (cmddev = x"1408" and WRITER = '1') else '0';
-  r_otmb_prbs_err_cnt  <= '1' when (cmddev = x"140C" and WRITER = '1') else '0';
-  w_otmb_prbs_cnt_rst  <= '1' when (cmddev = x"1410" and STROBE = '1' and WRITER = '0') else '0';  
+  r_otmb_prbs_en_cnt   <= '1' when (cmddev = x"1404" and WRITER = '1')                  else '0';
+  r_otmb_prbs_good_cnt <= '1' when (cmddev = x"1408" and WRITER = '1')                  else '0';
+  r_otmb_prbs_err_cnt  <= '1' when (cmddev = x"140C" and WRITER = '1')                  else '0';
+  w_otmb_prbs_cnt_rst  <= '1' when (cmddev = x"1410" and STROBE = '1' and WRITER = '0') else '0';
 
   STROBE_PE : PULSE_EDGE port map(strobe_pulse, open, SLOWCLK, RST, 1, STROBE);
 
-  DDU_PRBS_EN <= w_ddu_prbs_en;
-  PC_PRBS_EN  <= w_pc_prbs_en;
+  DDU_PRBS_RX_EN <= w_ddu_prbs_rx_en;
+  PC_PRBS_RX_EN  <= w_pc_prbs_rx_en;
+
+  FDC_DDU_TX_PRBS : FDC port map(DDU_PRBS_TX_EN, w_ddu_prbs_tx_en, RST, or_reduce(INDATA));
+  FDC_PC_TX_PRBS  : FDC port map(PC_PRBS_TX_EN, w_pc_prbs_tx_en, RST, or_reduce(INDATA));
 
   GEN_PRBS : for i in 15 downto 0 generate
   begin
-    FDC_DDU_PRBS   : FDC port map(DDU_PRBS_TST_CNT(i), w_ddu_prbs_en, RST, INDATA(i));
-    FDC_PC_PRBS    : FDC port map(PC_PRBS_TST_CNT(i), w_pc_prbs_en, RST, INDATA(i));
+    FDC_DDU_PRBS   : FDC port map(DDU_PRBS_TST_CNT(i), w_ddu_prbs_rx_en, RST, INDATA(i));
+    FDC_PC_PRBS    : FDC port map(PC_PRBS_TST_CNT(i), w_pc_prbs_rx_en, RST, INDATA(i));
     FDC_DCFEB_PRBS : FDC port map(dcfeb_prbs_seq_cnt(i), w_dcfeb_prbs_en, RST, INDATA(i));
     FDC_OTMB_PRBS  : FDC port map(otmb_prbs_rx_sequences(i), w_otmb_prbs_en, RST, INDATA(i));
   end generate GEN_PRBS;
@@ -210,22 +218,23 @@ begin
   PRBS_TYPE <= prbs_type_inner;
 
   OUTDATA <= DDU_PRBS_ERR_CNT when (r_ddu_prbs_err_cnt = '1') else
-             PC_PRBS_ERR_CNT                                         when (r_pc_prbs_err_cnt = '1')    else
-             DCFEB_PRBS_ERR_CNT                                      when (r_dcfeb_prbs_err_cnt = '1') else
-             x"000" & dcfeb_prbs_fiber_sel_inner                     when (r_dcfeb_prbs_fiber = '1')   else
-             dcfeb_prbserr_edge_cnt                                  when (r_dcfeb_prbs_edge = '1')    else
-             otmb_prbs_tx_en_cnt                                     when (r_otmb_prbs_en_cnt = '1')   else
+             PC_PRBS_ERR_CNT                                     when (r_pc_prbs_err_cnt = '1')    else
+             DCFEB_PRBS_ERR_CNT                                  when (r_dcfeb_prbs_err_cnt = '1') else
+             x"000" & dcfeb_prbs_fiber_sel_inner                 when (r_dcfeb_prbs_fiber = '1')   else
+             dcfeb_prbserr_edge_cnt                              when (r_dcfeb_prbs_edge = '1')    else
+             otmb_prbs_tx_en_cnt                                 when (r_otmb_prbs_en_cnt = '1')   else
              std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16)) when (r_otmb_prbs_good_cnt = '1') else
-             std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))      when (r_otmb_prbs_err_cnt = '1')  else
-             x"000" & '0' & prbs_type_inner                          when (r_prbs_type = '1')          else
+             std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  when (r_otmb_prbs_err_cnt = '1')  else
+             x"000" & '0' & prbs_type_inner                      when (r_prbs_type = '1')          else
              (others => 'L');
 
-  DTACK <= strobe_pulse and (w_ddu_prbs_en or r_ddu_prbs_err_cnt or w_pc_prbs_en or
-                             r_pc_prbs_err_cnt or w_otmb_prbs_en or r_otmb_prbs_en_cnt or
-                             w_dcfeb_prbs_en or r_dcfeb_prbs_err_cnt or r_dcfeb_prbs_edge or
-                             w_dcfeb_prbs_fiber or r_dcfeb_prbs_fiber or
-                             w_prbs_type or r_prbs_type or
-                             r_otmb_prbs_good_cnt or r_otmb_prbs_err_cnt or w_otmb_prbs_cnt_rst);
+  DTACK <= strobe_pulse and (w_ddu_prbs_tx_en or w_ddu_prbs_rx_en or r_ddu_prbs_err_cnt or
+                             w_pc_prbs_tx_en or w_pc_prbs_rx_en or r_pc_prbs_err_cnt or
+                             w_otmb_prbs_en or r_otmb_prbs_en_cnt or w_dcfeb_prbs_en or
+                             r_dcfeb_prbs_err_cnt or r_dcfeb_prbs_edge or
+                             w_dcfeb_prbs_fiber or r_dcfeb_prbs_fiber or w_prbs_type or
+                             r_prbs_type or r_otmb_prbs_good_cnt or r_otmb_prbs_err_cnt or
+                             w_otmb_prbs_cnt_rst);
 
   -- DCFEB PRBS signals
   dcfeb_prbs_rst_cnt   <= dcfeb_prbs_lock+dcfeb_prbs_rst_cycles;
@@ -277,7 +286,7 @@ begin
   otmb_prbs_tx_err <= or_reduce(otmb_prbs_tx_xor(47 downto 0));
 
   CNT_RST : PULSE_EDGE port map(otmb_prbs_cnt_rst, open, CLK, RST, 2, w_otmb_prbs_cnt_rst);
-  
+
   prbs_tx_cnt_proc : process (CLK, otmb_prbs_tx_err, RST, otmb_prbs_tx_en)
     variable bit : std_logic;
   begin
@@ -291,7 +300,7 @@ begin
       else
         otmb_tx_good_cnt_int <= otmb_tx_good_cnt_int + 1;
         if otmb_tx_good_cnt_int = otmb_prbs_length then
-          otmb_tx_good_cnt <= otmb_tx_good_cnt + 1;
+          otmb_tx_good_cnt     <= otmb_tx_good_cnt + 1;
           otmb_tx_good_cnt_int <= 0;
         end if;
       end if;

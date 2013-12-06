@@ -422,12 +422,14 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       PRBS_TYPE : out std_logic_vector(2 downto 0);
 
       -- DDU PRBS signals
-      DDU_PRBS_EN      : out std_logic;
+      DDU_PRBS_TX_EN   : out std_logic;
+      DDU_PRBS_RX_EN   : out std_logic;
       DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
       DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
       -- PC PRBS signals
-      PC_PRBS_EN      : out std_logic;
+      PC_PRBS_TX_EN   : out std_logic;
+      PC_PRBS_RX_EN   : out std_logic;
       PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
       PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
@@ -646,7 +648,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       -- PRBS signals
       PRBS_TYPE       : in  std_logic_vector(2 downto 0);
-      PRBS_EN         : in  std_logic;
+      PRBS_TX_EN      : in  std_logic;
+      PRBS_RX_EN      : in  std_logic;
       PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
       PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
       );
@@ -689,7 +692,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       -- PRBS signals
       PRBS_TYPE       : in  std_logic_vector(2 downto 0);
-      PRBS_EN         : in  std_logic;
+      PRBS_TX_EN      : in  std_logic;
+      PRBS_RX_EN      : in  std_logic;
       PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
       PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
       );
@@ -1352,12 +1356,14 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal prbs_type : std_logic_vector(2 downto 0);
 
   -- DDU PRBS
-  signal ddu_prbs_en         : std_logic;
+  signal ddu_prbs_tx_en      : std_logic;
+  signal ddu_prbs_rx_en      : std_logic;
   signal ddu_prbs_en_tst_cnt : std_logic_vector(15 downto 0);
   signal ddu_prbs_err_cnt    : std_logic_vector(15 downto 0);
 
   -- PC PRBS
-  signal pc_prbs_en         : std_logic;
+  signal pc_prbs_tx_en      : std_logic;
+  signal pc_prbs_rx_en      : std_logic;
   signal pc_prbs_en_tst_cnt : std_logic_vector(15 downto 0);
   signal pc_prbs_err_cnt    : std_logic_vector(15 downto 0);
 
@@ -1587,12 +1593,14 @@ begin
       PRBS_TYPE => prbs_type,
 
       -- DDU PRBS signals
-      DDU_PRBS_EN      => ddu_prbs_en,
+      DDU_PRBS_TX_EN   => ddu_prbs_tx_en,
+      DDU_PRBS_RX_EN   => ddu_prbs_rx_en,
       DDU_PRBS_TST_CNT => ddu_prbs_en_tst_cnt,
       DDU_PRBS_ERR_CNT => ddu_prbs_err_cnt,
 
       -- PC PRBS signals
-      PC_PRBS_EN      => pc_prbs_en,
+      PC_PRBS_TX_EN   => pc_prbs_tx_en,
+      PC_PRBS_RX_EN   => pc_prbs_rx_en,
       PC_PRBS_TST_CNT => pc_prbs_en_tst_cnt,
       PC_PRBS_ERR_CNT => pc_prbs_err_cnt,
 
@@ -1787,7 +1795,8 @@ begin
 
       -- DDU PRBS signals
       PRBS_TYPE       => prbs_type,
-      PRBS_EN         => ddu_prbs_en,
+      PRBS_TX_EN      => ddu_prbs_tx_en,
+      PRBS_RX_EN      => ddu_prbs_rx_en,
       PRBS_EN_TST_CNT => ddu_prbs_en_tst_cnt,
       PRBS_ERR_CNT    => ddu_prbs_err_cnt
       );
@@ -1833,7 +1842,8 @@ begin
 
       -- PC PRBS signals
       PRBS_TYPE       => prbs_type,
-      PRBS_EN         => pc_prbs_en,
+      PRBS_TX_EN      => pc_prbs_tx_en,
+      PRBS_RX_EN      => pc_prbs_rx_en,
       PRBS_EN_TST_CNT => pc_prbs_en_tst_cnt,
       PRBS_ERR_CNT    => pc_prbs_err_cnt
       );

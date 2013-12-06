@@ -43,8 +43,9 @@ entity GIGALINK_DDU is
     RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
 
     -- PRBS signals
-    PRBS_TYPE       : in std_logic_vector(2 downto 0);
-    PRBS_EN         : in  std_logic;
+    PRBS_TYPE       : in  std_logic_vector(2 downto 0);
+    PRBS_TX_EN      : in  std_logic;
+    PRBS_RX_EN      : in  std_logic;
     PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
     PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
     );
@@ -106,7 +107,8 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
       GTX0_TXRESETDONE_OUT   : out std_logic;
       -- PRBS Ports --------------------------------------------------------------
       GTX0_PRBSCNTRESET_IN   : in  std_logic;
-      GTX0_ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+      GTX0_ENTXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
+      GTX0_ENRXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
       -- DRP Ports ---------------------------------------------------------------
       GTX0_DCLK_IN           : in  std_logic;
       GTX0_DEN_IN            : in  std_logic;
@@ -177,18 +179,19 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
 
   -- PRBS signals
-  signal   gtx0_enprbstst_in : std_logic_vector(2 downto 0);
-  signal   prbs_err_cnt_rst  : std_logic;
-  signal   prbs_en_pulse     : std_logic;
-  signal   prbs_rd_en_pulse  : std_logic;
-  signal   prbs_init_pulse   : std_logic;
-  signal   prbs_reset_pulse  : std_logic;
-  signal   prbs_rd_en_inner  : std_logic;
-  constant prbs_rst_cycles   : integer := 1;
-  constant prbs_length       : integer := 10001;
-  signal   prbs_en_cnt       : integer;
-  signal   prbs_rst_cnt      : integer;
-  signal   prbs_rd_en_cnt    : integer;
+  signal   gtx0_entxprbstst_in : std_logic_vector(2 downto 0);
+  signal   gtx0_enrxprbstst_in : std_logic_vector(2 downto 0);
+  signal   prbs_err_cnt_rst    : std_logic;
+  signal   prbs_en_pulse       : std_logic;
+  signal   prbs_rd_en_pulse    : std_logic;
+  signal   prbs_init_pulse     : std_logic;
+  signal   prbs_reset_pulse    : std_logic;
+  signal   prbs_rd_en_inner    : std_logic;
+  constant prbs_rst_cycles     : integer := 1;
+  constant prbs_length         : integer := 10001;
+  signal   prbs_en_cnt         : integer;
+  signal   prbs_rst_cnt        : integer;
+  signal   prbs_rd_en_cnt      : integer;
 begin
 
   BUFG_USR : BUFG port map(O => usr_clk, I => ref_clk_80);
@@ -261,7 +264,8 @@ begin
       GTX0_TXRESETDONE_OUT   => open,
       -- PRBS Ports --------------------------------------------------------------
       GTX0_PRBSCNTRESET_IN   => prbs_err_cnt_rst,
-      GTX0_ENPRBSTST_IN      => gtx0_enprbstst_in,
+      GTX0_ENTXPRBSTST_IN    => gtx0_entxprbstst_in,
+      GTX0_ENRXPRBSTST_IN    => gtx0_enrxprbstst_in,
       -- DRP Ports ---------------------------------------------------------------
       GTX0_DCLK_IN           => usr_clk,
       GTX0_DEN_IN            => prbs_rd_en_inner,
@@ -347,15 +351,17 @@ begin
   prbs_en_cnt    <= prbs_length*to_integer(unsigned(prbs_en_tst_cnt))+prbs_rst_cnt;
   prbs_rd_en_cnt <= prbs_en_cnt-1;
 
-  PRBS_INIT_PE : PULSE_EDGE port map(prbs_init_pulse, open, usr_clk, RST, prbs_length, PRBS_EN);
-  PRBS_RST_PE : PULSE_EDGE port map(prbs_reset_pulse, open, usr_clk, RST,
-                                    prbs_rst_cnt, PRBS_EN);
-  PRBS_RD_EN_PE : PULSE_EDGE port map(prbs_rd_en_pulse, open, usr_clk, RST,
-                                      prbs_rd_en_cnt, PRBS_EN);
-  PRBS_EN_PE : PULSE_EDGE port map(prbs_en_pulse, open, usr_clk, RST, prbs_en_cnt, PRBS_EN);
+  PRBS_INIT_PE : PULSE_EDGE port map(prbs_init_pulse, open, usr_clk,
+                                     RST, prbs_length, PRBS_RX_EN);
+  PRBS_RST_PE : PULSE_EDGE port map(prbs_reset_pulse, open, usr_clk,
+                                    RST, prbs_rst_cnt, PRBS_RX_EN);
+  PRBS_RD_EN_PE : PULSE_EDGE port map(prbs_rd_en_pulse, open, usr_clk,
+                                      RST, prbs_rd_en_cnt, PRBS_RX_EN);
+  PRBS_EN_PE : PULSE_EDGE port map(prbs_en_pulse, open, usr_clk, RST, prbs_en_cnt, PRBS_RX_EN);
 
-  prbs_err_cnt_rst  <= prbs_reset_pulse and not prbs_init_pulse;
-  prbs_rd_en_inner  <= prbs_en_pulse and not prbs_rd_en_pulse;
+  prbs_err_cnt_rst    <= prbs_reset_pulse and not prbs_init_pulse;
+  prbs_rd_en_inner    <= prbs_en_pulse and not prbs_rd_en_pulse;
   --  gtx0_enprbstst_in <= "00" & prbs_en_pulse;
-  gtx0_enprbstst_in <= PRBS_TYPE when (prbs_en_pulse = '1') else "000";
+  gtx0_enrxprbstst_in <= PRBS_TYPE when (prbs_en_pulse = '1') else "000";
+  gtx0_entxprbstst_in <= PRBS_TYPE when (PRBS_TX_EN = '1')    else "000";
 end GIGALINK_DDU_ARCH;

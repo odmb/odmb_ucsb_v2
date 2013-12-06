@@ -127,7 +127,8 @@ entity WRAPPER_GIGALINK_DDU_GTX is
       TXRESETDONE_OUT   : out std_logic;
       -- PRBS Ports --------------------------------------------------------------
       PRBSCNTRESET_IN   : in  std_logic;
-      ENPRBSTST_IN      : in  std_logic_vector(2 downto 0);
+      ENTXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
+      ENRXPRBSTST_IN    : in  std_logic_vector(2 downto 0);
       -- DRP Ports ---------------------------------------------------------------
       DCLK_IN           : in  std_logic;
       DEN_IN            : in  std_logic;
@@ -453,7 +454,7 @@ begin
       RXSLIDE                  => tied_to_ground_i,
       ----------------------- Receive Ports - PRBS Detection ---------------------
       PRBSCNTRESET             => PRBSCNTRESET_IN,
-      RXENPRBSTST              => ENPRBSTST_IN(2 downto 0),
+      RXENPRBSTST              => ENRXPRBSTST_IN(2 downto 0),
       RXPRBSERR                => open,
       ------------------- Receive Ports - RX Data Path interface -----------------
       RXDATA                   => rxdata_i,
@@ -601,7 +602,7 @@ begin
       TXRATEDONE               => open,
       TXRESETDONE              => TXRESETDONE_OUT,
       --------------------- Transmit Ports - TX PRBS Generator -------------------
-      TXENPRBSTST              => ENPRBSTST_IN(2 downto 0),
+      TXENPRBSTST              => ENTXPRBSTST_IN(2 downto 0),
       TXPRBSFORCEERR           => tied_to_ground_i,
       -------------------- Transmit Ports - TX Polarity Control ------------------
       TXPOLARITY               => tied_to_ground_i,

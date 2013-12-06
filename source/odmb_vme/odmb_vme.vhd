@@ -214,12 +214,14 @@ entity ODMB_VME is
     PRBS_TYPE : out std_logic_vector(2 downto 0);
 
     -- DDU PRBS signals
-    DDU_PRBS_EN      : out std_logic;
+    DDU_PRBS_TX_EN   : out std_logic;
+    DDU_PRBS_RX_EN   : out std_logic;
     DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
     DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
     -- PC PRBS signals
-    PC_PRBS_EN      : out std_logic;
+    PC_PRBS_TX_EN   : out std_logic;
+    PC_PRBS_RX_EN   : out std_logic;
     PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
     PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
@@ -551,12 +553,14 @@ architecture ODMB_VME_architecture of ODMB_VME is
       PRBS_TYPE : out std_logic_vector(2 downto 0);
 
       -- DDU PRBS signals
-      DDU_PRBS_EN      : out std_logic;
+      DDU_PRBS_TX_EN   : out std_logic;
+      DDU_PRBS_RX_EN   : out std_logic;
       DDU_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
       DDU_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
       -- PC PRBS signals
-      PC_PRBS_EN      : out std_logic;
+      PC_PRBS_TX_EN   : out std_logic;
+      PC_PRBS_RX_EN   : out std_logic;
       PC_PRBS_TST_CNT : out std_logic_vector(15 downto 0);
       PC_PRBS_ERR_CNT : in  std_logic_vector(15 downto 0);
 
@@ -1074,12 +1078,14 @@ begin
       PRBS_TYPE => PRBS_TYPE,
 
       -- DDU PRBS signals
-      DDU_PRBS_EN      => DDU_PRBS_EN,
+      DDU_PRBS_TX_EN   => DDU_PRBS_TX_EN,
+      DDU_PRBS_RX_EN   => DDU_PRBS_RX_EN,
       DDU_PRBS_TST_CNT => DDU_PRBS_TST_CNT,
       DDU_PRBS_ERR_CNT => DDU_PRBS_ERR_CNT,
 
       -- PC PRBS signals
-      PC_PRBS_EN      => PC_PRBS_EN,
+      PC_PRBS_TX_EN   => PC_PRBS_TX_EN,
+      PC_PRBS_RX_EN   => PC_PRBS_RX_EN,
       PC_PRBS_TST_CNT => PC_PRBS_TST_CNT,
       PC_PRBS_ERR_CNT => PC_PRBS_ERR_CNT,
 
