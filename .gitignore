@@ -8,6 +8,7 @@ work/
 *.vstf
 commands/*out.txt
 source/transcript
+transcript
 
 ### ISE ###
 xlnx_auto_0_xdb/
