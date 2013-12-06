@@ -251,8 +251,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         v6_tdi      : out std_logic;
         v6_jtag_sel : out std_logic;
 
-        odmb_tms : in std_logic;
-        odmb_tdi : in std_logic;
+        --odmb_tms : in std_logic;
+        --odmb_tdi : in std_logic;
         odmb_tdo : in std_logic;
 
 -- From/To J6 (J3) connector to ODMB_CTRL
@@ -791,8 +791,8 @@ begin
       v6_tdi      => v6_tdi,
       v6_jtag_sel => v6_jtag_sel,
 
-      odmb_tms => odmb_tms,
-      odmb_tdi => odmb_tdi,
+      --odmb_tms => odmb_tms,
+      --odmb_tdi => odmb_tdi,
       odmb_tdo => odmb_tdo,
 
 -- From/To J6 (J3) connector to ODMB_CTRL

@@ -92,8 +92,8 @@ entity ODMB_UCSB_V2 is
     v6_tdi      : out std_logic;
     v6_jtag_sel : out std_logic;
 
-    odmb_tms : in std_logic;
-    odmb_tdi : in std_logic;
+    --odmb_tms : in std_logic;
+    --odmb_tdi : in std_logic;
     odmb_tdo : in std_logic;
 
 -- From/To J6 (J3) connector to ODMB_CTRL
@@ -235,7 +235,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   component ODMB_VME is
     port (
       CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
-      CSP_BPI_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      CSP_BPI_PORT_LA_CTRL         : inout std_logic_vector(35 downto 0);
+      CSP_LVMB_LA_CTRL             : inout std_logic_vector(35 downto 0);
 -- VME signals
 
       cmd_adrs        : out std_logic_vector(15 downto 0);
@@ -354,6 +355,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       INJ_DLY       : out std_logic_vector(4 downto 0);
       EXT_DLY       : out std_logic_vector(4 downto 0);
       CALLCT_DLY    : out std_logic_vector(3 downto 0);
+      ODMB_ID       : out std_logic_vector(15 downto 0);
       NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
       KILL          : out std_logic_vector(NFEB+2 downto 1);
       CRATEID       : out std_logic_vector(7 downto 0);
@@ -406,9 +408,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       BPI_CFG_UL_BUGGER : out std_logic;
       BPI_CFG_DL_BUGGER : out std_logic;
-      BPI_DONE   : in std_logic;
-      BPI_CFG_REG_WE : in std_logic;
-      BPI_CFG_REG_IN : in std_logic_vector(15 downto 0);
+      BPI_DONE          : in  std_logic;
+      BPI_CFG_REG_WE    : in  std_logic;
+      BPI_CFG_REG_IN    : in  std_logic_vector(15 downto 0);
 
       --To SYSMON
       VP    : in std_logic;
@@ -911,7 +913,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       BPI_DATA_TO       : out std_logic_vector(15 downto 0);  -- 
       BPI_EXECUTE       : out std_logic;
 -- Guido Aug 26
-      BPI_DONE      : out std_logic;
+      BPI_DONE          : out std_logic;
       BPI_CFG_REG_WE    : out std_logic;
       BPI_CFG_REG_IN    : out std_logic_vector(15 downto 0)
       );
@@ -962,7 +964,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       CONTROL0 : inout std_logic_vector (35 downto 0);
       CONTROL1 : inout std_logic_vector (35 downto 0);
       CONTROL2 : inout std_logic_vector (35 downto 0);
-      CONTROL3 : inout std_logic_vector (35 downto 0)
+      CONTROL3 : inout std_logic_vector (35 downto 0);
+      CONTROL4 : inout std_logic_vector (35 downto 0)
       );
   end component;
 
@@ -989,8 +992,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal vme_tovme_b  : std_logic;
   signal vme_doe      : std_logic;
 
-  signal v6_jtag_sel_inner  : std_logic := '0';
-  signal int_vme_dtack_v6_b : std_logic;
+  signal v6_jtag_sel_inner                        : std_logic := '0';
+  signal v6_tck_inner, v6_tms_inner, v6_tdi_inner : std_logic := '0';
+  signal int_vme_dtack_v6_b                       : std_logic;
 
   signal eof_data : std_logic_vector (NFEB+2 downto 1);
 
@@ -1287,6 +1291,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal INJ_DLY       : std_logic_vector(4 downto 0);
   signal EXT_DLY       : std_logic_vector(4 downto 0);
   signal CALLCT_DLY    : std_logic_vector(3 downto 0);
+  signal odmb_id       : std_logic_vector(15 downto 0);
   signal NWORDS_DUMMY  : std_logic_vector(15 downto 0);
   signal KILL          : std_logic_vector(NFEB+2 downto 1);
   signal CRATEID       : std_logic_vector(7 downto 0);
@@ -1312,7 +1317,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_rst           : std_logic;
   signal vme_bpi_rst       : std_logic;
   signal clk1mhz           : std_logic;
-  signal counter_clk1mhz : integer := 0;
+  signal counter_clk1mhz   : integer                       := 0;
   signal bpi_we            : std_logic;
   signal bpi_re            : std_logic;
   signal bpi_dsbl          : std_logic;
@@ -1332,13 +1337,13 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_data_to       : std_logic_vector(15 downto 0);
   signal dual_data_leds    : std_logic_vector(15 downto 0) := (others => '0');
 
-  signal bpi_done   : std_logic;
+  signal bpi_done       : std_logic;
   signal bpi_cfg_reg_we : std_logic;
   signal bpi_cfg_reg_in : std_logic_vector(15 downto 0);
 
-signal bpi_cfg_ul_pulse : std_logic;
+  signal bpi_cfg_ul_pulse : std_logic;
   signal bpi_cfg_dl_pulse : std_logic;
-  
+
   -- SYSMON
   signal vauxp : std_logic_vector(15 downto 0);
   signal vauxn : std_logic_vector(15 downto 0);
@@ -1369,16 +1374,17 @@ signal bpi_cfg_ul_pulse : std_logic;
 
   signal csp_control_fsm_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
   signal csp_system_test_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
-  signal csp_bpi_la_ctrl         : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
+  signal csp_bpi_la_ctrl              : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
   signal csp_bpi_port_la_ctrl         : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
-  
+  signal csp_lvmb_la_ctrl             : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
+
   -- since we're at the top level, let's make the other signals for the csp thingy.
-  signal csp_bpi_la_data         : std_logic_vector(299 downto 0);
-  signal csp_bpi_la_trig         : std_logic_vector(15 downto 0);
+  signal csp_bpi_la_data : std_logic_vector(299 downto 0);
+  signal csp_bpi_la_trig : std_logic_vector(15 downto 0);
   -- prom_inners for this csp operation
-  signal prom_control : std_logic_vector(5 downto 0);
-  signal prom_a_out : std_logic_vector(22 downto 0);
-  signal prom_d_out : std_logic_vector(15 downto 0);
+  signal prom_control    : std_logic_vector(5 downto 0);
+  signal prom_a_out      : std_logic_vector(22 downto 0);
+  signal prom_d_out      : std_logic_vector(15 downto 0);
 
   
 begin
@@ -1388,15 +1394,17 @@ begin
       CONTROL0 => csp_control_fsm_port_la_ctrl,
       CONTROL1 => csp_system_test_port_la_ctrl,
       CONTROL2 => csp_bpi_la_ctrl,
-      CONTROL3 => csp_bpi_port_la_ctrl
+      CONTROL3 => csp_bpi_port_la_ctrl,
+      CONTROL4 => csp_lvmb_la_ctrl
       );
 
   MBV : ODMB_VME
     port map (
 
       CSP_SYSTEM_TEST_PORT_LA_CTRL => csp_system_test_port_la_ctrl,
-      CSP_BPI_PORT_LA_CTRL => csp_bpi_port_la_ctrl,
-   
+      CSP_BPI_PORT_LA_CTRL         => csp_bpi_port_la_ctrl,
+      CSP_LVMB_LA_CTRL             => csp_lvmb_la_ctrl,
+
       cmd_adrs        => cmd_adrs,            -- output
       vme_addr        => vme_addr,            -- input
       vme_data_in     => vme_data_in,         -- input
@@ -1445,9 +1453,9 @@ begin
 -- JTAG Signals To/From ODMB JTAG
 
       odmb_jtag_sel => v6_jtag_sel_inner,
-      odmb_jtag_tck => v6_tck,
-      odmb_jtag_tms => v6_tms,
-      odmb_jtag_tdi => v6_tdi,
+      odmb_jtag_tck => v6_tck_inner,
+      odmb_jtag_tms => v6_tms_inner,
+      odmb_jtag_tdi => v6_tdi_inner,
       odmb_jtag_tdo => odmb_tdo,
 
 -- JTAG Signals To/From odmb_ctrl
@@ -1514,6 +1522,7 @@ begin
       INJ_DLY       => INJ_DLY,
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
+      ODMB_ID       => odmb_id,
       NWORDS_DUMMY  => NWORDS_DUMMY,
       KILL          => KILL,
       CRATEID       => CRATEID,
@@ -1565,9 +1574,9 @@ begin
 
       BPI_CFG_UL_BUGGER => bpi_cfg_ul_pulse,
       BPI_CFG_DL_BUGGER => bpi_cfg_dl_pulse,
-      BPI_DONE   => bpi_done,
-      BPI_CFG_REG_WE => bpi_cfg_reg_we,
-      BPI_CFG_REG_IN => bpi_cfg_reg_in,
+      BPI_DONE          => bpi_done,
+      BPI_CFG_REG_WE    => bpi_cfg_reg_we,
+      BPI_CFG_REG_IN    => bpi_cfg_reg_in,
 
       -- Adam Aug 15 To SYSMON
       VP    => '0',
@@ -2060,7 +2069,7 @@ begin
       DI    => otmb_fifo_data_in,       -- Input data
       RDCLK => dduclk,                  -- Input read clock
       RDEN  => data_fifo_re(NFEB+1),    -- Input read enable
-      RST   => l1acnt_rst,                   -- Input reset
+      RST   => l1acnt_rst,              -- Input reset
       WRCLK => clk40,                   -- Input write clock
       WREN  => otmb_fifo_data_valid     -- Input write enable
       );
@@ -2233,6 +2242,9 @@ begin
   qpll_reset       <= not reset;
 
   v6_jtag_sel <= v6_jtag_sel_inner;
+  v6_tck      <= v6_tck_inner;
+  v6_tms      <= v6_tms_inner;
+  v6_tdi      <= v6_tdi_inner;
 
   d <= (others => '0');
 
@@ -2498,7 +2510,7 @@ begin
       BPI_DATA_TO       => bpi_data_to,  -- Command or Data being written to FLASH device
       BPI_EXECUTE       => bpi_execute,
       -- Guido - Aug 26
-      BPI_DONE      => bpi_done,
+      BPI_DONE          => bpi_done,
       BPI_CFG_REG_WE    => bpi_cfg_reg_we,
       BPI_CFG_REG_IN    => bpi_cfg_reg_in
       );
@@ -2543,22 +2555,22 @@ begin
   csp_bpi_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
 
   csp_bpi_la_data <= "00" & x"0"
-                          & bpi_cfg_ul_pulse & bpi_cfg_dl_pulse &clk40 & clk2p5  -- [293:290]
-                          & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
-                          & cmd_adrs    -- [284:269]
-                          & vme_data_in  -- [268:253]
-                          & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
-                          & bpi_cfg_reg_we & bpi_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
-                          & bpi_op & bpi_cfg_reg_in                -- [240:223]
-                          & bpi_status & bpi_timer                 -- [222:175]
-                          & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]
-                          & bpi_cmd_fifo_data & bpi_rbk_fifo_data  -- [140:109]
-                          & bpi_data_from & bpi_data_to            -- [108:77]
-                          & dual_data_leds                         -- [76:61]
-                          & x"0000"                                -- [60:45]
-                          & prom_control -- [44:39]
-                          & prom_a_out  -- [38:16]
-                          & prom_d_out;  -- [15:0]
+                     & bpi_cfg_ul_pulse & bpi_cfg_dl_pulse &clk40 & clk2p5  -- [293:290]
+                     & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
+                     & cmd_adrs         -- [284:269]
+                     & vme_data_in      -- [268:253]
+                     & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
+                     & bpi_cfg_reg_we & bpi_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
+                     & bpi_op & bpi_cfg_reg_in                -- [240:223]
+                     & bpi_status & bpi_timer                 -- [222:175]
+                     & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]
+                     & bpi_cmd_fifo_data & bpi_rbk_fifo_data  -- [140:109]
+                     & bpi_data_from & bpi_data_to            -- [108:77]
+                     & dual_data_leds   -- [76:61]
+                     & x"0000"          -- [60:45]
+                     & prom_control     -- [44:39]
+                     & prom_a_out       -- [38:16]
+                     & prom_d_out;      -- [15:0]
 
 ------------------------------------  Monitoring  ------------------------------------
 ---------------------------------------------------------------------------------------
@@ -2879,15 +2891,15 @@ begin
   tph(38) <= rawlct(6);
   tph(39) <= rawlct(7);
   tph(40) <= lct_err;
-  tph(43) <= '0';
+  tph(43) <= int_tdi;
   tph(44) <= '0';
-  tph(45) <= '0';
+  tph(45) <= int_tms;
   tph(46) <= '0';
 
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
                          int_otmb_dav, dcfeb_data, otmb_fifo_data_in, otmb_fifo_data_valid, int_alct_dav,
                          alct_fifo_data_in,
-                         alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tms, odmb_tdi, odmb_tdo,
+                         alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tdo,
                          v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
                          otmb_lct_rqst, otmb_ext_trig, raw_l1a, L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT,
                          dcfeb_prbs_en, dcfeb_prbs_rst, dcfeb_prbs_rd_en, dcfeb_rxprbserr)
@@ -2960,8 +2972,8 @@ begin
         tph(42) <= dcfeb_data_valid(7);
 
       when x"0010" =>
-        tph(27) <= odmb_tms;
-        tph(28) <= odmb_tdi;
+        tph(27) <= odmb_tdo;
+        tph(28) <= odmb_tdo;
         tph(41) <= odmb_tdo;
         tph(42) <= dcfeb_data_valid(7);
 
@@ -3138,6 +3150,12 @@ begin
         tph(28) <= dcfeb_prbs_rst;
         tph(41) <= dcfeb_prbs_rd_en;
         tph(42) <= dcfeb_rxprbserr;
+
+      when x"002E" =>
+        tph(27) <= v6_jtag_sel_inner;
+        tph(28) <= v6_tck_inner;
+        tph(41) <= v6_tms_inner;
+        tph(42) <= v6_tdi_inner;
 
       when others =>
         tph(27) <= int_l1a;

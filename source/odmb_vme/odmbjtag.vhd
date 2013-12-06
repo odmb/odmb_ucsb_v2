@@ -5,7 +5,7 @@ use hdlmacro.hdlmacro.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 use ieee.std_logic_1164.all;
-
+use work.ucsb_types.all;
 
 entity ODMBJTAG is
 
@@ -32,6 +32,7 @@ entity ODMBJTAG is
     ODMBTDO   : in  std_logic;
 
     JTAGSEL : out std_logic;
+    ODMB_ID : in  std_logic_vector(15 downto 0);
 
     LED : out std_logic
     );
@@ -54,17 +55,19 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
 
   signal Q_BUSY, D_BUSY, CLR_BUSY, BUSY, BUSYP1 : std_logic;
 
-  signal C_IHEADEN, CLR_IHEADEN, IHEADEN                                                                : std_logic;
-  signal SHIHEAD                                                                                        : std_logic;
-  signal R_DONEIHEAD, Q_DONEIHEAD, CEO_DONEIHEAD, TC_DONEIHEAD, DONEIHEAD                               : std_logic;
-  signal QV_DONEIHEAD                                                                                   : std_logic_vector(3 downto 0);
-  signal CE_SHIHEAD_TMS, Q1_SHIHEAD_TMS, Q2_SHIHEAD_TMS, Q3_SHIHEAD_TMS, Q4_SHIHEAD_TMS, Q5_SHIHEAD_TMS : std_logic;
+  signal C_IHEADEN, CLR_IHEADEN, IHEADEN                                  : std_logic;
+  signal SHIHEAD                                                          : std_logic;
+  signal R_DONEIHEAD, Q_DONEIHEAD, CEO_DONEIHEAD, TC_DONEIHEAD, DONEIHEAD : std_logic;
+  signal QV_DONEIHEAD                                                     : std_logic_vector(3 downto 0);
+  signal CE_SHIHEAD_TMS, Q1_SHIHEAD_TMS, Q2_SHIHEAD_TMS                   : std_logic;
+  signal Q3_SHIHEAD_TMS, Q4_SHIHEAD_TMS, Q5_SHIHEAD_TMS                   : std_logic;
 
-  signal C_DHEADEN, CLR_DHEADEN, DHEADEN                                                                : std_logic;
-  signal SHDHEAD                                                                                        : std_logic;
-  signal R_DONEDHEAD, Q_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD, DONEDHEAD                               : std_logic;
-  signal QV_DONEDHEAD                                                                                   : std_logic_vector(3 downto 0);
-  signal CE_SHDHEAD_TMS, Q1_SHDHEAD_TMS, Q2_SHDHEAD_TMS, Q3_SHDHEAD_TMS, Q4_SHDHEAD_TMS, Q5_SHDHEAD_TMS : std_logic;
+  signal C_DHEADEN, CLR_DHEADEN, DHEADEN                                  : std_logic;
+  signal SHDHEAD                                                          : std_logic;
+  signal R_DONEDHEAD, Q_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD, DONEDHEAD : std_logic;
+  signal QV_DONEDHEAD                                                     : std_logic_vector(3 downto 0);
+  signal CE_SHDHEAD_TMS, Q1_SHDHEAD_TMS, Q2_SHDHEAD_TMS                   : std_logic;
+  signal Q3_SHDHEAD_TMS, Q4_SHDHEAD_TMS, Q5_SHDHEAD_TMS                   : std_logic;
 
   signal SHDATA, SHDATAX : std_logic;
 
@@ -88,7 +91,8 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   signal QV_RESETDONE                               : std_logic_vector(3 downto 0);
   signal RESETDONE                                  : std_logic;
 
-  signal CE_RESETJTAG_TMS, Q1_RESETJTAG_TMS, Q2_RESETJTAG_TMS, Q3_RESETJTAG_TMS, Q4_RESETJTAG_TMS, Q5_RESETJTAG_TMS, Q6_RESETJTAG_TMS : std_logic;
+  signal CE_RESETJTAG_TMS, Q1_RESETJTAG_TMS, Q2_RESETJTAG_TMS                   : std_logic;
+  signal Q3_RESETJTAG_TMS, Q4_RESETJTAG_TMS, Q5_RESETJTAG_TMS, Q6_RESETJTAG_TMS : std_logic;
 
   signal CE_TDI : std_logic;
   signal QV_TDI : std_logic_vector(15 downto 0);
@@ -99,19 +103,40 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   signal Q_OUTDATA : std_logic_vector(15 downto 0);
 
   signal D_DTACK, CE_DTACK, CLR_DTACK, Q1_DTACK, Q2_DTACK, Q3_DTACK, Q4_DTACK : std_logic;
+  signal dd_dtack_pol, d_dtack_pol, q_dtack_pol                               : std_logic := '0';
 
-  signal DTACK_INNER : std_logic;
-
+  signal default_low, default_high                : std_logic := '1';
+  signal polarity_rst, polarity_pre, w_polarity   : std_logic;
+  signal rst_b, rst_pulse, rst_pulse_b, pol_pulse : std_logic;
 begin
 
 -- Decode instruction
-  CMDDEV   <= "000" & DEVICE & "0000" & COMMAND(5 downto 0) & "00";  -- Variable that looks like the VME commands we input  
-  DATASHFT <= '1' when (CMDDEV(15 downto 4) = x"100") else '0';
-  INSTSHFT <= '1' when (CMDDEV = x"101C")             else '0';
-  READTDO  <= '1' when (CMDDEV = x"1014")             else '0';
-  RSTJTAG  <= '1' when (CMDDEV = x"1018")             else '0';
+  CMDDEV <= "000" & DEVICE & COMMAND & "00";
 
-  JTAGSEL_INNER <= DEVICE and STROBE;
+  DATASHFT <= '1' when (DEVICE = '1' and CMDDEV(7 downto 4) = x"0")  else '0';
+  INSTSHFT <= '1' when (DEVICE = '1' and CMDDEV(7 downto 0) = x"1C") else '0';
+  READTDO  <= '1' when (DEVICE = '1' and CMDDEV(7 downto 0) = x"14") else '0';
+  RSTJTAG  <= '1' when (DEVICE = '1' and CMDDEV(7 downto 0) = x"18") else '0';
+
+  w_polarity <= '1' when (cmddev = x"1020" and WRITER = '0' and STROBE = '1') else '0';
+
+  -- Setting polarity of JTAGSEL: V2 default low, V3 default high
+  rst_b        <= not RST;
+  PULSERST    : PULSE_EDGE port map(rst_pulse, open, SLOWCLK, '0', 18, rst_b);
+  rst_pulse_b  <= not rst_pulse;
+  PULSEPOL    : PULSE_EDGE port map(pol_pulse, open, SLOWCLK, '0', 1, rst_pulse_b);
+  polarity_rst <= '0'         when ODMB_ID(15 downto 12) /= x"3" else pol_pulse;
+  polarity_pre <= pol_pulse when ODMB_ID(15 downto 12) /= x"3" else '0';
+  FD_POLARITY : FDCP port map(default_low, w_polarity, polarity_rst, default_high, polarity_pre);
+  default_high <= not default_low;
+
+-- DTACK polarity
+  dd_dtack_pol <= STROBE and DEVICE;
+  FD_D_DTACK_POL : FDC port map(d_dtack_pol, dd_dtack_pol, q_dtack_pol, '1');
+  FD_Q_DTACK_POL : FD port map(q_dtack_pol, SLOWCLK, d_dtack_pol);
+
+  JTAGSEL_INNER <= DEVICE and STROBE when default_low = '1' else
+                   not (DEVICE and STROBE);
 
 -- Generate LOAD
   D1_LOAD  <= DATASHFT or INSTSHFT;
@@ -247,9 +272,6 @@ begin
                                  TC_RESETDONE, SLOWCLK, RESETJTAG, CLR_RESETDONE);
   RESETDONE <= '1' when (QV_RESETDONE(2) = '1' and QV_RESETDONE(3) = '1') else '0';
 
--- Generate DTACK when RESETDONE=1 AND INITJTAGS=0
-  --DTACK_INNER <= '0' when (RESETDONE = '1' and INITJTAGS = '0') else 'Z';
-
 -- Generate TMS when RESETJTAG=1
   CE_RESETJTAG_TMS <= (RESETJTAG and ENABLE);
   FD_Q6Q1_RESETJTAG_TMS : FDCE port map (Q1_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, RST, Q6_RESETJTAG_TMS);
@@ -277,9 +299,6 @@ begin
 -- Generate RDTDODK
   RDTDODK <= '1' when (STROBE = '1' and READTDO = '1' and BUSYP1 = '0' and BUSY = '0') else '0';
 
--- Generate DTACK when RDTDODK=1
-  --DTACK_INNER <= '0' when (RDTDODK = '1') else 'Z';
-
 -- Generate OUTDATA
   SHFT_EN              <= SHDATAX and not ENABLE;
 -- old: SR16LCE(SLOWCLK, SHFT_EN, RST, ODMBTDO, Q_OUTDATA, Q_OUTDATA);
@@ -290,9 +309,9 @@ begin
   OUTDATA(15 downto 0) <= Q_OUTDATA(15 downto 0) when (RDTDODK = '1') else "ZZZZZZZZZZZZZZZZ";
 
 -- Generate DTACK when DATASHFT=1 or INSTSHFT=1
-  D_DTACK     <= (DATASHFT or INSTSHFT);
-  CE_DTACK    <= not BUSY;
-  CLR_DTACK   <= not STROBE;
+  D_DTACK   <= (DATASHFT or INSTSHFT);
+  CE_DTACK  <= not BUSY;
+  CLR_DTACK <= not STROBE;
   FD_DQ1_DTACK  : FDCE port map (Q1_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, D_DTACK);
 -- Old code: commented out prior to change from package latchesAndFlipFlops
 -- FDC(Q1_LED, SLOWCLK, CLR_LED, Q2_LED);
@@ -302,13 +321,11 @@ begin
   FD_Q1Q2_DTACK : FDCE port map (Q2_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q1_DTACK);
   FD_Q2Q3_DTACK : FDCE port map (Q3_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q2_DTACK);
   FD_Q3Q4_DTACK : FDCE port map (Q4_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q3_DTACK);
-  --DTACK_INNER <= '0' when (Q3_DTACK = '1' and Q4_DTACK = '1') else 'Z';
 
--- DTACK_INNER                     
-  DTACK_INNER <= '1' when (RESETDONE = '1' and INITJTAGS = '0') or
-                 (RDTDODK = '1') or
-                 (Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
-  DTACK <= DTACK_INNER;
+-- DTACK                     
+  DTACK <= '1' when (RESETDONE = '1' and INITJTAGS = '0') or
+           (RDTDODK = '1') or q_dtack_pol = '1' or
+           (Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
 
 -- Generate LED.
   LED <= '0' when (Q3_DTACK = '1' and Q4_DTACK = '1') else '0';

@@ -415,8 +415,8 @@ NET: "prom_d[15]"		LOC = "M23" | IOSTANDARD = LVCMOS25; #STAT1
 #NET: "tck"			LOC = "AE8" | IOSTANDARD = LVCMOS25; #STAT1
 NET: "v6_jtag_sel"		LOC = "AF19" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "odmb_tdo"			LOC = "P34" | IOSTANDARD = LVCMOS25; #STAT1 
-NET: "odmb_tdi"			LOC = "M15" | IOSTANDARD = LVCMOS25; #STAT1 dcfeb_tdi to be connected to a test point
-NET: "odmb_tms"			LOC = "M13" | IOSTANDARD = LVCMOS25; #STAT1 dcfeb_tms to be connected to a test point
+NET: "dcfeb_tdi"		LOC = "M15" | IOSTANDARD = LVCMOS25; #STAT1 In V2 connected to tph43
+NET: "dcfeb_tms"		LOC = "M13" | IOSTANDARD = LVCMOS25; #STAT1 In V2 connected to tph45
 #NET: "vfs"			LOC = "Y8" | IOSTANDARD = LVCMOS25; #STAT1
 NET: "qpll_clk160mhz_n"		LOC = "P5" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
 NET: "qpll_clk160mhz_p"		LOC = "P6" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
@@ -452,8 +452,8 @@ NET: "odmb_hardrst_b"		LOC = "AE17" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "reprgen_b"		LOC = "AJ19" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "dcfeb_resync"		LOC = "AJ17" | IOSTANDARD = LVCMOS25; #STAT2
 
-NET: "dcfeb_tdi"		LOC = "AK11" | IOSTANDARD = LVCMOS25; #STAT2
-NET: "dcfeb_tms"		LOC = "AJ10" | IOSTANDARD = LVCMOS25 | PULLDOWN; #STAT2
+#NET: "dcfeb_tdi"		LOC = "AK11" | IOSTANDARD = LVCMOS25; #STAT2
+#NET: "dcfeb_tms"		LOC = "AJ10" | IOSTANDARD = LVCMOS25 | PULLDOWN; #STAT2
 
 NET: "dcfeb_tck[1]"		LOC = "AL15" | IOSTANDARD = LVCMOS25; #STAT2
 NET: "dcfeb_tck[2]"		LOC = "AK17" | IOSTANDARD = LVCMOS25; #STAT2
@@ -509,9 +509,9 @@ NET: "tph[39]"			LOC = "AM13" | IOSTANDARD = LVCMOS25; #STAT2   tp_13
 NET: "tph[40]"			LOC = "AK12" | IOSTANDARD = LVCMOS25; #STAT2   tp_14
 NET: "tph[41]"			LOC = "AL11" | IOSTANDARD = LVCMOS25; #STAT2   tp_15
 NET: "tph[42]"			LOC = "AM11" | IOSTANDARD = LVCMOS25; #STAT2   tp_16
-#NET: "tph[43]"			LOC = "AK11" | IOSTANDARD = LVCMOS25; #STAT2   tp_17  #Connected to dcfeb_tdi
+NET: "tph[43]"			LOC = "AK11" | IOSTANDARD = LVCMOS25; #STAT2   tp_17  #Connected to dcfeb_tdi
 NET: "tph[44]"			LOC = "AL10" | IOSTANDARD = LVCMOS25; #STAT2   tp_18
-#NET: "tph[45]"			LOC = "AJ10" | IOSTANDARD = LVCMOS25; #STAT2   tp_19  #Connected to dcfeb_tms
+NET: "tph[45]"			LOC = "AJ10" | IOSTANDARD = LVCMOS25; #STAT2   tp_19  #Connected to dcfeb_tms
 NET: "tph[46]"			LOC = "AH10" | IOSTANDARD = LVCMOS25; #STAT2   tp_20
 #NET: "TP24"			LOC = "AP7" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "TP25"			LOC = "AN7" | IOSTANDARD = LVCMOS25; #STAT2

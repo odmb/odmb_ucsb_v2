@@ -88,7 +88,7 @@ begin
 -- Upload Assignments (PROM to Configuration Registers)
   bpi_cmd_fifo_data_ul(0) <= x"0ff7";   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(1) <= x"0000";   -- Set Offset = 0 
-  bpi_cmd_fifo_data_ul(2) <= x"01e4";   -- Read_N - N = 16
+  bpi_cmd_fifo_data_ul(2) <= std_logic_vector(to_unsigned(NREGS-1, 11)) & "00100";   -- Read_N - N = NREGS-1
   bpi_cmd_fifo_data_ul(3) <= x"0005";   -- Set Read Array Mode
 
 -- UL and DL Registers

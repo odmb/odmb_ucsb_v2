@@ -27,6 +27,7 @@ entity ODMB_VME is
   port (
     CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
     CSP_BPI_PORT_LA_CTRL         : inout std_logic_vector(35 downto 0);
+    CSP_LVMB_LA_CTRL             : inout std_logic_vector(35 downto 0);
 -- VME signals
 
     cmd_adrs        : out std_logic_vector(15 downto 0);
@@ -146,6 +147,7 @@ entity ODMB_VME is
     INJ_DLY       : out std_logic_vector(4 downto 0);
     EXT_DLY       : out std_logic_vector(4 downto 0);
     CALLCT_DLY    : out std_logic_vector(3 downto 0);
+    ODMB_ID       : out std_logic_vector(15 downto 0);
     NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(7 downto 0);
@@ -320,6 +322,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       ODMBTDO   : in  std_logic;
 
       JTAGSEL : out std_logic;
+      ODMB_ID : in  std_logic_vector(15 downto 0);
 
       LED : out std_logic
       );
@@ -397,6 +400,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       EXT_DLY    : out std_logic_vector(4 downto 0);
       CALLCT_DLY : out std_logic_vector(3 downto 0);
 
+      ODMB_ID      : out std_logic_vector(15 downto 0);
       NWORDS_DUMMY : out std_logic_vector(15 downto 0);
       KILL         : out std_logic_vector(NFEB+2 downto 1);
       CRATEID      : out std_logic_vector(7 downto 0);
@@ -496,6 +500,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
   component LVDBMON is
     port (
 
+      CSP_LVMB_LA_CTRL : inout std_logic_vector(35 downto 0);
+
       SLOWCLK   : in std_logic;
       RST       : in std_logic;
       PON_RESET : in std_logic;         -- Power on reset
@@ -519,6 +525,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       R_LVTURNON : in  std_logic_vector(8 downto 1);
       LOADON     : out std_logic;
 
+      ODMB_ID  : in  std_logic_vector(15 downto 0);
       DIAGLVDB : out std_logic_vector(17 downto 0)
       );
   end component;
@@ -737,7 +744,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
   type   dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
   signal dev_outdata    : dev_array;
   signal device_index   : integer range 0 to 15;
-  signal cmd_adrs_inner : std_logic_vector (17 downto 2);
+  signal cmd_adrs_inner : std_logic_vector(17 downto 2);
+  signal odmb_id_inner  : std_logic_vector(15 downto 0);
 
 begin
 
@@ -815,6 +823,7 @@ begin
       TDI       => odmb_jtag_tdi,
       TMS       => odmb_jtag_tms,
       ODMBTDO   => odmb_jtag_tdo,
+      ODMB_ID   => odmb_id_inner,
 
       JTAGSEL => odmb_jtag_sel,
 
@@ -889,6 +898,7 @@ begin
         EXT_DLY    => EXT_DLY,
         CALLCT_DLY => CALLCT_DLY,
 
+        ODMB_ID      => odmb_id_inner,
         NWORDS_DUMMY => NWORDS_DUMMY,
         KILL         => KILL,
         CRATEID      => CRATEID,
@@ -905,7 +915,7 @@ begin
         CC_CFG_REG_WE => CC_BPI_CFG_REG_WE,
         BPI_CFG_REGS  => bpi_cfg_regs
         );
-
+  ODMB_ID <= odmb_id_inner;
 
   DEV5_TESTFIFOS : TESTFIFOS
     port map (
@@ -1013,6 +1023,8 @@ begin
 
   DEV8_LVDBMON : LVDBMON
     port map(
+      CSP_LVMB_LA_CTRL => CSP_LVMB_LA_CTRL,
+
       SLOWCLK   => clk_s2,
       RST       => rst,
       PON_RESET => pon_reset,
@@ -1036,6 +1048,7 @@ begin
       R_LVTURNON => r_lvmb_pon,
       LOADON     => pon_load,
 
+      ODMB_ID  => odmb_id_inner,
       DIAGLVDB => diagout_lvdbmon
 
       );
@@ -1186,7 +1199,7 @@ begin
   ext_vme_ga      <= vme_gap & vme_ga;
 
 
-  PON_OE_B <= '0';                      -- To LVMB
+  PON_OE_B <= '0' when odmb_id_inner(15 downto 12) /= x"3" else '1';  -- To LVMB: V2 default low, V3 default high
 
   VME_DTACK_B <= not or_reduce(dtack_dev);
 

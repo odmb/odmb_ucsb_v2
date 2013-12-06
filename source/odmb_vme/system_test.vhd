@@ -164,24 +164,24 @@ begin
 
   cmddev             <= "000" & DEVICE & COMMAND & "00";
   w_ddu_prbs_en      <= '1' when (cmddev = x"1000" and STROBE = '1' and WRITER = '0') else '0';
-  r_ddu_prbs_err_cnt <= '1' when (cmddev = x"100C" and STROBE = '1' and WRITER = '1') else '0';
+  r_ddu_prbs_err_cnt <= '1' when (cmddev = x"100C" and WRITER = '1') else '0';
 
   w_pc_prbs_en      <= '1' when (cmddev = x"1100" and STROBE = '1' and WRITER = '0') else '0';
-  r_pc_prbs_err_cnt <= '1' when (cmddev = x"110C" and STROBE = '1' and WRITER = '1') else '0';
+  r_pc_prbs_err_cnt <= '1' when (cmddev = x"110C" and WRITER = '1') else '0';
 
   w_dcfeb_prbs_en      <= '1' when (cmddev = x"1200" and STROBE = '1' and WRITER = '0') else '0';
   w_dcfeb_prbs_fiber   <= '1' when (cmddev = x"1204" and STROBE = '1' and WRITER = '0') else '0';
-  r_dcfeb_prbs_fiber   <= '1' when (cmddev = x"1204" and STROBE = '1' and WRITER = '1') else '0';
-  r_dcfeb_prbs_edge    <= '1' when (cmddev = x"1208" and STROBE = '1' and WRITER = '1') else '0';
-  r_dcfeb_prbs_err_cnt <= '1' when (cmddev = x"120C" and STROBE = '1' and WRITER = '1') else '0';
+  r_dcfeb_prbs_fiber   <= '1' when (cmddev = x"1204" and WRITER = '1') else '0';
+  r_dcfeb_prbs_edge    <= '1' when (cmddev = x"1208" and WRITER = '1') else '0';
+  r_dcfeb_prbs_err_cnt <= '1' when (cmddev = x"120C" and WRITER = '1') else '0';
 
   w_prbs_type <= '1' when (cmddev = x"1300" and STROBE = '1' and WRITER = '0') else '0';
-  r_prbs_type <= '1' when (cmddev = x"1300" and STROBE = '1' and WRITER = '1') else '0';
+  r_prbs_type <= '1' when (cmddev = x"1300" and WRITER = '1') else '0';
 
   w_otmb_prbs_en       <= '1' when (cmddev = x"1400" and STROBE = '1' and WRITER = '0') else '0';
-  r_otmb_prbs_en_cnt   <= '1' when (cmddev = x"1404" and STROBE = '1' and WRITER = '1') else '0';
-  r_otmb_prbs_good_cnt <= '1' when (cmddev = x"1408" and STROBE = '1' and WRITER = '1') else '0';
-  r_otmb_prbs_err_cnt  <= '1' when (cmddev = x"140C" and STROBE = '1' and WRITER = '1') else '0';
+  r_otmb_prbs_en_cnt   <= '1' when (cmddev = x"1404" and WRITER = '1') else '0';
+  r_otmb_prbs_good_cnt <= '1' when (cmddev = x"1408" and WRITER = '1') else '0';
+  r_otmb_prbs_err_cnt  <= '1' when (cmddev = x"140C" and WRITER = '1') else '0';
   w_otmb_prbs_cnt_rst  <= '1' when (cmddev = x"1410" and STROBE = '1' and WRITER = '0') else '0';  
 
   STROBE_PE : PULSE_EDGE port map(strobe_pulse, open, SLOWCLK, RST, 1, STROBE);

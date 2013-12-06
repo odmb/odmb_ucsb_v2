@@ -11,6 +11,8 @@ entity LVDBMON is
   
   port (
 
+    CSP_LVMB_LA_CTRL : inout std_logic_vector(35 downto 0);
+
     SLOWCLK   : in std_logic;
     RST       : in std_logic;
     PON_RESET : in std_logic;           -- Power on reset
@@ -34,6 +36,7 @@ entity LVDBMON is
     R_LVTURNON : in  std_logic_vector(8 downto 1);
     LOADON     : out std_logic;
 
+    ODMB_ID : in  std_logic_vector(15 downto 0);
     DIAGLVDB : out std_logic_vector(17 downto 0)
     );
 end LVDBMON;
@@ -41,6 +44,15 @@ end LVDBMON;
 
 
 architecture LVDBMON_Arch of LVDBMON is
+
+  component csp_lvmb_la is
+    port (
+      CLK     : in    std_logic := 'X';
+      DATA    : in    std_logic_vector (99 downto 0);
+      TRIG0   : in    std_logic_vector (7 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
+      );
+  end component;
 
   component PULSE_EDGE is
     port (
@@ -77,6 +89,10 @@ architecture LVDBMON_Arch of LVDBMON is
   signal Q_ADCDATA                                                                                  : std_logic_vector(7 downto 0);
   --signal D_ADCDATA: std_logic_vector(7 downto 0);
   signal CMDDEV                                                                                     : unsigned(12 downto 0);
+
+  signal csp_lvmb_la_trig : std_logic_vector (7 downto 0);
+  signal csp_lvmb_la_data : std_logic_vector (99 downto 0);
+  signal diaglvdb_inner   : std_logic_vector (17 downto 0);
   
 begin  --Architecture
 
@@ -154,7 +170,7 @@ begin  --Architecture
 -- Generate OUTDATA
   CE_OUTDATA_FULL      <= '1'                         when (BUSY = '1' and RSTBUSY = '0' and CLKMON = '0') else '0';
   SR16CE_OUTDATA : SR16CE port map (Q_OUTDATA_FULL, SLOWCLK, CE_OUTDATA_FULL, RST, ADCIN);
-  OUTDATA(15 downto 0) <= Q_OUTDATA_FULL(15 downto 0) when (RDMONBK = '1') else
+  OUTDATA(15 downto 0) <= Q_OUTDATA_FULL(15 downto 0) when (RDMONBK = '1')                                 else
                           (others => 'Z');
   SLI_ADCDATA <= 'L';
 
@@ -172,7 +188,7 @@ begin  --Architecture
   ADCCLK_INNER <= not CLKMON;
 
 -- Generate BUSY
-  CE1_BUSY <= '1' when (BUSY = '1' and CLKMON = '0') else '0';
+  CE1_BUSY <= '1' when (BUSY = '1' and CLKMON = '0')                          else '0';
   CLR_BUSY <= Q2_BUSY or RST;
   CB8CE_BUSY : CB8CE port map (blank1, QTIME, blank2, SLOWCLK, CE1_BUSY, CLR_BUSY);
   DONEMON  <= '1' when (QTIME(4) = '1' and QTIME(3) = '1' and QTIME(1) = '1') else '0';
@@ -188,7 +204,7 @@ begin  --Architecture
   CLR1_LOAD <= RST or Q2_LOAD;
   FDC_VCC    : FDC port map (Q1_LOAD, ASYNLOAD, CLR1_LOAD, VCC);
   FDC_LOAD1  : FDC port map (LOAD, SLOWCLK, RST, Q1_LOAD);
-  CE_LOAD   <= '1' when (BUSY = '1' and CLKMON = '0') else '0';
+  CE_LOAD   <= '1' when (BUSY = '1' and CLKMON = '0')                    else '0';
   FDCE_LOAD2 : FDCE port map (Q2_LOAD, SLOWCLK, CE_LOAD, RST, LOAD);
   FDC_LOAD3  : FDC port map (Q3_LOAD, SLOWCLK, RST, Q2_LOAD);
 
@@ -197,19 +213,38 @@ begin  --Architecture
   --DTACK_INNER <= '0' when (Q4_LOAD='1') else 'Z';
 
 -- Generate LOADON / Generate DTACK / Generate LVTURNON / Generate ADCLK
-  LOADON      <= LOADON_INNER;
+  -- V2 default low, V3 default high
+  LOADON   <= LOADON_INNER when ODMB_ID(15 downto 12) /= x"3" else not LOADON_INNER;
   LVTURNON <= LVTURNON_INNER;
   ADCCLK   <= ADCCLK_INNER;
-  
+
   DTACK_INNER <= '1' when (Q_OUTDATA = '1') or
                  (Q_DTACK_2 = '1') or
                  (Q_OUTDATA_2 = '1') or
                  (Q_DTACK_4 = '1') or
                  (RDMONBK = '1') or
                  (Q4_LOAD = '1') else '0';
-  DTACK    <= DTACK_INNER;
+  DTACK <= DTACK_INNER;
 
 -- Generate DIAGLVDB
-  DIAGLVDB(17 downto 0) <= x"000" & L_ADCDATA & BUSY & ADCCLK_INNER & CLKMON & CE_ADCDATA & SLOWCLK;
+  DIAGLVDB_INNER(17 downto 0) <= x"000" & L_ADCDATA & BUSY & ADCCLK_INNER & CLKMON & CE_ADCDATA & SLOWCLK;
+  DIAGLVDB                    <= DIAGLVDB_INNER;
+
+  csp_lvmb_la_pm : csp_lvmb_la
+    port map (
+      CONTROL => CSP_LVMB_LA_CTRL,
+      CLK     => SLOWCLK,
+      DATA    => csp_lvmb_la_data,
+      TRIG0   => csp_lvmb_la_trig
+      );
+
+  csp_lvmb_la_trig <= x"0" & "00" & WRITEADC & READMON;
+  csp_lvmb_la_data <= x"0000000000" & "00" &
+                      BUSY & RST & RSTBUSY &         -- (50:48)
+                      ASYNLOAD & LOADON_INNER & LVTURNON_INNER & CE_LOAD &  --(47:44)
+                      ADCIN & Q_ADCDATA(7) &         --ADC_OUT.  (43:42)
+                      Q_ADCDATA &       -- (41:34)
+                      Q_OUTDATA_FULL(15 downto 0) &  --(33:18)
+                      DIAGLVDB_INNER;   --(17:0)
   
 end LVDBMON_Arch;
