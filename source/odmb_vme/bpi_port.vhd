@@ -36,15 +36,20 @@ entity BPI_PORT is
     BPI_ENBL          : out std_logic;
     BPI_CFG_DL        : out std_logic;
     BPI_CFG_UL        : out std_logic;
+    BPI_CONST_DL      : out std_logic;
+    BPI_CONST_UL      : out std_logic;
 
-    BPI_RBK_FIFO_DATA : in  std_logic_vector(15 downto 0);
-    BPI_RBK_WRD_CNT   : in  std_logic_vector(10 downto 0);
-    BPI_STATUS        : in  std_logic_vector(15 downto 0);
-    BPI_TIMER         : in  std_logic_vector(31 downto 0);
-    BPI_CFG_UL_PULSE  : out std_logic;
-    BPI_CFG_DL_PULSE  : out std_logic;
-    BPI_CFG_BUSY      : in  std_logic;
-    BPI_DONE          : in  std_logic
+    BPI_RBK_FIFO_DATA  : in  std_logic_vector(15 downto 0);
+    BPI_RBK_WRD_CNT    : in  std_logic_vector(10 downto 0);
+    BPI_STATUS         : in  std_logic_vector(15 downto 0);
+    BPI_TIMER          : in  std_logic_vector(31 downto 0);
+    BPI_CFG_UL_PULSE   : out std_logic;
+    BPI_CFG_DL_PULSE   : out std_logic;
+    BPI_CFG_BUSY       : in  std_logic;
+    BPI_CONST_UL_PULSE : out std_logic;
+    BPI_CONST_DL_PULSE : out std_logic;
+    BPI_CONST_BUSY     : in  std_logic;
+    BPI_DONE           : in  std_logic
 
     );
 end BPI_PORT;
@@ -72,8 +77,10 @@ architecture BPI_PORT_Arch of BPI_PORT is
       );
   end component;
 
-  signal cmddev                 : unsigned(12 downto 0);
-  signal bpi_cfg_data_sel_inner : std_logic;
+  signal cmddev : unsigned(12 downto 0);
+
+  signal bpi_port_csp_data : std_logic_vector(127 downto 0);
+  signal bpi_port_csp_trig : std_logic_vector(7 downto 0);
 
   signal dd_dtack, d_dtack, q_dtack, dtack_inner : std_logic;
   signal send_bpi_rst, bpi_rst_inner             : std_logic;
@@ -86,28 +93,40 @@ architecture BPI_PORT_Arch of BPI_PORT is
   signal bpi_enbl_inner, bpi_dsbl_inner           : std_logic;
   signal send_bpi_enbl                            : std_logic;
   signal rst_send_bpi_enbl                        : std_logic;
-  signal send_bpi_cfg_ul                          : std_logic;
-  signal rst_cfg_ul_dl                            : std_logic;
-  signal d_cfg_ul_init, q_cfg_ul_init             : std_logic;
-  signal rst_cfg_ul_init, dd_cfg_ul_init          : std_logic;
-  signal send_bpi_cfg_dl                          : std_logic;
   signal w_cmd_fifo, r_rbk_fifo, start_w_cmd_fifo : std_logic;
   signal dd_r_rbk_fifo, d_r_rbk_fifo              : std_logic;
   signal q_r_rbk_fifo, q_r_rbk_fifo_b             : std_logic;
 
-  signal out_ctrl_reg                                   : std_logic_vector(15 downto 0);
-  signal bpi_cfg_ul_pulse_inner, bpi_cfg_dl_pulse_inner : std_logic;  --TD
-  signal bpi_cfg_busy_b                                 : std_logic;
+  signal start_rst, start_cfg_ul, start_const_ul : std_logic;
 
-  signal bpi_port_csp_data                  : std_logic_vector(127 downto 0);
-  signal bpi_port_csp_trig                  : std_logic_vector(7 downto 0);
-  signal bpi_cfg_ul_inner, bpi_cfg_dl_inner : std_logic;
-  signal start_rst, start_ul                : std_logic;
+  signal send_bpi_cfg_ul                 : std_logic;
+  signal d_cfg_ul_init, q_cfg_ul_init    : std_logic;
+  signal rst_cfg_ul_init, dd_cfg_ul_init : std_logic;
+  signal bpi_cfg_ul_pulse_inner          : std_logic;
+  signal bpi_cfg_busy_b                  : std_logic;
+  signal bpi_cfg_ul_inner                : std_logic;
+  signal rst_cfg_ul_pulse                : std_logic := '0';
+  signal rst_const_ul_init_b             : std_logic;
+  signal rst_cfg_done_pulse   : std_logic := '0';
+  signal rst_cfg_done_pulse_b : std_logic := '1';
+
+  signal send_bpi_cfg_dl, bpi_cfg_dl_inner     : std_logic;
+  signal rst_cfg_ul_dl, bpi_cfg_dl_pulse_inner : std_logic;
+
+  signal send_bpi_const_ul                   : std_logic;
+  signal d_const_ul_init, q_const_ul_init    : std_logic;
+  signal rst_const_ul_init, dd_const_ul_init : std_logic;
+  signal bpi_const_ul_pulse_inner            : std_logic;
+  signal bpi_const_busy_b                    : std_logic;
+  signal bpi_const_ul_inner                  : std_logic;
+  signal rst_const_ul_pulse                  : std_logic := '0';
+  signal rst_const_done_pulse   : std_logic := '0';
+  signal rst_const_done_pulse_b : std_logic := '1';
+
+  signal send_bpi_const_dl, bpi_const_dl_inner     : std_logic;
+  signal rst_const_ul_dl, bpi_const_dl_pulse_inner : std_logic;
 
   signal rst_b            : std_logic := '1';
-  signal rst_done_pulse   : std_logic := '0';
-  signal rst_done_pulse_b : std_logic := '1';
-  signal rst_cfg_ul_pulse : std_logic := '0';
 
 begin  --Architecture
 
@@ -115,69 +134,107 @@ begin  --Architecture
   CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input
 
   SEND_BPI_CFG_DL <= '1' when (CMDDEV = x"1000" and WRITE_B = '0'
-                               and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
+                               and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
   SEND_BPI_CFG_UL <= '1' when (CMDDEV = x"1004" and WRITE_B = '0'
-                               and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
+                               and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
+
+  SEND_BPI_CONST_DL <= '1' when (CMDDEV = x"1010" and WRITE_B = '0'
+                                 and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
+  SEND_BPI_CONST_UL <= '1' when (CMDDEV = x"1014" and WRITE_B = '0'
+                                 and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
 
   SEND_BPI_RST <= '1' when (CMDDEV = x"1020" and WRITE_B = '0'
                             and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
 
-  SEND_BPI_DSBL <= '1' when (CMDDEV = x"1024" and WRITE_B = '0' and BPI_CFG_BUSY = '0') else '0';
-  SEND_BPI_ENBL <= '1' when (CMDDEV = x"1028" and WRITE_B = '0' and BPI_CFG_BUSY = '0') else '0';
+  SEND_BPI_DSBL <= '1' when (CMDDEV = x"1024" and WRITE_B = '0'
+                             and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
+  SEND_BPI_ENBL <= '1' when (CMDDEV = x"1028" and WRITE_B = '0'
+                             and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
 
-  W_CMD_FIFO    <= '1' when (CMDDEV = x"102C" and WRITE_B = '0' and BPI_CFG_BUSY = '0') else '0';
+  W_CMD_FIFO <= '1' when (CMDDEV = x"102C" and WRITE_B = '0'
+                          and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
   R_RBK_FIFO    <= '1' when (CMDDEV = x"1030" and WRITE_B = '1') else '0';
   R_RBK_FIFO_NW <= '1' when (CMDDEV = x"1034" and WRITE_B = '1') else '0';
   R_BPI_STATUS  <= '1' when (CMDDEV = x"1038" and WRITE_B = '1') else '0';
   R_BPI_TIMER_L <= '1' when (CMDDEV = x"103C" and WRITE_B = '1') else '0';
   R_BPI_TIMER_H <= '1' when (CMDDEV = x"1040" and WRITE_B = '1') else '0';
 
+-- CFG REGISTERS
+  -- Start Upload and Download CFG registers
+  start_cfg_ul <= SEND_BPI_CFG_UL or rst_cfg_ul_pulse;
+  PULSE_CFG_UL : PULSE_EDGE port map(BPI_CFG_UL_INNER, open, CLK, RST, 1, start_cfg_ul);
+  PULSE_CFG_DL : PULSE_EDGE port map(BPI_CFG_DL_INNER, open, CLK, RST, 1, SEND_BPI_CFG_DL);
+  BPI_CFG_UL   <= BPI_CFG_UL_INNER;
+  BPI_CFG_DL   <= BPI_CFG_DL_INNER;
 
   -- Setting MUXes for Upload and Download CFG registers
-  start_ul       <= SEND_BPI_CFG_UL or rst_cfg_ul_pulse;
   bpi_cfg_busy_b <= not BPI_CFG_BUSY;
-  FDCP_TEST_UL : FDCP port map (bpi_cfg_ul_pulse_inner, bpi_cfg_busy_b, RST, '0', start_ul);
-  FDCP_TEST_DL : FDCP port map (bpi_cfg_dl_pulse_inner, bpi_cfg_busy_b, RST, '0', SEND_BPI_CFG_DL);
+  FDCP_CFG_UL : FDCP port map (bpi_cfg_ul_pulse_inner, bpi_cfg_busy_b, RST, '0', start_cfg_ul);
+  FDCP_CFG_DL : FDCP port map (bpi_cfg_dl_pulse_inner, bpi_cfg_busy_b, RST, '0', SEND_BPI_CFG_DL);
+
+  BPI_CFG_UL_PULSE <= bpi_cfg_ul_pulse_inner;
+  BPI_CFG_DL_PULSE <= bpi_cfg_dl_pulse_inner;
 
   -- Upload config from PROM on RST
-  rst_b            <= not RST;
-  RST_DONE_PE   : PULSE_EDGE port map (rst_done_pulse, open, clk, RST, 20, rst_b);
-  rst_done_pulse_b <= not rst_done_pulse;
-  RST_UL_CFG_PE : PULSE_EDGE port map (rst_cfg_ul_pulse, open, clk, RST, 5, rst_done_pulse_b);
+  rst_const_ul_init_b  <= not rst_const_ul_init;
+  RST_CFGDONE_PE : PULSE_EDGE port map (rst_cfg_done_pulse, open, clk, RST, 20, rst_const_ul_init_b);
+  rst_cfg_done_pulse_b <= not rst_cfg_done_pulse;
+  RST_UL_CFG_PE  : PULSE_EDGE port map (rst_cfg_ul_pulse, open, clk, RST, 5, rst_cfg_done_pulse_b);
 
   -- Reset BPI (mainly rbk_fifo) after initial Upload
   FD_DD_CFG_UL_INIT : FD port map(DD_CFG_UL_INIT, CLK, rst_cfg_ul_pulse);
   FD_D_CFG_UL_INIT  : FDC port map(D_CFG_UL_INIT, DD_CFG_UL_INIT, RST_CFG_UL_INIT, '1');
   FD_CFG_UL_INIT    : FD port map(Q_CFG_UL_INIT, SLOWCLK, D_CFG_UL_INIT);
-  RST_CFG_UL_INIT <= bpi_cfg_busy_b and Q_CFG_UL_INIT;
+  rst_cfg_ul_init <= bpi_cfg_busy_b and Q_CFG_UL_INIT;
 
-  BPI_CFG_UL_PULSE <= bpi_cfg_ul_pulse_inner;
-  BPI_CFG_DL_PULSE <= bpi_cfg_dl_pulse_inner;
 
--- PULSE COMMANDS
+-- CONST REGISTERS
+  -- Start Upload and Download CONST registers
+  start_const_ul <= SEND_BPI_CONST_UL or rst_const_ul_pulse;
+  PULSE_CONST_UL : PULSE_EDGE port map(BPI_CONST_UL_INNER, open, CLK, RST, 1, start_const_ul);
+  PULSE_CONST_DL : PULSE_EDGE port map(BPI_CONST_DL_INNER, open, CLK, RST, 1, SEND_BPI_CONST_DL);
+  BPI_CONST_UL   <= BPI_CONST_UL_INNER;
+  BPI_CONST_DL   <= BPI_CONST_DL_INNER;
 
-  -- DTACK signals for Readback FIFO
+  -- Setting MUXes for Upload and Download CONST registers
+  bpi_const_busy_b <= not BPI_CONST_BUSY;
+  FDCP_CONST_UL : FDCP port map (bpi_const_ul_pulse_inner, bpi_const_busy_b, RST, '0', start_const_ul);
+  FDCP_CONST_DL : FDCP port map (bpi_const_dl_pulse_inner, bpi_const_busy_b, RST, '0', SEND_BPI_CONST_DL);
+
+  BPI_CONST_UL_PULSE <= bpi_const_ul_pulse_inner;
+  BPI_CONST_DL_PULSE <= bpi_const_dl_pulse_inner;
+
+  -- Upload config from PROM on RST
+  rst_b            <= not RST;
+  RST_DONE_PE     : PULSE_EDGE port map (rst_const_done_pulse, open, clk, RST, 20, rst_b);
+  rst_const_done_pulse_b <= not rst_const_done_pulse;
+  RST_UL_CONST_PE : PULSE_EDGE port map (rst_const_ul_pulse, open, clk, RST, 5, rst_const_done_pulse_b);
+
+  -- Reset BPI (mainly rbk_fifo) after initial Upload
+  FD_DD_CONST_UL_INIT : FD port map(DD_CONST_UL_INIT, CLK, rst_const_ul_pulse);
+  FD_D_CONST_UL_INIT  : FDC port map(D_CONST_UL_INIT, DD_CONST_UL_INIT, RST_CONST_UL_INIT, '1');
+  FD_CONST_UL_INIT    : FD port map(Q_CONST_UL_INIT, SLOWCLK, D_CONST_UL_INIT);
+  rst_const_ul_init <= bpi_const_busy_b and Q_CONST_UL_INIT;
+
+
+  -- Read enables for Readback FIFO
   dd_r_rbk_fifo  <= '1' when (r_rbk_fifo = '1' and STROBE = '1') else '0';
   FD_D_R_RBK_FIFO : FDC port map(d_r_rbk_fifo, dd_r_rbk_fifo, q_r_rbk_fifo, '1');
   FD_Q_R_RBK_FIFO : FD port map(q_r_rbk_fifo, SLOWCLK, d_r_rbk_fifo);
   q_r_rbk_fifo_b <= not q_r_rbk_fifo;
   PULSE_BPI_RE    : PULSE_EDGE port map(BPI_RE, open, CLK, RST, 1, q_r_rbk_fifo_b);
 
-  start_rst        <= SEND_BPI_RST or RST_CFG_UL_INIT;
+  start_rst        <= SEND_BPI_RST or rst_cfg_ul_init or rst_const_ul_init;
   PULSE_BPI_RST : PULSE_EDGE port map(BPI_RST_INNER, open, CLK, RST, 10, start_rst);
   start_w_cmd_fifo <= '1' when (w_cmd_fifo = '1' and STROBE = '1') else '0';
   PULSE_BPI_WE  : PULSE_EDGE port map(BPI_WE, open, CLK, RST, 1, start_w_cmd_fifo);
 
-  PULSE_CFG_UL   : PULSE_EDGE port map(BPI_CFG_UL_INNER, open, CLK, RST, 1, start_ul);
-  PULSE_CFG_DL   : PULSE_EDGE port map(BPI_CFG_DL_INNER, open, CLK, RST, 1, SEND_BPI_CFG_DL);
   PULSE_BPI_ENBL : PULSE_EDGE port map(BPI_ENBL_INNER, open, CLK, RST, 1, SEND_BPI_ENBL);
   PULSE_BPI_DSBL : PULSE_EDGE port map(BPI_DSBL_INNER, open, CLK, RST, 1, SEND_BPI_DSBL);
 
-  BPI_CFG_UL <= BPI_CFG_UL_INNER;
-  BPI_CFG_DL <= BPI_CFG_DL_INNER;
-  BPI_RST    <= BPI_RST_INNER;
-  BPI_ENBL   <= BPI_ENBL_INNER;
-  BPI_DSBL   <= BPI_DSBL_INNER;
+  BPI_RST  <= BPI_RST_INNER;
+  BPI_ENBL <= BPI_ENBL_INNER;
+  BPI_DSBL <= BPI_DSBL_INNER;
 
   OUTDATA <= BPI_RBK_FIFO_DATA when (R_RBK_FIFO = '1') else
              "00000" & BPI_RBK_WRD_CNT when (R_RBK_FIFO_NW = '1') else
@@ -220,6 +277,7 @@ begin  --Architecture
   dd_dtack <= STROBE and DEVICE;
   FD_D_DTACK : FDC port map(d_dtack, dd_dtack, q_dtack, '1');
   FD_Q_DTACK : FD port map(q_dtack, SLOWCLK, d_dtack);
+  dtack_inner    <= q_dtack;
   DTACK    <= q_dtack;
   
 end BPI_PORT_Arch;

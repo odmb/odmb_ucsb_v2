@@ -301,7 +301,7 @@ begin
         otmb_tx_good_cnt_int <= otmb_tx_good_cnt_int + 1;
         if otmb_tx_good_cnt_int = otmb_prbs_length then
           otmb_tx_good_cnt     <= otmb_tx_good_cnt + 1;
-          otmb_tx_good_cnt_int <= 0;
+          otmb_tx_good_cnt_int <= 1;
         end if;
       end if;
     else

@@ -72,8 +72,8 @@ entity ODMB_UCSB_V2 is
 -- From/To PPIB (connectors J3 and J4)
 
     dcfeb_tck       : out std_logic_vector(NFEB downto 1);
-    dcfeb_tms       : out std_logic;
-    dcfeb_tdi       : out std_logic;
+    dcfeb_tms       : inout std_logic;
+    dcfeb_tdi       : inout std_logic;
     dcfeb_tdo       : in  std_logic_vector(NFEB downto 1);
     dcfeb_bc0       : out std_logic;
     dcfeb_resync    : out std_logic;
@@ -174,8 +174,7 @@ entity ODMB_UCSB_V2 is
 
 -- From/To Test Points
 
-    tph : out std_logic_vector(46 downto 27);
-    tpl : out std_logic_vector(23 downto 6);
+    test_point : out std_logic_vector(49 downto 12);
 
 -- From/To RX 
 
@@ -406,8 +405,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       BPI_STATUS        : in  std_logic_vector(15 downto 0);  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         : in  std_logic_vector(31 downto 0);  -- General timer
 
-      BPI_CFG_UL_BUGGER : out std_logic;
-      BPI_CFG_DL_BUGGER : out std_logic;
+      BPI_CFG_UL_PULSE : out std_logic;
+      BPI_CFG_DL_PULSE : out std_logic;
       BPI_DONE          : in  std_logic;
       BPI_CFG_REG_WE    : in  std_logic;
       BPI_CFG_REG_IN    : in  std_logic_vector(15 downto 0);
@@ -1041,7 +1040,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 -- JTAG signals To/From MBV
 
   signal int_tck, int_tdo : std_logic_vector(7 downto 1);
-  signal int_tms, int_tdi : std_logic;
+  signal odmb_tms, odmb_tdi : std_logic;
+  signal dcfeb_tms_out, dcfeb_tdi_out : std_logic;
+  signal isnot_ODMB_V3 : std_logic := '1';
 
 -- JTAG outputs from internal DCFEBs
 
@@ -1392,7 +1393,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal prom_a_out      : std_logic_vector(22 downto 0);
   signal prom_d_out      : std_logic_vector(15 downto 0);
 
-  
+  signal tp_1 : integer range 30 to 45 := 30;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  signal tp_2 : integer range 30 to 45 := 34;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  signal tp_3 : integer range 30 to 45 := 38;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  signal tp_4 : integer range 49 to 49 := 49;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+
 begin
   
   csp_controller_pm : csp_controller
@@ -1452,8 +1457,8 @@ begin
 -- JTAG signals To/From DCFEBs
 
       dl_jtag_tck => int_tck,
-      dl_jtag_tms => int_tms,
-      dl_jtag_tdi => int_tdi,
+      dl_jtag_tms => dcfeb_tms_out,
+      dl_jtag_tdi => dcfeb_tdi_out,
       dl_jtag_tdo => int_tdo,
 
 -- JTAG Signals To/From ODMB JTAG
@@ -1578,8 +1583,8 @@ begin
       BPI_STATUS        => bpi_status,  -- FIFO status bits and latest value of the PROM status register. 
       BPI_TIMER         => bpi_timer,   -- General timer
 
-      BPI_CFG_UL_BUGGER => bpi_cfg_ul_pulse,
-      BPI_CFG_DL_BUGGER => bpi_cfg_dl_pulse,
+      BPI_CFG_UL_PULSE => bpi_cfg_ul_pulse,
+      BPI_CFG_DL_PULSE => bpi_cfg_dl_pulse,
       BPI_DONE          => bpi_done,
       BPI_CFG_REG_WE    => bpi_cfg_reg_we,
       BPI_CFG_REG_IN    => bpi_cfg_reg_in,
@@ -1961,8 +1966,8 @@ begin
         dcfeb_jtag_ir => dcfeb_jtag_ir(I),
         trst          => reset,
         tck           => int_tck(I),
-        tms           => int_tms,
-        tdi           => int_tdi,
+        tms           => dcfeb_tms_out,
+        tdi           => dcfeb_tdi_out,
         rtn_shft_en   => open,
         tdo           => gen_tdo(I));
 
@@ -2240,8 +2245,6 @@ begin
   end generate GEN_CCB_FD;
 
   -- To DCFEBs
-  dcfeb_tms       <= int_tms;
-  dcfeb_tdi       <= int_tdi;
   dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
@@ -2284,8 +2287,12 @@ begin
   bxcnt_rst        <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
-  PULLDOWN_DCFEB_TMS : PULLDOWN port map (int_tms);
+  PULLDOWN_DCFEB_TMS : PULLDOWN port map (dcfeb_tms_out);
   PULLDOWN_ODMB_TMS  : PULLDOWN port map (v6_tms);
+
+  isnot_ODMB_V3 <= '1' when odmb_id(15 downto 12) /= x"3" else '0'; 
+  BUF_DCFEBTMS : IOBUF port map(O => odmb_tms, IO => DCFEB_TMS, I => dcfeb_tms_out, T => isnot_ODMB_V3);
+  BUF_DCFEBTDI : IOBUF port map(O => odmb_tdi, IO => DCFEB_TDI, I => dcfeb_tdi_out, T => isnot_ODMB_V3);
 
   GEN_15 : for I in 0 to 15 generate
   begin
@@ -2870,309 +2877,324 @@ begin
   end process;
 
 
-  tpl(6)  <= raw_lct(1);
-  tpl(8)  <= raw_lct(2);
-  tpl(10) <= raw_lct(3);
-  tpl(12) <= raw_lct(4);
-  tpl(14) <= raw_lct(5);
-  tpl(16) <= raw_lct(6);
-  tpl(18) <= raw_lct(7);
-  tpl(7)  <= int_l1a_match(1);
-  tpl(9)  <= int_l1a_match(2);
-  tpl(11) <= int_l1a_match(3);
-  tpl(13) <= int_l1a_match(4);
-  tpl(15) <= int_l1a_match(5);
-  tpl(17) <= int_l1a_match(6);
-  tpl(19) <= int_l1a_match(7);
-  tpl(20) <= int_l1a;
-  tpl(21) <= gtx0_data_valid;
-  tpl(22) <= int_otmb_dav;
-  tpl(23) <= int_alct_dav;
+  test_point(12)  <= raw_lct(1);
+  test_point(14)  <= raw_lct(2);
+  test_point(16) <= raw_lct(3);
+  test_point(18) <= raw_lct(4);
+  test_point(20) <= raw_lct(5);
+  test_point(22) <= raw_lct(6);
+  test_point(24) <= raw_lct(7);
+  test_point(13)  <= int_l1a_match(1);
+  test_point(15)  <= int_l1a_match(2);
+  test_point(17) <= int_l1a_match(3);
+  test_point(19) <= int_l1a_match(4);
+  test_point(21) <= int_l1a_match(5);
+  test_point(23) <= int_l1a_match(6);
+  test_point(25) <= int_l1a_match(7);
+  test_point(26) <= int_l1a;
+  test_point(27) <= gtx0_data_valid;
+  test_point(28) <= int_otmb_dav;
+  test_point(29) <= int_alct_dav;
 
-  tph(29) <= cafifo_l1a_dav(1);
-  tph(30) <= cafifo_l1a_dav(2);
-  tph(31) <= gtx0_data_valid;
-  tph(32) <= gtx1_data_valid;
-  tph(33) <= rawlct(1);
-  tph(34) <= rawlct(2);
-  tph(35) <= rawlct(3);
-  tph(36) <= rawlct(4);
-  tph(37) <= rawlct(5);
-  tph(38) <= rawlct(6);
-  tph(39) <= rawlct(7);
-  tph(40) <= lct_err;
-  tph(43) <= int_tdi;
-  tph(44) <= '0';
-  tph(45) <= int_tms;
-  tph(46) <= '0';
+  --test_point(29) <= cafifo_l1a_dav(1);
+  --test_point(30) <= cafifo_l1a_dav(2);
+  --test_point(31) <= gtx0_data_valid;
+  --test_point(32) <= gtx1_data_valid;
+  --test_point(33) <= rawlct(1);
+  --test_point(34) <= rawlct(2);
+  --test_point(35) <= rawlct(3);
+  --test_point(36) <= rawlct(4);
+  --test_point(37) <= rawlct(5);
+  --test_point(38) <= rawlct(6);
+  --test_point(39) <= rawlct(7);
+  --test_point(40) <= lct_err;
+  --test_point(44) <= '0';
+  --test_point(46) <= '0';
+
+  test_point(46) <= dcfeb_tdi_out;
+  test_point(47) <= '1';
+  test_point(48) <= dcfeb_tms_out;
+
+  tp_1 <= 30;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
+  tp_2 <= 34;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
+  tp_3 <= 38;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
+  tp_4 <= 49;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
 
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
                          int_otmb_dav, dcfeb_data, otmb_fifo_data_in, otmb_fifo_data_valid, int_alct_dav,
                          alct_fifo_data_in,
                          alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tdo,
-                         v6_jtag_sel_inner, int_tms, int_tdi, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
+                         v6_jtag_sel_inner, dcfeb_tms_out, dcfeb_tdi_out, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
                          otmb_lct_rqst, otmb_ext_trig, raw_l1a, L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT,
-                         dcfeb_prbs_en, dcfeb_prbs_rst, dcfeb_prbs_rd_en, dcfeb_rxprbserr)
+                         dcfeb_prbs_en, dcfeb_prbs_rst, dcfeb_prbs_rd_en, dcfeb_rxprbserr,
+                         int_lvmb_sclk, int_lvmb_sdin, lvmb_sdout, int_lvmb_csb)
   begin
     case tp_sel_reg is
       when x"0000" =>
-        tph(27) <= gtx0_data_valid;
-        tph(28) <= cafifo_l1a_dav(7);
-        tph(41) <= int_l1a_match(7);
-        tph(42) <= dcfeb_data_valid(7);
+        test_point(tp_1) <= gtx0_data_valid;
+        test_point(tp_2) <= cafifo_l1a_dav(7);
+        test_point(tp_3) <= int_l1a_match(7);
+        test_point(tp_4) <= dcfeb_data_valid(7);
 
       when x"0001" =>
-        tph(27) <= int_l1a_match(1);
-        tph(28) <= cafifo_l1a_dav(1);
-        tph(41) <= dcfeb_data(1)(0);
-        tph(42) <= dcfeb_data_valid(1);
+        test_point(tp_1) <= int_l1a_match(1);
+        test_point(tp_2) <= cafifo_l1a_dav(1);
+        test_point(tp_3) <= dcfeb_data(1)(0);
+        test_point(tp_4) <= dcfeb_data_valid(1);
 
       when x"0002" =>
-        tph(27) <= int_l1a_match(2);
-        tph(28) <= cafifo_l1a_dav(2);
-        tph(41) <= dcfeb_data(2)(0);
-        tph(42) <= dcfeb_data_valid(2);
+        test_point(tp_1) <= int_l1a_match(2);
+        test_point(tp_2) <= cafifo_l1a_dav(2);
+        test_point(tp_3) <= dcfeb_data(2)(0);
+        test_point(tp_4) <= dcfeb_data_valid(2);
 
       when x"0003" =>
-        tph(27) <= int_l1a_match(3);
-        tph(28) <= cafifo_l1a_dav(3);
-        tph(41) <= dcfeb_data(3)(0);
-        tph(42) <= dcfeb_data_valid(3);
+        test_point(tp_1) <= int_l1a_match(3);
+        test_point(tp_2) <= cafifo_l1a_dav(3);
+        test_point(tp_3) <= dcfeb_data(3)(0);
+        test_point(tp_4) <= dcfeb_data_valid(3);
 
       when x"0004" =>
-        tph(27) <= int_l1a_match(4);
-        tph(28) <= cafifo_l1a_dav(4);
-        tph(41) <= dcfeb_data(4)(0);
-        tph(42) <= dcfeb_data_valid(4);
+        test_point(tp_1) <= int_l1a_match(4);
+        test_point(tp_2) <= cafifo_l1a_dav(4);
+        test_point(tp_3) <= dcfeb_data(4)(0);
+        test_point(tp_4) <= dcfeb_data_valid(4);
 
       when x"0005" =>
-        tph(27) <= int_l1a_match(5);
-        tph(28) <= cafifo_l1a_dav(5);
-        tph(41) <= dcfeb_data(5)(0);
-        tph(42) <= dcfeb_data_valid(5);
+        test_point(tp_1) <= int_l1a_match(5);
+        test_point(tp_2) <= cafifo_l1a_dav(5);
+        test_point(tp_3) <= dcfeb_data(5)(0);
+        test_point(tp_4) <= dcfeb_data_valid(5);
 
       when x"0006" =>
-        tph(27) <= int_l1a_match(6);
-        tph(28) <= cafifo_l1a_dav(6);
-        tph(41) <= dcfeb_data(6)(0);
-        tph(42) <= dcfeb_data_valid(6);
+        test_point(tp_1) <= int_l1a_match(6);
+        test_point(tp_2) <= cafifo_l1a_dav(6);
+        test_point(tp_3) <= dcfeb_data(6)(0);
+        test_point(tp_4) <= dcfeb_data_valid(6);
 
       when x"0007" =>
-        tph(27) <= int_l1a_match(7);
-        tph(28) <= cafifo_l1a_dav(7);
-        tph(41) <= dcfeb_data(7)(0);
-        tph(42) <= dcfeb_data_valid(7);
+        test_point(tp_1) <= int_l1a_match(7);
+        test_point(tp_2) <= cafifo_l1a_dav(7);
+        test_point(tp_3) <= dcfeb_data(7)(0);
+        test_point(tp_4) <= dcfeb_data_valid(7);
 
       when x"0008" =>
-        tph(27) <= int_otmb_dav;
-        tph(28) <= cafifo_l1a_dav(8);
-        tph(41) <= otmb_fifo_data_in(0);
-        tph(42) <= otmb_fifo_data_valid;
+        test_point(tp_1) <= int_otmb_dav;
+        test_point(tp_2) <= cafifo_l1a_dav(8);
+        test_point(tp_3) <= otmb_fifo_data_in(0);
+        test_point(tp_4) <= otmb_fifo_data_valid;
 
       when x"0009" =>
-        tph(27) <= int_alct_dav;
-        tph(28) <= cafifo_l1a_dav(9);
-        tph(41) <= alct_fifo_data_in(0);
-        tph(42) <= alct_fifo_data_valid;
+        test_point(tp_1) <= int_alct_dav;
+        test_point(tp_2) <= cafifo_l1a_dav(9);
+        test_point(tp_3) <= alct_fifo_data_in(0);
+        test_point(tp_4) <= alct_fifo_data_valid;
 
       when x"000A" =>
-        tph(27) <= ext_dcfeb_l1a_cnt7(0);
-        tph(28) <= dcfeb_l1a_dav7;
-        tph(41) <= dcfeb_data(7)(0);
-        tph(42) <= dcfeb_data_valid(7);
+        test_point(tp_1) <= ext_dcfeb_l1a_cnt7(0);
+        test_point(tp_2) <= dcfeb_l1a_dav7;
+        test_point(tp_3) <= dcfeb_data(7)(0);
+        test_point(tp_4) <= dcfeb_data_valid(7);
 
       when x"0010" =>
-        tph(27) <= odmb_tdo;
-        tph(28) <= odmb_tdo;
-        tph(41) <= odmb_tdo;
-        tph(42) <= dcfeb_data_valid(7);
+        test_point(tp_1) <= odmb_tdo;
+        test_point(tp_2) <= odmb_tdo;
+        test_point(tp_3) <= odmb_tdo;
+        test_point(tp_4) <= dcfeb_data_valid(7);
 
       when x"0011" =>
-        tph(27) <= gtx1_data_valid;
-        tph(28) <= pc_tx_fifo_wren;
-        tph(41) <= pc_txd_frame(0);
-        tph(42) <= pc_txd_frame(1);
+        test_point(tp_1) <= gtx1_data_valid;
+        test_point(tp_2) <= pc_tx_fifo_wren;
+        test_point(tp_3) <= pc_txd_frame(0);
+        test_point(tp_4) <= pc_txd_frame(1);
 
       when x"0012" =>
-        tph(27) <= gtx1_data_valid;
-        tph(28) <= gl_pc_tx_ack;
-        tph(41) <= rom_cnt_out(0);
-        tph(42) <= rom_cnt_out(1);
+        test_point(tp_1) <= gtx1_data_valid;
+        test_point(tp_2) <= gl_pc_tx_ack;
+        test_point(tp_3) <= rom_cnt_out(0);
+        test_point(tp_4) <= rom_cnt_out(1);
 
       when x"0013" =>
-        tph(27) <= int_tdi;
-        tph(28) <= int_tms;
-        tph(41) <= int_tdo(7);
-        tph(42) <= int_tck(7);
+        test_point(tp_1) <= dcfeb_tdi_out;
+        test_point(tp_2) <= dcfeb_tms_out;
+        test_point(tp_3) <= int_tdo(7);
+        test_point(tp_4) <= int_tck(7);
 
       when x"0014" =>
-        tph(27) <= otmb_lct_rqst;
-        tph(28) <= otmb_ext_trig;
-        tph(41) <= raw_lct(0);
-        tph(42) <= raw_lct(1);
+        test_point(tp_1) <= otmb_lct_rqst;
+        test_point(tp_2) <= otmb_ext_trig;
+        test_point(tp_3) <= raw_lct(0);
+        test_point(tp_4) <= raw_lct(1);
 
       when x"0015" =>
-        tph(27) <= int_l1a;
-        tph(28) <= raw_l1a;
-        tph(41) <= raw_lct(0);
-        tph(42) <= raw_lct(1);
+        test_point(tp_1) <= int_l1a;
+        test_point(tp_2) <= raw_l1a;
+        test_point(tp_3) <= raw_lct(0);
+        test_point(tp_4) <= raw_lct(1);
 
       when x"0016" =>
-        tph(27) <= int_l1a;
-        tph(28) <= raw_l1a;
-        tph(41) <= alctdav;
-        tph(42) <= otmbdav;
+        test_point(tp_1) <= int_l1a;
+        test_point(tp_2) <= raw_l1a;
+        test_point(tp_3) <= alctdav;
+        test_point(tp_4) <= otmbdav;
 
       when x"0017" =>
-        tph(27) <= int_l1a;
-        tph(28) <= raw_l1a;
-        tph(41) <= alct(16);
-        tph(42) <= alct(17);
+        test_point(tp_1) <= int_l1a;
+        test_point(tp_2) <= raw_l1a;
+        test_point(tp_3) <= alct(16);
+        test_point(tp_4) <= alct(17);
 
       when x"0018" =>
-        tph(27) <= int_l1a;
-        tph(28) <= raw_l1a;
-        tph(41) <= otmb(16);
-        tph(42) <= otmb(17);
+        test_point(tp_1) <= int_l1a;
+        test_point(tp_2) <= raw_l1a;
+        test_point(tp_3) <= otmb(16);
+        test_point(tp_4) <= otmb(17);
 
       when x"0019" =>
-        tph(27) <= L1A_OTMB_PUSHED_OUT;
-        tph(28) <= raw_l1a;
-        tph(41) <= otmbdav;
-        tph(42) <= OTMB_DAV_SYNC_OUT;
+        test_point(tp_1) <= L1A_OTMB_PUSHED_OUT;
+        test_point(tp_2) <= raw_l1a;
+        test_point(tp_3) <= otmbdav;
+        test_point(tp_4) <= OTMB_DAV_SYNC_OUT;
 
       when x"001A" =>
-        tph(27) <= ccb_cal(2);
-        tph(28) <= ccb_cal(1);
-        tph(41) <= ccb_cal(0);
-        tph(42) <= ccb_cmd(5);
+        test_point(tp_1) <= ccb_cal(2);
+        test_point(tp_2) <= ccb_cal(1);
+        test_point(tp_3) <= ccb_cal(0);
+        test_point(tp_4) <= ccb_cmd(5);
 
       when x"001B" =>
-        tph(27) <= ccb_cmd(4);
-        tph(28) <= ccb_cmd(3);
-        tph(41) <= ccb_cmd(2);
-        tph(42) <= ccb_cmd(1);
+        test_point(tp_1) <= ccb_cmd(4);
+        test_point(tp_2) <= ccb_cmd(3);
+        test_point(tp_3) <= ccb_cmd(2);
+        test_point(tp_4) <= ccb_cmd(1);
 
       when x"001C" =>
-        tph(27) <= int_l1a;
-        tph(28) <= ccb_cal(1);
-        tph(41) <= ccb_cal(0);
-        tph(42) <= raw_l1a;
+        test_point(tp_1) <= int_l1a;
+        test_point(tp_2) <= ccb_cal(1);
+        test_point(tp_3) <= ccb_cal(0);
+        test_point(tp_4) <= raw_l1a;
 
       when x"001D" =>
-        tph(27) <= vme_ds_b(0);
-        tph(28) <= vme_as_b;
-        tph(41) <= vme_dtack_v6_b;
-        tph(42) <= vme_write_b;
+        test_point(tp_1) <= vme_ds_b(0);
+        test_point(tp_2) <= vme_as_b;
+        test_point(tp_3) <= vme_dtack_v6_b;
+        test_point(tp_4) <= vme_write_b;
 
       when x"001E" =>
-        tph(27) <= otmb_rx(5);
-        tph(28) <= otmb_rx(4);
-        tph(41) <= otmb_rx(3);
-        tph(42) <= otmb_rx(2);
+        test_point(tp_1) <= otmb_rx(5);
+        test_point(tp_2) <= otmb_rx(4);
+        test_point(tp_3) <= otmb_rx(3);
+        test_point(tp_4) <= otmb_rx(2);
         
       when x"001F" =>
-        tph(27) <= otmb_rx(1);
-        tph(28) <= otmb_rx(0);
-        tph(41) <= rawlct(1);
-        tph(42) <= int_l1a_match(1);
+        test_point(tp_1) <= otmb_rx(1);
+        test_point(tp_2) <= otmb_rx(0);
+        test_point(tp_3) <= rawlct(1);
+        test_point(tp_4) <= int_l1a_match(1);
 
       when x"0020" =>
-        tph(27) <= otmb_tx(48);
-        tph(28) <= otmb_tx(47);
-        tph(41) <= otmb_tx(46);
-        tph(42) <= otmb_tx(45);
+        test_point(tp_1) <= otmb_tx(48);
+        test_point(tp_2) <= otmb_tx(47);
+        test_point(tp_3) <= otmb_tx(46);
+        test_point(tp_4) <= otmb_tx(45);
         
       when x"0021" =>
-        tph(27) <= otmb_tx(44);
-        tph(28) <= otmb_tx(43);
-        tph(41) <= otmb_tx(42);
-        tph(42) <= otmb_tx(41);
+        test_point(tp_1) <= otmb_tx(44);
+        test_point(tp_2) <= otmb_tx(43);
+        test_point(tp_3) <= otmb_tx(42);
+        test_point(tp_4) <= otmb_tx(41);
 
       when x"0022" =>
-        tph(27) <= otmb_tx(40);
-        tph(28) <= otmb_tx(39);
-        tph(41) <= otmb_tx(38);
-        tph(42) <= otmb_tx(37);
+        test_point(tp_1) <= otmb_tx(40);
+        test_point(tp_2) <= otmb_tx(39);
+        test_point(tp_3) <= otmb_tx(38);
+        test_point(tp_4) <= otmb_tx(37);
 
       when x"0023" =>
-        tph(27) <= otmb_tx(36);
-        tph(28) <= otmb_tx(35);
-        tph(41) <= otmb_tx(34);
-        tph(42) <= otmb_tx(33);
+        test_point(tp_1) <= otmb_tx(36);
+        test_point(tp_2) <= otmb_tx(35);
+        test_point(tp_3) <= otmb_tx(34);
+        test_point(tp_4) <= otmb_tx(33);
 
       when x"0024" =>
-        tph(27) <= otmb_tx(32);
-        tph(28) <= otmb_tx(31);
-        tph(41) <= otmb_tx(30);
-        tph(42) <= otmb_tx(29);
+        test_point(tp_1) <= otmb_tx(32);
+        test_point(tp_2) <= otmb_tx(31);
+        test_point(tp_3) <= otmb_tx(30);
+        test_point(tp_4) <= otmb_tx(29);
 
       when x"0025" =>
-        tph(27) <= otmb_tx(28);
-        tph(28) <= otmb_tx(27);
-        tph(41) <= otmb_tx(26);
-        tph(42) <= otmb_tx(25);
+        test_point(tp_1) <= otmb_tx(28);
+        test_point(tp_2) <= otmb_tx(27);
+        test_point(tp_3) <= otmb_tx(26);
+        test_point(tp_4) <= otmb_tx(25);
 
       when x"0026" =>
-        tph(27) <= otmb_tx(24);
-        tph(28) <= otmb_tx(23);
-        tph(41) <= otmb_tx(22);
-        tph(42) <= otmb_tx(21);
+        test_point(tp_1) <= otmb_tx(24);
+        test_point(tp_2) <= otmb_tx(23);
+        test_point(tp_3) <= otmb_tx(22);
+        test_point(tp_4) <= otmb_tx(21);
 
       when x"0027" =>
-        tph(27) <= otmb_tx(20);
-        tph(28) <= otmb_tx(19);
-        tph(41) <= otmb_tx(18);
-        tph(42) <= otmb_tx(17);
+        test_point(tp_1) <= otmb_tx(20);
+        test_point(tp_2) <= otmb_tx(19);
+        test_point(tp_3) <= otmb_tx(18);
+        test_point(tp_4) <= otmb_tx(17);
 
       when x"0028" =>
-        tph(27) <= otmb_tx(16);
-        tph(28) <= otmb_tx(15);
-        tph(41) <= otmb_tx(14);
-        tph(42) <= otmb_tx(13);
+        test_point(tp_1) <= otmb_tx(16);
+        test_point(tp_2) <= otmb_tx(15);
+        test_point(tp_3) <= otmb_tx(14);
+        test_point(tp_4) <= otmb_tx(13);
 
       when x"0029" =>
-        tph(27) <= otmb_tx(12);
-        tph(28) <= otmb_tx(11);
-        tph(41) <= otmb_tx(10);
-        tph(42) <= otmb_tx(9);
+        test_point(tp_1) <= otmb_tx(12);
+        test_point(tp_2) <= otmb_tx(11);
+        test_point(tp_3) <= otmb_tx(10);
+        test_point(tp_4) <= otmb_tx(9);
 
       when x"002A" =>
-        tph(27) <= otmb_tx(8);
-        tph(28) <= otmb_tx(7);
-        tph(41) <= otmb_tx(6);
-        tph(42) <= otmb_tx(5);
+        test_point(tp_1) <= otmb_tx(8);
+        test_point(tp_2) <= otmb_tx(7);
+        test_point(tp_3) <= otmb_tx(6);
+        test_point(tp_4) <= otmb_tx(5);
 
       when x"002B" =>
-        tph(27) <= otmb_tx(4);
-        tph(28) <= otmb_tx(3);
-        tph(41) <= otmb_tx(2);
-        tph(42) <= otmb_tx(1);
+        test_point(tp_1) <= otmb_tx(4);
+        test_point(tp_2) <= otmb_tx(3);
+        test_point(tp_3) <= otmb_tx(2);
+        test_point(tp_4) <= otmb_tx(1);
         
       when x"002C" =>
-        tph(27) <= otmb_tx(0);
-        tph(28) <= raw_lct(1);
-        tph(41) <= rawlct(1);
-        tph(42) <= int_l1a_match(1);
+        test_point(tp_1) <= otmb_tx(0);
+        test_point(tp_2) <= raw_lct(1);
+        test_point(tp_3) <= rawlct(1);
+        test_point(tp_4) <= int_l1a_match(1);
 
       when x"002D" =>
-        tph(27) <= dcfeb_prbs_en;
-        tph(28) <= dcfeb_prbs_rst;
-        tph(41) <= dcfeb_prbs_rd_en;
-        tph(42) <= dcfeb_rxprbserr;
+        test_point(tp_1) <= dcfeb_prbs_en;
+        test_point(tp_2) <= dcfeb_prbs_rst;
+        test_point(tp_3) <= dcfeb_prbs_rd_en;
+        test_point(tp_4) <= dcfeb_rxprbserr;
 
       when x"002E" =>
-        tph(27) <= v6_jtag_sel_inner;
-        tph(28) <= v6_tck_inner;
-        tph(41) <= v6_tms_inner;
-        tph(42) <= v6_tdi_inner;
+        test_point(tp_1) <= v6_jtag_sel_inner;
+        test_point(tp_2) <= v6_tck_inner;
+        test_point(tp_3) <= v6_tms_inner;
+        test_point(tp_4) <= v6_tdi_inner;
+
+      when x"002F" =>
+        test_point(tp_1) <= lvmb_sdout;
+        test_point(tp_2) <= int_lvmb_sclk;
+        test_point(tp_3) <= int_lvmb_sdin;
+        test_point(tp_4) <= int_lvmb_csb(0);   
 
       when others =>
-        tph(27) <= int_l1a;
-        tph(28) <= raw_lct(1);
-        tph(41) <= rawlct(1);
-        tph(42) <= int_l1a_match(1);
+        test_point(tp_1) <= int_l1a;
+        test_point(tp_2) <= raw_lct(1);
+        test_point(tp_3) <= rawlct(1);
+        test_point(tp_4) <= int_l1a_match(1);
     end case;
   end process;
 
+  
 end ODMB_UCSB_V2_ARCH;

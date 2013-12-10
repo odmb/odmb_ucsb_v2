@@ -7,6 +7,12 @@
 =                                                                    =
 ======================================================================
 
+V02-01, build 3: 10 December 2013, Manuel
+------------------------------------------
+ODMB.V3 compatible firmware (uses ODMB_ID to set polarity of
+V6_JTAG_SEL, LVMB_LOAD, LVMB_PON_OE).
+Writes constants in different block
+
 V02-00: 3 December 2013, Manuel
 --------------------------------
 Storage of configuration registers to PROM.

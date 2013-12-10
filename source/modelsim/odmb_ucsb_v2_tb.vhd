@@ -231,8 +231,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 -- From/To PPIB (connectors J3 and J4)
 
         dcfeb_tck       : out std_logic_vector(NFEB downto 1);
-        dcfeb_tms       : out std_logic;
-        dcfeb_tdi       : out std_logic;
+        dcfeb_tms       : inout std_logic;
+        dcfeb_tdi       : inout std_logic;
         dcfeb_tdo       : in  std_logic_vector(NFEB downto 1);
         dcfeb_bc0       : out std_logic;
         dcfeb_resync    : out std_logic;
@@ -333,8 +333,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From/To Test Points
 
-        tph : out std_logic_vector(46 downto 27);
-        tpl : out std_logic_vector(23 downto 6);
+        test_point : out std_logic_vector(49 downto 12);
 
 -- From/To RX 
 
@@ -604,8 +603,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
 -- From/To Test Points
 
-  signal tph : std_logic_vector(46 downto 27);
-  signal tpl : std_logic_vector(23 downto 6);
+  signal test_point : std_logic_vector(49 downto 12);
 
 -- From/To RX 
 
@@ -874,8 +872,7 @@ begin
 
 -- From/To Test Points
 
-      tph => tph,
-      tpl => tpl,
+      test_point => test_point,
 
 -- From/To RX 
 

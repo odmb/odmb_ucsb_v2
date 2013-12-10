@@ -1,7 +1,23 @@
-w 6020 0      ## BPI reset 
-w 6024 0      ## Disable parser
-	      
-r 6038 0      ## Read status register
+r 6038    0   ## Read status register
+
+W 4FFF FFFF   ## Set CONST mask
+W 6014    0   ## Upload CONSTs
+R 4100    0   ## Read CONST0 (unique ID)
+R 4200    0   ## Read CONST1
+R 4300    0   ## Read CONST2
+R 4700    0   ## Read CONST3
+W 4100 3001   ## Write CONST0 (unique ID)
+W 4200 ABCD   ## Write CONST1
+
+W 6010    0   ## Download CONSTs
+R 4100    0   ## Read CONST0 (unique ID)
+R 4200    0   ## Read CONST1
+R 4300    0   ## Read CONST2
+R 4400    0   ## Read CONST3
+W 4100 1234   ## Write CONST0 (unique ID)
+W 4200 5678   ## Write CONST1
+W 6014    0   ## Upload CONSTs
+
 	      
 ==================================================================================================
 == Write_CFG_REGs

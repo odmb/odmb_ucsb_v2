@@ -1,20 +1,24 @@
 -- BPI_CFG_CONTROLLER: Sends the instructions to BPI_CTRL that Upload and Dowload
--- configuration registers to the PROM
+-- configuration and protected registers to the PROM
 
 library ieee;
 library work;
+library unisim;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
+use unisim.vcomponents.all;
 use work.ucsb_types.all;
 
 entity bpi_cfg_controller is
   generic (
-    NREGS : integer := 16               -- Number of Configuration registers
+    NREGS : integer := 4               -- Number of Configuration/Protected registers
     );  
   port(
-    clk : in std_logic;
-    rst : in std_logic;
+    CLK : in std_logic;
+    RST : in std_logic;
+
+    BPI_BANK_BLOCK : in std_logic_vector(15 downto 0);
 
 -- From VMECONFREGS
     bpi_cfg_reg_we_o : out integer range 0 to NREGS;
@@ -66,46 +70,38 @@ architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
 
   signal bpi_cfg_reg_sel     : integer   := 0;
   signal bpi_cfg_reg_sel_rst : std_logic := '0';
+  signal rst_cfg_ul, rst_cfg_dl : std_logic := '0';
+  
 
 begin
 
 -- Unlock-erase assignments (setting up for DL to PROM)
-  bpi_cmd_fifo_data_er(0) <= x"0ff7";   -- bank/block address
+  bpi_cmd_fifo_data_er(0) <= BPI_BANK_BLOCK;   -- bank/block address
   bpi_cmd_fifo_data_er(1) <= x"0000";   -- block offset
   bpi_cmd_fifo_data_er(2) <= x"0014";   -- unlock (?)
   bpi_cmd_fifo_data_er(3) <= x"000a";   -- erase (?)
 
 -- Download Assignments (Configuration Registers to PROM)
-  bpi_cmd_fifo_data_dl(0) <= x"0ff7";   -- Load Address in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(0) <= BPI_BANK_BLOCK;   -- Load Address in Bank 0 / Block 127
   bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
   bpi_cmd_fifo_data_dl(2) <= std_logic_vector(to_unsigned(NREGS-1, 11)) & "01100";  -- Buffer_Program N = NREGS-1
   --bpi_cmd_fifo_data_dl(2) <= x"01ec";   -- Buffer_Program - N = 16
   GEN_DATA : for index in 0 to NREGS-1 generate
-    bpi_cmd_fifo_data_dl(index+3) <= bpi_cfg_regs(index);  -- Set data
+    bpi_cmd_fifo_data_dl(index+3) <= BPI_CFG_REGS(index);  -- Set data
   end generate GEN_DATA;
   bpi_cmd_fifo_data_dl(NREGS+3) <= x"0005";  -- Set Read Array Mode
 
 -- Upload Assignments (PROM to Configuration Registers)
-  bpi_cmd_fifo_data_ul(0) <= x"0ff7";   -- Load Address in Block 0
+  bpi_cmd_fifo_data_ul(0) <= BPI_BANK_BLOCK;   -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(1) <= x"0000";   -- Set Offset = 0 
   bpi_cmd_fifo_data_ul(2) <= std_logic_vector(to_unsigned(NREGS-1, 11)) & "00100";   -- Read_N - N = NREGS-1
   bpi_cmd_fifo_data_ul(3) <= x"0005";   -- Set Read Array Mode
 
 -- UL and DL Registers
-  ul_reg : process (RST, bpi_cfg_ul_start, bpi_cfg_ul_reset, bpi_cfg_dl_start, bpi_cfg_dl_reset)
-  begin
-    if (rst = '1') or (bpi_cfg_ul_reset = '1') then
-      bpi_cfg_ul <= '0';
-    elsif (rising_edge(bpi_cfg_ul_start)) then
-      bpi_cfg_ul <= '1';
-    end if;
-
-    if (rst = '1') or (bpi_cfg_dl_reset = '1') then
-      bpi_cfg_dl <= '0';
-    elsif (rising_edge(bpi_cfg_dl_start)) then
-      bpi_cfg_dl <= '1';
-    end if;
-  end process;
+  rst_cfg_ul <= rst or bpi_cfg_ul_reset;
+  FD_ULSTART : FDC port map(bpi_cfg_ul, bpi_cfg_ul_start, rst_cfg_ul, '1');
+  rst_cfg_dl <= rst or bpi_cfg_dl_reset;
+  FD_DLSTART : FDC port map(bpi_cfg_dl, bpi_cfg_dl_start, rst_cfg_dl, '1');
 
 -- CFG_REG_WE generation (setting WE to NREGS implies no writing)
   we_proc : process (clk, bpi_cfg_ul, bpi_cfg_reg_we_i, bpi_cfg_reg_sel, bpi_cfg_reg_sel_rst, rst)
