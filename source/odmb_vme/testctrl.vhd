@@ -14,7 +14,7 @@ entity TESTCTRL is
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );
   port (
-    CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    --CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
     CLK                          : in    std_logic;
     DDUCLK                       : in    std_logic;
     SLOWCLK                      : in    std_logic;
@@ -441,21 +441,21 @@ begin  --Architecture
                   (others => '0');
 
 -- Chip ScopePro ILA core
-  csp_systemtest_la_pm : csp_systemtest_la
-    port map (
-      CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
-      CLK     => CLK,                   -- Good ol' 40MHz clock here
-      DATA    => testctrl_la_data,
-      TRIG0   => testctrl_la_trig
-      );
+  --csp_systemtest_la_pm : csp_systemtest_la
+  --  port map (
+  --    CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
+  --    CLK     => CLK,                   -- Good ol' 40MHz clock here
+  --    DATA    => testctrl_la_data,
+  --    TRIG0   => testctrl_la_trig
+  --    );
 
-  testctrl_la_trig <= tc_run_inner & "0000000";
-  testctrl_la_data <= "000" & x"000"
-                      & L1A_INNER & ALCT_DAV_INNER & OTMB_DAV_INNER & LCT_INNER(7 downto 1) -- [112:103]
-                      & tc_fifo_wr_en(0) & tc_fifo_rd_en(0) & tc_fifo_empty(0) -- [102:100]
-                      & tc_fifo_in(0) & tc_fifo_out(0) -- [99:68]
-                      & tc_fifo_wr_en(2) & tc_fifo_rd_en(2) & tc_fifo_empty(2) -- [67:65]
-                      & tc_fifo_in(2) & tc_fifo_out(2) -- [64:33]
-                      & ts_cnt_out(15 downto 0)  -- [32:17]
-                      & tc_run_inner & nrep_data;  -- [16:0]
+  --testctrl_la_trig <= tc_run_inner & "0000000";
+  --testctrl_la_data <= "000" & x"000"
+  --                    & L1A_INNER & ALCT_DAV_INNER & OTMB_DAV_INNER & LCT_INNER(7 downto 1) -- [112:103]
+  --                    & tc_fifo_wr_en(0) & tc_fifo_rd_en(0) & tc_fifo_empty(0) -- [102:100]
+  --                    & tc_fifo_in(0) & tc_fifo_out(0) -- [99:68]
+  --                    & tc_fifo_wr_en(2) & tc_fifo_rd_en(2) & tc_fifo_empty(2) -- [67:65]
+  --                    & tc_fifo_in(2) & tc_fifo_out(2) -- [64:33]
+  --                    & ts_cnt_out(15 downto 0)  -- [32:17]
+  --                    & tc_run_inner & nrep_data;  -- [16:0]
 end TESTCTRL_Arch;

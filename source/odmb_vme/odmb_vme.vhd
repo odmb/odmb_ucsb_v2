@@ -248,7 +248,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
       );    
     port (
-      CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      --CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       CLK                          : in    std_logic;
       DDUCLK                       : in    std_logic;
       SLOWCLK                      : in    std_logic;
@@ -541,7 +541,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
   component SYSTEM_TEST is
     port (
-      --CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 
       DEVICE  : in std_logic;
       COMMAND : in std_logic_vector(9 downto 0);
@@ -784,7 +784,7 @@ begin
   DEV0_TESTCTRL : TESTCTRL
     generic map (NFEB => NFEB)
     port map (
-      CSP_SYSTEM_TEST_PORT_LA_CTRL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
+      --CSP_SYSTEM_TEST_PORT_LA_CTRL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
       CLK                          => clk,
       DDUCLK                       => dduclk,
       SLOWCLK                      => clk_s2,
@@ -1099,7 +1099,7 @@ begin
 
   DEV9_SYSTEST : SYSTEM_TEST
     port map (
-      --CSP_SYSTEM_TEST_PORT_LA_CTRL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
+      CSP_SYSTEM_TEST_PORT_LA_CTRL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
 
       DEVICE  => device(9),
       COMMAND => cmd,

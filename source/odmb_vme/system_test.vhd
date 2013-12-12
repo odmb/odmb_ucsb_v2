@@ -10,7 +10,7 @@ use unisim.vcomponents.all;
 
 entity SYSTEM_TEST is
   port (
-    --CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 
     DEVICE  : in std_logic;
     COMMAND : in std_logic_vector(9 downto 0);
@@ -312,29 +312,29 @@ begin
   end process;
 
 -- Chip ScopePro ILA core
-  --csp_systemtest_la_pm : csp_systemtest_la
-  --  port map (
-  --    CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
-  --    CLK     => CLK,                   -- Good ol' 40MHz clock here
-  --    DATA    => system_test_la_data,
-  --    TRIG0   => system_test_la_trig
-  --    );
+  csp_systemtest_la_pm : csp_systemtest_la
+    port map (
+      CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
+      CLK     => CLK,                   -- Good ol' 40MHz clock here
+      DATA    => system_test_la_data,
+      TRIG0   => system_test_la_trig
+      );
 
-  --system_test_la_trig <= otmb_prbs_tx_en & "0000000";  -- to start with, anyhow.
-  --system_test_la_data <= "00" & x"00000"
-  --                       & otmb_prbs_rx_rst & otmb_prbs_tx_rst  -- 2
-  --                       & otmb_prbs_tx & otmb_prbs_rx          -- 4
-  --                       & start_otmb_prbs_rx & otmb_prbs_rx_en & otmb_prbs_tx_en & otmb_prbs_tx_err  -- 8
-  --                       & otmb_rx_inner(5 downto 0)   -- 14
-  --                       & OTMB_TX(47 downto 44)       -- 18
-  --                       & OTMB_TX(1 downto 0)         -- 20
-  --                       & mux_otmb_tx(47 downto 44)   -- 24
-  --                       & mux_otmb_tx(1 downto 0)     -- 26
-  --                       & otmb_prbs_tx_en_cnt(15 downto 0)     -- 42
-  --                       & x"0000"      -- 58
-  --                       & std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  -- 74
-  --                       & std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16))  -- 90
-  --                       & std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16));  -- 106
+  system_test_la_trig <= otmb_prbs_tx_en & "0000000";  -- to start with, anyhow.
+  system_test_la_data <= "00" & x"00000"
+                         & otmb_prbs_rx_rst & otmb_prbs_tx_rst  -- 2
+                         & otmb_prbs_tx & otmb_prbs_rx          -- 4
+                         & start_otmb_prbs_rx & otmb_prbs_rx_en & otmb_prbs_tx_en & otmb_prbs_tx_err  -- 8
+                         & otmb_rx_inner(5 downto 0)   -- 14
+                         & OTMB_TX(47 downto 44)       -- 18
+                         & OTMB_TX(1 downto 0)         -- 20
+                         & mux_otmb_tx(47 downto 44)   -- 24
+                         & mux_otmb_tx(1 downto 0)     -- 26
+                         & otmb_prbs_tx_en_cnt(15 downto 0)     -- 42
+                         & x"0000"      -- 58
+                         & std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  -- 74
+                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16))  -- 90
+                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16));  -- 106
   
 
 end SYSTEM_TEST_Arch;
