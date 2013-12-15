@@ -17,6 +17,7 @@ entity CONTROL is
     );  
   port (
 
+      CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
     RST    : in std_logic;
     CLKCMS : in std_logic;
     CLK    : in std_logic;
@@ -58,7 +59,8 @@ entity CONTROL is
     cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
     cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
     cafifo_l1a_cnt   : in std_logic_vector(23 downto 0);
-    cafifo_bx_cnt    : in std_logic_vector(11 downto 0)
+    cafifo_bx_cnt    : in std_logic_vector(11 downto 0);
+    cafifo_lost_pckt : in std_logic_vector(NFEB+2 downto 1)
     );
 end CONTROL;
 
