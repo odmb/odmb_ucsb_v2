@@ -125,10 +125,12 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal control_fsm_la_trig : std_logic_vector(7 downto 0);
 
   signal expect_pckt                     : std_logic                     := '0';
-  signal dav_inner                       : std_logic                     := '0';
-  signal dout_inner                      : std_logic_vector(15 downto 0) := (others => '0');
+  signal dav_inner, dav_d                : std_logic                     := '0';
+  signal dout_inner, dout_d              : std_logic_vector(15 downto 0) := (others => '0');
   signal oefifo_b_inner, renfifo_b_inner : std_logic_vector(NFEB+2 downto 1);
+  signal renfifo_b_d                     : std_logic_vector(NFEB+2 downto 1);
   signal fifo_pop_inner, eof_inner       : std_logic                     := '0';
+
 
   signal dev_cnt_svl, hdr_tail_cnt_svl : std_logic_vector(4 downto 0) := (others => '0');
 
@@ -151,14 +153,14 @@ begin
 -- trigger assignments (8 bits)
   control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & "00000";
   control_fsm_la_data <= "000" & x"0000000"
-                         & FFOR_B & cafifo_lost_pckt -- [96:79]
-                         & next_state_svl & eof_inner & fifo_pop_inner & fifo_pop_80 -- [78:72]
-                         & oefifo_b_inner & renfifo_b_inner & dout_inner -- [71:38]
-                         & hdr_tail_cnt_rst & hdr_tail_cnt_en & dev_cnt_en -- [37:35]
-                         & cafifo_l1a_dav & cafifo_l1a_match -- [34:17]
-                         & q_datain_last & expect_pckt    -- [16:15]
-                         & hdr_tail_cnt_svl & dev_cnt_svl -- [14:5]
-                         & current_state_svl & dav_inner; -- [4:0]
+                         & FFOR_B & cafifo_lost_pckt          -- [96:79]
+                         & next_state_svl & eof_inner & fifo_pop_inner & fifo_pop_80  -- [78:72]
+                         & oefifo_b_inner & renfifo_b_inner & dout_inner  -- [71:38]
+                         & hdr_tail_cnt_rst & hdr_tail_cnt_en & dev_cnt_en  -- [37:35]
+                         & cafifo_l1a_dav & cafifo_l1a_match  -- [34:17]
+                         & q_datain_last & expect_pckt        -- [16:15]
+                         & hdr_tail_cnt_svl & dev_cnt_svl     -- [14:5]
+                         & current_state_svl & dav_inner;     -- [4:0]
 
 -- Needed because DATAIN_LAST does not arrive during the last word
   FDLAST : FD port map(q_datain_last, clk, DATAIN_LAST);
@@ -219,14 +221,16 @@ begin
     x"7"                   when TAIL,
     x"8"                   when WAIT_IDLE,
     x"0"                   when others;
+
+  
   
   control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav, hdr_word,
                                hdr_tail_cnt, dev_cnt, tx_cnt, DATAIN, q_datain_last, tail_word)
   begin
-    dout_inner       <= (others => '0');
-    dav_inner        <= '0';
+    dout_d           <= (others => '0');
+    dav_d            <= '0';
     oefifo_b_inner   <= (others => '1');
-    renfifo_b_inner  <= (others => '1');
+    renfifo_b_d      <= (others => '1');
     eof_inner        <= '0';
     fifo_pop_80      <= '0';
     hdr_tail_cnt_rst <= '0';
@@ -245,8 +249,8 @@ begin
         end if;
         
       when HDR =>
-        dout_inner      <= hdr_word(hdr_tail_cnt);
-        dav_inner       <= '1';
+        dout_d          <= hdr_word(hdr_tail_cnt);
+        dav_d           <= '1';
         hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_ALCT_OTMB;
@@ -264,18 +268,18 @@ begin
             control_next_state <= WAIT_DCFEB;
           end if;
         elsif(cafifo_l1a_dav(dev_cnt) = '1') then
-          control_next_state       <= TX_ALCT_OTMB;
-          oefifo_b_inner(dev_cnt)  <= '0';
-          renfifo_b_inner(dev_cnt) <= '0';
+          control_next_state      <= TX_ALCT_OTMB;
+          oefifo_b_inner(dev_cnt) <= '0';
+          renfifo_b_d(dev_cnt)    <= '0';
         else
           control_next_state <= WAIT_ALCT_OTMB;
         end if;
         
       when TX_ALCT_OTMB =>
-        dout_inner               <= DATAIN;
-        dav_inner                <= '1';
-        oefifo_b_inner(dev_cnt)  <= '0';
-        renfifo_b_inner(dev_cnt) <= '0';
+        dout_d                  <= DATAIN;
+        dav_d                   <= '1';
+        oefifo_b_inner(dev_cnt) <= '0';
+        renfifo_b_d(dev_cnt)    <= '0';
         if(q_datain_last = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt = 9) then
@@ -296,22 +300,22 @@ begin
             control_next_state <= WAIT_DCFEB;
           end if;
         elsif(cafifo_l1a_dav(dev_cnt) = '1') then
-          control_next_state       <= TX_DCFEB;
-          oefifo_b_inner(dev_cnt)  <= '0';
-          renfifo_b_inner(dev_cnt) <= '0';
+          control_next_state      <= TX_DCFEB;
+          oefifo_b_inner(dev_cnt) <= '0';
+          renfifo_b_d(dev_cnt)    <= '0';
         else
           control_next_state <= WAIT_DCFEB;
         end if;
 
       when TX_DCFEB =>
-        dout_inner               <= DATAIN;
-        oefifo_b_inner(dev_cnt)  <= '0';
-        renfifo_b_inner(dev_cnt) <= '0';
-        tx_cnt_en                <= '1';
+        dout_d                  <= DATAIN;
+        oefifo_b_inner(dev_cnt) <= '0';
+        renfifo_b_d(dev_cnt)    <= '0';
+        tx_cnt_en               <= '1';
         if (tx_cnt = 3) then
-          dav_inner <= '1';
+          dav_d <= '1';
         else
-          dav_inner <= '0';
+          dav_d <= '0';
         end if;
         if(q_datain_last = '1') then
           dev_cnt_en <= '1';
@@ -326,8 +330,8 @@ begin
         end if;
 
       when TAIL =>
-        dout_inner      <= tail_word(hdr_tail_cnt);
-        dav_inner       <= '1';
+        dout_d          <= tail_word(hdr_tail_cnt);
+        dav_d           <= '1';
         hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_IDLE;
@@ -351,6 +355,18 @@ begin
 
     end case;
   end process;
+
+  FD_DAV : FD port map(dav_inner, CLK, dav_d);
+
+  GEN_FD_RENFIFO : for DEV in 1 to NFEB+2 generate
+    FD_RENFIFO : FD port map (renfifo_b_inner(DEV), CLK, renfifo_b_d(DEV));
+  end generate GEN_FD_RENFIFO;
+
+  GEN_FD_DOUT : for INDEX in 0 to 15 generate
+    FD_DOUT : FD port map (dout_inner(INDEX), CLK, dout_d(INDEX));
+  end generate GEN_FD_DOUT;
+
+
 
   DAV       <= dav_inner;
   DOUT      <= dout_inner;
