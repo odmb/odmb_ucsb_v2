@@ -1394,9 +1394,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal prom_d_out      : std_logic_vector(15 downto 0);
 
   signal tp_1 : integer range 30 to 45 := 30;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  signal tp_2 : integer range 30 to 45 := 34;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  signal tp_3 : integer range 30 to 45 := 38;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  signal tp_4 : integer range 49 to 49 := 49;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  signal tp_2 : integer range 30 to 45 := 31;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  signal tp_3 : integer range 30 to 45 := 44;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  signal tp_4 : integer range 30 to 45 := 45;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  --signal tp_4 : integer range 49 to 49 := 49;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
 
 begin
   
@@ -2914,11 +2915,12 @@ begin
   test_point(46) <= dcfeb_tdi_out;
   test_point(47) <= '1';
   test_point(48) <= dcfeb_tms_out;
+  test_point(49) <= '1';
 
   tp_1 <= 30;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
-  tp_2 <= 34;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
-  tp_3 <= 38;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
-  tp_4 <= 49;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
+  tp_2 <= 31;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
+  tp_3 <= 44;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
+  tp_4 <= 45;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2
 
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
                          int_otmb_dav, dcfeb_data, otmb_fifo_data_in, otmb_fifo_data_valid, int_alct_dav,

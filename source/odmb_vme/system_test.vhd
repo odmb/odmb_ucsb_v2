@@ -59,7 +59,7 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   component csp_systemtest_la is
     port (
       CLK     : in    std_logic := 'X';
-      DATA    : in    std_logic_vector (127 downto 0);
+      DATA    : in    std_logic_vector (199 downto 0);
       TRIG0   : in    std_logic_vector (7 downto 0);
       CONTROL : inout std_logic_vector (35 downto 0)
       );
@@ -160,7 +160,7 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
 
 
   -- Declare the csp stuff here
-  signal system_test_la_data : std_logic_vector(127 downto 0);
+  signal system_test_la_data : std_logic_vector(199 downto 0);
   signal system_test_la_trig : std_logic_vector(7 downto 0);
   
 begin
@@ -321,20 +321,17 @@ begin
       );
 
   system_test_la_trig <= otmb_prbs_tx_en & "0000000";  -- to start with, anyhow.
-  system_test_la_data <= "00" & x"00000"
-                         & otmb_prbs_rx_rst & otmb_prbs_tx_rst  -- 2
-                         & otmb_prbs_tx & otmb_prbs_rx          -- 4
-                         & start_otmb_prbs_rx & otmb_prbs_rx_en & otmb_prbs_tx_en & otmb_prbs_tx_err  -- 8
-                         & otmb_rx_inner(5 downto 0)   -- 14
-                         & OTMB_TX(47 downto 44)       -- 18
-                         & OTMB_TX(1 downto 0)         -- 20
-                         & mux_otmb_tx(47 downto 44)   -- 24
-                         & mux_otmb_tx(1 downto 0)     -- 26
-                         & otmb_prbs_tx_en_cnt(15 downto 0)     -- 42
-                         & x"0000"      -- 58
-                         & std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  -- 74
-                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16))  -- 90
-                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16));  -- 106
-  
+  system_test_la_data <= "00" & x"000000" -- [199:174]
+                         & otmb_prbs_rx_rst & otmb_prbs_tx_rst  -- [173:172]
+                         & otmb_prbs_tx & otmb_prbs_rx          -- [171:170]
+                         & start_otmb_prbs_rx & otmb_prbs_rx_en & otmb_prbs_tx_en & otmb_prbs_tx_err  -- [169:166]
+                         & otmb_rx_inner(5 downto 0)   -- [165:160]
+                         & OTMB_TX(47 downto 0)        -- [159:112]
+                         & mux_otmb_tx(47 downto 0)     -- [111:64]
+                         & otmb_prbs_tx_en_cnt(15 downto 0)     -- [63:48]                        
+                         & std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  -- [47:32]
+                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16))  -- [31:16]
+                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16));  -- [15:0]
+   
 
 end SYSTEM_TEST_Arch;
