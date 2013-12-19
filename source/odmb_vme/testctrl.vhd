@@ -14,7 +14,7 @@ entity TESTCTRL is
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );
   port (
-    --CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    --CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
     CLK                          : in    std_logic;
     DDUCLK                       : in    std_logic;
     SLOWCLK                      : in    std_logic;
@@ -443,7 +443,7 @@ begin  --Architecture
 -- Chip ScopePro ILA core
   --csp_systemtest_la_pm : csp_systemtest_la
   --  port map (
-  --    CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
+  --    CONTROL => CSP_FREE_AGENT_PORT_LA_CTRL,
   --    CLK     => CLK,                   -- Good ol' 40MHz clock here
   --    DATA    => testctrl_la_data,
   --    TRIG0   => testctrl_la_trig

@@ -14,6 +14,7 @@ entity ODMB_CTRL is
   port (
 
 -- Chip Scope Pro Logic Analyzer control
+      CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
     CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 
     clk40  : in std_logic;
@@ -455,6 +456,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       );  
     port(
 
+    CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       clk        : in std_logic;
       dcfebclk   : in std_logic;
       rst        : in std_logic;
@@ -768,6 +770,7 @@ begin
   CAFIFO_PM : cafifo
     generic map (NFEB => NFEB, CAFIFO_SIZE => 32)
     port map(
+      CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
       clk        => clk40,
       dcfebclk   => clk160,
       rst        => l1acnt_rst,

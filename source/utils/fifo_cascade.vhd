@@ -15,6 +15,7 @@ entity FIFO_CASCADE is
   generic (
     NFIFO        : integer range 3 to 16 := 3;
     DATA_WIDTH   : integer               := 18;
+    FWFT         : boolean               := false;
     WR_FASTER_RD : boolean               := true
     );
   port(
@@ -148,7 +149,7 @@ begin
       ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
       DATA_WIDTH              => DATA_WIDTH,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
       FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
-      FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
+      FIRST_WORD_FALL_THROUGH => FWFT)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
       ALMOSTEMPTY => fifo_aempty(1),    -- Output almost empty 

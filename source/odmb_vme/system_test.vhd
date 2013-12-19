@@ -10,7 +10,7 @@ use unisim.vcomponents.all;
 
 entity SYSTEM_TEST is
   port (
-    CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    --CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 
     DEVICE  : in std_logic;
     COMMAND : in std_logic_vector(9 downto 0);
@@ -56,14 +56,14 @@ end SYSTEM_TEST;
 
 architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
 
-  component csp_systemtest_la is
-    port (
-      CLK     : in    std_logic := 'X';
-      DATA    : in    std_logic_vector (199 downto 0);
-      TRIG0   : in    std_logic_vector (7 downto 0);
-      CONTROL : inout std_logic_vector (35 downto 0)
-      );
-  end component;
+  --component csp_systemtest_la is
+  --  port (
+  --    CLK     : in    std_logic := 'X';
+  --    DATA    : in    std_logic_vector (199 downto 0);
+  --    TRIG0   : in    std_logic_vector (7 downto 0);
+  --    CONTROL : inout std_logic_vector (35 downto 0)
+  --    );
+  --end component;
 
   component PULSE_EDGE is
     port (
@@ -160,8 +160,8 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
 
 
   -- Declare the csp stuff here
-  signal system_test_la_data : std_logic_vector(199 downto 0);
-  signal system_test_la_trig : std_logic_vector(7 downto 0);
+  --signal free_agent_la_data : std_logic_vector(199 downto 0);
+  --signal free_agent_la_trig : std_logic_vector(7 downto 0);
   
 begin
 
@@ -312,26 +312,26 @@ begin
   end process;
 
 -- Chip ScopePro ILA core
-  csp_systemtest_la_pm : csp_systemtest_la
-    port map (
-      CONTROL => CSP_SYSTEM_TEST_PORT_LA_CTRL,
-      CLK     => CLK,                   -- Good ol' 40MHz clock here
-      DATA    => system_test_la_data,
-      TRIG0   => system_test_la_trig
-      );
+  --csp_systemtest_la_pm : csp_systemtest_la
+  --  port map (
+  --    CONTROL => CSP_FREE_AGENT_PORT_LA_CTRL,
+  --    CLK     => CLK,                   -- Good ol' 40MHz clock here
+  --    DATA    => free_agent_la_data,
+  --    TRIG0   => free_agent_la_trig
+  --    );
 
-  system_test_la_trig <= otmb_prbs_tx_en & "0000000";  -- to start with, anyhow.
-  system_test_la_data <= "00" & x"000000" -- [199:174]
-                         & otmb_prbs_rx_rst & otmb_prbs_tx_rst  -- [173:172]
-                         & otmb_prbs_tx & otmb_prbs_rx          -- [171:170]
-                         & start_otmb_prbs_rx & otmb_prbs_rx_en & otmb_prbs_tx_en & otmb_prbs_tx_err  -- [169:166]
-                         & otmb_rx_inner(5 downto 0)   -- [165:160]
-                         & OTMB_TX(47 downto 0)        -- [159:112]
-                         & mux_otmb_tx(47 downto 0)     -- [111:64]
-                         & otmb_prbs_tx_en_cnt(15 downto 0)     -- [63:48]                        
-                         & std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  -- [47:32]
-                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16))  -- [31:16]
-                         & std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16));  -- [15:0]
+  --free_agent_la_trig <= otmb_prbs_tx_en & "0000000";  -- to start with, anyhow.
+  --free_agent_la_data <= "00" & x"000000" -- [199:174]
+  --                       & otmb_prbs_rx_rst & otmb_prbs_tx_rst  -- [173:172]
+  --                       & otmb_prbs_tx & otmb_prbs_rx          -- [171:170]
+  --                       & start_otmb_prbs_rx & otmb_prbs_rx_en & otmb_prbs_tx_en & otmb_prbs_tx_err  -- [169:166]
+  --                       & otmb_rx_inner(5 downto 0)   -- [165:160]
+  --                       & OTMB_TX(47 downto 0)        -- [159:112]
+  --                       & mux_otmb_tx(47 downto 0)     -- [111:64]
+  --                       & otmb_prbs_tx_en_cnt(15 downto 0)     -- [63:48]                        
+  --                       & std_logic_vector(to_unsigned(otmb_tx_err_cnt, 16))  -- [47:32]
+  --                       & std_logic_vector(to_unsigned(otmb_tx_good_cnt_int, 16))  -- [31:16]
+  --                       & std_logic_vector(to_unsigned(otmb_tx_good_cnt, 16));  -- [15:0]
    
 
 end SYSTEM_TEST_Arch;

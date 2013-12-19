@@ -22,11 +22,12 @@ entity cafifo is
     );
   port(
 
-    clk        : in std_logic;
-    dcfebclk   : in std_logic;
-    rst        : in std_logic;
-    l1acnt_rst : in std_logic;
-    bxcnt_rst  : in std_logic;
+    CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    clk                         : in    std_logic;
+    dcfebclk                    : in    std_logic;
+    rst                         : in    std_logic;
+    l1acnt_rst                  : in    std_logic;
+    bxcnt_rst                   : in    std_logic;
 
     BC0   : in std_logic;
     BXRST : in std_logic;
@@ -71,6 +72,15 @@ end cafifo;
 
 
 architecture cafifo_architecture of cafifo is
+
+  component csp_systemtest_la is
+    port (
+      CLK     : in    std_logic := 'X';
+      DATA    : in    std_logic_vector (199 downto 0);
+      TRIG0   : in    std_logic_vector (7 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
+      );
+  end component;
 
   signal wr_addr_en, rd_addr_en   : std_logic;
   signal wr_addr_out, rd_addr_out : integer := 0;
@@ -127,18 +137,24 @@ architecture cafifo_architecture of cafifo is
   signal timeout_current_state, timeout_next_state : timeout_state_vec;
 
   type     timeout_array is array (NFEB+2 downto 1) of integer range 0 to 800;
-  signal   timeout_cnt                     : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  constant timeout_max : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
+  signal   timeout_cnt                      : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+  constant timeout_max                      : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
   --constant timeout_max                     : timeout_array := (70, 70, 18, 18, 18, 18, 18, 18, 18);
-                                        -- count to these numbers before
-                                        -- timeout (7 us, 12 us)
-  signal   timeout_cnt_en, timeout_cnt_rst : std_logic_vector(NFEB+2 downto 1);
-  signal   lost_pckt, reg_lost_pckt        : l1a_array_type;
-  signal   l1a_dav_en                      : std_logic_vector(NFEB+2 downto 1);
-  signal   lost_pckt_en                    : std_logic_vector(NFEB+2 downto 1);
-  signal   wait_cnt                        : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  signal   wait_cnt_en, wait_cnt_rst       : std_logic_vector(NFEB+2 downto 1);
+    -- count to these numbers before
+      -- timeout (7 us, 12 us)
+  
+  signal   timeout_state_1, timeout_state_9 : std_logic_vector(1 downto 0);
+  signal   timeout_cnt_en, timeout_cnt_rst  : std_logic_vector(NFEB+2 downto 1);
+  signal   lost_pckt, reg_lost_pckt         : l1a_array_type;
+  signal   l1a_dav_en                       : std_logic_vector(NFEB+2 downto 1);
+  signal   lost_pckt_en                     : std_logic_vector(NFEB+2 downto 1);
+  signal   wait_cnt                         : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+  signal   wait_cnt_en, wait_cnt_rst        : std_logic_vector(NFEB+2 downto 1);
 
+  -- Declare the csp stuff here
+  signal free_agent_la_data : std_logic_vector(199 downto 0);
+  signal free_agent_la_trig : std_logic_vector(7 downto 0);
+  
 begin
 
   cafifo_wr_addr <= std_logic_vector(to_unsigned(wr_addr_out, cafifo_wr_addr'length));
@@ -196,7 +212,7 @@ begin
 
   --cafifo_wren <= l1a;
   --cafifo_wren <= or_reduce(l1a_match_in);  -- Avoids empty packets
-  cafifo_wren <= or_reduce(l1a_match_in) when (cafifo_full='0') else '0';  -- Avoids empty packets
+  cafifo_wren <= or_reduce(l1a_match_in) when (cafifo_full = '0') else '0';  -- Avoids empty packets
   cafifo_rden <= pop;
 
 -- RX FSMs
@@ -427,6 +443,14 @@ begin
     end process;
 
   end generate GEN_L1ACNT_DAV;
+  timeout_state_1 <= "01" when timeout_current_state(1) = IDLE else
+                     "10" when timeout_current_state(1) = COUNT     else
+                     "11" when timeout_current_state(1) = WAIT_IDLE else
+                     "00";
+  timeout_state_9 <= "01" when timeout_current_state(9) = IDLE else
+                     "10" when timeout_current_state(9) = COUNT     else
+                     "11" when timeout_current_state(9) = WAIT_IDLE else
+                     "00";
 
 -----------------------------------------------------------------------------------------
 
@@ -489,7 +513,7 @@ begin
         cafifo_empty <= '0';
         cafifo_full  <= '0';
         if (cafifo_wren = '1' and cafifo_rden = '0') then
-          if ((wr_addr_out = rd_addr_out-1) or (wr_addr_out=CAFIFO_SIZE-1 and rd_addr_out=0)) then
+          if ((wr_addr_out = rd_addr_out-1) or (wr_addr_out = CAFIFO_SIZE-1 and rd_addr_out = 0)) then
             next_state <= FIFO_FULL;
           else
             next_state <= FIFO_NOT_EMPTY;
@@ -535,5 +559,41 @@ begin
 
     end case;
   end process;
+
+-- Chip ScopePro ILA core
+  csp_systemtest_la_pm : csp_systemtest_la
+    port map (
+      CONTROL => CSP_FREE_AGENT_PORT_LA_CTRL,
+      CLK     => CLK,                   -- Good ol' 40MHz clock here
+      DATA    => free_agent_la_data,
+      TRIG0   => free_agent_la_trig
+      );
+
+  free_agent_la_trig <= cafifo_wren & std_logic_vector(to_unsigned(wr_addr_out, 3)) &
+                        cafifo_rden & std_logic_vector(to_unsigned(rd_addr_out, 3));
+  free_agent_la_data <= "000"           -- [199:197]
+                        & timeout_state_9  -- [196:195]                        
+                        & wait_cnt_en(9) & wait_cnt_rst(9)  -- [194:193]                        
+                        & l1a_dav_en(9) & l1acnt_dav_fifo_rd_en(9)  -- [192:191]                        
+                        & lost_pckt_en(9) & timeout_cnt_en(1) & timeout_cnt_rst(9)  -- [190:188]          
+                        & timeout_state_1  -- [187:186]                        
+                        & wait_cnt_en(1) & wait_cnt_rst(1)  -- [185:184]                        
+                        & l1a_dav_en(1) & l1acnt_dav_fifo_rd_en(1)  -- [183:182]                        
+                        & lost_pckt_en(1) & timeout_cnt_en(1) & timeout_cnt_rst(1)  -- [181:179]          
+                        & lost_pckt(3) & lost_pckt(2)  -- [178:161]                        
+                        & lost_pckt(1) & lost_pckt(5)  -- [160:143]                        
+                        & l1a_dav(3) & l1a_dav(2)  -- [142:125]                        
+                        & l1a_dav(1) & l1a_dav(5)  -- [124:107]                        
+                        & l1a_match(3) & l1a_match(2)  -- [106:89]                        
+                        & l1a_match(1) & l1a_match(5)  -- [88:71]                        
+                        & l1a_cnt(3)(3 downto 0) & l1a_cnt(2)(3 downto 0)  -- [70:63]                        
+                        & l1a_cnt(1)(3 downto 0) & l1a_cnt(5)(3 downto 0)  -- [62:55]                        
+                        & EOF_DATA      -- [54:46]                        
+                        & ALCT_DV & OTMB_DV & dcfeb_dv  -- [45:37]                        
+                        & DCFEB0_DATA   -- [36:21]                        
+                        & L1A_MATCH_IN & L1A & POP     -- [20:10]
+                        & std_logic_vector(to_unsigned(wr_addr_out, 5))  -- [9:5]
+                        & std_logic_vector(to_unsigned(rd_addr_out, 5));  -- [4:0]
+  
 
 end cafifo_architecture;

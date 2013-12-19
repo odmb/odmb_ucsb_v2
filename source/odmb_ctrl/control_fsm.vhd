@@ -119,7 +119,8 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal   tx_cnt                            : integer range 1 to 4 := 1;
   type     tx_cnt_array is array (1 to 9) of integer range 1 to 4;
   --signal   tx_cnt                            : tx_cnt_array         := (1, 1, 1, 1, 1, 1, 1, 1, 1);
-  constant tx_cnt_max                        : tx_cnt_array         := (4, 4, 4, 4, 4, 4, 4, 2, 2);
+  --constant tx_cnt_max                        : tx_cnt_array         := (4, 4, 4, 4, 4, 4, 4, 2, 2);
+  constant tx_cnt_max                        : tx_cnt_array         := (3, 3, 3, 3, 3, 3, 3, 1, 1);
 
   signal reg_crc       : std_logic_vector(23 downto 0) := (others => '0');
   signal q_datain_last : std_logic;
@@ -178,6 +179,7 @@ begin
       control_current_state <= IDLE;
       hdr_tail_cnt          <= 1;
       dev_cnt               <= 9;
+      tx_cnt <= 1;
     elsif rising_edge(CLK) then
       control_current_state <= control_next_state;
       if(hdr_tail_cnt_rst = '1') then
@@ -230,7 +232,7 @@ begin
     dout_d           <= (others => '0');
     dav_d            <= '0';
     oefifo_b_inner   <= (others => '1');
-    renfifo_b_d      <= (others => '1');
+    renfifo_b_inner      <= (others => '1');
     eof_inner        <= '0';
     fifo_pop_80      <= '0';
     hdr_tail_cnt_rst <= '0';
@@ -260,6 +262,7 @@ begin
         end if;
 
       when WAIT_DEV =>
+          tx_cnt_rst <= '1';
         if(cafifo_l1a_match(dev_cnt) = '0' or cafifo_lost_pckt(dev_cnt) = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt = 7) then
@@ -268,7 +271,7 @@ begin
             control_next_state <= WAIT_DEV;
           end if;
         elsif(cafifo_l1a_dav(dev_cnt) = '1') then
-          control_next_state      <= PRETX_DEV;
+          control_next_state      <= TX_DEV;
           oefifo_b_inner(dev_cnt) <= '0';
         else
           control_next_state <= WAIT_DEV;
@@ -277,12 +280,12 @@ begin
       when PRETX_DEV =>
         control_next_state      <= TX_DEV;
         oefifo_b_inner(dev_cnt) <= '0';
-        renfifo_b_d(dev_cnt)    <= '0';
+        renfifo_b_inner(dev_cnt)    <= '0';
         
       when TX_DEV =>
         dout_d                  <= DATAIN;
         oefifo_b_inner(dev_cnt) <= '0';
-        renfifo_b_d(dev_cnt)    <= '0';
+        renfifo_b_inner(dev_cnt)    <= '0';
         tx_cnt_en               <= '1';
         if (tx_cnt >= tx_cnt_max(dev_cnt)) then
           dav_d <= '1';
@@ -291,7 +294,6 @@ begin
         end if;
         if(q_datain_last = '1') then
           dev_cnt_en <= '1';
-          tx_cnt_rst <= '1';
           if (dev_cnt = 7) then
             control_next_state <= TAIL;
           else
@@ -330,9 +332,9 @@ begin
 
   FD_DAV : FD port map(dav_inner, CLK, dav_d);
 
-  GEN_FD_RENFIFO : for DEV in 1 to NFEB+2 generate
-    FD_RENFIFO : FD port map (renfifo_b_inner(DEV), CLK, renfifo_b_d(DEV));
-  end generate GEN_FD_RENFIFO;
+  --GEN_FD_RENFIFO : for DEV in 1 to NFEB+2 generate
+  --  FD_RENFIFO : FD port map (renfifo_b_inner(DEV), CLK, renfifo_b_d(DEV));
+  --end generate GEN_FD_RENFIFO;
 
   GEN_FD_DOUT : for INDEX in 0 to 15 generate
     FD_DOUT : FD port map (dout_inner(INDEX), CLK, dout_d(INDEX));

@@ -71,19 +71,19 @@ entity ODMB_UCSB_V2 is
 
 -- From/To PPIB (connectors J3 and J4)
 
-    dcfeb_tck       : out std_logic_vector(NFEB downto 1);
+    dcfeb_tck       : out   std_logic_vector(NFEB downto 1);
     dcfeb_tms       : inout std_logic;
     dcfeb_tdi       : inout std_logic;
-    dcfeb_tdo       : in  std_logic_vector(NFEB downto 1);
-    dcfeb_bc0       : out std_logic;
-    dcfeb_resync    : out std_logic;
-    odmb_hardrst_b  : out std_logic;    -- Generates REPROG_B
-    dcfeb_reprgen_b : out std_logic;
-    dcfeb_injpls    : out std_logic;
-    dcfeb_extpls    : out std_logic;
-    dcfeb_l1a       : out std_logic;
-    dcfeb_l1a_match : out std_logic_vector(NFEB downto 1);
-    dcfeb_done      : in  std_logic_vector(NFEB downto 1);
+    dcfeb_tdo       : in    std_logic_vector(NFEB downto 1);
+    dcfeb_bc0       : out   std_logic;
+    dcfeb_resync    : out   std_logic;
+    odmb_hardrst_b  : out   std_logic;  -- Generates REPROG_B
+    dcfeb_reprgen_b : out   std_logic;
+    dcfeb_injpls    : out   std_logic;
+    dcfeb_extpls    : out   std_logic;
+    dcfeb_l1a       : out   std_logic;
+    dcfeb_l1a_match : out   std_logic_vector(NFEB downto 1);
+    dcfeb_done      : in    std_logic_vector(NFEB downto 1);
 
 -- From/To odmb_ucsb_v2 JTAG port (through IC34)
 
@@ -233,9 +233,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   component ODMB_VME is
     port (
-      CSP_SYSTEM_TEST_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
-      CSP_BPI_PORT_LA_CTRL         : inout std_logic_vector(35 downto 0);
-      CSP_LVMB_LA_CTRL             : inout std_logic_vector(35 downto 0);
+      CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      CSP_BPI_PORT_LA_CTRL        : inout std_logic_vector(35 downto 0);
+      CSP_LVMB_LA_CTRL            : inout std_logic_vector(35 downto 0);
 -- VME signals
 
       cmd_adrs        : out std_logic_vector(15 downto 0);
@@ -407,9 +407,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       BPI_CFG_UL_PULSE : out std_logic;
       BPI_CFG_DL_PULSE : out std_logic;
-      BPI_DONE          : in  std_logic;
-      BPI_CFG_REG_WE    : in  std_logic;
-      BPI_CFG_REG_IN    : in  std_logic_vector(15 downto 0);
+      BPI_DONE         : in  std_logic;
+      BPI_CFG_REG_WE   : in  std_logic;
+      BPI_CFG_REG_IN   : in  std_logic_vector(15 downto 0);
 
       --To SYSMON
       VP    : in std_logic;
@@ -450,6 +450,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   component ODMB_CTRL is
     port (
+      CSP_FREE_AGENT_PORT_LA_CTRL  : inout std_logic_vector(35 downto 0);
       CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       clk40                        : in    std_logic;
       clk80                        : in    std_logic;
@@ -863,6 +864,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
     generic(
       NFIFO        : integer range 3 to 16 := 3;
       DATA_WIDTH   : integer               := 18;
+      FWFT         : boolean               := false;
       WR_FASTER_RD : boolean               := true
       );
     port(
@@ -1039,10 +1041,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- JTAG signals To/From MBV
 
-  signal int_tck, int_tdo : std_logic_vector(7 downto 1);
-  signal odmb_tms, odmb_tdi : std_logic;
+  signal int_tck, int_tdo             : std_logic_vector(7 downto 1);
+  signal odmb_tms, odmb_tdi           : std_logic;
   signal dcfeb_tms_out, dcfeb_tdi_out : std_logic;
-  signal isnot_ODMB_V3 : std_logic := '1';
+  signal isnot_ODMB_V3                : std_logic := '1';
 
 -- JTAG outputs from internal DCFEBs
 
@@ -1380,7 +1382,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal otmb_tx : std_logic_vector(48 downto 0);
 
   signal csp_control_fsm_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
-  signal csp_system_test_port_la_ctrl : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
+  signal csp_free_agent_port_la_ctrl  : std_logic_vector(35 downto 0);  -- bgb logic analyzer control signals
   signal csp_bpi_la_ctrl              : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
   signal csp_bpi_port_la_ctrl         : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
   signal csp_lvmb_la_ctrl             : std_logic_vector(35 downto 0);  -- for the bpi controller stuff up here
@@ -1404,7 +1406,7 @@ begin
   csp_controller_pm : csp_controller
     port map (
       CONTROL0 => csp_control_fsm_port_la_ctrl,
-      CONTROL1 => csp_system_test_port_la_ctrl,
+      CONTROL1 => csp_free_agent_port_la_ctrl,
       CONTROL2 => csp_bpi_la_ctrl,
       CONTROL3 => csp_bpi_port_la_ctrl,
       CONTROL4 => csp_lvmb_la_ctrl
@@ -1413,9 +1415,9 @@ begin
   MBV : ODMB_VME
     port map (
 
-      CSP_SYSTEM_TEST_PORT_LA_CTRL => csp_system_test_port_la_ctrl,
-      CSP_BPI_PORT_LA_CTRL         => csp_bpi_port_la_ctrl,
-      CSP_LVMB_LA_CTRL             => csp_lvmb_la_ctrl,
+      CSP_FREE_AGENT_PORT_LA_CTRL => csp_free_agent_port_la_ctrl,
+      CSP_BPI_PORT_LA_CTRL        => csp_bpi_port_la_ctrl,
+      CSP_LVMB_LA_CTRL            => csp_lvmb_la_ctrl,
 
       cmd_adrs        => cmd_adrs,            -- output
       vme_addr        => vme_addr,            -- input
@@ -1586,9 +1588,9 @@ begin
 
       BPI_CFG_UL_PULSE => bpi_cfg_ul_pulse,
       BPI_CFG_DL_PULSE => bpi_cfg_dl_pulse,
-      BPI_DONE          => bpi_done,
-      BPI_CFG_REG_WE    => bpi_cfg_reg_we,
-      BPI_CFG_REG_IN    => bpi_cfg_reg_in,
+      BPI_DONE         => bpi_done,
+      BPI_CFG_REG_WE   => bpi_cfg_reg_we,
+      BPI_CFG_REG_IN   => bpi_cfg_reg_in,
 
       -- Adam Aug 15 To SYSMON
       VP    => '0',
@@ -1626,6 +1628,7 @@ begin
   MBC : ODMB_CTRL
     port map (
 
+      CSP_FREE_AGENT_PORT_LA_CTRL  => csp_free_agent_port_la_ctrl,
       CSP_CONTROL_FSM_PORT_LA_CTRL => csp_control_fsm_port_la_ctrl,
       clk40                        => clk40,
       clk80                        => clk80,
@@ -1995,6 +1998,7 @@ begin
       generic map (
         NFIFO        => NFIFO,          -- number of FIFOs in cascade
         DATA_WIDTH   => 18,             -- With of data packets
+        FWFT         => true,           -- First word fall through
         WR_FASTER_RD => true)   -- Set int_clk to WRCLK if faster than RDCLK
 
       port map(
@@ -2052,6 +2056,7 @@ begin
     generic map (
       NFIFO        => 3,                -- number of FIFOs in cascade
       DATA_WIDTH   => 18,               -- With of data packets
+      FWFT         => true,           -- First word fall through
       WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
 
     port map(
@@ -2073,6 +2078,7 @@ begin
     generic map (
       NFIFO        => 3,                -- number of FIFOs in cascade
       DATA_WIDTH   => 18,               -- With of data packets
+      FWFT         => true,           -- First word fall through
       WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
 
     port map(
@@ -2291,7 +2297,7 @@ begin
   PULLDOWN_DCFEB_TMS : PULLDOWN port map (dcfeb_tms_out);
   PULLDOWN_ODMB_TMS  : PULLDOWN port map (v6_tms);
 
-  isnot_ODMB_V3 <= '1' when odmb_id(15 downto 12) /= x"3" else '0'; 
+  isnot_ODMB_V3 <= '1' when odmb_id(15 downto 12) /= x"3" else '0';
   BUF_DCFEBTMS : IOBUF port map(O => odmb_tms, IO => DCFEB_TMS, I => dcfeb_tms_out, T => isnot_ODMB_V3);
   BUF_DCFEBTDI : IOBUF port map(O => odmb_tdi, IO => DCFEB_TDI, I => dcfeb_tdi_out, T => isnot_ODMB_V3);
 
@@ -2878,15 +2884,15 @@ begin
   end process;
 
 
-  test_point(12)  <= raw_lct(1);
-  test_point(14)  <= raw_lct(2);
+  test_point(12) <= raw_lct(1);
+  test_point(14) <= raw_lct(2);
   test_point(16) <= raw_lct(3);
   test_point(18) <= raw_lct(4);
   test_point(20) <= raw_lct(5);
   test_point(22) <= raw_lct(6);
   test_point(24) <= raw_lct(7);
-  test_point(13)  <= int_l1a_match(1);
-  test_point(15)  <= int_l1a_match(2);
+  test_point(13) <= int_l1a_match(1);
+  test_point(15) <= int_l1a_match(2);
   test_point(17) <= int_l1a_match(3);
   test_point(19) <= int_l1a_match(4);
   test_point(21) <= int_l1a_match(5);
@@ -3188,7 +3194,7 @@ begin
         test_point(tp_1) <= lvmb_sdout;
         test_point(tp_2) <= int_lvmb_sclk;
         test_point(tp_3) <= int_lvmb_sdin;
-        test_point(tp_4) <= int_lvmb_csb(0);   
+        test_point(tp_4) <= int_lvmb_csb(0);
 
       when others =>
         test_point(tp_1) <= int_l1a;
