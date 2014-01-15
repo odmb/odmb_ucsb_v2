@@ -7,6 +7,12 @@
 =                                                                    =
 ======================================================================
 
+V02-02, build 6: 15 January 2014, Manuel
+------------------------------------------
+Fixed some issues with CONTROL_FSM.
+Changed fmt_Vers from 01 to 10.
+Added VME command to monitor QPLL_lock.
+
 V02-01, build 3: 10 December 2013, Manuel
 ------------------------------------------
 ODMB.V3 compatible firmware (uses ODMB_ID to set polarity of

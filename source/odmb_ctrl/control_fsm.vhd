@@ -96,7 +96,7 @@ architecture CONTROL_arch of CONTROL_FSM is
   type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
   signal hdr_word, tail_word : hdr_tail_array;
 
-  constant fmt_vers         : std_logic_vector(1 downto 0)      := "01";
+  constant fmt_vers         : std_logic_vector(1 downto 0)      := "10";
   constant l1a_dav_mismatch : std_logic                         := '0';
   constant ovlp             : std_logic_vector(5 downto 1)      := "00000";
   constant sync             : std_logic_vector(3 downto 0)      := "0000";

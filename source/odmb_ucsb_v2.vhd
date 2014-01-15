@@ -269,6 +269,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       clk_s1 : in std_logic;            -- midclk (10MHz) 
       clk_s2 : in std_logic;            -- slowclk (2.5MHz)
       clk_s3 : in std_logic;            -- slowclk2 (1.25MHz)
+      qpll_locked       : in  std_logic;
 
 -- Reset
 
@@ -1450,7 +1451,8 @@ begin
       clk_s1 => clk10,                  -- midclk (10MHz) 
       clk_s2 => clk2p5,                 -- slowclk (2.5MHz)
       clk_s3 => clk1p25,                -- slowclk2 (1.25MHz)
-
+      QPLL_LOCKED => qpll_locked,
+      
 -- Reset
 
       rst       => reset,

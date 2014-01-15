@@ -648,7 +648,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- CCBCODE outputs
 
   signal bx0     : std_logic;
-  signal bxrst   : std_logic;
+  signal bxrst, ccb_bxrst_b   : std_logic;
   signal l1arst  : std_logic;
   signal clken   : std_logic;
   signal bc0     : std_logic;
@@ -778,7 +778,7 @@ begin
       bxcnt_rst  => bxcnt_rst,
 
       BC0   => bc0,
-      BXRST => ccb_bxrst,
+      BXRST => ccb_bxrst_b,
 
       pop          => cafifo_pop,
       l1a          => cafifo_push,
@@ -1138,7 +1138,7 @@ begin
       CCB_DATA   => ccb_data,
       CCB_DATA_S => ccb_data_s,
       CMSCLK     => clk40,
-      CCB_BXRST  => ccb_bxrst,
+      CCB_BXRST  => ccb_bxrst_b,
       CCB_BX0    => ccb_bx0,
       CCB_L1ARST => ccb_l1arst,
       CCB_CLKEN  => ccb_clken,
@@ -1201,5 +1201,6 @@ begin
 -- from ODMB_CTRL_EMPTY
 
   ccb_rsvi <= "000";
+  ccb_bxrst_b <= not ccb_bxrst;
 
 end ODMB_CTRL_arch;

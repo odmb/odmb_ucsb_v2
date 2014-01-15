@@ -155,7 +155,7 @@ architecture CONTROL_arch of CONTROL is
 -- PAGE 8
   signal JREF : std_logic_vector(NFEB+2 downto 1);
 
-  constant fmt_vers              : std_logic_vector(1 downto 0)      := "01";
+  constant fmt_vers              : std_logic_vector(1 downto 0)      := "10";
   constant l1a_dav_mismatch : std_logic                         := '0';
   constant ovlp             : std_logic_vector(5 downto 1)      := "00000";
   constant sync             : std_logic_vector(3 downto 0)      := "0000";

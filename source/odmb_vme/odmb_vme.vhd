@@ -27,8 +27,8 @@ entity ODMB_VME is
     );  
   port (
     CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
-    CSP_BPI_PORT_LA_CTRL         : inout std_logic_vector(35 downto 0);
-    CSP_LVMB_LA_CTRL             : inout std_logic_vector(35 downto 0);
+    CSP_BPI_PORT_LA_CTRL        : inout std_logic_vector(35 downto 0);
+    CSP_LVMB_LA_CTRL            : inout std_logic_vector(35 downto 0);
 -- VME signals
 
     cmd_adrs        : out std_logic_vector(15 downto 0);
@@ -56,12 +56,13 @@ entity ODMB_VME is
 
 -- Clock
 
-    clk160 : in std_logic;              -- For dcfeb prbs (160MHz)
-    clk80  : in std_logic;              -- For testctrl (80MHz)
-    clk    : in std_logic;              -- NEW (fastclk -> 40MHz)
-    clk_s1 : in std_logic;              -- NEW (midclk -> fastclk/4 -> 10MHz)
-    clk_s2 : in std_logic;              -- NEW (slowclk -> midclk/4 -> 2.5MHz)
-    clk_s3 : in std_logic;  -- NEW (slowclk2 -> midclk/8 -> 12.5MHz)
+    clk160      : in std_logic;         -- For dcfeb prbs (160MHz)
+    clk80       : in std_logic;         -- For testctrl (80MHz)
+    clk         : in std_logic;         -- NEW (fastclk -> 40MHz)
+    clk_s1      : in std_logic;         -- NEW (midclk -> fastclk/4 -> 10MHz)
+    clk_s2      : in std_logic;         -- NEW (slowclk -> midclk/4 -> 2.5MHz)
+    clk_s3      : in std_logic;  -- NEW (slowclk2 -> midclk/8 -> 12.5MHz)
+    qpll_locked : in std_logic;
 
 -- Reset
 
@@ -249,10 +250,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );    
     port (
       --CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
-      CLK                          : in    std_logic;
-      DDUCLK                       : in    std_logic;
-      SLOWCLK                      : in    std_logic;
-      RST                          : in    std_logic;
+      CLK     : in std_logic;
+      DDUCLK  : in std_logic;
+      SLOWCLK : in std_logic;
+      RST     : in std_logic;
 
       DEVICE  : in std_logic;
       STROBE  : in std_logic;
@@ -349,7 +350,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       DTACK : out std_logic;
 
-      DCFEB_DONE : in std_logic_vector(NFEB downto 1);
+      DCFEB_DONE  : in std_logic_vector(NFEB downto 1);
+      QPLL_LOCKED : in std_logic;
 
       OPT_RESET_PULSE : out std_logic;
       L1A_RESET_PULSE : out std_logic;
@@ -773,7 +775,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
 
   signal dtack_dev      : std_logic_vector(9 downto 0);
-  type   dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
+  type dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
   signal dev_outdata    : dev_array;
   signal device_index   : integer range 0 to 15;
   signal cmd_adrs_inner : std_logic_vector(17 downto 2);
@@ -785,10 +787,10 @@ begin
     generic map (NFEB => NFEB)
     port map (
       --CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
-      CLK                          => clk,
-      DDUCLK                       => dduclk,
-      SLOWCLK                      => clk_s2,
-      RST                          => rst,
+      CLK     => clk,
+      DDUCLK  => dduclk,
+      SLOWCLK => clk_s2,
+      RST     => rst,
 
       DEVICE  => device(0),
       STROBE  => strobe,
@@ -880,7 +882,8 @@ begin
 
       DTACK => dtack_dev(3),
 
-      DCFEB_DONE => dcfeb_done,
+      DCFEB_DONE  => dcfeb_done,
+      QPLL_LOCKED => qpll_locked,
 
       OPT_RESET_PULSE => opt_reset_pulse,
       L1A_RESET_PULSE => l1a_reset_pulse,
@@ -913,11 +916,11 @@ begin
         CLK     => clk,
         RST     => RST,
 
-        DEVICE  => DEVICE(4),
-        STROBE  => STROBE,
-        COMMAND => CMD,
-        WRITER  => VME_WRITE_B,
-      VME_AS_B => vme_as_b,
+        DEVICE   => DEVICE(4),
+        STROBE   => STROBE,
+        COMMAND  => CMD,
+        WRITER   => VME_WRITE_B,
+        VME_AS_B => vme_as_b,
 
         INDATA  => VME_DATA_IN,
         OUTDATA => DEV_OUTDATA(4),
@@ -962,10 +965,10 @@ begin
       RST     => RST,
       CLK40   => CLK,
 
-      DEVICE   => DEVICE(5),
-      STROBE   => STROBE,
-      COMMAND  => CMD,
-      WRITER   => VME_WRITE_B,
+      DEVICE  => DEVICE(5),
+      STROBE  => STROBE,
+      COMMAND => CMD,
+      WRITER  => VME_WRITE_B,
 
       INDATA  => VME_DATA_IN,
       OUTDATA => DEV_OUTDATA(5),
