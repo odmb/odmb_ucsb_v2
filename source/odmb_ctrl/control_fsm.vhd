@@ -93,7 +93,7 @@ architecture CONTROL_arch of CONTROL_FSM is
 
   signal fifo_pop_80 : std_logic := '0';
 
-  type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
+  type hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
   signal hdr_word, tail_word : hdr_tail_array;
 
   constant fmt_vers         : std_logic_vector(1 downto 0)      := "10";
@@ -107,20 +107,20 @@ architecture CONTROL_arch of CONTROL_FSM is
   constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
 
-  type   control_state is (IDLE, HDR, WAIT_DEV, PRETX_DEV, TX_DEV, TAIL, WAIT_IDLE);
+  type control_state is (IDLE, HDR, WAIT_DEV, PRETX_DEV, TX_DEV, TAIL, WAIT_IDLE);
 --  type   control_state is (IDLE, HDR, WAIT_ALCT_OTMB, TX, WAIT_DCFEB, TX_DCFEB, TAIL, WAIT_IDLE);
   signal control_current_state, control_next_state : control_state := IDLE;
 
-  signal   hdr_tail_cnt_en, hdr_tail_cnt_rst : std_logic            := '0';
-  signal   hdr_tail_cnt                      : integer range 1 to 8 := 1;
-  signal   dev_cnt_en                        : std_logic            := '0';
-  signal   dev_cnt                           : integer range 1 to 9 := 9;
-  signal   tx_cnt_en, tx_cnt_rst             : std_logic            := '0';
-  signal   tx_cnt                            : integer range 1 to 4 := 1;
-  type     tx_cnt_array is array (1 to 9) of integer range 1 to 4;
+  signal hdr_tail_cnt_en, hdr_tail_cnt_rst : std_logic            := '0';
+  signal hdr_tail_cnt                      : integer range 1 to 8 := 1;
+  signal dev_cnt_en                        : std_logic            := '0';
+  signal dev_cnt                           : integer range 1 to 9 := 9;
+  signal tx_cnt_en, tx_cnt_rst             : std_logic            := '0';
+  signal tx_cnt                            : integer range 1 to 4 := 1;
+  type tx_cnt_array is array (1 to 9) of integer range 1 to 4;
   --signal   tx_cnt                            : tx_cnt_array         := (1, 1, 1, 1, 1, 1, 1, 1, 1);
   --constant tx_cnt_max                        : tx_cnt_array         := (4, 4, 4, 4, 4, 4, 4, 2, 2);
-  constant tx_cnt_max                        : tx_cnt_array         := (3, 3, 3, 3, 3, 3, 3, 1, 1);
+  constant tx_cnt_max                      : tx_cnt_array         := (3, 3, 3, 3, 3, 3, 3, 1, 1);
 
   signal reg_crc       : std_logic_vector(23 downto 0) := (others => '0');
   signal q_datain_last : std_logic;
@@ -129,12 +129,12 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal control_fsm_la_data : std_logic_vector(127 downto 0);
   signal control_fsm_la_trig : std_logic_vector(7 downto 0);
 
-  signal expect_pckt                     : std_logic                     := '0';
-  signal dav_inner, dav_d                : std_logic                     := '0';
-  signal dout_inner, dout_d              : std_logic_vector(15 downto 0) := (others => '0');
-  signal oefifo_b_inner, renfifo_b_inner : std_logic_vector(NFEB+2 downto 1);
-  signal renfifo_b_d                     : std_logic_vector(NFEB+2 downto 1);
-  signal fifo_pop_inner, eof_inner       : std_logic                     := '0';
+  signal expect_pckt                      : std_logic                     := '0';
+  signal dav_inner, dav_d                 : std_logic                     := '0';
+  signal dout_inner, dout_d               : std_logic_vector(15 downto 0) := (others => '0');
+  signal oefifo_b_inner, renfifo_b_inner  : std_logic_vector(NFEB+2 downto 1);
+  signal renfifo_b_d                      : std_logic_vector(NFEB+2 downto 1);
+  signal fifo_pop_inner, eof_inner, eof_d : std_logic                     := '0';
 
 
   signal dev_cnt_svl, hdr_tail_cnt_svl : std_logic_vector(4 downto 0) := (others => '0');
@@ -179,7 +179,7 @@ begin
       control_current_state <= IDLE;
       hdr_tail_cnt          <= 1;
       dev_cnt               <= 9;
-      tx_cnt <= 1;
+      tx_cnt                <= 1;
     elsif rising_edge(CLK) then
       control_current_state <= control_next_state;
       if(hdr_tail_cnt_rst = '1') then
@@ -232,8 +232,8 @@ begin
     dout_d           <= (others => '0');
     dav_d            <= '0';
     oefifo_b_inner   <= (others => '1');
-    renfifo_b_inner      <= (others => '1');
-    eof_inner        <= '0';
+    renfifo_b_inner  <= (others => '1');
+    eof_d            <= '0';
     fifo_pop_80      <= '0';
     hdr_tail_cnt_rst <= '0';
     hdr_tail_cnt_en  <= '0';
@@ -262,7 +262,7 @@ begin
         end if;
 
       when WAIT_DEV =>
-          tx_cnt_rst <= '1';
+        tx_cnt_rst <= '1';
         if(cafifo_l1a_match(dev_cnt) = '0' or cafifo_lost_pckt(dev_cnt) = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt = 7) then
@@ -278,15 +278,15 @@ begin
         end if;
         
       when PRETX_DEV =>
-        control_next_state      <= TX_DEV;
-        oefifo_b_inner(dev_cnt) <= '0';
-        renfifo_b_inner(dev_cnt)    <= '0';
+        control_next_state       <= TX_DEV;
+        oefifo_b_inner(dev_cnt)  <= '0';
+        renfifo_b_inner(dev_cnt) <= '0';
         
       when TX_DEV =>
-        dout_d                  <= DATAIN;
-        oefifo_b_inner(dev_cnt) <= '0';
-        renfifo_b_inner(dev_cnt)    <= '0';
-        tx_cnt_en               <= '1';
+        dout_d                   <= DATAIN;
+        oefifo_b_inner(dev_cnt)  <= '0';
+        renfifo_b_inner(dev_cnt) <= '0';
+        tx_cnt_en                <= '1';
         if (tx_cnt >= tx_cnt_max(dev_cnt)) then
           dav_d <= '1';
         else
@@ -309,12 +309,12 @@ begin
         hdr_tail_cnt_en <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_IDLE;
-          eof_inner          <= '1';
+          eof_d              <= '1';
           fifo_pop_80        <= '1';
           hdr_tail_cnt_rst   <= '1';
         else
           control_next_state <= TAIL;
-          eof_inner          <= '0';
+          eof_d              <= '0';
           fifo_pop_80        <= '0';
         end if;
 
@@ -330,7 +330,8 @@ begin
     end case;
   end process;
 
-  FD_DAV : FD port map(dav_inner, CLK, dav_d);
+  FD_DAV  : FD port map(dav_inner, CLK, dav_d);
+  EOF_DAV : FD port map(eof_inner, CLK, eof_d);
 
   --GEN_FD_RENFIFO : for DEV in 1 to NFEB+2 generate
   --  FD_RENFIFO : FD port map (renfifo_b_inner(DEV), CLK, renfifo_b_d(DEV));

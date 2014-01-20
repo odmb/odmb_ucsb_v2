@@ -69,7 +69,7 @@ architecture pcfifo_architecture of pcfifo is
 
   constant logich : std_logic := '1';
 
-  type   fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, FIFO_TX_EPKT, IDLE_ETH);
+  type fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, FIFO_TX_EPKT, IDLE_ETH);
   signal f0_current_state : fsm_state_type := IDLE;
   signal f0_next_state    : fsm_state_type := IDLE;
 
@@ -83,10 +83,10 @@ architecture pcfifo_architecture of pcfifo is
   signal tx_ack_q             : std_logic_vector(2 downto 0) := (others => '0');
   signal tx_ack_q_b           : std_logic                    := '1';
 
-  signal fifo_in, fifo_out         : std_logic_vector(17 downto 0);
-  signal fifo_empty                : std_logic;
-  signal fifo_full, fifo_rst       : std_logic;
-  signal fifo_wren, bof, bof_pulse : std_logic;
+  signal fifo_in, fifo_out   : std_logic_vector(17 downto 0);
+  signal fifo_empty          : std_logic;
+  signal fifo_full, fifo_rst : std_logic;
+  signal fifo_wren           : std_logic;
 
   signal pkt_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
 
@@ -98,8 +98,10 @@ architecture pcfifo_architecture of pcfifo is
   signal idle_cnt_en, idle_cnt_rst : std_logic            := '0';
   signal idle_cnt                  : integer range 0 to 9 := 0;
 
-  signal dv_in_pulse         : std_logic := '0';
-  signal first_in, first_dly : std_logic := '1';
+  signal dv_in_pulse, last_pulse : std_logic := '0';
+  signal first_in, last_pulse_b  : std_logic := '1';
+  -- Clock cycles it takes to reach the end of the FIFO_CASCADE
+  constant nwait_fifo            : integer   := NFIFO * 8;
 
   signal epkt_cnt_total : std_logic_vector(15 downto 0) := (others => '0');
   signal epkt_cnt_en    : std_logic;
@@ -108,9 +110,9 @@ begin
 
 
 -- FIFOs
-  DV_PULSE_EDGE      : pulse_edge port map(dv_in_pulse, open, clk_in, rst, 1, dv_in);
-  FDLDIN             : FD port map(ld_in_q, clk_in, ld_in);
-  
+  DV_PULSE_EDGE : pulse_edge port map(dv_in_pulse, open, clk_in, rst, 1, dv_in);
+  FDLDIN        : FD port map(ld_in_q, clk_in, ld_in);
+
   FDFIRST  : FDCP port map(first_in, ld_in_q, dv_in_pulse, logich, rst);
   fifo_wren <= dv_in;
   fifo_in   <= first_in & ld_in & data_in;
@@ -127,7 +129,7 @@ begin
       EMPTY => fifo_empty,              -- Output empty
       FULL  => fifo_full,               -- Output full
       EOF   => open,                    -- Output EOF
-      BOF   => bof,
+      BOF   => open,
 
       DI    => fifo_in,                 -- Input data
       RDCLK => clk_out,                 -- Input read clock
@@ -147,11 +149,10 @@ begin
   tx_ack_q_b <= not tx_ack_q(2);
 
 -- FSMs
-  BOFPULSE : PULSE_EDGE port map(bof_pulse, open, clk_out, rst, 1, bof);
-  FIRSTDLY : SRLC32E port map(first_dly, open, "11111", logich, clk_out, bof_pulse);
-
-  LDOUT_PULSE_EDGE : pulse_edge port map(ld_out_pulse, open, clk_out, rst, 1, ld_out);
-  LDIN_PULSE_EDGE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, first_dly);
+  FIRST_PE : pulse_edge port map(last_pulse, open, clk_in, rst, nwait_fifo, ld_in);
+  last_pulse_b <= not last_pulse;
+  LDIN_PE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, last_pulse_b);
+  LDOUT_PE : pulse_edge port map(ld_out_pulse, open, clk_out, rst, 1, ld_out);
 
 -- Generation of counter for total packets sent
   epkt_cnt_total_pro : process (rst, clk_out, epkt_cnt_en)
@@ -270,8 +271,8 @@ begin
         end if;
 
       when FIFO_TX_EPKT =>
-        dv_out        <= '1';
-        data_out      <= epkt_cnt_total;
+        dv_out   <= '1';
+        data_out <= epkt_cnt_total;
         if (f0_ld = '0') then
           word_cnt_rst <= '0';
           ld_out       <= '0';
