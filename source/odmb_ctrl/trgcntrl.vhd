@@ -1,13 +1,14 @@
 -- TRGCNTRL: Applies LCT_L1A_DLY to RAW_LCT[7:1] to sync it with L1A and produce L1A_MATCH[7:1]
 -- It also generates the PUSH that load the FIFOs/RAM in TRGFIFO
 
-library unisim;
 library ieee;
 library work;
-use unisim.vcomponents.all;
+library unisim;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
+use work.ucsb_types.all;
+use unisim.vcomponents.all;
 
 entity TRGCNTRL is
   generic (
@@ -20,22 +21,22 @@ entity TRGCNTRL is
     CAL_LCT       : in std_logic_vector(NFEB downto 0);
     CAL_L1A       : in std_logic;
     LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
-    PUSH_DLY      : in std_logic_vector(4 downto 0);
+    OTMB_PUSH_DLY : in integer range 0 to 63;
+    ALCT_PUSH_DLY : in integer range 0 to 63;
+    PUSH_DLY      : in integer range 0 to 63;
     ALCT_DAV      : in std_logic;
     OTMB_DAV      : in std_logic;
-    ALCT_PUSH_DLY : in std_logic_vector(4 downto 0);
-    OTMB_PUSH_DLY : in std_logic_vector(4 downto 0);
 
-    JTRGEN    : in std_logic_vector(3 downto 0);
-    EAFEB     : in std_logic;
-    CMODE     : in std_logic;
-    CALTRGSEL : in std_logic;
-    KILL      : in std_logic_vector(NFEB+2 downto 1);
-    PEDESTAL  : in std_logic;
-    PEDESTAL_OTMB  : in std_logic;
+    JTRGEN        : in std_logic_vector(3 downto 0);
+    EAFEB         : in std_logic;
+    CMODE         : in std_logic;
+    CALTRGSEL     : in std_logic;
+    KILL          : in std_logic_vector(NFEB+2 downto 1);
+    PEDESTAL      : in std_logic;
+    PEDESTAL_OTMB : in std_logic;
 
-    L1A_OTMB_PUSHED_OUT : out std_logic;
-    OTMB_DAV_SYNC_OUT   : out std_logic;
+    ALCT_DAV_SYNC_OUT : out std_logic;
+    OTMB_DAV_SYNC_OUT : out std_logic;
 
     DCFEB_L1A       : out std_logic;
     DCFEB_L1A_MATCH : out std_logic_vector(NFEB downto 1);
@@ -63,18 +64,15 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
   signal DLY_LCT, LCT, LCT_IN : std_logic_vector(NFEB downto 0);
   signal RAW_L1A_Q, L1A_IN    : std_logic;
   signal L1A                  : std_logic;
-  type   LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
+  type LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
   signal LCT_Q                : LCT_TYPE;
   signal LCT_ERR_D            : std_logic;
   signal L1A_MATCH            : std_logic_vector(NFEB downto 1);
-  signal FIFO_L1A_MATCH_INNER            : std_logic_vector(NFEB+2 downto 0);
+  signal FIFO_L1A_MATCH_INNER : std_logic_vector(NFEB+2 downto 0);
 
-  signal l1a_push                        : std_logic;
-  signal l1a_match_push                  : std_logic_vector(NFEB downto 0);
-  signal OTMB_ALCT_DLY                   : std_logic_vector(4 downto 0);
-  signal otmb_dav_sync, alct_dav_sync    : std_logic;
-  signal l1a_otmb_pushed, l1a_otmb_match : std_logic;
-  signal fifo_push_inner                 : std_logic;
+  signal otmb_dav_sync, alct_dav_sync : std_logic;
+  signal fifo_push_inner              : std_logic;
+  signal push_otmb_diff, push_alct_diff : integer range 0 to 63;
 
 begin  --Architecture
 
@@ -120,36 +118,33 @@ begin  --Architecture
     begin
       FD_H : FD port map(LCT_Q(K)(H), CLK, LCT_Q(K)(H-1));
     end generate GEN_LCT_Q;
-    L1A_MATCH(K) <= '1' when (L1A = '1' and KILL(K)='0' and (LCT_Q(K) /= "00000" or PEDESTAL = '1'))  else '0';
+    L1A_MATCH(K) <= '1' when (L1A = '1' and KILL(K) = '0' and (LCT_Q(K) /= "00000" or PEDESTAL = '1')) else '0';
   end generate GEN_L1A_MATCH;
   DCFEB_L1A_MATCH <= L1A_MATCH(NFEB downto 1);
 
 
 -- Generate FIFO_PUSH, FIFO_L1A_MATCH - All signals are pushed a total of ALCT_PUSH_DLY
-  L1APUSH       : SRLC32E port map(l1a_push, open, push_dly, logich, clk, l1a);
-  L1A_ALCT_PUSH : SRLC32E port map(fifo_push_inner, open, alct_push_dly, logich, clk, l1a_push);
+  DS_L1A_PUSH : DELAY_SIGNAL port map(fifo_push_inner, clk, push_dly, l1a);
 
-  FIFO_PUSH <= fifo_push_inner;
- 
   GEN_L1A_MATCH_PUSH_DLY : for K in 1 to NFEB generate
   begin
-    L1AMATCHPUSH   : SRLC32E port map(l1a_match_push(K), open, push_dly, logich, clk, l1a_match(K));
-    L1A_MATCH_ALCT : SRLC32E port map(fifo_l1a_match_inner(K), open, alct_push_dly, logich, clk, l1a_match_push(K));
+    DS_L1AMATCH_PUSH : DELAY_SIGNAL port map(fifo_l1a_match_inner(K), clk, push_dly, l1a_match(K));
   end generate GEN_L1A_MATCH_PUSH_DLY;
 
-  OTMBDAV_FD     : FD port map(otmb_dav_sync, clk, otmb_dav);
-  otmb_alct_dly  <= std_logic_vector(unsigned(alct_push_dly) - unsigned(otmb_push_dly)-1);
-  L1A_OTMB_PUSH  : SRLC32E port map(l1a_otmb_pushed, open, otmb_push_dly, logich, clk, l1a_push);
-  l1a_otmb_match <= (otmb_dav_sync or pedestal_otmb) and l1a_otmb_pushed and not kill(NFEB+1);
-  OTMB_ALCT_PUSH : SRLC32E port map(fifo_l1a_match_inner(NFEB+1), open, otmb_alct_dly, logich, clk, l1a_otmb_match);
+  push_otmb_diff <= push_dly-otmb_push_dly when push_dly > otmb_push_dly else 0;
+  DS_OTMB_PUSH : DELAY_SIGNAL port map(otmb_dav_sync, clk, push_otmb_diff, otmb_dav);
+  fifo_l1a_match_inner(NFEB+1) <= (otmb_dav_sync or pedestal_otmb) and fifo_push_inner and not kill(NFEB+1);
 
-  ALCTDAV_FD : FD port map(alct_dav_sync, clk, alct_dav);
+  push_alct_diff <= push_dly-alct_push_dly when push_dly > alct_push_dly else 0;
+  DS_ALCT_PUSH : DELAY_SIGNAL port map(alct_dav_sync, clk, push_alct_diff, alct_dav);
   fifo_l1a_match_inner(NFEB+2) <= (alct_dav_sync or pedestal_otmb) and fifo_push_inner and not kill(NFEB+2);
 
-  fifo_l1a_match_inner(0)    <= or_reduce(fifo_l1a_match_inner(NFEB+2 downto 1));
-  fifo_l1a_match    <= fifo_l1a_match_inner;
+  fifo_l1a_match_inner(0) <= or_reduce(fifo_l1a_match_inner(NFEB+2 downto 1));
 
-  l1a_otmb_pushed_out <= l1a_otmb_pushed;
-  otmb_dav_sync_out   <= otmb_dav_sync;
+  FIFO_PUSH      <= fifo_push_inner;
+  FIFO_L1A_MATCH <= fifo_l1a_match_inner;
+
+  OTMB_DAV_SYNC_OUT <= otmb_dav_sync;
+  ALCT_DAV_SYNC_OUT <= alct_dav_sync;
 
 end TRGCNTRL_Arch;

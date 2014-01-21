@@ -7,22 +7,23 @@ library unisim;
 use unisim.vcomponents.all;
 
 entity DELAY_SIGNAL is
-  generic (NCYCLES : integer := 1);
-    port (
-      DOUT : out std_logic;
-      CLK  : in  std_logic;
-      DIN  : in  std_logic
-      );
+  generic (NCYCLES_MAX : integer := 64);
+  port (
+    DOUT    : out std_logic;
+    CLK     : in  std_logic;
+    NCYCLES : in  integer range 0 to NCYCLES_MAX;
+    DIN     : in  std_logic
+    );
 end DELAY_SIGNAL;
 
 architecture DELAY_SIGNAL_Arch of DELAY_SIGNAL is
 
-  signal din_vector : std_logic_vector(NCYCLES downto 0);
+  signal din_vector : std_logic_vector(NCYCLES_MAX downto 0);
 
 begin  --Architecture
 
   din_vector(0) <= DIN;
-  GEN_DIN : for index in 1 to NCYCLES generate
+  GEN_DIN : for index in 1 to NCYCLES_MAX generate
   begin
     FD_DIN : FD port map(din_vector(index), CLK, din_vector(index-1));
   end generate GEN_DIN;

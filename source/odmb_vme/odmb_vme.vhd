@@ -142,10 +142,9 @@ entity ODMB_VME is
     dduclk         : in  std_logic;
 
     -- VMECONFREGS outputs
-    ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-    OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
-    PUSH_DLY      : out std_logic_vector(4 downto 0);
     LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
+    OTMB_PUSH_DLY : out integer range 0 to 63;
+    ALCT_PUSH_DLY : out integer range 0 to 63;
     INJ_DLY       : out std_logic_vector(4 downto 0);
     EXT_DLY       : out std_logic_vector(4 downto 0);
     CALLCT_DLY    : out std_logic_vector(3 downto 0);
@@ -397,10 +396,9 @@ architecture ODMB_VME_architecture of ODMB_VME is
       OUTDATA : out std_logic_vector(15 downto 0);
 
 -- Configuration registers    
-      ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-      OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
-      PUSH_DLY      : out std_logic_vector(4 downto 0);
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
+    OTMB_PUSH_DLY : out integer range 0 to 63;
+    ALCT_PUSH_DLY : out integer range 0 to 63;
 
       INJ_DLY    : out std_logic_vector(4 downto 0);
       EXT_DLY    : out std_logic_vector(4 downto 0);
@@ -926,10 +924,10 @@ begin
         OUTDATA => DEV_OUTDATA(4),
 
         DTACK         => DTACK_DEV(4),
-        ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-        OTMB_PUSH_DLY => OTMB_PUSH_DLY,
-        PUSH_DLY      => PUSH_DLY,
+
         LCT_L1A_DLY   => LCT_L1A_DLY,
+        OTMB_PUSH_DLY => OTMB_PUSH_DLY,
+        ALCT_PUSH_DLY => ALCT_PUSH_DLY,
 
         INJ_DLY    => INJ_DLY,
         EXT_DLY    => EXT_DLY,

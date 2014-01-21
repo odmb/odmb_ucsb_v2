@@ -113,6 +113,8 @@ architecture CONTROL_arch of CONTROL_FSM is
 
   signal hdr_tail_cnt_en, hdr_tail_cnt_rst : std_logic            := '0';
   signal hdr_tail_cnt                      : integer range 1 to 8 := 1;
+  signal wait_cnt_en, wait_cnt_rst         : std_logic            := '0';
+  signal wait_cnt                          : integer range 1 to 8 := 1;
   signal dev_cnt_en                        : std_logic            := '0';
   signal dev_cnt                           : integer range 1 to 9 := 9;
   signal tx_cnt_en, tx_cnt_rst             : std_logic            := '0';
@@ -156,13 +158,15 @@ begin
   dev_cnt_svl         <= std_logic_vector(to_unsigned(dev_cnt, 5));
   hdr_tail_cnt_svl    <= std_logic_vector(to_unsigned(hdr_tail_cnt, 5));
 -- trigger assignments (8 bits)
-  control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & "00000";
-  control_fsm_la_data <= "000" & x"0000000"
+  control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & CAFIFO_L1A_CNT(4 downto 0);
+  control_fsm_la_data <= "0" & x"00000"
+                         & std_logic_vector(to_unsigned(wait_cnt, 5))  -- [106:102]
+                         & CAFIFO_L1A_CNT(4 downto 0)         -- [101:97]
                          & FFOR_B & cafifo_lost_pckt          -- [96:79]
                          & next_state_svl & eof_inner & fifo_pop_inner & fifo_pop_80  -- [78:72]
                          & oefifo_b_inner & renfifo_b_inner & dout_inner  -- [71:38]
                          & hdr_tail_cnt_rst & hdr_tail_cnt_en & dev_cnt_en  -- [37:35]
-                         & cafifo_l1a_dav & cafifo_l1a_match  -- [34:17]
+                         & CAFIFO_L1A_DAV & CAFIFO_L1A_MATCH  -- [34:17]
                          & q_datain_last & expect_pckt        -- [16:15]
                          & hdr_tail_cnt_svl & dev_cnt_svl     -- [14:5]
                          & current_state_svl & dav_inner;     -- [4:0]
@@ -178,10 +182,16 @@ begin
     if (RST = '1') then
       control_current_state <= IDLE;
       hdr_tail_cnt          <= 1;
+      wait_cnt              <= 1;
       dev_cnt               <= 9;
       tx_cnt                <= 1;
     elsif rising_edge(CLK) then
       control_current_state <= control_next_state;
+      if(wait_cnt_rst = '1') then
+        wait_cnt <= 1;
+      elsif(wait_cnt_en = '1') then
+        wait_cnt <= wait_cnt + 1;
+      end if;
       if(hdr_tail_cnt_rst = '1') then
         hdr_tail_cnt <= 1;
       elsif(hdr_tail_cnt_en = '1') then
@@ -227,7 +237,8 @@ begin
     x"0"                   when others;
 
   control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav, hdr_word,
-                               hdr_tail_cnt, dev_cnt, tx_cnt, DATAIN, q_datain_last, tail_word)
+                               hdr_tail_cnt, dev_cnt, tx_cnt, DATAIN, q_datain_last, tail_word,
+                               wait_cnt)
   begin
     dout_d           <= (others => '0');
     dav_d            <= '0';
@@ -237,13 +248,15 @@ begin
     fifo_pop_80      <= '0';
     hdr_tail_cnt_rst <= '0';
     hdr_tail_cnt_en  <= '0';
+    wait_cnt_rst     <= '0';
+    wait_cnt_en      <= '0';
     dev_cnt_en       <= '0';
     tx_cnt_rst       <= '0';
     tx_cnt_en        <= '0';
 
     case control_current_state is
       when IDLE =>
-        hdr_tail_cnt_rst <= '1';
+        wait_cnt_rst <= '1';
         if (or_reduce(cafifo_l1a_match) = '1') then
           control_next_state <= HDR;
         else
@@ -251,13 +264,13 @@ begin
         end if;
         
       when HDR =>
-        dout_d          <= hdr_word(hdr_tail_cnt);
-        dav_d           <= '1';
-        hdr_tail_cnt_en <= '1';
+        dout_d <= hdr_word(hdr_tail_cnt);
+        dav_d  <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_DEV;
-          hdr_tail_cnt_rst   <= '1';
+          hdr_tail_cnt_en    <= '0';
         else
+          hdr_tail_cnt_en    <= '1';
           control_next_state <= HDR;
         end if;
 
@@ -268,13 +281,16 @@ begin
           if (dev_cnt = 7) then
             control_next_state <= TAIL;
           else
+            hdr_tail_cnt_rst   <= '1';
             control_next_state <= WAIT_DEV;
           end if;
         elsif(cafifo_l1a_dav(dev_cnt) = '1') then
+          hdr_tail_cnt_rst   <= '1';
           control_next_state      <= TX_DEV;
           oefifo_b_inner(dev_cnt) <= '0';
         else
-          control_next_state <= WAIT_DEV;
+         hdr_tail_cnt_rst   <= '1';
+         control_next_state <= WAIT_DEV;
         end if;
         
       when PRETX_DEV =>
@@ -304,27 +320,28 @@ begin
         end if;
 
       when TAIL =>
-        dout_d          <= tail_word(hdr_tail_cnt);
-        dav_d           <= '1';
-        hdr_tail_cnt_en <= '1';
+        dout_d <= tail_word(hdr_tail_cnt);
+        dav_d  <= '1';
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_IDLE;
           eof_d              <= '1';
           fifo_pop_80        <= '1';
-          hdr_tail_cnt_rst   <= '1';
+          hdr_tail_cnt_en    <= '0';
         else
           control_next_state <= TAIL;
           eof_d              <= '0';
           fifo_pop_80        <= '0';
+          hdr_tail_cnt_en    <= '1';
         end if;
 
       when WAIT_IDLE =>
-        hdr_tail_cnt_en <= '1';
-        if (hdr_tail_cnt = 8) then
-          hdr_tail_cnt_rst   <= '1';
+        hdr_tail_cnt_rst <= '1';
+        if (wait_cnt = 8) then
           control_next_state <= IDLE;
+          wait_cnt_en        <= '0';
         else
           control_next_state <= WAIT_IDLE;
+          wait_cnt_en        <= '1';
         end if;
 
     end case;
@@ -356,7 +373,8 @@ begin
   hdr_word(4) <= x"9" & cafifo_bx_cnt;
   hdr_word(5) <= x"A" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & fmt_vers & l1a_dav_mismatch & cafifo_l1a_match(NFEB downto 1);
   hdr_word(6) <= x"A" & DAQMBID(11 downto 0);
-  hdr_word(7) <= x"A" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & ovlp & cafifo_bx_cnt(4 downto 0);
+  hdr_word(7) <= x"A000";
+  --hdr_word(7) <= x"A" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & ovlp & cafifo_bx_cnt(4 downto 0);
   hdr_word(8) <= x"A" & sync & fmt_vers & l1a_dav_mismatch & cafifo_l1a_cnt(4 downto 0);
 
   tail_word(1) <= x"F" & alct_to_end & cafifo_bx_cnt(4 downto 0) & cafifo_l1a_cnt(5 downto 0);

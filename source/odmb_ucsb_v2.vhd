@@ -12,6 +12,7 @@
 
 library work;
 library ieee;
+library work;
 library unisim;
 library unimacro;
 library hdlmacro;
@@ -19,6 +20,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 use hdlmacro.hdlmacro.all;
@@ -348,10 +350,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       dduclk         : in  std_logic;
 
       -- VMECONFREGS outputs
-      ALCT_PUSH_DLY : out std_logic_vector(4 downto 0);
-      OTMB_PUSH_DLY : out std_logic_vector(4 downto 0);
-      PUSH_DLY      : out std_logic_vector(4 downto 0);
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
+      OTMB_PUSH_DLY : out integer range 0 to 63;
+      ALCT_PUSH_DLY : out integer range 0 to 63;
       INJ_DLY       : out std_logic_vector(4 downto 0);
       EXT_DLY       : out std_logic_vector(4 downto 0);
       CALLCT_DLY    : out std_logic_vector(3 downto 0);
@@ -553,7 +554,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
-      L1A_OTMB_PUSHED_OUT : out std_logic;
+      ALCT_DAV_SYNC_OUT   : out std_logic;
       OTMB_DAV_SYNC_OUT   : out std_logic;
 
       dcfeb_injpulse  : out std_logic;  -- inject - to DCFEBs
@@ -579,10 +580,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       cal_trgsel : in std_logic;
       cal_trgen  : in std_logic_vector(3 downto 0);
 
-      ALCT_PUSH_DLY : in std_logic_vector(4 downto 0);
-      OTMB_PUSH_DLY : in std_logic_vector(4 downto 0);
-      PUSH_DLY      : in std_logic_vector(4 downto 0);
       LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
+      OTMB_PUSH_DLY : in integer range 0 to 63;
+      ALCT_PUSH_DLY : in integer range 0 to 63;
+      PUSH_DLY : in integer range 0 to 63;
       INJ_DLY       : in std_logic_vector(4 downto 0);
       EXT_DLY       : in std_logic_vector(4 downto 0);
       CALLCT_DLY    : in std_logic_vector(3 downto 0);
@@ -850,40 +851,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       );
   end component;
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
-  component FIFO_CASCADE is
-    generic(
-      NFIFO        : integer range 3 to 16 := 3;
-      DATA_WIDTH   : integer               := 18;
-      FWFT         : boolean               := false;
-      WR_FASTER_RD : boolean               := true
-      );
-    port(
-      DO    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      EMPTY : out std_logic;
-      FULL  : out std_logic;
-      EOF   : out std_logic;
-      BOF   : out std_logic;
-
-      DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      RDCLK : in std_logic;
-      RDEN  : in std_logic;
-      RST   : in std_logic;
-      WRCLK : in std_logic;
-      WREN  : in std_logic
-      );
-  end component;
-
   component LCTDLY is  -- Aligns RAW_LCT with L1A by 2.4 us to 4.8 us
     port (
       DIN   : in std_logic;
@@ -987,8 +954,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct, test_pb_lct : std_logic := '0';
   signal otmb_lct_rqst, otmb_ext_trig                                          : std_logic := '0';
   signal l1acnt_rst, bxcnt_rst                                                 : std_logic := '0';
-  signal test_l1a_pushed                                                       : std_logic := '0';
   signal test_otmb_dav, test_alct_dav                                          : std_logic := '0';
+  signal otmb_push_dly_p1, alct_push_dly_p1 : integer range 0 to 64;
 
 -- VME Signals
 
@@ -1030,7 +997,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal otmb_fifo_data_in    : std_logic_vector(17 downto 0);
   signal otmb_fifo_data_out   : std_logic_vector (17 downto 0);
 
-  signal l1a_otmb_pushed_out, otmb_dav_sync_out : std_logic;
+  signal alct_dav_sync_out, otmb_dav_sync_out : std_logic;
 
 
 ------------------------------
@@ -1292,17 +1259,17 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
-  signal ALCT_PUSH_DLY : std_logic_vector(4 downto 0);
-  signal OTMB_PUSH_DLY : std_logic_vector(4 downto 0);
-  signal PUSH_DLY      : std_logic_vector(4 downto 0);
-  signal LCT_L1A_DLY   : std_logic_vector(5 downto 0);
-  signal INJ_DLY       : std_logic_vector(4 downto 0);
-  signal EXT_DLY       : std_logic_vector(4 downto 0);
-  signal CALLCT_DLY    : std_logic_vector(3 downto 0);
+  constant push_dly : integer := 50;  -- It needs to be > alct/otmb_push_dly
+  signal alct_push_dly : integer range 0 to 63;
+  signal otmb_push_dly : integer range 0 to 63;
+  signal lct_l1a_dly   : std_logic_vector(5 downto 0);
+  signal inj_dly       : std_logic_vector(4 downto 0);
+  signal ext_dly       : std_logic_vector(4 downto 0);
+  signal callct_dly    : std_logic_vector(3 downto 0);
   signal odmb_id       : std_logic_vector(15 downto 0);
-  signal NWORDS_DUMMY  : std_logic_vector(15 downto 0);
-  signal KILL          : std_logic_vector(NFEB+2 downto 1);
-  signal CRATEID       : std_logic_vector(7 downto 0);
+  signal nwords_dummy  : std_logic_vector(15 downto 0);
+  signal kill          : std_logic_vector(nfeb+2 downto 1);
+  signal crateid       : std_logic_vector(7 downto 0);
 
   -- From/to TESTFIFOS to test FIFOs
   signal TFF_DOUT    : std_logic_vector(15 downto 0);
@@ -1531,10 +1498,9 @@ begin
       dduclk         => dduclk,
 
       -- VMECONFREGS outputs
-      ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      OTMB_PUSH_DLY => OTMB_PUSH_DLY,
-      PUSH_DLY      => PUSH_DLY,
       LCT_L1A_DLY   => LCT_L1A_DLY,
+      OTMB_PUSH_DLY => OTMB_PUSH_DLY,
+      ALCT_PUSH_DLY => ALCT_PUSH_DLY,
       INJ_DLY       => INJ_DLY,
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
@@ -1730,7 +1696,7 @@ begin
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
-      L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
+      ALCT_DAV_SYNC_OUT   => ALCT_DAV_SYNC_OUT,
       OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT,
 
       dcfeb_l1a_match => int_l1a_match,  -- lctf(5 DOWNTO 1) - to DCFEBs
@@ -1757,10 +1723,10 @@ begin
       cal_trgsel => odmb_ctrl_reg(5),
       cal_trgen  => odmb_ctrl_reg(3 downto 0),
 
-      ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      OTMB_PUSH_DLY => OTMB_PUSH_DLY,
-      PUSH_DLY      => PUSH_DLY,
       LCT_L1A_DLY   => LCT_L1A_DLY,
+      OTMB_PUSH_DLY => OTMB_PUSH_DLY,
+      ALCT_PUSH_DLY => ALCT_PUSH_DLY,
+      PUSH_DLY => PUSH_DLY,
       INJ_DLY       => INJ_DLY,
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
@@ -2018,9 +1984,9 @@ begin
         WREN  => eofgen_dcfeb_data_valid(I)  -- Input write enable
         );
 
-    -- Make pulse 5 cc long, so that there are 1-2 matches at 40 MHz
+    -- Delay EOF of DCFEBs by PUSH_DLY to be on CAFIFO time
     PULSEEOF40    : PULSE_EDGE port map(pulse_eof40(I), open, clk40, reset, 1, eof_data_160(I));
-    EOF_ALCT_PUSH : SRLC32E port map(eof_data(I), open, alct_push_dly, logich, clk40, pulse_eof40(I));
+    DS_EOF_PUSH : DELAY_SIGNAL port map(eof_data(I), clk40, push_dly, pulse_eof40(I));
 
   end generate GEN_DCFEB;
 
@@ -2165,10 +2131,10 @@ begin
 
   tc_run_out <= tc_run;
 
-  L1APUSH  : SRLC32E port map(test_l1a_pushed, open, push_dly, logich, clk40, test_l1a);
-  OTMBPUSH : SRLC32E port map(test_otmb_dav, open, otmb_push_dly, logich, clk40, test_l1a_pushed);
-  ALCTPUSH : SRLC32E port map(test_alct_dav, open, alct_push_dly, logich, clk40, test_l1a_pushed);
-
+  otmb_push_dly_p1 <= otmb_push_dly + 1;
+  alct_push_dly_p1 <= alct_push_dly + 1;
+  DS_OTMB_PUSH : DELAY_SIGNAL port map(test_otmb_dav, clk40, otmb_push_dly_p1, test_l1a);
+  DS_ALCT_PUSH : DELAY_SIGNAL port map(test_alct_dav, clk40, alct_push_dly_p1, test_l1a);
 
   int_alct_dav <= '1' when test_alct_dav = '1' else
                   tc_alct_dav when (testctrl_sel = '1') else
@@ -2789,9 +2755,9 @@ begin
       when x"29" => odmb_data <= l1a_match_cnt(9);
 
 
-      when x"2A" => odmb_data <= "00000000000" & alct_push_dly;
-      when x"2B" => odmb_data <= "00000000000" & otmb_push_dly;
-      when x"2C" => odmb_data <= "00000000000" & push_dly;
+      when x"2A" => odmb_data <= std_logic_vector(to_unsigned(alct_push_dly, 16));
+      when x"2B" => odmb_data <= std_logic_vector(to_unsigned(otmb_push_dly, 16));
+      when x"2C" => odmb_data <= std_logic_vector(to_unsigned(push_dly, 16));
       when x"2D" => odmb_data <= "0000000000" & lct_l1a_dly;
       when x"2E" => odmb_data <= ts_out(15 downto 0);
       when x"2F" => odmb_data <= ts_out(31 downto 16);
@@ -2934,8 +2900,9 @@ begin
                          int_otmb_dav, dcfeb_data, otmb_fifo_data_in, otmb_fifo_data_valid, int_alct_dav,
                          alct_fifo_data_in,
                          alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tdo,
-                         v6_jtag_sel_inner, dcfeb_tms_out, dcfeb_tdi_out, int_tck, int_tdo, raw_lct, rawlct, int_l1a,
-                         otmb_lct_rqst, otmb_ext_trig, raw_l1a, L1A_OTMB_PUSHED_OUT, OTMB_DAV_SYNC_OUT,
+                         v6_jtag_sel_inner, dcfeb_tms_out, dcfeb_tdi_out, int_tck, int_tdo, raw_lct, rawlct,
+                         int_l1a, cafifo_l1a,
+                         otmb_lct_rqst, otmb_ext_trig, raw_l1a, ALCT_DAV_SYNC_OUT, OTMB_DAV_SYNC_OUT,
                          dcfeb_prbs_en, dcfeb_prbs_rst, dcfeb_prbs_rd_en, dcfeb_rxprbserr,
                          int_lvmb_sclk, int_lvmb_sdin, lvmb_sdout, int_lvmb_csb)
   begin
@@ -3061,8 +3028,8 @@ begin
         test_point(tp_4) <= otmb(17);
 
       when x"0019" =>
-        test_point(tp_1) <= L1A_OTMB_PUSHED_OUT;
-        test_point(tp_2) <= raw_l1a;
+        test_point(tp_1) <= ALCT_DAV_SYNC_OUT;
+        test_point(tp_2) <= cafifo_l1a;
         test_point(tp_3) <= otmbdav;
         test_point(tp_4) <= OTMB_DAV_SYNC_OUT;
 

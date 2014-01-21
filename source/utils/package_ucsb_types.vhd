@@ -20,11 +20,12 @@ package ucsb_types is
   end component;
 
   component DELAY_SIGNAL is
-    generic (NCYCLES : integer := 1);
+    generic (NCYCLES_MAX : integer := 64);
     port (
-      DOUT : out std_logic;
-      CLK  : in  std_logic;
-      DIN  : in  std_logic
+      DOUT    : out std_logic;
+      CLK     : in  std_logic;
+      NCYCLES : in  integer range 0 to NCYCLES_MAX;
+      DIN     : in  std_logic
       );
   end component;
 

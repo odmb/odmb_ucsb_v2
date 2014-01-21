@@ -14,7 +14,7 @@ entity ODMB_CTRL is
   port (
 
 -- Chip Scope Pro Logic Analyzer control
-      CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+    CSP_FREE_AGENT_PORT_LA_CTRL  : inout std_logic_vector(35 downto 0);
     CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
 
     clk40  : in std_logic;
@@ -116,7 +116,7 @@ entity ODMB_CTRL is
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
-    L1A_OTMB_PUSHED_OUT : out std_logic;
+    ALCT_DAV_SYNC_OUT   : out std_logic;
     OTMB_DAV_SYNC_OUT   : out std_logic;
 
     dcfeb_injpulse  : out std_logic;    -- inject - to DCFEBs
@@ -141,10 +141,10 @@ entity ODMB_CTRL is
     cal_trgsel : in std_logic;
     cal_trgen  : in std_logic_vector(3 downto 0);
 
-    ALCT_PUSH_DLY : in std_logic_vector(4 downto 0);
-    OTMB_PUSH_DLY : in std_logic_vector(4 downto 0);
-    PUSH_DLY      : in std_logic_vector(4 downto 0);
     LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
+    OTMB_PUSH_DLY : in integer range 0 to 63;
+    ALCT_PUSH_DLY : in integer range 0 to 63;
+    PUSH_DLY      : in integer range 0 to 63;
     INJ_DLY       : in std_logic_vector(4 downto 0);
     EXT_DLY       : in std_logic_vector(4 downto 0);
     CALLCT_DLY    : in std_logic_vector(3 downto 0);
@@ -349,11 +349,11 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CAL_LCT       : in std_logic_vector(NFEB downto 0);
       CAL_L1A       : in std_logic;
       LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
-      PUSH_DLY      : in std_logic_vector(4 downto 0);
+      OTMB_PUSH_DLY : in integer range 0 to 63;
+      ALCT_PUSH_DLY : in integer range 0 to 63;
+      PUSH_DLY      : in integer range 0 to 63;
       ALCT_DAV      : in std_logic;
       OTMB_DAV      : in std_logic;
-      ALCT_PUSH_DLY : in std_logic_vector(4 downto 0);
-      OTMB_PUSH_DLY : in std_logic_vector(4 downto 0);
 
       JTRGEN        : in std_logic_vector(3 downto 0);
       EAFEB         : in std_logic;
@@ -363,7 +363,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       PEDESTAL      : in std_logic;
       PEDESTAL_OTMB : in std_logic;
 
-      L1A_OTMB_PUSHED_OUT : out std_logic;
+      ALCT_DAV_SYNC_OUT   : out std_logic;
       OTMB_DAV_SYNC_OUT   : out std_logic;
 
       DCFEB_L1A       : out std_logic;
@@ -396,7 +396,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   end component;
 
   component CONTROL_FSM is
-  --component CONTROL is
+    --component CONTROL is
     generic (
       NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
       );  
@@ -456,12 +456,12 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       );  
     port(
 
-    CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
-      clk        : in std_logic;
-      dcfebclk   : in std_logic;
-      rst        : in std_logic;
-      l1acnt_rst : in std_logic;
-      bxcnt_rst  : in std_logic;
+      CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
+      clk                         : in    std_logic;
+      dcfebclk                    : in    std_logic;
+      rst                         : in    std_logic;
+      l1acnt_rst                  : in    std_logic;
+      bxcnt_rst                   : in    std_logic;
 
       BC0   : in std_logic;
       BXRST : in std_logic;
@@ -647,13 +647,13 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
 -- CCBCODE outputs
 
-  signal bx0     : std_logic;
-  signal bxrst, ccb_bxrst_b   : std_logic;
-  signal l1arst  : std_logic;
-  signal clken   : std_logic;
-  signal bc0     : std_logic;
-  signal l1asrst : std_logic;
-  signal ttccal  : std_logic_vector(2 downto 0);
+  signal bx0                : std_logic;
+  signal bxrst, ccb_bxrst_b : std_logic;
+  signal l1arst             : std_logic;
+  signal clken              : std_logic;
+  signal bc0                : std_logic;
+  signal l1asrst            : std_logic;
+  signal ttccal             : std_logic_vector(2 downto 0);
 
 
 -- LOADFIFO outputs
@@ -741,11 +741,11 @@ begin
       CAL_LCT       => cal_lct,
       CAL_L1A       => cal_gtrg,
       LCT_L1A_DLY   => lct_l1a_dly,
-      PUSH_DLY      => push_dly,        -- Not used for now
+      OTMB_PUSH_DLY => otmb_push_dly,
+      ALCT_PUSH_DLY => alct_push_dly,
+      PUSH_DLY      => push_dly,
       ALCT_DAV      => alct_dav,
       OTMB_DAV      => otmb_dav,
-      ALCT_PUSH_DLY => alct_push_dly,
-      OTMB_PUSH_DLY => otmb_push_dly,
 
       JTRGEN        => cal_trgen,
       EAFEB         => enacfeb,
@@ -755,7 +755,7 @@ begin
       PEDESTAL      => pedestal,
       PEDESTAL_OTMB => pedestal_otmb,
 
-      L1A_OTMB_PUSHED_OUT => L1A_OTMB_PUSHED_OUT,
+      ALCT_DAV_SYNC_OUT   => ALCT_DAV_SYNC_OUT,
       OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT,
 
       DCFEB_L1A       => dcfeb_l1a,
@@ -771,11 +771,11 @@ begin
     generic map (NFEB => NFEB, CAFIFO_SIZE => 32)
     port map(
       CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
-      clk        => clk40,
-      dcfebclk   => clk160,
-      rst        => l1acnt_rst,
-      l1acnt_rst => l1acnt_rst,
-      bxcnt_rst  => bxcnt_rst,
+      clk                         => clk40,
+      dcfebclk                    => clk160,
+      rst                         => l1acnt_rst,
+      l1acnt_rst                  => l1acnt_rst,
+      bxcnt_rst                   => bxcnt_rst,
 
       BC0   => bc0,
       BXRST => ccb_bxrst_b,
@@ -818,7 +818,7 @@ begin
       );
 
   CONTROL_FSM_PM : CONTROL_FSM
-   --CONTROL_PM : CONTROL
+    --CONTROL_PM : CONTROL
     generic map(NFEB => NFEB)
     port map(
       CSP_CONTROL_FSM_PORT_LA_CTRL => CSP_CONTROL_FSM_PORT_LA_CTRL,
@@ -1200,7 +1200,7 @@ begin
 
 -- from ODMB_CTRL_EMPTY
 
-  ccb_rsvi <= "000";
+  ccb_rsvi    <= "000";
   ccb_bxrst_b <= not ccb_bxrst;
 
 end ODMB_CTRL_arch;
