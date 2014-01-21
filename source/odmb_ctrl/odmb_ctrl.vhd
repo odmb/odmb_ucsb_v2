@@ -395,8 +395,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       );
   end component;
 
-  --component CONTROL_FSM is
-  component CONTROL is
+  component CONTROL_FSM is
+  --component CONTROL is
     generic (
       NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
       );  
@@ -817,8 +817,8 @@ begin
       cafifo_rd_addr => cafifo_rd_addr
       );
 
-  --CONTROL_FSM_PM : CONTROL_FSM
-   CONTROL_PM : CONTROL
+  CONTROL_FSM_PM : CONTROL_FSM
+   --CONTROL_PM : CONTROL
     generic map(NFEB => NFEB)
     port map(
       CSP_CONTROL_FSM_PORT_LA_CTRL => CSP_CONTROL_FSM_PORT_LA_CTRL,

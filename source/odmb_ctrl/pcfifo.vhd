@@ -1,11 +1,13 @@
 -- PCFIFO: Takes the DDU packets, and Produces continuous packets suitable for ethernet
 
 library ieee;
+library work;
 library unisim;
 library unimacro;
 library hdlmacro;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_1164.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 use hdlmacro.hdlmacro.all;
@@ -34,49 +36,14 @@ end pcfifo;
 
 architecture pcfifo_architecture of pcfifo is
 
-  component FIFO_CASCADE is
-    generic(
-      NFIFO        : integer range 3 to 16 := 3;
-      DATA_WIDTH   : integer               := 18;
-      WR_FASTER_RD : boolean               := true
-      );
-    port(
-      DO    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      EMPTY : out std_logic;
-      FULL  : out std_logic;
-      EOF   : out std_logic;
-      BOF   : out std_logic;
-
-      DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      RDCLK : in std_logic;
-      RDEN  : in std_logic;
-      RST   : in std_logic;
-      WRCLK : in std_logic;
-      WREN  : in std_logic
-      );
-  end component;
-
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
-  constant logich : std_logic := '1';
-
   type fsm_state_type is (IDLE, FIFO_TX, FIFO_TX_HEADER, FIFO_TX_EPKT, IDLE_ETH);
-  signal f0_current_state : fsm_state_type := IDLE;
-  signal f0_next_state    : fsm_state_type := IDLE;
+  signal pcfifo_current_state : fsm_state_type := IDLE;
+  signal pcfifo_next_state    : fsm_state_type := IDLE;
 
-  signal f0_rden  : std_logic;
-  signal f0_empty : std_logic;
-  signal f0_out   : std_logic_vector(15 downto 0);
-  signal f0_ld    : std_logic;
+  signal pcfifo_rden  : std_logic;
+  signal pcfifo_empty : std_logic;
+  signal pcfifo_out   : std_logic_vector(15 downto 0);
+  signal pcfifo_ld    : std_logic;
 
   signal ld_in_q, ld_in_pulse : std_logic                    := '0';
   signal ld_out, ld_out_pulse : std_logic                    := '0';
@@ -96,10 +63,10 @@ architecture pcfifo_architecture of pcfifo is
 
   -- IDLE_ETH ensures the interframe gap of 96 bits between packets
   signal idle_cnt_en, idle_cnt_rst : std_logic            := '0';
-  signal idle_cnt                  : integer range 0 to 9 := 0;
+  signal idle_cnt                  : integer range 0 to 20 := 0;
 
-  signal dv_in_pulse, last_pulse : std_logic := '0';
-  signal first_in, last_pulse_b  : std_logic := '1';
+  signal dv_in_pulse, q_ld_in : std_logic := '0';
+  signal first_in  : std_logic := '1';
   -- Clock cycles it takes to reach the end of the FIFO_CASCADE
   constant nwait_fifo            : integer   := NFIFO * 8;
 
@@ -113,7 +80,7 @@ begin
   DV_PULSE_EDGE : pulse_edge port map(dv_in_pulse, open, clk_in, rst, 1, dv_in);
   FDLDIN        : FD port map(ld_in_q, clk_in, ld_in);
 
-  FDFIRST  : FDCP port map(first_in, ld_in_q, dv_in_pulse, logich, rst);
+  FDFIRST  : FDCP port map(first_in, ld_in_q, dv_in_pulse, '1', rst);
   fifo_wren <= dv_in;
   fifo_in   <= first_in & ld_in & data_in;
   PULSERST : PULSE_EDGE port map(fifo_rst, open, clk_out, '0', 3, rst);
@@ -133,15 +100,15 @@ begin
 
       DI    => fifo_in,                 -- Input data
       RDCLK => clk_out,                 -- Input read clock
-      RDEN  => f0_rden,                 -- Input read enable
+      RDEN  => pcfifo_rden,                 -- Input read enable
       RST   => fifo_rst,                -- Input reset
       WRCLK => clk_in,                  -- Input write clock
       WREN  => fifo_wren                -- Input write enable
       );
 
-  f0_out   <= fifo_out(15 downto 0);
-  f0_ld    <= fifo_out(16);
-  f0_empty <= fifo_empty;
+  pcfifo_out   <= fifo_out(15 downto 0);
+  pcfifo_ld    <= fifo_out(16);
+  pcfifo_empty <= fifo_empty;
 
   FDCACK   : FDC port map(tx_ack_q(0), tx_ack, tx_ack_q(2), tx_ack_q_b);
   FDACK_Q  : FD port map(tx_ack_q(1), clk_out, tx_ack_q(0));
@@ -149,10 +116,9 @@ begin
   tx_ack_q_b <= not tx_ack_q(2);
 
 -- FSMs
-  FIRST_PE : pulse_edge port map(last_pulse, open, clk_in, rst, nwait_fifo, ld_in);
-  last_pulse_b <= not last_pulse;
-  LDIN_PE  : pulse_edge port map(ld_in_pulse, open, clk_out, rst, 1, last_pulse_b);
-  LDOUT_PE : pulse_edge port map(ld_out_pulse, open, clk_out, rst, 1, ld_out);
+  DS_LDIN : DELAY_SIGNAL generic map (nwait_fifo) port map (q_ld_in, CLK_IN, ld_in);
+  LDIN_PE  : pulse_edge port map(ld_in_pulse, open, CLK_OUT, RST, 1, q_ld_in);
+  LDOUT_PE : pulse_edge port map(ld_out_pulse, open, CLK_OUT, RST, 1, ld_out);
 
 -- Generation of counter for total packets sent
   epkt_cnt_total_pro : process (rst, clk_out, epkt_cnt_en)
@@ -166,7 +132,7 @@ begin
     end if;
   end process;
 
--- Guido 10/28 => split long data packets
+-- Counter to split long data packets
   word_cnt : process (word_cnt_rst, word_cnt_en, rst, clk_out)
     variable word_cnt_data : std_logic_vector(15 downto 0) := (others => '0');
   begin
@@ -180,8 +146,7 @@ begin
       end if;
     end if;
 
-    word_cnt_out <= word_cnt_data;
-    
+    word_cnt_out <= word_cnt_data;    
   end process;
 
   pkt_cnt : process (ld_in_pulse, ld_out_pulse, rst, clk_out)
@@ -201,12 +166,12 @@ begin
     
   end process;
 
-  f0_fsm_regs : process (f0_next_state, rst, clk_out, idle_cnt)
+  pcfifo_fsm_regs : process (pcfifo_next_state, rst, clk_out, idle_cnt)
   begin
     if (rst = '1') then
-      f0_current_state <= IDLE;
+      pcfifo_current_state <= IDLE;
     elsif rising_edge(clk_out) then
-      f0_current_state <= f0_next_state;
+      pcfifo_current_state <= pcfifo_next_state;
       if(idle_cnt_rst = '1') then
         idle_cnt <= 0;
       elsif(idle_cnt_en = '1') then
@@ -216,9 +181,10 @@ begin
     
   end process;
 
-  f0_fsm_logic : process (f0_current_state, f0_out, f0_empty, f0_ld, pkt_cnt_out, tx_ack_q, idle_cnt, word_cnt_out)
+  pcfifo_fsm_logic : process (pcfifo_current_state, pcfifo_out, pcfifo_empty, pcfifo_ld,
+                              pkt_cnt_out, tx_ack_q, idle_cnt, word_cnt_out)
   begin
-    case f0_current_state is
+    case pcfifo_current_state is
       when IDLE =>
         dv_out       <= '0';
         data_out     <= (others => '0');
@@ -229,16 +195,16 @@ begin
         word_cnt_en  <= '0';
         epkt_cnt_en  <= '0';
         if (pkt_cnt_out = "00000000") then
-          f0_rden       <= '0';
-          f0_next_state <= IDLE;
+          pcfifo_rden       <= '0';
+          pcfifo_next_state <= IDLE;
         else
-          f0_rden       <= '1';
-          f0_next_state <= FIFO_TX_HEADER;
+          pcfifo_rden       <= '1';
+          pcfifo_next_state <= FIFO_TX_HEADER;
         end if;
         
       when FIFO_TX_HEADER =>
         dv_out       <= '1';
-        data_out     <= f0_out;
+        data_out     <= pcfifo_out;
         ld_out       <= '0';
         idle_cnt_rst <= '0';
         idle_cnt_en  <= '0';
@@ -246,34 +212,34 @@ begin
         word_cnt_en  <= '0';
         epkt_cnt_en  <= '0';
         if (tx_ack_q(0) = '1') then
-          f0_rden       <= '1';
-          f0_next_state <= FIFO_TX;
+          pcfifo_rden       <= '1';
+          pcfifo_next_state <= FIFO_TX;
         else
-          f0_rden       <= '0';
-          f0_next_state <= FIFO_TX_HEADER;
+          pcfifo_rden       <= '0';
+          pcfifo_next_state <= FIFO_TX_HEADER;
         end if;
 
       when FIFO_TX =>
         dv_out       <= '1';
-        data_out     <= f0_out;
+        data_out     <= pcfifo_out;
         idle_cnt_rst <= '0';
         idle_cnt_en  <= '0';
         word_cnt_rst <= '0';
         word_cnt_en  <= '1';
         epkt_cnt_en  <= '0';
         ld_out       <= '0';
-        if f0_ld = '1' or word_cnt_out = x"0FFF" then
-          f0_next_state <= FIFO_TX_EPKT;
-          f0_rden       <= '0';
+        if pcfifo_ld = '1' or word_cnt_out = x"0FFF" then
+          pcfifo_next_state <= FIFO_TX_EPKT;
+          pcfifo_rden       <= '0';
         else
-          f0_next_state <= FIFO_TX;
-          f0_rden       <= '1';
+          pcfifo_next_state <= FIFO_TX;
+          pcfifo_rden       <= '1';
         end if;
 
       when FIFO_TX_EPKT =>
         dv_out   <= '1';
         data_out <= epkt_cnt_total;
-        if (f0_ld = '0') then
+        if (pcfifo_ld = '0') then
           word_cnt_rst <= '0';
           ld_out       <= '0';
         else
@@ -284,37 +250,37 @@ begin
         idle_cnt_en   <= '0';
         word_cnt_en   <= '0';
         epkt_cnt_en   <= '1';
-        f0_rden       <= '0';
-        f0_next_state <= IDLE_ETH;
+        pcfifo_rden       <= '0';
+        pcfifo_next_state <= IDLE_ETH;
 
       when IDLE_ETH =>
         dv_out       <= '0';
         data_out     <= (others => '0');
         ld_out       <= '0';
-        f0_rden      <= '0';
+        pcfifo_rden      <= '0';
         idle_cnt_en  <= '1';
         epkt_cnt_en  <= '0';
         word_cnt_rst <= '0';
         word_cnt_en  <= '0';
-        if (idle_cnt > 7) then
-          f0_next_state <= IDLE;
+        if (idle_cnt > 12) then
+          pcfifo_next_state <= IDLE;
           idle_cnt_rst  <= '1';
         else
-          f0_next_state <= IDLE_ETH;
+          pcfifo_next_state <= IDLE_ETH;
           idle_cnt_rst  <= '0';
         end if;
 
       when others =>
         dv_out        <= '0';
         data_out      <= (others => '0');
-        f0_rden       <= '0';
+        pcfifo_rden       <= '0';
         ld_out        <= '0';
         idle_cnt_rst  <= '0';
         idle_cnt_en   <= '0';
         word_cnt_rst  <= '0';
         word_cnt_en   <= '0';
         epkt_cnt_en   <= '0';
-        f0_next_state <= IDLE;
+        pcfifo_next_state <= IDLE;
         
     end case;
     

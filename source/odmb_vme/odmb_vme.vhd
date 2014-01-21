@@ -164,21 +164,21 @@ entity ODMB_VME is
     pc_tx_fifo_rst     : out std_logic;
     pc_tx_fifo_rden    : out std_logic;
     pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+    pc_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
     pc_rx_fifo_rst     : out std_logic;
     pc_rx_fifo_rden    : out std_logic;
     pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    pc_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+    pc_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
 
     -- DDU FIFO signals
     ddu_tx_fifo_rst     : out std_logic;
     ddu_tx_fifo_rden    : out std_logic;
     ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    ddu_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+    ddu_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
     ddu_rx_fifo_rst     : out std_logic;
     ddu_rx_fifo_rden    : out std_logic;
     ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    ddu_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+    ddu_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
 
     -- TESTFIFOS
     TFF_DOUT    : in  std_logic_vector(15 downto 0);
@@ -461,21 +461,21 @@ architecture ODMB_VME_architecture of ODMB_VME is
       pc_tx_fifo_rst     : out std_logic;
       pc_tx_fifo_rden    : out std_logic;
       pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      pc_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
       pc_rx_fifo_rst     : out std_logic;
       pc_rx_fifo_rden    : out std_logic;
       pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      pc_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
 
       -- DDU_TX/RX Fifo signals
       ddu_tx_fifo_rst     : out std_logic;
       ddu_tx_fifo_rden    : out std_logic;
       ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
       ddu_rx_fifo_rst     : out std_logic;
       ddu_rx_fifo_rden    : out std_logic;
       ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
 
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT    : in std_logic_vector(15 downto 0);

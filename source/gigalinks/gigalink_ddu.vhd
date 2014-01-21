@@ -36,11 +36,11 @@ entity GIGALINK_DDU is
     TX_FIFO_RST     : in  std_logic;
     TX_FIFO_RDEN    : in  std_logic;
     TX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-    TX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
+    TX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
     RX_FIFO_RST     : in  std_logic;
     RX_FIFO_RDEN    : in  std_logic;
     RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-    RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
+    RX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
 
     -- PRBS signals
     PRBS_TYPE       : in  std_logic_vector(2 downto 0);
@@ -309,7 +309,6 @@ begin
       );
 
   TX_WRD_COUNT : FIFOWORDS
-    generic map(12)
     port map(RST   => tx_fifo_rst, WRCLK => usr_clk, WREN => TXD_VLD, FULL => tx_fifo_full,
              RDCLK => VME_CLK, RDEN => TX_FIFO_RDEN, COUNT => TX_FIFO_WRD_CNT);
 
@@ -342,7 +341,6 @@ begin
       );
 
   RX_WRD_COUNT : FIFOWORDS
-    generic map(12)
     port map(RST   => rx_fifo_rst, WRCLK => usr_clk, WREN => rxd_vld_inner,
              FULL  => rx_fifo_full, RDCLK => VME_CLK, RDEN => RX_FIFO_RDEN,
              COUNT => RX_FIFO_WRD_CNT);

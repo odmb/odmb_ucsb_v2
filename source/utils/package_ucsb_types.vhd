@@ -1,5 +1,5 @@
 -- Package with types used by UCSB
-library ieee; 
+library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
@@ -19,6 +19,38 @@ package ucsb_types is
       );
   end component;
 
+  component DELAY_SIGNAL is
+    generic (NCYCLES : integer := 1);
+    port (
+      DOUT : out std_logic;
+      CLK  : in  std_logic;
+      DIN  : in  std_logic
+      );
+  end component;
+
+  component FIFO_CASCADE is
+    generic(
+      NFIFO        : integer range 3 to 16 := 3;
+      DATA_WIDTH   : integer               := 18;
+      FWFT         : boolean               := false;
+      WR_FASTER_RD : boolean               := true
+      );
+    port(
+      DO    : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      EMPTY : out std_logic;
+      FULL  : out std_logic;
+      EOF   : out std_logic;
+      BOF   : out std_logic;
+
+      DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
+      RDCLK : in std_logic;
+      RDEN  : in std_logic;
+      RST   : in std_logic;
+      WRCLK : in std_logic;
+      WREN  : in std_logic
+      );
+  end component;
+
 
 end ucsb_types;
- 
+

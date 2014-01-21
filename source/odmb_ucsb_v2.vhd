@@ -370,21 +370,21 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       pc_tx_fifo_rst     : out std_logic;
       pc_tx_fifo_rden    : out std_logic;
       pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      pc_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
       pc_rx_fifo_rst     : out std_logic;
       pc_rx_fifo_rden    : out std_logic;
       pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      pc_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
 
       -- DDU FIFO signals
       ddu_tx_fifo_rst     : out std_logic;
       ddu_tx_fifo_rden    : out std_logic;
       ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
       ddu_rx_fifo_rst     : out std_logic;
       ddu_rx_fifo_rden    : out std_logic;
       ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(11 downto 0);
+      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
 
       -- TESTFIFOS
       TFF_DOUT    : in  std_logic_vector(15 downto 0);
@@ -641,11 +641,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       TX_FIFO_RST      : in  std_logic;
       TX_FIFO_RDEN     : in  std_logic;
       TX_FIFO_DOUT     : out std_logic_vector(15 downto 0);
-      TX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0);
+      TX_FIFO_WRD_CNT  : out std_logic_vector(15 downto 0);
       RX_FIFO_RST      : in  std_logic;
       RX_FIFO_RDEN     : in  std_logic;
       RX_FIFO_DOUT     : out std_logic_vector(15 downto 0);
-      RX_FIFO_WRD_CNT  : out std_logic_vector(11 downto 0);
+      RX_FIFO_WRD_CNT  : out std_logic_vector(15 downto 0);
 
       -- PRBS signals
       PRBS_TYPE       : in  std_logic_vector(2 downto 0);
@@ -685,11 +685,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       TX_FIFO_RST     : in  std_logic;
       TX_FIFO_RDEN    : in  std_logic;
       TX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-      TX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
+      TX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
       RX_FIFO_RST     : in  std_logic;
       RX_FIFO_RDEN    : in  std_logic;
       RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-      RX_FIFO_WRD_CNT : out std_logic_vector(11 downto 0);
+      RX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
 
       -- PRBS signals
       PRBS_TYPE       : in  std_logic_vector(2 downto 0);
@@ -1095,11 +1095,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pc_tx_fifo_rst     : std_logic;
   signal pc_tx_fifo_rden    : std_logic;
   signal pc_tx_fifo_dout    : std_logic_vector(15 downto 0);
-  signal pc_tx_fifo_wrd_cnt : std_logic_vector(11 downto 0);
+  signal pc_tx_fifo_wrd_cnt : std_logic_vector(15 downto 0);
   signal pc_rx_fifo_rst     : std_logic;
   signal pc_rx_fifo_rden    : std_logic;
   signal pc_rx_fifo_dout    : std_logic_vector(15 downto 0);
-  signal pc_rx_fifo_wrd_cnt : std_logic_vector(11 downto 0);
+  signal pc_rx_fifo_wrd_cnt : std_logic_vector(15 downto 0);
   signal pc_txd_frame       : std_logic_vector(15 downto 0);
   signal rom_cnt_out        : std_logic_vector(2 downto 0);
   signal pc_tx_fifo_wren    : std_logic;
@@ -1114,11 +1114,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal ddu_tx_fifo_rst     : std_logic;
   signal ddu_tx_fifo_rden    : std_logic;
   signal ddu_tx_fifo_dout    : std_logic_vector (15 downto 0);
-  signal ddu_tx_fifo_wrd_cnt : std_logic_vector (11 downto 0);
+  signal ddu_tx_fifo_wrd_cnt : std_logic_vector (15 downto 0);
   signal ddu_rx_fifo_rst     : std_logic;
   signal ddu_rx_fifo_rden    : std_logic;
   signal ddu_rx_fifo_dout    : std_logic_vector (15 downto 0);
-  signal ddu_rx_fifo_wrd_cnt : std_logic_vector (11 downto 0);
+  signal ddu_rx_fifo_wrd_cnt : std_logic_vector (15 downto 0);
 
   -- dmb_receiver
   signal CRC_VALID : std_logic_vector(NFEB downto 1) := (others => '0');
