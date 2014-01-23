@@ -250,28 +250,28 @@ begin  --Architecture
   end generate FDCE_GEN;
 
 -- Chip ScopePro
-  csp_bpi_port_la_pm : csp_bpi_port_la
-    port map (
-      CONTROL => CSP_BPI_PORT_LA_CTRL,
-      CLK     => CLK,
-      DATA    => bpi_port_csp_data,
-      TRIG0   => bpi_port_csp_trig
-      );
+  --csp_bpi_port_la_pm : csp_bpi_port_la
+  --  port map (
+  --    CONTROL => CSP_BPI_PORT_LA_CTRL,
+  --    CLK     => CLK,
+  --    DATA    => bpi_port_csp_data,
+  --    TRIG0   => bpi_port_csp_trig
+  --    );
 
-  bpi_port_csp_trig <= "00" & STROBE & BPI_ENBL_INNER & BPI_DSBL_INNER & BPI_RST_INNER
-                       & SEND_BPI_CFG_UL & SEND_BPI_CFG_DL;
-  bpi_port_csp_data <= "0" & x"000000000000" &
-                       std_logic_vector(cmddev) &                   --[78:66]
-                       x"0000" &        --[65:50]
-                       BPI_RBK_FIFO_DATA &                          --[49:34]
-                       BPI_RBK_WRD_CNT &                            --[33:23]
-                       BPI_CFG_BUSY & BPI_DONE & bpi_cfg_busy_b & STROBE & WRITE_B & RST &  --[22:17]
-                       "00" &           --[16:15]
-                       "00" &           --[14:13]
-                       bpi_cfg_dl_pulse_inner & SEND_BPI_CFG_DL & BPI_CFG_DL_INNER &  --[12:10]
-                       bpi_cfg_ul_pulse_inner & SEND_BPI_CFG_UL & BPI_CFG_UL_INNER &  --[9:7]
-                       "000" &          -- [6:4]
-                       DD_DTACK & D_DTACK & Q_DTACK & DTACK_INNER;  --[3:0]
+  --bpi_port_csp_trig <= "00" & STROBE & BPI_ENBL_INNER & BPI_DSBL_INNER & BPI_RST_INNER
+  --                     & SEND_BPI_CFG_UL & SEND_BPI_CFG_DL;
+  --bpi_port_csp_data <= "0" & x"000000000000" &
+  --                     std_logic_vector(cmddev) &                   --[78:66]
+  --                     x"0000" &        --[65:50]
+  --                     BPI_RBK_FIFO_DATA &                          --[49:34]
+  --                     BPI_RBK_WRD_CNT &                            --[33:23]
+  --                     BPI_CFG_BUSY & BPI_DONE & bpi_cfg_busy_b & STROBE & WRITE_B & RST &  --[22:17]
+  --                     "00" &           --[16:15]
+  --                     "00" &           --[14:13]
+  --                     bpi_cfg_dl_pulse_inner & SEND_BPI_CFG_DL & BPI_CFG_DL_INNER &  --[12:10]
+  --                     bpi_cfg_ul_pulse_inner & SEND_BPI_CFG_UL & BPI_CFG_UL_INNER &  --[9:7]
+  --                     "000" &          -- [6:4]
+  --                     DD_DTACK & D_DTACK & Q_DTACK & DTACK_INNER;  --[3:0]
 
   -- DTACK
   dd_dtack <= STROBE and DEVICE;

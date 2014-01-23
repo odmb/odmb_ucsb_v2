@@ -7,6 +7,9 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.all;
 
 entity ETHERNET_FRAME is
+  generic (
+    NWORDS : integer := 7               -- Number of ethernet words
+    );    
   port (
     CLK : in std_logic;                 -- User clock
     RST : in std_logic;                 -- Reset
@@ -50,13 +53,29 @@ architecture ETHERNET_FRAME_ARCH of ETHERNET_FRAME is
   signal crc_value                              : std_logic_vector(15 downto 0);
   signal crc_calc, crc_clr, crc_dv              : std_logic := '0';
 
-  type   tx_state is (TX_IDLE, TX_HEAD_TRAIL, TX_DATA, TX_CRC);
+  type tx_state is (TX_IDLE, TX_HEAD_TRAIL, TX_MAC, TX_DATA, TX_CRC);
   signal tx_current_state, tx_next_state : tx_state := TX_IDLE;
 
-  signal rom_cnt_en, rom_cnt_rst : std_logic            := '0';
-  signal rom_cnt                 : integer range 0 to 6 := 0;
+  signal rom_cnt_en, rom_cnt_rst   : std_logic                 := '0';
+  signal rom_cnt                   : integer range 0 to 6      := 0;
+  signal mac_cnt_en, mac_cnt_rst   : std_logic                 := '0';
+  signal mac_cnt                   : integer range 0 to NWORDS := 0;
+  signal mac2_cnt_en, mac2_cnt_rst : std_logic                 := '0';
+  signal mac2_cnt                  : integer range 0 to NWORDS := 0;
+
+  type mac_words_array is array (0 to NWORDS-1) of std_logic_vector(15 downto 0);
+  constant mac_words_cnst : mac_words_array := (x"35A0", x"149F", x"5ACA", x"DBDB",
+                                                x"DBDB", x"DBDB", x"7088");
+  signal mac_words : mac_words_array;
+
+  constant nwords_p1 : integer := NWORDS + 1;
+
+  signal eth_payload : std_logic_vector(15 downto 0);
 
 begin
+
+  mac_words(0 to NWORDS-1) <= mac_words_cnst(0 to NWORDS-1);
+  --mac_words(NWORDS-1)      <= WORD7;
 
   ROM_CNT_OUT <= std_logic_vector(to_unsigned(rom_cnt, 3));
 
@@ -76,6 +95,8 @@ begin
     if (RST = '1') then
       tx_current_state <= TX_IDLE;
       rom_cnt          <= 0;
+      mac_cnt          <= 0;
+      mac2_cnt         <= 0;
     elsif rising_edge(CLK) then
       tx_current_state <= tx_next_state;
       if(rom_cnt_rst = '1') then
@@ -83,21 +104,36 @@ begin
       elsif(rom_cnt_en = '1') then
         rom_cnt <= rom_cnt + 1;
       end if;
+      if(mac_cnt_rst = '1') then
+        mac_cnt <= 0;
+      elsif(mac_cnt_en = '1') then
+        mac_cnt <= mac_cnt + 1;
+      end if;
+      if(mac2_cnt_rst = '1') then
+        mac2_cnt <= 0;
+      elsif(mac2_cnt_en = '1') then
+        mac2_cnt <= mac2_cnt + 1;
+      end if;
     end if;
   end process;
 
-  tx_fsm_logic : process (tx_current_state, TXD_VLD, txd_vld1, txd_vld2, txd_vld3, rom_cnt, txd_dly2, crc_dly2)
+  tx_fsm_logic : process (tx_current_state, TXD_VLD, txd_vld1, txd_vld2, txd_vld3,
+                          rom_cnt, mac_cnt, txd_dly2, crc_dly2)
   begin
     case tx_current_state is
       when TX_IDLE =>
-        TXD_FRAME   <= eth_idle;
-        TXD_ACK     <= '0';
-        TXD_ISK     <= "01";
-        rom_cnt_rst <= '0';
-        rom_cnt_en  <= '0';
-        crc_calc    <= '0';
-        crc_clr     <= '0';
-        crc_dv      <= '0';
+        TXD_FRAME    <= eth_idle;
+        TXD_ACK      <= '0';
+        TXD_ISK      <= "01";
+        rom_cnt_rst  <= '0';
+        rom_cnt_en   <= '0';
+        mac_cnt_rst  <= '1';
+        mac_cnt_en   <= '0';
+        mac2_cnt_rst <= '1';
+        mac2_cnt_en  <= '0';
+        crc_calc     <= '0';
+        crc_clr      <= '0';
+        crc_dv       <= '0';
         if (txd_vld2 = '1') then
           tx_next_state <= TX_HEAD_TRAIL;
         else
@@ -110,6 +146,10 @@ begin
         rom_cnt_rst   <= '0';
         rom_cnt_en    <= '1';
         crc_clr       <= '0';
+        mac_cnt_rst   <= '0';
+        mac_cnt_en    <= '0';
+        mac2_cnt_rst  <= '0';
+        mac2_cnt_en   <= '0';
         case rom_cnt is
           when 0 =>
             TXD_FRAME <= sop_pre;
@@ -124,17 +164,18 @@ begin
             crc_clr   <= '1';
             crc_dv    <= '0';
           when 2 =>
-            TXD_FRAME <= preamble;
-            TXD_ACK   <= '1';
-            TXD_ISK   <= "00";
-            crc_calc  <= '1';
-            crc_dv    <= '1';
+            TXD_FRAME   <= preamble;
+            TXD_ISK     <= "00";
+            crc_calc    <= '1';
+            crc_dv      <= '1';
+            mac2_cnt_en <= '1';
           when 3 =>
-            tx_next_state <= TX_DATA;
+            tx_next_state <= TX_MAC;
             TXD_FRAME     <= sof_pre;
             TXD_ISK       <= "00";
             crc_calc      <= '1';
             crc_dv        <= '1';
+            mac2_cnt_en   <= '1';
           when 4 =>
             TXD_FRAME <= eop;
             TXD_ISK   <= "11";
@@ -156,13 +197,45 @@ begin
             crc_dv        <= '0';
         end case;
         
+      when TX_MAC =>
+        TXD_FRAME    <= mac_words(mac_cnt);
+        TXD_ISK      <= "00";
+        rom_cnt_rst  <= '0';
+        rom_cnt_en   <= '0';
+        mac_cnt_rst  <= '0';
+        mac2_cnt_rst <= '0';
+        crc_clr      <= '0';
+        crc_calc     <= '1';
+        crc_dv       <= '1';
+        if (mac_cnt = NWORDS-2) then
+          TXD_ACK <= '1';
+        else
+          TXD_ACK <= '0';
+        end if;
+        if (mac_cnt = NWORDS-1) then
+          tx_next_state <= TX_DATA;
+          mac_cnt_en    <= '0';
+        else
+          mac_cnt_en    <= '1';
+          tx_next_state <= TX_MAC;
+        end if;
+        if (mac2_cnt < NWORDS-1) then
+          mac2_cnt_en <= '1';
+        else
+          mac2_cnt_en <= '0';
+        end if;
+        
       when TX_DATA =>
-        TXD_FRAME   <= txd_dly2;
-        TXD_ACK     <= '0';
-        TXD_ISK     <= "00";
-        rom_cnt_rst <= '0';
-        rom_cnt_en  <= '0';
-        crc_clr     <= '0';
+        TXD_FRAME    <= txd_dly2;
+        TXD_ACK      <= '0';
+        TXD_ISK      <= "00";
+        rom_cnt_rst  <= '0';
+        rom_cnt_en   <= '0';
+        mac_cnt_rst  <= '0';
+        mac_cnt_en   <= '0';
+        mac2_cnt_en  <= '0';
+        mac2_cnt_rst <= '1';
+        crc_clr      <= '0';
         if (TXD_VLD = '1') then
           crc_calc <= '1';
         else
@@ -177,14 +250,18 @@ begin
         end if;
         
       when TX_CRC =>
-        TXD_FRAME   <= crc_dly2;
-        TXD_ACK     <= '0';
-        TXD_ISK     <= "00";
-        rom_cnt_rst <= '0';
-        crc_calc    <= '0';
-        crc_clr     <= '0';
-        crc_dv      <= '0';
-        rom_cnt_en  <= '0';
+        TXD_FRAME    <= crc_dly2;
+        TXD_ACK      <= '0';
+        TXD_ISK      <= "00";
+        mac_cnt_rst  <= '0';
+        mac_cnt_en   <= '0';
+        rom_cnt_rst  <= '0';
+        crc_calc     <= '0';
+        crc_clr      <= '0';
+        crc_dv       <= '0';
+        rom_cnt_en   <= '0';
+        mac2_cnt_en  <= '0';
+        mac2_cnt_rst <= '0';
         if (txd_vld3 = '0') then
           tx_next_state <= TX_HEAD_TRAIL;
         else
@@ -198,6 +275,10 @@ begin
         TXD_ISK       <= "01";
         rom_cnt_rst   <= '1';
         rom_cnt_en    <= '0';
+        mac_cnt_rst   <= '0';
+        mac_cnt_en    <= '0';
+        mac2_cnt_en   <= '0';
+        mac2_cnt_rst  <= '0';
         crc_calc      <= '0';
         crc_clr       <= '0';
         crc_dv        <= '0';
@@ -205,13 +286,15 @@ begin
     end case;
   end process;
 
+  eth_payload <= mac_words(mac2_cnt) when mac2_cnt_en = '1' or mac_cnt = 4 else
+                 TXD;
 
   CRC_GEN_PM : CRC_GEN
     port map (
       crc_reg => open,
       crc     => crc_value,
 
-      d       => TXD,
+      d       => eth_payload,
       calc    => crc_calc,
       init    => crc_clr,
       d_valid => crc_dv,

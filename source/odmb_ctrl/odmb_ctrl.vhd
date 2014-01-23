@@ -24,10 +24,6 @@ entity ODMB_CTRL is
 
     ga : in std_logic_vector(4 downto 0);
 
-    mbc_instr_sel : in  std_logic_vector(5 downto 0);
-    mbc_instr     : out std_logic_vector(47 downto 1);
-    mbc_jtag_ir   : out std_logic_vector(9 downto 0);
-
     ccb_cmd    : in  std_logic_vector (5 downto 0);  -- ccbcmnd(5 downto 0) - from J3
     ccb_cmd_s  : in  std_logic;         -- ccbcmnd(6) - from J3
     ccb_data   : in  std_logic_vector (7 downto 0);  -- ccbdata(7 downto 0) - from J3
@@ -126,11 +122,6 @@ entity ODMB_CTRL is
     PEDESTAL        : in  std_logic;
     PEDESTAL_OTMB   : in  std_logic;
 
-    tck : in  std_logic;
-    tdi : in  std_logic;
-    tms : in  std_logic;
-    tdo : out std_logic;
-
     test_ccbinj : in std_logic;
     test_ccbpls : in std_logic;
     test_ccbped : in std_logic;
@@ -156,56 +147,6 @@ end ODMB_CTRL;
 
 
 architecture ODMB_CTRL_arch of ODMB_CTRL is
-
-  component BGB_BSCAN_emulator is
-    port(
-      IR : out std_logic_vector(9 downto 0);
-
-      CAPTURE1 : out std_ulogic;
-      DRCK1    : out std_ulogic;
-      RESET1   : out std_ulogic;
-      SEL1     : out std_ulogic;
-      SHIFT1   : out std_ulogic;
-      UPDATE1  : out std_ulogic;
-      RUNTEST1 : out std_ulogic;
-      TDO1     : in  std_ulogic;
-
-      CAPTURE2 : out std_ulogic;
-      DRCK2    : out std_ulogic;
-      RESET2   : out std_ulogic;
-      SEL2     : out std_ulogic;
-      SHIFT2   : out std_ulogic;
-      UPDATE2  : out std_ulogic;
-      RUNTEST2 : out std_ulogic;
-      TDO2     : in  std_ulogic;
-
-      TDO3 : in std_ulogic;
-      TDO4 : in std_ulogic;
-
-      TDO : out std_ulogic;
-
-      TCK  : in std_ulogic;
-      TDI  : in std_ulogic;
-      TMS  : in std_ulogic;
-      TRST : in std_ulogic
-      );
-
-  end component;
-
-
-  component INSTRGDC is
-    port (
-      BTDI   : in  std_logic;           -- TDI from BSCAN_VIRTEX
-      DRCK   : in  std_logic;           -- Signals are from BSCAN_VIRTEX
-      SEL1   : in  std_logic;
-      UPDATE : in  std_logic;
-      SHIFT  : in  std_logic;
-      D0     : out std_logic;
-      FSEL   : in  std_logic_vector(5 downto 0);
-      F      : out std_logic_vector(47 downto 1)
-      );
-
-  end component;
 
   component CRC_CHECKER is
     port (
@@ -294,30 +235,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       GTRGOUT  : out std_logic;
       LCTOUT   : out std_logic_vector(NFEB downto 0);
       PULSE    : out std_logic
-      );
-  end component;
-
-  component LOADCFEB is
-    generic (
-      NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
-      );  
-    port (
-      CLK : in std_logic;
-      RST : in std_logic;
-
-      BTDI   : in  std_logic;
-      DRCK   : in  std_logic;
-      SEL2   : in  std_logic;
-      SHIFT  : in  std_logic;
-      UPDATE : in  std_logic;
-      TDO    : out std_logic;
-
-      FLOAD    : in std_logic;
-      CALLCT_1 : in std_logic;
-      RNDMLCT  : in std_logic_vector(NFEB downto 0);
-
-      LCTFEB : out std_logic_vector(NFEB downto 0);
-      CFEB   : out std_logic_vector(NFEB downto 1)
       );
   end component;
 
@@ -583,16 +500,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   signal rst  : std_logic := '0';
   signal rstn : std_logic := '1';
 
--- jtag signals
-
-  signal initjtags                                      : std_logic  := '0';
-  signal drck1, sel1, reset1, shift1, capture1, update1 : std_ulogic := '0';
-  signal drck2, sel2, reset2, shift2, capture2, update2 : std_ulogic := '0';
-  signal b_tms1, b_tdi1, b_tck1                         : std_ulogic := '0';
-  signal b_tms2, b_tdi2, b_tck2                         : std_ulogic := '0';
-  signal tdo1                                           : std_ulogic := '0';
-  signal tdo2                                           : std_ulogic := '0';
-
 -------------------------------------------------------------------------------
 
   signal ccbped                                                           : std_logic;
@@ -659,7 +566,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- LOADFIFO outputs
 
   signal joef     : std_logic_vector(NFEB+2 downto 1);
-  signal tdo_fifo : std_logic;
 
   signal LOGICL : std_logic := '0';
   signal LOGICH : std_logic := '1';
@@ -772,7 +678,7 @@ begin
     port map(
       CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
       clk                         => clk40,
-      dcfebclk                    => clk160,
+      dcfebclk                    => clk80,
       rst                         => l1acnt_rst,
       l1acnt_rst                  => l1acnt_rst,
       bxcnt_rst                   => bxcnt_rst,
@@ -939,7 +845,6 @@ begin
 
 
   ddu_eof   <= eof;  -- This counts the number of packets sent to the DDU
-  mbc_instr <= instr;
 
   CRC_CHECKER_PM : CRC_CHECKER
     port map (
@@ -953,50 +858,6 @@ begin
       CRC_ERROR => open
       );
 
-
-  JTAG_PM : BGB_BSCAN_emulator
-    port map (
-
-      IR => mbc_jtag_ir,
-
-      CAPTURE1 => capture1,
-      DRCK1    => drck1,
-      RESET1   => reset1,
-      SEL1     => sel1,
-      SHIFT1   => shift1,
-      UPDATE1  => update1,
-      RUNTEST1 => open,
-      TDO1     => tdo1,
-
-      CAPTURE2 => capture2,
-      DRCK2    => drck2,
-      RESET2   => reset2,
-      SEL2     => sel2,
-      SHIFT2   => shift2,
-      UPDATE2  => update2,
-      RUNTEST2 => open,
-      TDO2     => tdo2,
-
-      TDO3 => '0',
-      TDO4 => '0',
-
-      TCK  => tck,
-      TDI  => tdi,
-      TMS  => tms,
-      TDO  => tdo,
-      TRST => reset
-      );
-
-  INSTR_DECODER_PM : INSTRGDC
-    port map (
-      BTDI   => tdi,                    -- TDI from BSCAN_VIRTEX
-      DRCK   => drck1,                  -- Signals are from BSCAN_VIRTEX
-      SEL1   => sel1,
-      SHIFT  => shift1,
-      UPDATE => update1,
-      D0     => tdo1,
-      FSEL   => mbc_instr_sel,
-      F      => instr);
 
   CONFLOGIC_PM : CONFLOGIC              -- Used to be discrete logic in JTAGCOM
     generic map (NFEB => NFEB)
@@ -1071,30 +932,6 @@ begin
   rndmgtrg  <= '0';
   rndmlct   <= (others => '0');
   rndmpls   <= '0';
-
-
-  LOADCFEB_PM : LOADCFEB
-    generic map (NFEB => NFEB)
-    port map (
-      CLK => clk40,
-      RST => reset,
-
-      BTDI   => tdi,
-      DRCK   => drck2,
-      SEL2   => sel2,
-      SHIFT  => shift2,
-      UPDATE => update2,
-
-      TDO => open,
-
-      FLOAD => instr(9),
-
-      CALLCT_1 => callct_1,
-      RNDMLCT  => rndmlct,
-
-      LCTFEB => cal_lct,
-      CFEB   => loadcfeb_cfeb           -- It does not go anywhere, AFAWK
-      );
 
 
   --TRGSEL_PM : TRGSEL
@@ -1181,22 +1018,6 @@ begin
 --dl_gtrig <= cal_gtrg; 
   dcfeb_injpulse <= inject;
   dcfeb_extpulse <= pulse;
-
-  LOADFIFO_PM : LOADFIFO
-    generic map (NFEB => NFEB)
-    port map(
-      FENF   => instr(12),              -- INSTR(12)
-      BTDI   => tdi,
-      DRCK   => drck2,
-      SEL2   => sel2,
-      SHIFT  => shift2,
-      UPDATE => update2,
-      RST    => instr(1),   -- JRST (or RESET or FPGARST or L1ASRST)
-      JOEF   => joef,
-      TDO    => tdo_fifo);
-
-
-  TDO2 <= 'L';
 
 -- from ODMB_CTRL_EMPTY
 

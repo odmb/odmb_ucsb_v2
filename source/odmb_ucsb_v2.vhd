@@ -294,13 +294,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       odmb_jtag_tdi : out std_logic;
       odmb_jtag_tdo : in  std_logic;
 
--- JTAG Signals To/From ODMB_CTRL
-
-      mbc_jtag_tck : out std_logic;
-      mbc_jtag_tms : out std_logic;
-      mbc_jtag_tdi : out std_logic;
-      mbc_jtag_tdo : in  std_logic;
-
 -- Done from DCFEB FPGA (CFEBPRG)
 
       dcfeb_done : in std_logic_vector(NFEB downto 1);
@@ -461,10 +454,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       ga : in std_logic_vector(4 downto 0);
 
-      mbc_instr_sel : in  std_logic_vector(5 downto 0);
-      mbc_instr     : out std_logic_vector(47 downto 1);
-      mbc_jtag_ir   : out std_logic_vector(9 downto 0);
-
       ccb_cmd    : in  std_logic_vector (5 downto 0);  -- ccbcmnd(5 downto 0) - from J3
       ccb_cmd_s  : in  std_logic;       -- ccbcmnd(6) - from J3
       ccb_data   : in  std_logic_vector (7 downto 0);  -- ccbdata(7 downto 0) - from J3
@@ -564,11 +553,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       pedestal      : in std_logic;
       pedestal_otmb : in std_logic;
-
-      tck : in  std_logic;
-      tdi : in  std_logic;
-      tms : in  std_logic;
-      tdo : out std_logic;
 
       test_ccbinj : in std_logic;
       test_ccbpls : in std_logic;
@@ -1160,13 +1144,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   signal led_pulse : std_logic := '1';
 
--- JTAG signals between ODMB_VME and ODMB_CTRL
-
-  signal mbc_jtag_tck : std_logic;
-  signal mbc_jtag_tms : std_logic;
-  signal mbc_jtag_tdi : std_logic;
-  signal mbc_jtag_tdo : std_logic;
-
 -- Test FIFOs
 
   type   dcfeb_gbrx_data_type is array (NFEB+1 downto 1) of std_logic_vector(15 downto 0);
@@ -1183,10 +1160,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   type   dcfeb_jtag_ir_type is array (NFEB downto 1) of std_logic_vector(9 downto 0);
   signal dcfeb_jtag_ir : dcfeb_jtag_ir_type;
-
-  signal mbc_instr : std_logic_vector(47 downto 1);
-
-  signal mbc_jtag_ir : std_logic_vector(9 downto 0);
 
   signal diagout_cfebjtag : std_logic_vector(17 downto 0);
   signal diagout_lvdbmon  : std_logic_vector(17 downto 0);
@@ -1441,13 +1414,6 @@ begin
       odmb_jtag_tdi => v6_tdi_inner,
       odmb_jtag_tdo => odmb_tdo,
 
--- JTAG Signals To/From odmb_ctrl
-
-      mbc_jtag_tck => mbc_jtag_tck,
-      mbc_jtag_tms => mbc_jtag_tms,
-      mbc_jtag_tdi => mbc_jtag_tdi,
-      mbc_jtag_tdo => mbc_jtag_tdo,
-
 -- Done from DCFEB FPGA (CFEBPRG)
 
       dcfeb_done => dcfeb_done,
@@ -1605,10 +1571,6 @@ begin
 
       ga => vme_ga,
 
-      mbc_instr_sel => dcfeb_ctrl_reg(15 downto 10),
-      mbc_instr     => mbc_instr,
-      mbc_jtag_ir   => mbc_jtag_ir,
-
       ccb_cmd    => ccb_cmd,            -- ccbcmnd(5 downto 0) - from J3
       ccb_cmd_s  => ccb_cmd_s,          -- ccbcmnd(6) - from J3
       ccb_data   => ccb_data,           -- ccbdata(7 downto 0) - from J3
@@ -1705,13 +1667,6 @@ begin
       dcfeb_extpulse  => dcfeb_extpls,   -- extpls - to DCFEBs
       pedestal        => pedestal,
       pedestal_otmb   => odmb_ctrl_reg(14),
-
--- From/To ODMB_VME
-
-      tck => mbc_jtag_tck,
-      tdi => mbc_jtag_tdi,
-      tms => mbc_jtag_tms,
-      tdo => mbc_jtag_tdo,
 
       test_ccbinj => test_inj,
       test_ccbpls => test_pls,
@@ -2694,7 +2649,7 @@ begin
     end case;
   end process;
 
-  odmb_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, mbc_instr, mbc_jtag_ir, odmb_data_sel,
+  odmb_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
                          l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
                          data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, goodcrc_cnt,
                          alct_dav_cnt, otmb_dav_cnt)
@@ -2737,10 +2692,10 @@ begin
       when x"1A" => odmb_data <= dcfeb_fsel(7)(31 downto 16);
       when x"1B" => odmb_data <= "00" & dcfeb_jtag_ir(7) & "000" & dcfeb_fsel(7)(31);
 
-      when x"1C" => odmb_data <= mbc_instr(16 downto 1);
-      when x"1D" => odmb_data <= mbc_instr(32 downto 17);
-      when x"1E" => odmb_data <= '0' & mbc_instr(47 downto 33);
-      when x"1F" => odmb_data <= "00" & mbc_jtag_ir(9 downto 0) & "0000";
+      when x"1C" => odmb_data <= x"0000";
+      when x"1D" => odmb_data <= x"0000";
+      when x"1E" => odmb_data <= x"0000";
+      when x"1F" => odmb_data <= x"0000";
 
       when x"20" => odmb_data <= "0000000000" & vme_gap & vme_ga;
 

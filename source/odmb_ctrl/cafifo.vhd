@@ -154,9 +154,9 @@ architecture cafifo_architecture of cafifo is
   -- Declare the csp stuff here
   signal free_agent_la_data : std_logic_vector(199 downto 0);
   signal free_agent_la_trig : std_logic_vector(7 downto 0);
-  constant csp1 : integer := 1;
-  constant csp2 : integer := 3;
-  constant csp3 : integer := 3;
+  constant csp1 : integer := 31;
+  constant csp2 : integer := 0;
+  constant csp3 : integer := 1;
   
 begin
 
@@ -180,39 +180,6 @@ begin
 
 -- Initial assignments
 
-  dcfeb_dv(1) <= dcfeb0_dv;
-  dcfeb_dv(2) <= dcfeb1_dv;
-  dcfeb_dv(3) <= dcfeb2_dv;
-  dcfeb_dv(4) <= dcfeb3_dv;
-  dcfeb_dv(5) <= dcfeb4_dv;
-  dcfeb_dv(6) <= dcfeb5_dv;
-  dcfeb_dv(7) <= dcfeb6_dv;
-
-  dcfeb_l1a_cnt(1) <= dcfeb0_data(11 downto 0) when (dcfeb0_dv = '1') else (others => '0');
-  dcfeb_l1a_cnt(2) <= dcfeb1_data(11 downto 0) when (dcfeb1_dv = '1') else (others => '0');
-  dcfeb_l1a_cnt(3) <= dcfeb2_data(11 downto 0) when (dcfeb2_dv = '1') else (others => '0');
-  dcfeb_l1a_cnt(4) <= dcfeb3_data(11 downto 0) when (dcfeb3_dv = '1') else (others => '0');
-  dcfeb_l1a_cnt(5) <= dcfeb4_data(11 downto 0) when (dcfeb4_dv = '1') else (others => '0');
-  dcfeb_l1a_cnt(6) <= dcfeb5_data(11 downto 0) when (dcfeb5_dv = '1') else (others => '0');
-  dcfeb_l1a_cnt(7) <= dcfeb6_data(11 downto 0) when (dcfeb6_dv = '1') else (others => '0');
-
-  l1a_cnt_regs : process (dcfeb_l1a_cnt, rst, dcfebclk, reg_dcfeb_l1a_cnt)
-  begin
-    for index_dcfeb in 1 to NFEB loop
-      if (rst = '1') then
-        reg_dcfeb_l1a_cnt(index_dcfeb) <= (others => '0');
-      elsif rising_edge(dcfebclk) then
-        reg_dcfeb_l1a_cnt(index_dcfeb) <= dcfeb_l1a_cnt(index_dcfeb);
-      end if;
-      ext_dcfeb_l1a_cnt(index_dcfeb) <= reg_dcfeb_l1a_cnt(index_dcfeb) & dcfeb_l1a_cnt(index_dcfeb);
-    end loop;
-
-  end process;
-
-
-  ext_dcfeb_l1a_cnt7 <= ext_dcfeb_l1a_cnt(7);
-  dcfeb_l1a_dav7     <= dcfeb_l1a_dav(7);
-
   --cafifo_wren <= l1a;
   --cafifo_wren <= or_reduce(l1a_match_in);  -- Avoids empty packets
   cafifo_wren <= or_reduce(l1a_match_in) when (cafifo_full = '0') else '0';  -- Avoids empty packets
@@ -220,52 +187,85 @@ begin
 
 -- RX FSMs
 
-  rx_fsm_regs : process (rx_next_state, rst, dcfebclk)
-  begin
-    for dcfeb_index in 1 to NFEB loop
-      if (rst = '1') then
-        rx_current_state(dcfeb_index) <= RX_IDLE;
-      elsif rising_edge(dcfebclk) then
-        rx_current_state(dcfeb_index) <= rx_next_state(dcfeb_index);
-      end if;
-    end loop;
-  end process;
+  --dcfeb_dv(1) <= dcfeb0_dv;
+  --dcfeb_dv(2) <= dcfeb1_dv;
+  --dcfeb_dv(3) <= dcfeb2_dv;
+  --dcfeb_dv(4) <= dcfeb3_dv;
+  --dcfeb_dv(5) <= dcfeb4_dv;
+  --dcfeb_dv(6) <= dcfeb5_dv;
+  --dcfeb_dv(7) <= dcfeb6_dv;
 
-  rx_fsm_logic : process (rx_current_state, dcfeb_dv)
-  begin
-    for dcfeb_index in 1 to NFEB loop
-      case rx_current_state(dcfeb_index) is
-        when RX_IDLE =>
-          dcfeb_l1a_dav(dcfeb_index) <= '0';
-          if (dcfeb_dv(dcfeb_index) = '1') then
-            rx_next_state(dcfeb_index) <= RX_HEADER1;
-          else
-            rx_next_state(dcfeb_index) <= RX_IDLE;
-          end if;
+  --dcfeb_l1a_cnt(1) <= dcfeb0_data(11 downto 0) when (dcfeb0_dv = '1') else (others => '0');
+  --dcfeb_l1a_cnt(2) <= dcfeb1_data(11 downto 0) when (dcfeb1_dv = '1') else (others => '0');
+  --dcfeb_l1a_cnt(3) <= dcfeb2_data(11 downto 0) when (dcfeb2_dv = '1') else (others => '0');
+  --dcfeb_l1a_cnt(4) <= dcfeb3_data(11 downto 0) when (dcfeb3_dv = '1') else (others => '0');
+  --dcfeb_l1a_cnt(5) <= dcfeb4_data(11 downto 0) when (dcfeb4_dv = '1') else (others => '0');
+  --dcfeb_l1a_cnt(6) <= dcfeb5_data(11 downto 0) when (dcfeb5_dv = '1') else (others => '0');
+  --dcfeb_l1a_cnt(7) <= dcfeb6_data(11 downto 0) when (dcfeb6_dv = '1') else (others => '0');
 
-        when RX_HEADER1 =>
-          dcfeb_l1a_dav(dcfeb_index) <= '1';
-          rx_next_state(dcfeb_index) <= RX_HEADER2;
+  --l1a_cnt_regs : process (dcfeb_l1a_cnt, rst, dcfebclk, reg_dcfeb_l1a_cnt)
+  --begin
+  --  for index_dcfeb in 1 to NFEB loop
+  --    if (rst = '1') then
+  --      reg_dcfeb_l1a_cnt(index_dcfeb) <= (others => '0');
+  --    elsif rising_edge(dcfebclk) then
+  --      reg_dcfeb_l1a_cnt(index_dcfeb) <= dcfeb_l1a_cnt(index_dcfeb);
+  --    end if;
+  --    ext_dcfeb_l1a_cnt(index_dcfeb) <= reg_dcfeb_l1a_cnt(index_dcfeb) & dcfeb_l1a_cnt(index_dcfeb);
+  --  end loop;
 
-        when RX_HEADER2 =>
-          dcfeb_l1a_dav(dcfeb_index) <= '0';
-          rx_next_state(dcfeb_index) <= RX_DW;
+  --end process;
 
-        when RX_DW =>
-          dcfeb_l1a_dav(dcfeb_index) <= '0';
-          if (dcfeb_dv(dcfeb_index) = '1') then
-            rx_next_state(dcfeb_index) <= RX_DW;
-          else
-            rx_next_state(dcfeb_index) <= RX_IDLE;
-          end if;
 
-        when others =>
-          dcfeb_l1a_dav(dcfeb_index) <= '0';
-          rx_next_state(dcfeb_index) <= RX_IDLE;
+  --ext_dcfeb_l1a_cnt7 <= ext_dcfeb_l1a_cnt(7);
+  --dcfeb_l1a_dav7     <= dcfeb_l1a_dav(7);
 
-      end case;
-    end loop;
-  end process;
+  --rx_fsm_regs : process (rx_next_state, rst, dcfebclk)
+  --begin
+  --  for dcfeb_index in 1 to NFEB loop
+  --    if (rst = '1') then
+  --      rx_current_state(dcfeb_index) <= RX_IDLE;
+  --    elsif rising_edge(dcfebclk) then
+  --      rx_current_state(dcfeb_index) <= rx_next_state(dcfeb_index);
+  --    end if;
+  --  end loop;
+  --end process;
+
+  --rx_fsm_logic : process (rx_current_state, dcfeb_dv)
+  --begin
+  --  for dcfeb_index in 1 to NFEB loop
+  --    case rx_current_state(dcfeb_index) is
+  --      when RX_IDLE =>
+  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
+  --        if (dcfeb_dv(dcfeb_index) = '1') then
+  --          rx_next_state(dcfeb_index) <= RX_HEADER1;
+  --        else
+  --          rx_next_state(dcfeb_index) <= RX_IDLE;
+  --        end if;
+
+  --      when RX_HEADER1 =>
+  --        dcfeb_l1a_dav(dcfeb_index) <= '1';
+  --        rx_next_state(dcfeb_index) <= RX_HEADER2;
+
+  --      when RX_HEADER2 =>
+  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
+  --        rx_next_state(dcfeb_index) <= RX_DW;
+
+  --      when RX_DW =>
+  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
+  --        if (dcfeb_dv(dcfeb_index) = '1') then
+  --          rx_next_state(dcfeb_index) <= RX_DW;
+  --        else
+  --          rx_next_state(dcfeb_index) <= RX_IDLE;
+  --        end if;
+
+  --      when others =>
+  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
+  --        rx_next_state(dcfeb_index) <= RX_IDLE;
+
+  --    end case;
+  --  end loop;
+  --end process;
 
 -------------------- L1A Counter        --------------------
 
@@ -576,10 +576,10 @@ begin
       TRIG0   => free_agent_la_trig
       );
 
-  free_agent_la_trig <= cafifo_wren & std_logic_vector(to_unsigned(wr_addr_out, 3)) &
-                        cafifo_rden & std_logic_vector(to_unsigned(rd_addr_out, 3));
-  free_agent_la_data <= l1acnt_dav_fifo_out(1)(2 downto 0)           -- [199:197]
-                        & timeout_state_9  -- [196:195]                        
+  free_agent_la_trig <= std_logic_vector(to_unsigned(wr_addr_out, 4)) &
+                        std_logic_vector(to_unsigned(rd_addr_out, 4));
+  free_agent_la_data <= l1acnt_dav_fifo_out(1)(4 downto 0)           -- [199:195]
+                        --& timeout_state_9  -- [196:195]                        
                         & wait_cnt_en(9) & wait_cnt_rst(9)  -- [194:193]                        
                         & l1a_dav_en(9) & l1acnt_dav_fifo_rd_en(9)  -- [192:191]                        
                         & lost_pckt_en(9) & timeout_cnt_en(1) & timeout_cnt_rst(9)  -- [190:188]          

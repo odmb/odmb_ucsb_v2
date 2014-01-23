@@ -77,13 +77,6 @@ entity ODMB_VME is
     dl_jtag_tdi : out std_logic;
     dl_jtag_tdo : in  std_logic_vector (6 downto 0);
 
--- JTAG Signals To/From DMB_CTRL
-
-    mbc_jtag_tck : out std_logic;
-    mbc_jtag_tms : out std_logic;
-    mbc_jtag_tdi : out std_logic;
-    mbc_jtag_tdo : in  std_logic;
-
 -- JTAG Signals To/From ODMB JTAG
 
     odmb_jtag_sel : out std_logic;
@@ -585,29 +578,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
-  component MBCJTAG is
-    port (
-      DEVICE    : in std_logic;
-      COMMAND   : in std_logic_vector(9 downto 0);
-      INDATA    : in std_logic_vector(15 downto 0);
-      STROBE    : in std_logic;
-      MBCTDO    : in std_logic;
-      INITJTAGS : in std_logic;
-      WRITER    : in std_logic;
-      FASTCLK   : in std_logic;
-      SLOWCLK   : in std_logic;
-      RST       : in std_logic;
-
-      OUTDATA : out std_logic_vector(15 downto 0);
-      DTACK   : out std_logic;
-      TDI     : out std_logic;
-      TMS     : out std_logic;
-      TCK     : out std_logic;
-      LED     : out std_logic
-      );
-  end component;
-
-  -- TD
   component BPI_PORT is
     
     port (
@@ -740,9 +710,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal led_cfebjtag : std_logic;
 
   signal led_odmbjtag : std_logic;
-
-  signal outdata_mbcjtag : std_logic_vector(15 downto 0);
-  signal led_mbcjtag     : std_logic;
 
   -- VMECONFREGS
   signal bpi_cfg_regs      : cfg_regs_array;
@@ -1141,30 +1108,6 @@ begin
       --OTMB_PRBS signals
       OTMB_TX => OTMB_TX,
       OTMB_RX => OTMB_RX
-      );
-
-  DEVX_MBCJTAG : MBCJTAG
-    port map (
-      FASTCLK => clk,
-      SLOWCLK => clk_s2,
-      RST     => rst,
-      DEVICE  => LOGICL,
-      STROBE  => strobe,
-      COMMAND => cmd,
-      WRITER  => vme_write_b,
-
-      INDATA  => vme_data_in,
-      OUTDATA => outdata_mbcjtag,
-
-      DTACK => open,
-
-      INITJTAGS => '0',                 -- to be defined
-      TCK       => mbc_jtag_tck,
-      TDI       => mbc_jtag_tdi,
-      TMS       => mbc_jtag_tms,
-      MBCTDO    => mbc_jtag_tdo,
-
-      LED => led_mbcjtag
       );
 
   COMMAND_PM : COMMAND_MODULE
