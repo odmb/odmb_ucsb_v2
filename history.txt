@@ -7,6 +7,16 @@
 =                                                                    =
 ======================================================================
 
+V02-04, build A: 23 January 2014, Manuel
+------------------------------------------
+Fixed many issues in CAFIFO and CONTROL_FSM. New event handler
+shown to work with cosmics.
+Made PCFIFO work with packets of all sizes, and added padding
+for packets that are too small (<64 bytes).
+Made the PUSH delays (ALCT, OTMB) integers, and independent of each other.
+Cleaned up MBCJTAG.
+Added DELAY_SIGNAL to delay signals arbitrary number of clock cycles.
+
 V02-02, build 6: 15 January 2014, Manuel
 ------------------------------------------
 Fixed some issues with CONTROL_FSM.
