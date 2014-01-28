@@ -1227,9 +1227,8 @@ begin
   vme_sysfail_out <= '0';
   ext_vme_ga      <= vme_gap & vme_ga;
 
-
-  PON_OE_B <= '0' when odmb_id_inner(15 downto 12) /= x"3" else '1';  -- To LVMB: V2 default low, V3 default high
-
+-- To LVMB: V2 default low, V3 default high
+  PON_OE_B <= '0' when (odmb_id_inner(15 downto 12) /= x"3" and odmb_id_inner(15 downto 12) /= x"4") else '1';  
   VME_DTACK_B <= not or_reduce(dtack_dev);
 
 

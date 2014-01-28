@@ -996,7 +996,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_tck, int_tdo             : std_logic_vector(7 downto 1);
   signal odmb_tms, odmb_tdi           : std_logic;
   signal dcfeb_tms_out, dcfeb_tdi_out : std_logic;
-  signal isnot_ODMB_V3                : std_logic := '1';
+  signal isnot_ODMB_V3V4                : std_logic := '1';
 
 -- JTAG outputs from internal DCFEBs
 
@@ -1029,6 +1029,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
   signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
   signal otmb_tx_inner                    : std_logic_vector(48 downto 0);
+  signal qpll_locked_cnt                  : std_logic_vector(15 downto 0);
 
   signal tp_sel_reg               : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg            : std_logic_vector(15 downto 0) := (others => '0');
@@ -2182,7 +2183,8 @@ begin
 
   -- To QPLL
   qpll_autorestart <= '1';
-  qpll_reset       <= not reset;
+  qpll_reset       <= '1';
+  --qpll_reset       <= not reset;
 
   v6_jtag_sel <= v6_jtag_sel_inner;
   v6_tck      <= v6_tck_inner;
@@ -2220,9 +2222,9 @@ begin
   PULLDOWN_DCFEB_TMS : PULLDOWN port map (dcfeb_tms_out);
   PULLDOWN_ODMB_TMS  : PULLDOWN port map (v6_tms);
 
-  isnot_ODMB_V3 <= '1' when odmb_id(15 downto 12) /= x"3" else '0';
-  BUF_DCFEBTMS : IOBUF port map(O => odmb_tms, IO => DCFEB_TMS, I => dcfeb_tms_out, T => isnot_ODMB_V3);
-  BUF_DCFEBTDI : IOBUF port map(O => odmb_tdi, IO => DCFEB_TDI, I => dcfeb_tdi_out, T => isnot_ODMB_V3);
+  isnot_ODMB_V3V4 <= '1' when (odmb_id(15 downto 12) /= x"3" and odmb_id(15 downto 12) /= x"4") else '0';
+  BUF_DCFEBTMS : IOBUF port map(O => odmb_tms, IO => DCFEB_TMS, I => dcfeb_tms_out, T => isnot_ODMB_V3V4);
+  BUF_DCFEBTDI : IOBUF port map(O => odmb_tdi, IO => DCFEB_TDI, I => dcfeb_tdi_out, T => isnot_ODMB_V3V4);
 
   GEN_15 : for I in 0 to 15 generate
   begin
@@ -2534,7 +2536,8 @@ begin
   OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, int_otmb_dav, reset, logich);
   DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
   PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, gtx1_data_valid, reset, logich);
-
+  LOCKED_CNT  : COUNT_EDGES port map(qpll_locked_cnt, qpll_locked, reset, '1');
+  
   NFEB_CNT : for dev in 1 to NFEB generate
   begin
     RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
@@ -2749,6 +2752,7 @@ begin
       when x"4C" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
       when x"4D" => odmb_data <= "0000000" & cafifo_l1a_match_out;
       when x"4E" => odmb_data <= "0000000" & cafifo_l1a_dav;
+      when x"4F" => odmb_data <= qpll_locked_cnt;
 
       when x"51" => odmb_data <= data_fifo_re_cnt(1);  -- from control to FIFOs in top
       when x"52" => odmb_data <= data_fifo_re_cnt(2);  -- from control to FIFOs in top

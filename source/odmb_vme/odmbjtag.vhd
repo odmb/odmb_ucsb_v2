@@ -108,6 +108,7 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   signal default_low, default_high                : std_logic := '1';
   signal polarity_rst, polarity_pre, w_polarity   : std_logic;
   signal rst_b, rst_pulse, rst_pulse_b, pol_pulse : std_logic;
+  signal isnot_ODMB_V3V4                          : boolean;
 begin
 
 -- Decode instruction
@@ -121,14 +122,16 @@ begin
   w_polarity <= '1' when (cmddev = x"1020" and WRITER = '0' and STROBE = '1') else '0';
 
   -- Setting polarity of JTAGSEL: V2 default low, V3 default high
-  rst_b        <= not RST;
+  rst_b           <= not RST;
   PULSERST    : PULSE_EDGE port map(rst_pulse, open, SLOWCLK, '0', 18, rst_b);
-  rst_pulse_b  <= not rst_pulse;
+  rst_pulse_b     <= not rst_pulse;
   PULSEPOL    : PULSE_EDGE port map(pol_pulse, open, SLOWCLK, '0', 1, rst_pulse_b);
-  polarity_rst <= '0'         when ODMB_ID(15 downto 12) /= x"3" else pol_pulse;
-  polarity_pre <= pol_pulse when ODMB_ID(15 downto 12) /= x"3" else '0';
+  
+  isnot_ODMB_V3V4 <= (odmb_id(15 downto 12) /= x"3" and odmb_id(15 downto 12) /= x"4");
+  polarity_rst    <= '0'       when isnot_ODMB_V3V4 else pol_pulse;
+  polarity_pre    <= pol_pulse when isnot_ODMB_V3V4 else '0';
   FD_POLARITY : FDCP port map(default_low, w_polarity, polarity_rst, default_high, polarity_pre);
-  default_high <= not default_low;
+  default_high    <= not default_low;
 
 -- DTACK polarity
   dd_dtack_pol <= STROBE and DEVICE;
