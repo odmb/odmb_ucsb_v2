@@ -74,6 +74,7 @@
    (
 
     // PRBS signals
+    input 	      DCLK_IN,
     input [2:0]       PRBS_TYPE,
     input [3:0]       PRBS_FIBER_SEL,
     input 	      PRBS_EN,
@@ -559,7 +560,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[5]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX0_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX0_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo5_out)
       
@@ -616,7 +618,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[1]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX1_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX1_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo1_out)
       );
@@ -671,7 +674,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[4]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX2_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX2_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo4_out)
       );
@@ -726,7 +730,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[2]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX3_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX3_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo2_out)
       );
@@ -781,7 +786,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[3]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX4_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX4_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo3_out)
      );
@@ -836,7 +842,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[11]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX5_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX5_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo11_out)
       );
@@ -891,7 +898,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[10]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX6_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX6_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo10_out)
       );
@@ -946,7 +954,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[12]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX7_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX7_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo12_out)
       );
@@ -1001,7 +1010,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[7]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX8_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX8_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo7_out)
      );
@@ -1056,7 +1066,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[8]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX9_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX9_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo8_out)
       );
@@ -1111,7 +1122,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[9]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX10_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX10_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo9_out)
       );
@@ -1166,7 +1178,8 @@
       .ENPRBSTST_IN                    (enprbstst_in),
       .RXPRBSERR_OUT                   (rxprbserr_out[6]),
       //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
-      .DCLK_IN                         (GTX11_RXUSRCLK2_IN),
+      .DCLK_IN                         (DCLK_IN),
+      //.DCLK_IN                         (GTX11_RXUSRCLK2_IN),
       .DEN_IN                          (PRBS_RD_EN),
       .DRPDO_OUT                       (drpdo6_out)
      );

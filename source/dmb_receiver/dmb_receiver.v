@@ -257,6 +257,7 @@ module dmb_receiver #(
 	   mgt_32gbps_16bit_1to12_i
 	     (
 
+	      .DCLK_IN          (DMBVME_CLK_S2),
 	      .PRBS_TYPE        (PRBS_TYPE),
 	      .PRBS_FIBER_SEL	(PRBS_FIBER_SEL),
 	      .PRBS_EN          (PRBS_EN),
