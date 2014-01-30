@@ -104,7 +104,7 @@ begin
          else '0';
 
   --DTACK when OUTDATA contains valid data
-  dd_dtack <= device and strobe;
+  dd_dtack <= device and strobe and drdy;
   FD_D_DTACK : FDC port map(d_dtack, dd_dtack, q_dtack, '1');
   FD_Q_DTACK : FD port map(q_dtack, SLOWCLK, d_dtack);
   DTACK    <= q_dtack;
