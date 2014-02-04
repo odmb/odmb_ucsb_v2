@@ -1186,43 +1186,41 @@
 
    
    // PRBS signals
-   //assign enprbstst_in = {2'b00, PRBS_EN};  //PRBS-7
-//   assign enprbstst_in = {PRBS_EN, 2'b00};  //PRBS-31
-//   assign enprbstst_in = PRBS_EN ? PRBS_TYPE : 3'b000;
-   assign enprbstst_in = 3'b000;
-//   always @*
-//     begin
-//	case (PRBS_FIBER_SEL)
-//	  4'h1:   PRBS_ERR_CNT_OUT <= drpdo1_out; 
-//	  4'h2:   PRBS_ERR_CNT_OUT <= drpdo2_out; 
-//	  4'h3:   PRBS_ERR_CNT_OUT <= drpdo3_out; 
-//	  4'h4:   PRBS_ERR_CNT_OUT <= drpdo4_out; 
-//	  4'h5:   PRBS_ERR_CNT_OUT <= drpdo5_out; 
-//	  4'h6:   PRBS_ERR_CNT_OUT <= drpdo6_out; 
-//	  4'h7:   PRBS_ERR_CNT_OUT <= drpdo7_out; 
-//	  4'h8:   PRBS_ERR_CNT_OUT <= drpdo8_out; 
-//	  4'h9:   PRBS_ERR_CNT_OUT <= drpdo9_out; 
-//	  4'ha:   PRBS_ERR_CNT_OUT <= drpdo10_out;
-//	  4'hb:   PRBS_ERR_CNT_OUT <= drpdo11_out;
-//	  4'hc:   PRBS_ERR_CNT_OUT <= drpdo12_out;
-//	  default: PRBS_ERR_CNT_OUT<= 16'hffff;
-//	endcase     
-//	case (PRBS_FIBER_SEL)
-//	  4'h1:   RXPRBSERR <= rxprbserr_out[1];
-//	  4'h2:   RXPRBSERR <= rxprbserr_out[2];
-//	  4'h3:   RXPRBSERR <= rxprbserr_out[3];
-//	  4'h4:   RXPRBSERR <= rxprbserr_out[4];
-//	  4'h5:   RXPRBSERR <= rxprbserr_out[5];
-//	  4'h6:   RXPRBSERR <= rxprbserr_out[6];
-//	  4'h7:   RXPRBSERR <= rxprbserr_out[7];
-//	  4'h8:   RXPRBSERR <= rxprbserr_out[8];
-//	  4'h9:   RXPRBSERR <= rxprbserr_out[9];
-//	  4'ha:   RXPRBSERR <= rxprbserr_out[10];
-//	  4'hb:   RXPRBSERR <= rxprbserr_out[11];
-//	  4'hc:   RXPRBSERR <= rxprbserr_out[12];
-//	  default: RXPRBSERR <= 1'b1;
-//	endcase 
-//     end
+   assign enprbstst_in = PRBS_EN ? PRBS_TYPE : 3'b000;
+
+   always @*
+     begin
+	case (PRBS_FIBER_SEL)
+	  4'h1:   PRBS_ERR_CNT_OUT <= drpdo1_out; 
+	  4'h2:   PRBS_ERR_CNT_OUT <= drpdo2_out; 
+	  4'h3:   PRBS_ERR_CNT_OUT <= drpdo3_out; 
+	  4'h4:   PRBS_ERR_CNT_OUT <= drpdo4_out; 
+	  4'h5:   PRBS_ERR_CNT_OUT <= drpdo5_out; 
+	  4'h6:   PRBS_ERR_CNT_OUT <= drpdo6_out; 
+	  4'h7:   PRBS_ERR_CNT_OUT <= drpdo7_out; 
+	  4'h8:   PRBS_ERR_CNT_OUT <= drpdo8_out; 
+	  4'h9:   PRBS_ERR_CNT_OUT <= drpdo9_out; 
+	  4'ha:   PRBS_ERR_CNT_OUT <= drpdo10_out;
+	  4'hb:   PRBS_ERR_CNT_OUT <= drpdo11_out;
+	  4'hc:   PRBS_ERR_CNT_OUT <= drpdo12_out;
+	  default: PRBS_ERR_CNT_OUT<= 16'hffff;
+	endcase     
+	case (PRBS_FIBER_SEL)
+	  4'h1:   RXPRBSERR <= rxprbserr_out[1];
+	  4'h2:   RXPRBSERR <= rxprbserr_out[2];
+	  4'h3:   RXPRBSERR <= rxprbserr_out[3];
+	  4'h4:   RXPRBSERR <= rxprbserr_out[4];
+	  4'h5:   RXPRBSERR <= rxprbserr_out[5];
+	  4'h6:   RXPRBSERR <= rxprbserr_out[6];
+	  4'h7:   RXPRBSERR <= rxprbserr_out[7];
+	  4'h8:   RXPRBSERR <= rxprbserr_out[8];
+	  4'h9:   RXPRBSERR <= rxprbserr_out[9];
+	  4'ha:   RXPRBSERR <= rxprbserr_out[10];
+	  4'hb:   RXPRBSERR <= rxprbserr_out[11];
+	  4'hc:   RXPRBSERR <= rxprbserr_out[12];
+	  default: RXPRBSERR <= 1'b1;
+	endcase 
+     end
    
 endmodule
 

@@ -237,20 +237,20 @@ begin
                              w_otmb_prbs_cnt_rst);
 
   -- DCFEB PRBS signals
-  --dcfeb_prbs_rst_cnt   <= dcfeb_prbs_lock+dcfeb_prbs_rst_cycles;
-  --dcfeb_prbs_en_cnt    <= dcfeb_prbs_length*to_integer(unsigned(dcfeb_prbs_seq_cnt))+dcfeb_prbs_rst_cnt;
-  --dcfeb_prbs_rd_en_cnt <= dcfeb_prbs_en_cnt-1;
+  dcfeb_prbs_rst_cnt   <= dcfeb_prbs_lock+dcfeb_prbs_rst_cycles;
+  dcfeb_prbs_en_cnt    <= dcfeb_prbs_length*to_integer(unsigned(dcfeb_prbs_seq_cnt))+dcfeb_prbs_rst_cnt;
+  dcfeb_prbs_rd_en_cnt <= dcfeb_prbs_en_cnt-1;
 
-  --DCFEBPRBSINIT : PULSE_EDGE port map(dcfeb_prbs_init_pulse, open, CLK160, RST, dcfeb_prbs_lock, w_dcfeb_prbs_en);
-  --DCFEBPRBSRST  : PULSE_EDGE port map(dcfeb_prbs_reset_pulse, open, CLK160, RST, dcfeb_prbs_rst_cnt, w_dcfeb_prbs_en);
-  --DCFEBPRBSRDEN : PULSE_EDGE port map(dcfeb_prbs_rd_en_pulse, open, CLK160, RST,
-  --                                    dcfeb_prbs_rd_en_cnt, w_dcfeb_prbs_en);
-  --DCFEBPRBSEN : PULSE_EDGE port map(dcfeb_prbs_en_pulse, open, CLK160, RST, dcfeb_prbs_en_cnt, w_dcfeb_prbs_en);
-  --PRBSERR_CNT : COUNT_EDGES port map(dcfeb_prbserr_edge_cnt, DCFEB_RXPRBSERR, RST, '1');
+  DCFEBPRBSINIT : PULSE_EDGE port map(dcfeb_prbs_init_pulse, open, CLK160, RST, dcfeb_prbs_lock, w_dcfeb_prbs_en);
+  DCFEBPRBSRST  : PULSE_EDGE port map(dcfeb_prbs_reset_pulse, open, CLK160, RST, dcfeb_prbs_rst_cnt, w_dcfeb_prbs_en);
+  DCFEBPRBSRDEN : PULSE_EDGE port map(dcfeb_prbs_rd_en_pulse, open, CLK160, RST,
+                                      dcfeb_prbs_rd_en_cnt, w_dcfeb_prbs_en);
+  DCFEBPRBSEN : PULSE_EDGE port map(dcfeb_prbs_en_pulse, open, CLK160, RST, dcfeb_prbs_en_cnt, w_dcfeb_prbs_en);
+  PRBSERR_CNT : COUNT_EDGES port map(dcfeb_prbserr_edge_cnt, DCFEB_RXPRBSERR, RST, '1');
 
-  --DCFEB_PRBS_RST   <= dcfeb_prbs_reset_pulse and not dcfeb_prbs_init_pulse;
-  --DCFEB_PRBS_EN    <= dcfeb_prbs_en_pulse;
-  --DCFEB_PRBS_RD_EN <= dcfeb_prbs_en_pulse and not dcfeb_prbs_rd_en_pulse;
+  DCFEB_PRBS_RST   <= dcfeb_prbs_reset_pulse and not dcfeb_prbs_init_pulse;
+  DCFEB_PRBS_EN    <= dcfeb_prbs_en_pulse;
+  DCFEB_PRBS_RD_EN <= dcfeb_prbs_en_pulse and not dcfeb_prbs_rd_en_pulse;
 
   -- OTMB PRBS RX test
   otmb_prbs_rx_cycles <= otmb_prbs_length*to_integer(unsigned(otmb_prbs_rx_sequences));

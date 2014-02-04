@@ -7,7 +7,7 @@ library unisim;
 use unisim.vcomponents.all;
 
 entity DELAY_SIGNAL is
-  generic (NCYCLES_MAX : integer := 64);
+  generic (NCYCLES_MAX : integer := 63);
   port (
     DOUT    : out std_logic;
     CLK     : in  std_logic;

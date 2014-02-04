@@ -20,7 +20,7 @@ package ucsb_types is
   end component;
 
   component DELAY_SIGNAL is
-    generic (NCYCLES_MAX : integer := 64);
+    generic (NCYCLES_MAX : integer := 63);
     port (
       DOUT    : out std_logic;
       CLK     : in  std_logic;
@@ -52,6 +52,18 @@ package ucsb_types is
       );
   end component;
 
+  component GAP_COUNTER is
+    generic(MAX_CYCLES : integer := 63);
+    port (
+      GAP_COUNT : out std_logic_vector(15 downto 0);
+
+      CLK     : in std_logic;
+      RST     : in std_logic;
+      SIGNAL1 : in std_logic;
+      SIGNAL2 : in std_logic
+      );
+  end component;
+  
 
 end ucsb_types;
 

@@ -39,13 +39,13 @@ entity ODMB_UCSB_V2 is
     vme_am          : in    std_logic_vector(5 downto 0);
     vme_gap         : in    std_logic;
     vme_ga          : in    std_logic_vector(4 downto 0);
-    vme_bg0         : in    std_logic;
-    vme_bg1         : in    std_logic;
-    vme_bg2         : in    std_logic;
-    vme_bg3         : in    std_logic;
+    --vme_bg0         : in    std_logic;
+    --vme_bg1         : in    std_logic;
+    --vme_bg2         : in    std_logic;
+    --vme_bg3         : in    std_logic;
     vme_as_b        : in    std_logic;
     vme_ds_b        : in    std_logic_vector(1 downto 0);
-    vme_sysreset_b  : in    std_logic;
+    --vme_sysreset_b  : in    std_logic;
     vme_sysfail_b   : in    std_logic;
     vme_sysfail_out : out   std_logic;
     vme_berr_b      : in    std_logic;
@@ -53,7 +53,7 @@ entity ODMB_UCSB_V2 is
     vme_iack_b      : in    std_logic;
     vme_lword_b     : in    std_logic;
     vme_write_b     : in    std_logic;
-    vme_clk         : in    std_logic;
+    --vme_clk         : in    std_logic;
     vme_dtack_v6_b  : inout std_logic;
     vme_tovme       : out   std_logic;  -- not (tovme)
     vme_doe_b       : out   std_logic;
@@ -125,7 +125,7 @@ entity ODMB_UCSB_V2 is
     otmb      : in std_logic_vector(17 downto 0);
     alct      : in std_logic_vector(17 downto 0);
     rawlct    : in std_logic_vector(NFEB downto 0);
-    otmbffclk : in std_logic;
+    --otmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
@@ -140,7 +140,7 @@ entity ODMB_UCSB_V2 is
 
     qpll_autorestart : out std_logic;
     qpll_reset       : out std_logic;
-    qpll_f0sel       : in  std_logic_vector(3 downto 0);
+    --qpll_f0sel       : in  std_logic_vector(3 downto 0);
     qpll_locked      : in  std_logic;
     qpll_error       : in  std_logic;
     qpll_clk40MHz_p  : in  std_logic;
@@ -252,7 +252,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       vme_lword_b     : in  std_logic;  -- ilword* -> lword*
       vme_write_b     : in  std_logic;  -- iwrite* -> write*
       vme_iack_b      : in  std_logic;  -- inack* -> iack*
-      vme_sysreset_b  : in  std_logic;  -- isysrst* -> sysrest*
+      --vme_sysreset_b  : in  std_logic;  -- isysrst* -> sysrest*
       vme_sysfail_b   : in  std_logic;  -- isysfail* -> sysfail
       vme_sysfail_out : out std_logic;  -- NEW (N.1)
       vme_berr_b      : in  std_logic;  -- iberr* -> berr*
@@ -824,17 +824,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       );
   end component;
 
-  component GAP_COUNTER is
-    port (
-      GAP_COUNT : out std_logic_vector(15 downto 0);
-
-      CLK     : in std_logic;
-      RST     : in std_logic;
-      SIGNAL1 : in std_logic;
-      SIGNAL2 : in std_logic
-      );
-  end component;
-
   component LCTDLY is  -- Aligns RAW_LCT with L1A by 2.4 us to 4.8 us
     port (
       DIN   : in std_logic;
@@ -934,6 +923,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal   FW_RESET : std_logic := '0';
   signal   PB_PULSE : std_logic := '0';
   signal   PB_B     : std_logic_vector(1 downto 0);
+  signal odmb_status     : std_logic_vector (15 downto 0);
 
   signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct, test_pb_lct : std_logic := '0';
   signal otmb_lct_rqst, otmb_ext_trig                                          : std_logic := '0';
@@ -1168,7 +1158,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pon_rst_reg, fw_rst_reg, opt_rst_reg : std_logic_vector (31 downto 0) := (others => '0');
   signal reset, opt_reset, fw_reset_q         : std_logic                      := '0';
   signal opt_reset_pulse, opt_reset_pulse_q   : std_logic                      := '0';
-  signal l1a_reset_pulse, l1acnt_rst_pulse    : std_logic                      := '0';
+  signal l1a_reset_pulse, l1acnt_rst_pulse, l1acnt_rst_start    : std_logic                      := '0';
   signal pon_reset                            : std_logic;
 
   signal select_diagnostic : integer := 0;
@@ -1233,7 +1223,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
-  constant push_dly : integer := 50;  -- It needs to be > alct/otmb_push_dly
+  constant push_dly : integer := 63;  -- It needs to be > alct/otmb_push_dly
   signal alct_push_dly : integer range 0 to 63;
   signal otmb_push_dly : integer range 0 to 63;
   signal lct_l1a_dly   : std_logic_vector(5 downto 0);
@@ -1373,7 +1363,7 @@ begin
       vme_lword_b     => vme_lword_b,         -- input
       vme_write_b     => vme_write_b,         -- input
       vme_iack_b      => vme_iack_b,          -- input
-      vme_sysreset_b  => vme_sysreset_b,      -- input
+      --vme_sysreset_b  => vme_sysreset_b,      -- input
       vme_sysfail_b   => vme_sysfail_b,       -- input
       vme_sysfail_out => vme_sysfail_out,     -- output
       vme_berr_b      => vme_berr_b,          -- input
@@ -2038,8 +2028,8 @@ begin
          dcfeb_fifo_out(5)(17)  when data_fifo_oe = "111101111" else
          dcfeb_fifo_out(6)(17)  when data_fifo_oe = "111011111" else
          dcfeb_fifo_out(7)(17)  when data_fifo_oe = "110111111" else
-         otmb_fifo_data_out(17) when data_fifo_oe = "101111111" else  -- eof still to be implemented for alct and otmb data
-         alct_fifo_data_out(17) when data_fifo_oe = "011111111" else  -- eof still to be implemented for alct and otmb data
+         otmb_fifo_data_out(17) when data_fifo_oe = "101111111" else  
+         alct_fifo_data_out(17) when data_fifo_oe = "011111111" else  
          '0';
 
   -- Sync alct and otmb to our clock. Probably not needed
@@ -2089,8 +2079,8 @@ begin
 
   otmb_push_dly_p1 <= otmb_push_dly + 1;
   alct_push_dly_p1 <= alct_push_dly + 1;
-  DS_OTMB_PUSH : DELAY_SIGNAL port map(test_otmb_dav, clk40, otmb_push_dly_p1, test_l1a);
-  DS_ALCT_PUSH : DELAY_SIGNAL port map(test_alct_dav, clk40, alct_push_dly_p1, test_l1a);
+  DS_OTMB_PUSH : DELAY_SIGNAL generic map (64)port map(test_otmb_dav, clk40, otmb_push_dly_p1, test_l1a);
+  DS_ALCT_PUSH : DELAY_SIGNAL generic map (64)port map(test_alct_dav, clk40, alct_push_dly_p1, test_l1a);
 
   int_alct_dav <= '1' when test_alct_dav = '1' else
                   tc_alct_dav when (testctrl_sel = '1') else
@@ -2213,9 +2203,10 @@ begin
   opt_reset <= opt_rst_reg(31) or pon_rst_reg(31);  -- Optical reset
 
   -- FIFOs require more than 1 clock cycle to properly reset
-  l1acnt_rst_pulse <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse or reset;
+  l1acnt_rst_start <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse;
   PULSE_RESYNC : PULSE_EDGE port map(resync, open, clk40, logicl, 1, l1acnt_rst_pulse);
-  PULSE_L1A    : PULSE_EDGE port map(l1acnt_rst, open, clk40, logicl, 20, l1acnt_rst_pulse);
+  PULSE_L1A    : PULSE_EDGE port map(l1acnt_rst_pulse, open, clk40, logicl, 20, l1acnt_rst_start);
+  l1acnt_rst <= l1acnt_rst_pulse or reset; -- reset is so long that it created problems
   bxcnt_rst        <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
@@ -2542,7 +2533,7 @@ begin
   begin
     RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
     CRC_CNT    : COUNT_EDGES port map(goodcrc_cnt(dev), clk160, reset, crc_valid(dev));
-    LCTL1AGAP  : GAP_COUNTER port map(lct_l1a_gap(dev), clk40, reset, raw_lct(dev), int_l1a);
+    LCTL1AGAP  : GAP_COUNTER generic map (200) port map(lct_l1a_gap(dev), clk40, reset, raw_lct(dev), int_l1a);
   end generate NFEB_CNT;
 
   NFEB2_CNT : for dev in 1 to NFEB+2 generate
@@ -2652,7 +2643,9 @@ begin
     end case;
   end process;
 
-  odmb_status : process (dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
+  odmb_status <= x"00" & "000" & orx_sd & vme_berr_b & qpll_error & QPLL_LOCKED & DONE_IN;
+
+  odmb_status_pro : process (odmb_status, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
                          l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
                          data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, goodcrc_cnt,
                          alct_dav_cnt, otmb_dav_cnt)
@@ -2660,10 +2653,10 @@ begin
     
     case odmb_data_sel is
 
-      when x"00" => odmb_data <= "0000" & dcfeb_adc_mask(1);
-      when x"01" => odmb_data <= dcfeb_fsel(1)(15 downto 0);
-      when x"02" => odmb_data <= dcfeb_fsel(1)(31 downto 16);
-      when x"03" => odmb_data <= "00" & dcfeb_jtag_ir(1) & "000" & dcfeb_fsel(1)(31);
+      when x"00" => odmb_data <= odmb_status;
+      when x"01" => odmb_data <= x"0000";
+      when x"02" => odmb_data <= x"0000";
+      when x"03" => odmb_data <= x"0000";
 
       when x"04" => odmb_data <= "0000" & dcfeb_adc_mask(2);
       when x"05" => odmb_data <= dcfeb_fsel(2)(15 downto 0);
@@ -2846,7 +2839,7 @@ begin
   --test_point(46) <= '0';
 
   test_point(46) <= dcfeb_tdi_out;
-  test_point(47) <= '1';
+  test_point(47) <= lct_err;
   test_point(48) <= dcfeb_tms_out;
   test_point(49) <= '1';
 
@@ -2863,7 +2856,7 @@ begin
                          int_l1a, cafifo_l1a,
                          otmb_lct_rqst, otmb_ext_trig, raw_l1a, ALCT_DAV_SYNC_OUT, OTMB_DAV_SYNC_OUT,
                          dcfeb_prbs_en, dcfeb_prbs_rst, dcfeb_prbs_rd_en, dcfeb_rxprbserr,
-                         int_lvmb_sclk, int_lvmb_sdin, lvmb_sdout, int_lvmb_csb)
+                         int_lvmb_sclk, int_lvmb_sdin, lvmb_sdout, int_lvmb_csb, alct_qq, otmb_qq)
   begin
     case tp_sel_reg is
       when x"0000" =>
@@ -3035,16 +3028,16 @@ begin
         test_point(tp_4) <= otmb_tx(45);
         
       when x"0021" =>
-        test_point(tp_1) <= otmb_tx(44);
-        test_point(tp_2) <= otmb_tx(43);
-        test_point(tp_3) <= otmb_tx(42);
-        test_point(tp_4) <= otmb_tx(41);
+        test_point(tp_1) <= alct_qq(17);
+        test_point(tp_2) <= alct_qq(16);
+        test_point(tp_3) <= alct_qq(15);
+        test_point(tp_4) <= alct_qq(14);
 
       when x"0022" =>
-        test_point(tp_1) <= otmb_tx(40);
-        test_point(tp_2) <= otmb_tx(39);
-        test_point(tp_3) <= otmb_tx(38);
-        test_point(tp_4) <= otmb_tx(37);
+        test_point(tp_1) <= otmb_qq(17);
+        test_point(tp_2) <= otmb_qq(16);
+        test_point(tp_3) <= otmb_qq(15);
+        test_point(tp_4) <= otmb_qq(14);
 
       when x"0023" =>
         test_point(tp_1) <= otmb_tx(36);

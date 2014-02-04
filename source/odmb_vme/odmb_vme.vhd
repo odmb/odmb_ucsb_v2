@@ -43,7 +43,7 @@ entity ODMB_VME is
     vme_lword_b     : in  std_logic;                       -- ilword*
     vme_write_b     : in  std_logic;                       -- iwrite*
     vme_iack_b      : in  std_logic;                       -- inack*
-    vme_sysreset_b  : in  std_logic;                       -- isysrst*
+    --vme_sysreset_b  : in  std_logic;                       -- isysrst*
     vme_sysfail_b   : in  std_logic;                       -- isysfail*
     vme_sysfail_out : out std_logic;                       -- NEW
     vme_berr_b      : in  std_logic;                       -- iberr*

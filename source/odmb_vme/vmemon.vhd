@@ -189,6 +189,7 @@ begin
   TXDIFFCTRL <= TXDIFFCTRL_INNER;
 
 -- Read TXDIFFCTRL
+  OUT_TXDIFFCTRL(15 downto 4) <= (others => '0');
   OUT_TXDIFFCTRL(3 downto 0) <= TXDIFFCTRL_INNER when (STROBE = '1' and R_TXDIFFCTRL = '1') else (others => 'Z');
 
 -- Read DCFEB_DONE

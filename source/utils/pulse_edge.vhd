@@ -23,13 +23,13 @@ architecture PULSE_EDGE_Arch of PULSE_EDGE is
 
   signal pulse1_inner, pulse1_d : std_logic := '0';
 
-  signal pulse_cnt          : integer   := 0;
+  signal pulse_cnt          : integer   := 1;
   signal pulse_cnt_en       : std_logic := '0';
   signal reset_q, clk_pulse : std_logic := '0';
 
   type   pulse_state_type is (PULSE_IDLE, PULSE_COUNTING);
   signal pulse_next_state, pulse_current_state : pulse_state_type;
-  signal state                                 : std_logic_vector(1 downto 0);
+  --signal state                                 : std_logic_vector(1 downto 0);
 
 begin  --Architecture
 
@@ -62,7 +62,7 @@ begin  --Architecture
   begin
     case pulse_current_state is
       when PULSE_IDLE =>
-        state        <= "01";
+        --state        <= "01";
         pulse_cnt_en <= '0';
         DOUT         <= '0';
         if (pulse1_inner = '1') then
@@ -72,7 +72,7 @@ begin  --Architecture
         end if;
         
       when PULSE_COUNTING =>
-        state        <= "10";
+        --state        <= "10";
         DOUT         <= '1';
         pulse_cnt_en <= '1';
         if (pulse_cnt = NPULSE) then

@@ -121,7 +121,6 @@ NET  "d[6]"			LOC = "AJ25"  	| IOSTANDARD = LVCMOS25;  # ok test_vme_addr(23) #S
 NET  "d[7]"			LOC = "AK26"  	| IOSTANDARD = LVCMOS25;  # ok test_vme_addr(22)  #STAT0
 NET  "d[8]"			LOC = "AK27"  	| IOSTANDARD = LVCMOS25;  # ok test_vme_addr(21) #STAT0
 NET  "d[9]"			LOC = "AJ20"  	| IOSTANDARD = LVCMOS25;  # ok test_vme_addr(20) #STAT0
-NET  "done_in"  		LOC = "R8"  	| IOSTANDARD = LVCMOS25;  # ok #STAT0
 NET  "done_in"  		LOC = "T31"  	| IOSTANDARD = LVCMOS25;  # ok #STAT0
 NET  "lctrqst[1]"		LOC = "AK32"  	| IOSTANDARD = LVCMOS25; # ok  (out)   #STAT0
 NET  "lctrqst[2]"		LOC = "T34"  	| IOSTANDARD = LVCMOS25; # ok  (out)   #STAT0
@@ -227,11 +226,11 @@ NET  "qpll_clk80mhz_n"		LOC = "A31"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRU
 NET  "qpll_clk80mhz_p"		LOC = "B31"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE; # ok #STAT0
 NET  "qpll_autorestart"		LOC = "B30"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
 NET  "qpll_error"		LOC = "G28"  	| IOSTANDARD = LVCMOS25;  # ok  #STAT0
-NET  "qpll_f0sel[0]"		LOC = "G25"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
-NET  "qpll_f0sel[1]"		LOC = "E24"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
-NET  "qpll_f0sel[2]"		LOC = "D27"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
-NET  "qpll_f0sel[3]"		LOC = "G26"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
-NET  "qpll_locked"              LOC = "G27"  	| IOSTANDARD = LVCMOS25;  # ok  #STAT0
+# NET  "qpll_f0sel[0]"		LOC = "G25"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
+# NET  "qpll_f0sel[1]"		LOC = "E24"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
+# NET  "qpll_f0sel[2]"		LOC = "D27"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
+# NET  "qpll_f0sel[3]"		LOC = "G26"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
+# NET  "qpll_locked"              LOC = "G27"  	| IOSTANDARD = LVCMOS25;  # ok  #STAT0
 NET  "qpll_reset"		LOC = "H27"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
 NET  "r_lvmb_pon[0]"		LOC = "A18"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "r_lvmb_pon[1]"		LOC = "B18"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
@@ -277,7 +276,7 @@ NET  "otmb[6]"			LOC = "AE31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "otmb[7]"			LOC = "AE32"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "otmb[8]"			LOC = "AF31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
 NET  "otmb[9]"			LOC = "AG31"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0
-NET  "otmbffclk"  		LOC = "AD26"  	| IOSTANDARD = LVCMOS25; # ok #STAT0
+# NET  "otmbffclk"  		LOC = "AD26"  	| IOSTANDARD = LVCMOS25; # ok #STAT0
 NET  "vme_addr[10]"		LOC = "C32"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_addr[11]"		LOC = "D32"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_addr[12]"		LOC = "E31"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
@@ -310,11 +309,11 @@ NET  "vme_am[5]"		LOC = "R32"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_as_b"  		LOC = "R31"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_berr_b"		LOC = "E33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_berr_out"		LOC = "T26"  	| IOSTANDARD = LVCMOS25; # ok  (out)  #STAT0
-NET  "vme_bg0"  		LOC = "G33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
-NET  "vme_bg1"  		LOC = "L33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
-NET  "vme_bg2"  		LOC = "L34"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
-NET  "vme_bg3"  		LOC = "M33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
-NET  "vme_clk"  		LOC = "C33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
+# NET  "vme_bg0"  		LOC = "G33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
+# NET  "vme_bg1"  		LOC = "L33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
+# NET  "vme_bg2"  		LOC = "L34"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
+# NET  "vme_bg3"  		LOC = "M33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
+# NET  "vme_clk"  		LOC = "C33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_data[0]"		LOC = "J26"  	| IOSTANDARD = LVCMOS25; # ok  (i/o) #STAT0
 NET  "vme_data[10]"		LOC = "R26"  	| IOSTANDARD = LVCMOS25; # ok  (i/o)  #STAT0
 NET  "vme_data[11]"		LOC = "R28"  	| IOSTANDARD = LVCMOS25; # ok  (i/o)  #STAT0
@@ -344,7 +343,7 @@ NET  "vme_iack_b"		LOC = "F34"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_lword_b"		LOC = "E34"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_sysfail_b"		LOC = "C34"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_sysfail_out"		LOC = "R27"  	| IOSTANDARD = LVCMOS25; # ok  (out)  #STAT0
-NET  "vme_sysreset_b"		LOC = "D34"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
+# NET  "vme_sysreset_b"		LOC = "D34"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 NET  "vme_write_b"		LOC = "F33"  	| IOSTANDARD = LVCMOS25; # ok  #STAT0
 #NET: "cclk"			LOC = "K8" | IOSTANDARD = LVCMOS25; #STAT1
 NET: "gl0_rx_n"			LOC = "AG4" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT1
@@ -544,5 +543,5 @@ NET "gl1_clk_n" TNM_NET = gl1_clk_n;
 TIMESPEC TS_gl1_clk_n = PERIOD "gl1_clk_n" 8 ns HIGH 50%;
 NET "gl1_clk_p" TNM_NET = gl1_clk_p;
 TIMESPEC TS_gl1_clk_p = PERIOD "gl1_clk_p" 8 ns HIGH 50%;
-NET "otmbffclk" TNM_NET = otmbffclk;
-TIMESPEC TS_otmbffclk = PERIOD "otmbffclk" 25 ns HIGH 50%; 
+# NET "otmbffclk" TNM_NET = otmbffclk;
+# TIMESPEC TS_otmbffclk = PERIOD "otmbffclk" 25 ns HIGH 50%; 

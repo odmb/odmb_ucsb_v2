@@ -209,13 +209,13 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         vme_am          : in    std_logic_vector(5 downto 0);
         vme_gap         : in    std_logic;
         vme_ga          : in    std_logic_vector(4 downto 0);
-        vme_bg0         : in    std_logic;
-        vme_bg1         : in    std_logic;
-        vme_bg2         : in    std_logic;
-        vme_bg3         : in    std_logic;
+        --vme_bg0         : in    std_logic;
+        --vme_bg1         : in    std_logic;
+        --vme_bg2         : in    std_logic;
+        --vme_bg3         : in    std_logic;
         vme_as_b        : in    std_logic;
         vme_ds_b        : in    std_logic_vector(1 downto 0);
-        vme_sysreset_b  : in    std_logic;
+        --vme_sysreset_b  : in    std_logic;
         vme_sysfail_b   : in    std_logic;
         vme_sysfail_out : out   std_logic;
         vme_berr_b      : in    std_logic;
@@ -223,7 +223,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         vme_iack_b      : in    std_logic;
         vme_lword_b     : in    std_logic;
         vme_write_b     : in    std_logic;
-        vme_clk         : in    std_logic;
+        --vme_clk         : in    std_logic;
         vme_dtack_v6_b  : inout std_logic;
         vme_tovme       : out   std_logic;  -- not (tovme)
         vme_doe_b       : out   std_logic;
@@ -282,7 +282,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         otmb      : in std_logic_vector(17 downto 0);
         alct      : in std_logic_vector(17 downto 0);
         rawlct    : in std_logic_vector(NFEB downto 0);
-        otmbffclk : in std_logic;
+        --otmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
@@ -297,7 +297,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
         qpll_autorestart : out std_logic;
         qpll_reset       : out std_logic;
-        qpll_f0sel       : in  std_logic_vector(3 downto 0);
+        --qpll_f0sel       : in  std_logic_vector(3 downto 0);
         qpll_locked      : in  std_logic;
         qpll_error       : in  std_logic;
         qpll_clk40MHz_p  : in  std_logic;
@@ -553,7 +553,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   signal otmb      : std_logic_vector(17 downto 0) := (others => '1');  -- in
   signal alct      : std_logic_vector(17 downto 0) := (others => '1');  -- in
-  signal otmbffclk : std_logic                     := '0';  -- in
+  --signal otmbffclk : std_logic                     := '0';  -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
@@ -567,7 +567,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
 
   signal qpll_autorestart : std_logic;  -- out
   signal qpll_reset       : std_logic;  -- out
-  signal qpll_f0sel       : std_logic_vector(3 downto 0) := (others => '0');  -- out
+  --signal qpll_f0sel       : std_logic_vector(3 downto 0) := (others => '0');  -- out
   signal qpll_locked      : std_logic                    := '1';  -- in
   signal qpll_error       : std_logic                    := '1';  -- in
   signal qpll_clk40MHz_p  : std_logic                    := '0';  -- in
@@ -747,13 +747,13 @@ begin
       vme_am          => am(5 downto 0),         -- in
       vme_gap         => ga(5),         -- in
       vme_ga          => ga(4 downto 0),         -- in
-      vme_bg0         => LOGIC0,        -- in
-      vme_bg1         => LOGIC0,        -- in
-      vme_bg2         => LOGIC0,        -- in
-      vme_bg3         => LOGIC0,        -- in
+      --vme_bg0         => LOGIC0,        -- in
+      --vme_bg1         => LOGIC0,        -- in
+      --vme_bg2         => LOGIC0,        -- in
+      --vme_bg3         => LOGIC0,        -- in
       vme_as_b        => as,  -- in                                               
       vme_ds_b        => ds,            -- in
-      vme_sysreset_b  => LOGIC1,        -- in ???
+      --vme_sysreset_b  => LOGIC1,        -- in ???
       vme_sysfail_b   => sysfail,
       vme_sysfail_out => sysfail_out,   -- out
       vme_berr_b      => berr,          -- in
@@ -761,7 +761,7 @@ begin
       vme_iack_b      => iack,          -- in
       vme_lword_b     => lword,         -- in
       vme_write_b     => write_b,       -- in
-      vme_clk         => LOGIC0,        -- in ???
+      --vme_clk         => LOGIC0,        -- in ???
       vme_dtack_v6_b  => dtack,         -- inout
       vme_tovme       => tovme,         -- out
       vme_doe_b       => doe_b,         -- out
@@ -819,7 +819,7 @@ begin
       otmb      => otmb,                -- in
       alct      => alct,                -- in
       rawlct    => lct,                 -- from file_handler_event
-      otmbffclk => otmbffclk,           -- in
+      --otmbffclk => otmbffclk,           -- in
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
 
@@ -835,7 +835,7 @@ begin
 
       qpll_autorestart => qpll_autorestart,  -- out
       qpll_reset       => qpll_reset,        -- out
-      qpll_f0sel       => qpll_f0sel,        -- out
+      --qpll_f0sel       => qpll_f0sel,        -- out
       qpll_locked      => qpll_locked,       -- in
       qpll_error       => qpll_error,        -- in
 
