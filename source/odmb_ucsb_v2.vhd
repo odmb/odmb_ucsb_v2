@@ -145,8 +145,8 @@ entity ODMB_UCSB_V2 is
     qpll_error       : in  std_logic;
     qpll_clk40MHz_p  : in  std_logic;
     qpll_clk40MHz_n  : in  std_logic;
-    qpll_clk80MHz_p  : in  std_logic;
-    qpll_clk80MHz_n  : in  std_logic;
+    --qpll_clk80MHz_p  : in  std_logic;
+    --qpll_clk80MHz_n  : in  std_logic;
     qpll_clk160MHz_p : in  std_logic;
     qpll_clk160MHz_n : in  std_logic;
 
@@ -1113,7 +1113,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- PLL Signals
 
-  signal qpll_clk40MHz, qpll_clk80MHz, qpll_clk160MHz, clk160 : std_logic;
+  signal qpll_clk40MHz, qpll_clk160MHz, clk160 : std_logic;
 
   signal pll1_fb, pll1_fb_slow, pll1_rst, pll1_pd, pll1_locked, pll1_locked_slow : std_logic := '0';
 
@@ -1274,7 +1274,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bpi_op            : std_logic_vector(1 downto 0);
   signal bpi_addr          : std_logic_vector(22 downto 0);
   signal bpi_data_to       : std_logic_vector(15 downto 0);
-  signal dual_data_leds    : std_logic_vector(15 downto 0) := (others => '0');
+  constant dual_data_leds    : std_logic_vector(15 downto 0) := (others => '0');
 
   signal bpi_done       : std_logic;
   signal bpi_cfg_reg_we : std_logic;
@@ -2257,11 +2257,12 @@ begin
 -----------------------------------------------------------------------------
 
   qpll_clk40MHz_buf : IBUFDS port map (I => qpll_clk40MHz_p, IB => qpll_clk40MHz_n, O => qpll_clk40MHz);
-  qpll_clk80MHz_buf : IBUFDS port map (I => qpll_clk80MHz_p, IB => qpll_clk80MHz_n, O => qpll_clk80MHz);
+  --qpll_clk80MHz_buf : IBUFDS port map (I => qpll_clk80MHz_p, IB => qpll_clk80MHz_n, O => qpll_clk80MHz);
   
   qpll_clk160MHz_buf : IBUFDS_GTXE1 port map (I => qpll_clk160MHz_p, IB => qpll_clk160MHz_n, CEB => logicl,
                                               O => qpll_clk160MHz, ODIV2 => open);
-  qpll_clk160MHz_bufg : BUFR port map (O => clk160, CE => logich, CLR => logicl, I => qpll_clk160MHz);
+  qpll_clk160MHz_bufg : BUFR generic map (SIM_DEVICE => "VIRTEX6")
+    port map (O => clk160, CE => logich, CLR => logicl, I => qpll_clk160MHz);
   --qpll_clk160MHz_bufg : BUFG port map (O => clk160, I => qpll_clk160MHz);
 
   -- Clock for PC TX

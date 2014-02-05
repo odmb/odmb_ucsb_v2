@@ -14,7 +14,7 @@ use work.ucsb_types.all;
 entity VMECONFREGS is
   generic (
     NREGS  : integer := 16;             -- Number of Configuration registers
-    NCONST : integer := 8;              -- Number of Protected registers
+    NCONST : integer := 16;              -- Number of Protected registers
     NFEB   : integer := 7               -- Number of DCFEBs
     );    
   port (
@@ -70,7 +70,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
 
   constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0205";
   constant FW_ID            : std_logic_vector(15 downto 0) := x"0004";
-  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0203";
+  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0204";
   constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2014";
   constant able_write_const : std_logic                     := '0';
 
@@ -136,7 +136,7 @@ begin
 -- Set write enables and output data
   cfg_reg_index <= to_integer(unsigned(cmddev(5 downto 2)));
 
-  const_reg_index_p1 <= to_integer(unsigned(cmddev(10 downto 8)));
+  const_reg_index_p1 <= to_integer(unsigned(cmddev(11 downto 8)));
   const_reg_index    <= const_reg_index_p1 - 1 when const_reg_index_p1 > 0 else NCONST;
 
   OUTDATA <= mask_vme when r_mask_vme = '1' else
@@ -145,15 +145,15 @@ begin
   BPI_CFG_REGS   <= cfg_regs;
   BPI_CONST_REGS <= const_regs;
 
-  LCT_L1A_DLY   <= cfg_regs(0)(5 downto 0);       -- 0x4000
-  OTMB_PUSH_DLY <= to_integer(unsigned(cfg_regs(1)(5 downto 0)));       -- 0x4004
-  ALCT_PUSH_DLY <= to_integer(unsigned(cfg_regs(3)(5 downto 0)));       -- 0x400C
-  INJ_DLY       <= cfg_regs(4)(4 downto 0);       -- 0x4010
-  EXT_DLY       <= cfg_regs(5)(4 downto 0);       -- 0x4014
-  CALLCT_DLY    <= cfg_regs(6)(3 downto 0);       -- 0x4018
-  KILL          <= cfg_regs(7)(NFEB+1 downto 0);  -- 0x401C
-  CRATEID       <= cfg_regs(8)(7 downto 0);       -- 0x4020
-  NWORDS_DUMMY  <= cfg_regs(10)(15 downto 0);     -- 0x4028
+  LCT_L1A_DLY   <= cfg_regs(0)(5 downto 0);                        -- 0x4000
+  OTMB_PUSH_DLY <= to_integer(unsigned(cfg_regs(1)(5 downto 0)));  -- 0x4004
+  ALCT_PUSH_DLY <= to_integer(unsigned(cfg_regs(3)(5 downto 0)));  -- 0x400C
+  INJ_DLY       <= cfg_regs(4)(4 downto 0);                        -- 0x4010
+  EXT_DLY       <= cfg_regs(5)(4 downto 0);                        -- 0x4014
+  CALLCT_DLY    <= cfg_regs(6)(3 downto 0);                        -- 0x4018
+  KILL          <= cfg_regs(7)(NFEB+1 downto 0);                   -- 0x401C
+  CRATEID       <= cfg_regs(8)(7 downto 0);                        -- 0x4020
+  NWORDS_DUMMY  <= cfg_regs(10)(15 downto 0);                      -- 0x4028
 
   ODMB_ID <= const_regs(0)(15 downto 0);  -- 0x4100
 
@@ -180,18 +180,26 @@ begin
     end loop;
   end process;
 
-  ml_proc : process (cfg_reg_triple)    -- Triple voting
+  GEN_CFG_TRIPLEVOTING : for ind in 0 to NREGS-1 generate
   begin
-    for i in 0 to NREGS-1 loop
-      if (cfg_reg_triple(i)(0) = cfg_reg_triple(i)(1)) then
-        cfg_regs(i) <= cfg_reg_triple(i)(0);
-      elsif (cfg_reg_triple(i)(0) = cfg_reg_triple(i)(2)) then
-        cfg_regs(i) <= cfg_reg_triple(i)(0);
-      elsif (cfg_reg_triple(i)(1) = cfg_reg_triple(i)(2)) then
-        cfg_regs(i) <= cfg_reg_triple(i)(1);
-      end if;
-    end loop;
-  end process;
+    cfg_regs(ind) <= cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(1)) else
+                     cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(2)) else
+                     cfg_reg_triple(ind)(1) when (cfg_reg_triple(ind)(1) = cfg_reg_triple(ind)(2)) else
+                     cfg_reg_triple(ind)(0);
+  end generate GEN_CFG_TRIPLEVOTING;
+  
+  -- ml_proc : process (cfg_reg_triple)    -- Triple voting
+  -- begin
+  --   for i in 0 to NREGS-1 loop
+  --     if (cfg_reg_triple(i)(0) = cfg_reg_triple(i)(1)) then
+  --       cfg_regs(i) <= cfg_reg_triple(i)(0);
+  --     elsif (cfg_reg_triple(i)(0) = cfg_reg_triple(i)(2)) then
+  --       cfg_regs(i) <= cfg_reg_triple(i)(0);
+  --     elsif (cfg_reg_triple(i)(1) = cfg_reg_triple(i)(2)) then
+  --       cfg_regs(i) <= cfg_reg_triple(i)(1);
+  --     end if;
+  --   end loop;
+  -- end process;
 
   -- Writing protected registers
   const_reg_clk <= STROBE when (BPI_CONST_UL_PULSE = '0') else CLK;
@@ -216,18 +224,26 @@ begin
     end loop;
   end process;
 
-  const_ml_proc : process (const_reg_triple)  -- Triple voting
+  GEN_CONST_TRIPLEVOTING : for ind in 0 to NCONST-1 generate
   begin
-    for i in 0 to NCONST-1 loop
-      if (const_reg_triple(i)(0) = const_reg_triple(i)(1)) then
-        const_regs(i) <= const_reg_triple(i)(0);
-      elsif (const_reg_triple(i)(0) = const_reg_triple(i)(2)) then
-        const_regs(i) <= const_reg_triple(i)(0);
-      elsif (const_reg_triple(i)(1) = const_reg_triple(i)(2)) then
-        const_regs(i) <= const_reg_triple(i)(1);
-      end if;
-    end loop;
-  end process;
+    const_regs(ind) <= const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(1)) else
+                     const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(2)) else
+                     const_reg_triple(ind)(1) when (const_reg_triple(ind)(1) = const_reg_triple(ind)(2)) else
+                     const_reg_triple(ind)(0);
+  end generate GEN_CONST_TRIPLEVOTING;
+  
+  --const_ml_proc : process (const_reg_triple)  -- Triple voting
+  --begin
+  --  for i in 0 to NCONST-1 loop
+  --    if (const_reg_triple(i)(0) = const_reg_triple(i)(1)) then
+  --      const_regs(i) <= const_reg_triple(i)(0);
+  --    elsif (const_reg_triple(i)(0) = const_reg_triple(i)(2)) then
+  --      const_regs(i) <= const_reg_triple(i)(0);
+  --    elsif (const_reg_triple(i)(1) = const_reg_triple(i)(2)) then
+  --      const_regs(i) <= const_reg_triple(i)(1);
+  --    end if;
+  --  end loop;
+  --end process;
 
 -- DTACK
   dd_dtack <= STROBE and DEVICE;

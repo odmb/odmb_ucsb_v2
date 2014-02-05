@@ -21,7 +21,7 @@ end PULSE_EDGE;
 
 architecture PULSE_EDGE_Arch of PULSE_EDGE is
 
-  signal pulse1_inner, pulse1_d : std_logic := '0';
+  signal pulse1_inner, pulse1_d : std_logic;
 
   signal pulse_cnt          : integer   := 1;
   signal pulse_cnt_en       : std_logic := '0';

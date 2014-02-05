@@ -22,7 +22,7 @@ use work.ucsb_types.all;
 entity ODMB_VME is
   generic (
     NREGS  : integer := 16;             -- Number of Configuration registers
-    NCONST : integer := 8;              -- Number of Protected registers
+    NCONST : integer := 16;              -- Number of Protected registers
     NFEB   : integer := 7               -- Number of DCFEBS
     );  
   port (
@@ -369,8 +369,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
   component VMECONFREGS is
     generic (
-      NREGS  : integer := 15;           -- Number of Configuration registers
-      NCONST : integer := 4;            -- Number of Protected registers
+      NREGS  : integer := 16;           -- Number of Configuration registers
+      NCONST : integer := 16;            -- Number of Protected registers
       NFEB   : integer := 7             -- Number of DCFEBs
       );    
     port (

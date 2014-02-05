@@ -302,8 +302,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         qpll_error       : in  std_logic;
         qpll_clk40MHz_p  : in  std_logic;
         qpll_clk40MHz_n  : in  std_logic;
-        qpll_clk80MHz_p  : in  std_logic;
-        qpll_clk80MHz_n  : in  std_logic;
+        --qpll_clk80MHz_p  : in  std_logic;
+        --qpll_clk80MHz_n  : in  std_logic;
         qpll_clk160MHz_p : in  std_logic;
         qpll_clk160MHz_n : in  std_logic;
 
@@ -572,8 +572,8 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal qpll_error       : std_logic                    := '1';  -- in
   signal qpll_clk40MHz_p  : std_logic                    := '0';  -- in
   signal qpll_clk40MHz_n  : std_logic                    := '1';  -- in
-  signal qpll_clk80MHz_p  : std_logic                    := '0';  -- in
-  signal qpll_clk80MHz_n  : std_logic                    := '1';  -- in
+  --signal qpll_clk80MHz_p  : std_logic                    := '0';  -- in
+  --signal qpll_clk80MHz_n  : std_logic                    := '1';  -- in
   signal qpll_clk160MHz_p : std_logic                    := '0';  -- in
   signal qpll_clk160MHz_n : std_logic                    := '1';  -- in
 
@@ -680,8 +680,8 @@ begin
   
   qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 12.5 ns;
   qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 12.5 ns;
-  qpll_clk80MHz_p  <= not qpll_clk80MHz_p  after 6.25 ns;
-  qpll_clk80MHz_n  <= not qpll_clk80MHz_n  after 6.25 ns;
+  --qpll_clk80MHz_p  <= not qpll_clk80MHz_p  after 6.25 ns;
+  --qpll_clk80MHz_n  <= not qpll_clk80MHz_n  after 6.25 ns;
   qpll_clk160MHz_p <= not qpll_clk160MHz_p after 3.125 ns;
   qpll_clk160MHz_n <= not qpll_clk160MHz_n after 3.125 ns;
   gl1_clk_p        <= not gl1_clk_p        after 4 ns;
@@ -841,8 +841,8 @@ begin
 
       qpll_clk40MHz_p  => qpll_clk40MHz_p,   -- in 
       qpll_clk40MHz_n  => qpll_clk40MHz_n,   -- in 
-      qpll_clk80MHz_p  => qpll_clk80MHz_p,   -- in 
-      qpll_clk80MHz_n  => qpll_clk80MHz_n,   -- in 
+      --qpll_clk80MHz_p  => qpll_clk80MHz_p,   -- in 
+      --qpll_clk80MHz_n  => qpll_clk80MHz_n,   -- in 
       qpll_clk160MHz_p => qpll_clk160MHz_p,  -- NEW!
       qpll_clk160MHz_n => qpll_clk160MHz_n,  -- NEW!
 

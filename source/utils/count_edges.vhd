@@ -21,7 +21,7 @@ end COUNT_EDGES;
 architecture COUNT_EDGES_ARCH of COUNT_EDGES is
 begin
 
-  edge_cnt_proc : process (CLK, RST, CE)
+  edge_cnt_proc : process (CLK, RST)
     variable count_inner : std_logic_vector(WIDTH-1 downto 0);
   begin
     if (RST = '1') then

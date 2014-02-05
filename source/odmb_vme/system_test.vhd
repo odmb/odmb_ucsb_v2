@@ -278,7 +278,7 @@ begin
   mux_otmb_tx         <= not q_otmb_tx when qq_otmb_prbs_tx_en = '1' else q_otmb_tx;
 
   PRBS_GEN_TX_PM   : PRBS_GEN port map(otmb_prbs_tx, CLK, otmb_prbs_tx_rst, otmb_prbs_tx_en);
-  FD_OTMB_PRBS_TX  : FD port map(q_otmb_prbs_tx, CLK, otmb_prbs_tx);
+  --FD_OTMB_PRBS_TX  : FD port map(q_otmb_prbs_tx, CLK, otmb_prbs_tx);
   GEN_OTMB_PRBS_TX : for index in 48 downto 0 generate
     FD_OTMB_TX : FD port map(q_otmb_tx(index), CLK, OTMB_TX(index));
     otmb_prbs_tx_xor(index) <= mux_otmb_tx(index) xor otmb_prbs_tx;
@@ -287,7 +287,9 @@ begin
 
   CNT_RST : PULSE_EDGE port map(otmb_prbs_cnt_rst, open, CLK, RST, 2, w_otmb_prbs_cnt_rst);
 
-  prbs_tx_cnt_proc : process (CLK, otmb_prbs_tx_err, RST, otmb_prbs_tx_en)
+  prbs_tx_cnt_proc : process (CLK, RST, otmb_prbs_tx_en, otmb_prbs_cnt_rst,
+                              otmb_tx_good_cnt_int, otmb_prbs_tx_err, otmb_tx_err_cnt,
+                              otmb_tx_good_cnt)
     variable bit : std_logic;
   begin
     if (RST = '1' or otmb_prbs_cnt_rst = '1') then

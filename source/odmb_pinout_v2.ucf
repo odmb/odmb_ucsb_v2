@@ -220,10 +220,10 @@ NET  "pb[0]"  			LOC = "E18"  	| IOSTANDARD = LVCMOS25; # ok #STAT0
 NET  "pb[1]"  			LOC = "F18"  	| IOSTANDARD = LVCMOS25; # ok #STAT0
 NET  "pon_load"  		LOC = "A24"  	| IOSTANDARD = LVCMOS25; # ok (out)  #STAT0
 NET  "pon_en_b"  		LOC = "A23"  	| IOSTANDARD = LVCMOS25; # ok (out) #STAT0
-NET  "qpll_clk40mhz_n"		LOC = "H29"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE; # ok #STAT0
-NET  "qpll_clk40mhz_p"		LOC = "H28"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE; # ok #STAT0
-NET  "qpll_clk80mhz_n"		LOC = "A31"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE; # ok #STAT0
-NET  "qpll_clk80mhz_p"		LOC = "B31"  	| IOSTANDARD = LVDS_25 		| DIFF_TERM = TRUE; # ok #STAT0
+NET  "qpll_clk40mhz_n"		LOC = "H29"  	| IOSTANDARD = LVDS_25 	| DIFF_TERM = TRUE; # ok #STAT0
+NET  "qpll_clk40mhz_p"		LOC = "H28"  	| IOSTANDARD = LVDS_25 	| DIFF_TERM = TRUE; # ok #STAT0
+# NET  "qpll_clk80mhz_n"	LOC = "A31"  	| IOSTANDARD = LVDS_25 	| DIFF_TERM = TRUE; # ok #STAT0
+# NET  "qpll_clk80mhz_p"	LOC = "B31"  	| IOSTANDARD = LVDS_25 	| DIFF_TERM = TRUE; # ok #STAT0
 NET  "qpll_autorestart"		LOC = "B30"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
 NET  "qpll_error"		LOC = "G28"  	| IOSTANDARD = LVCMOS25;  # ok  #STAT0
 # NET  "qpll_f0sel[0]"		LOC = "G25"  	| IOSTANDARD = LVCMOS25;  # ok (out)  #STAT0
@@ -527,10 +527,10 @@ NET "qpll_clk40mhz_n" TNM_NET = qpll_clk40mhz_n;
 TIMESPEC TS_qpll_clk40mhz_n = PERIOD "qpll_clk40mhz_n" 25 ns HIGH 50%;
 NET "qpll_clk40mhz_p" TNM_NET = qpll_clk40mhz_p;
 TIMESPEC TS_qpll_clk40mhz_p = PERIOD "qpll_clk40mhz_p" 25 ns HIGH 50%;
-NET "qpll_clk80mhz_n" TNM_NET = qpll_clk80mhz_n;
-TIMESPEC TS_qpll_clk80mhz_n = PERIOD "qpll_clk80mhz_n" 12.5 ns HIGH 50%;
-NET "qpll_clk80mhz_p" TNM_NET = qpll_clk80mhz_p;
-TIMESPEC TS_qpll_clk80mhz_p = PERIOD "qpll_clk80mhz_p" 12.5 ns HIGH 50%;
+# NET "qpll_clk80mhz_n" TNM_NET = qpll_clk80mhz_n;
+# TIMESPEC TS_qpll_clk80mhz_n = PERIOD "qpll_clk80mhz_n" 12.5 ns HIGH 50%;
+# NET "qpll_clk80mhz_p" TNM_NET = qpll_clk80mhz_p;
+# TIMESPEC TS_qpll_clk80mhz_p = PERIOD "qpll_clk80mhz_p" 12.5 ns HIGH 50%;
 NET "qpll_clk160mhz_n" TNM_NET = qpll_clk160mhz_n;
 TIMESPEC TS_qpll_clk160mhz_n = PERIOD "qpll_clk160mhz_n" 6.25 ns HIGH 50%;
 NET "qpll_clk160mhz_p" TNM_NET = qpll_clk160mhz_p;
