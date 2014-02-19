@@ -1,4 +1,4 @@
--- CONTROL: Monitor state of the nine data FIFOs and creates DDU packet when FIFOs are non-empty.
+-- CONTROL: Monitor state of the nine data FIFOs and create DDU packet when FIFOs are non-empty.
 
 library ieee;
 library work;
@@ -93,7 +93,7 @@ architecture CONTROL_arch of CONTROL_FSM is
 
   signal fifo_pop_80 : std_logic := '0';
 
-  type hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
+  type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
   signal hdr_word, tail_word : hdr_tail_array;
 
   constant fmt_vers         : std_logic_vector(1 downto 0)      := "10";
@@ -107,24 +107,26 @@ architecture CONTROL_arch of CONTROL_FSM is
   constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
 
-  type control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, WAIT_IDLE);
-  signal control_current_state, control_next_state : control_state := IDLE;
+  type   control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, WAIT_IDLE);
+  signal control_current_state, control_next_state, q_control_current_state : control_state := IDLE;
 
-  signal hdr_tail_cnt_en       : std_logic             := '0';
-  signal hdr_tail_cnt          : integer range 1 to 8  := 1;
-  signal wait_cnt_en           : std_logic             := '0';
-  signal wait_cnt              : integer range 1 to 10 := 1;
-  signal dev_cnt_en            : std_logic             := '0';
-  signal dev_cnt               : integer range 1 to 9  := 9;
-  signal tx_cnt_en, tx_cnt_rst : std_logic             := '0';
-  signal tx_cnt                : integer range 1 to 4  := 1;
-  type tx_cnt_array is array (1 to 9) of integer range 1 to 4;
-  --signal   tx_cnt                            : tx_cnt_array         := (1, 1, 1, 1, 1, 1, 1, 1, 1);
-  --constant tx_cnt_max                        : tx_cnt_array         := (4, 4, 4, 4, 4, 4, 4, 2, 2);
-  constant tx_cnt_max          : tx_cnt_array          := (3, 3, 3, 3, 3, 3, 3, 1, 1);
+  signal   hdr_tail_cnt_en       : std_logic             := '0';
+  signal   hdr_tail_cnt          : integer range 1 to 8  := 1;
+  signal   wait_cnt_en           : std_logic             := '0';
+  signal   wait_cnt              : integer range 1 to 10 := 1;
+  signal   dev_cnt_en            : std_logic             := '0';
+  signal   dev_cnt               : integer range 1 to 9  := 9;
+  signal   tx_cnt_en, tx_cnt_rst : std_logic             := '0';
+  signal   tx_cnt                : integer range 1 to 4  := 1;
+  type     tx_cnt_array is array (1 to 9) of integer range 1 to 4;
+  --signal   tx_cnt                : tx_cnt_array          := (1, 1, 1, 1, 1, 1, 1, 1, 1);
+  --constant tx_cnt_max            : tx_cnt_array          := (4, 4, 4, 4, 4, 4, 4, 2, 2);
+  constant tx_cnt_max            : tx_cnt_array          := (3, 3, 3, 3, 3, 3, 3, 1, 1);
 
-  signal reg_crc       : std_logic_vector(23 downto 0) := (others => '0');
-  signal q_datain_last : std_logic;
+  signal reg_crc, crc : std_logic_vector(23 downto 0) := (others => '0');
+
+  signal crc_clr, crc_en : std_logic;
+  signal q_datain_last   : std_logic;
 
   --Declaring Logic Analyzer signals -- bgb
   signal control_fsm_la_data : std_logic_vector(127 downto 0);
@@ -180,8 +182,8 @@ begin
   FP_POP80 : FDC port map(d_fifo_pop_inner, fifo_pop_80, fifo_pop_inner, '1');
   FP_POP   : FD port map(fifo_pop_inner, CLKCMS, d_fifo_pop_inner);
 
-  control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en, tx_cnt, tx_cnt_en,
-                              tx_cnt_rst, hdr_tail_cnt_en, wait_cnt_en)
+  control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en, tx_cnt,
+                              tx_cnt_en, tx_cnt_rst, hdr_tail_cnt_en, wait_cnt_en)
   begin
     if (RST = '1') then
       control_current_state <= IDLE;
@@ -242,9 +244,9 @@ begin
     x"6"                   when WAIT_IDLE,
     x"0"                   when others;
 
-  control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav, hdr_word,
-                               hdr_tail_cnt, dev_cnt, tx_cnt, DATAIN, q_datain_last, tail_word,
-                               wait_cnt)
+  control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav,
+                               hdr_word, hdr_tail_cnt, dev_cnt, tx_cnt, DATAIN, q_datain_last,
+                               tail_word, wait_cnt)
   begin
     oefifo_b_inner  <= (others => '1');
     renfifo_b_inner <= (others => '1');
@@ -349,7 +351,39 @@ begin
     FD_DOUT : FD port map (dout_inner(INDEX), CLK, dout_d(INDEX));
   end generate GEN_FD_DOUT;
 
+  crc(4 downto 0) <= reg_crc(20 downto 16);
+  crc(5)          <= dout_d(0) xor reg_crc(0) xor reg_crc(21);
+  crc(6)          <= dout_d(0) xor dout_d(1) xor reg_crc(0) xor reg_crc(1);
+  crc(7)          <= dout_d(1) xor dout_d(2) xor reg_crc(1) xor reg_crc(2);
+  crc(8)          <= dout_d(2) xor dout_d(3) xor reg_crc(2) xor reg_crc(3);
+  crc(9)          <= dout_d(3) xor dout_d(4) xor reg_crc(3) xor reg_crc(4);
+  crc(10)         <= dout_d(4) xor dout_d(5) xor reg_crc(4) xor reg_crc(5);
+  crc(11)         <= dout_d(5) xor dout_d(6) xor reg_crc(5) xor reg_crc(6);
+  crc(12)         <= dout_d(6) xor dout_d(7) xor reg_crc(6) xor reg_crc(7);
+  crc(13)         <= dout_d(7) xor dout_d(8) xor reg_crc(7) xor reg_crc(8);
+  crc(14)         <= dout_d(8) xor dout_d(9) xor reg_crc(8) xor reg_crc(9);
+  crc(15)         <= dout_d(9) xor dout_d(10) xor reg_crc(9) xor reg_crc(10);
+  crc(16)         <= dout_d(10) xor dout_d(11) xor reg_crc(10) xor reg_crc(11);
+  crc(17)         <= dout_d(11) xor dout_d(12) xor reg_crc(11) xor reg_crc(12);
+  crc(18)         <= dout_d(12) xor dout_d(13) xor reg_crc(12) xor reg_crc(13);
+  crc(19)         <= dout_d(13) xor dout_d(14) xor reg_crc(13) xor reg_crc(14);
+  crc(20)         <= dout_d(14) xor dout_d(15) xor reg_crc(14) xor reg_crc(15);
+  crc(21)         <= dout_d(15) xor reg_crc(15);
+  crc(22)         <= crc(0) xor crc(1) xor crc(2) xor crc(3) xor crc(4) xor crc(5)
+                     xor crc(6) xor crc(7) xor crc(8) xor crc(9) xor crc(10);
+  crc(23) <= crc(11) xor crc(12) xor crc(13) xor crc(14) xor crc(15) xor crc(16)
+             xor crc(17) xor crc(18) xor crc(19) xor crc(20) xor crc(21);
 
+  GEN_REG_CRC : for K in 0 to 23 generate
+  begin
+    FDCE_REG_CRC : FDCE port map (REG_CRC(K), CLK, crc_en, crc_clr, CRC(K));
+  end generate GEN_REG_CRC;
+
+  crc_clr <= '1' when control_current_state = WAIT_IDLE
+             else '0';
+
+  crc_en <= '1' when (dav_d = '1' and not (control_current_state = TAIL and hdr_tail_cnt > 4))
+            else '0';
 
   DAV       <= dav_inner;
   DOUT      <= dout_inner;
@@ -360,9 +394,11 @@ begin
 
   hdr_word(1) <= x"9" & cafifo_l1a_cnt(11 downto 0);
   hdr_word(2) <= x"9" & cafifo_l1a_cnt(23 downto 12);
-  hdr_word(3) <= x"9" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & fmt_vers & l1a_dav_mismatch & cafifo_l1a_match(NFEB downto 1);
+  hdr_word(3) <= x"9" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & fmt_vers & l1a_dav_mismatch
+                 & cafifo_l1a_match(NFEB downto 1);
   hdr_word(4) <= x"9" & cafifo_bx_cnt;
-  hdr_word(5) <= x"A" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & fmt_vers & l1a_dav_mismatch & cafifo_l1a_match(NFEB downto 1);
+  hdr_word(5) <= x"A" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & fmt_vers & l1a_dav_mismatch
+                 & cafifo_l1a_match(NFEB downto 1);
   hdr_word(6) <= x"A" & DAQMBID(11 downto 0);
   hdr_word(7) <= x"A" & cafifo_l1a_match(NFEB+2 downto NFEB+1) & ovlp & cafifo_bx_cnt(4 downto 0);
   hdr_word(8) <= x"A" & sync & fmt_vers & l1a_dav_mismatch & cafifo_l1a_cnt(4 downto 0);
@@ -370,8 +406,10 @@ begin
   tail_word(1) <= x"F" & alct_to_end & cafifo_bx_cnt(4 downto 0) & cafifo_l1a_cnt(5 downto 0);
   tail_word(2) <= x"F" & ovlp & dcfeb_to_end;
   tail_word(3) <= x"F" & data_fifo_full(3 downto 1) & cafifo_lost_pckt(8) & dmb_l1pipe;
-  tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1) & data_fifo_full(7 downto 4);
-  tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & data_fifo_half(NFEB+2 downto NFEB+1) & otmb_to_end & data_fifo_half(NFEB downto 1);
+  tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1)
+                  & data_fifo_full(7 downto 4);
+  tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & data_fifo_half(NFEB+2 downto NFEB+1)
+                  & otmb_to_end & data_fifo_half(NFEB downto 1);
   tail_word(6) <= x"E" & DAQMBID(11 downto 0);
   tail_word(7) <= x"E" & REG_CRC(22) & REG_CRC(10 downto 0);
   tail_word(8) <= x"E" & REG_CRC(23) & REG_CRC(21 downto 11);
