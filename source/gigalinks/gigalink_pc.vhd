@@ -356,19 +356,19 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
   signal rxdisperr_pulse     : std_logic := '0';
 
   -- PRBS signals
-  signal gtx0_entxprbstst_in : std_logic_vector(2 downto 0);
-  signal gtx0_enrxprbstst_in : std_logic_vector(2 downto 0);
-  signal prbs_err_cnt_rst    : std_logic;
-  signal prbs_en_pulse       : std_logic;
-  signal prbs_rd_en_pulse    : std_logic;
-  signal prbs_init_pulse     : std_logic;
-  signal prbs_reset_pulse    : std_logic;
-  signal prbs_rd_en_inner    : std_logic;
-  constant prbs_rst_cycles   : integer := 1;
-  constant prbs_length       : integer := 10001;
-  signal prbs_en_cnt         : integer;
-  signal prbs_rst_cnt        : integer;
-  signal prbs_rd_en_cnt      : integer;
+  signal   gtx0_entxprbstst_in : std_logic_vector(2 downto 0);
+  signal   gtx0_enrxprbstst_in : std_logic_vector(2 downto 0);
+  signal   prbs_err_cnt_rst    : std_logic;
+  signal   prbs_en_pulse       : std_logic;
+  signal   prbs_rd_en_pulse    : std_logic;
+  signal   prbs_init_pulse     : std_logic;
+  signal   prbs_reset_pulse    : std_logic;
+  signal   prbs_rd_en_inner    : std_logic;
+  constant prbs_rst_cycles     : integer := 1;
+  constant prbs_length         : integer := 10001;
+  signal   prbs_en_cnt         : integer;
+  signal   prbs_rst_cnt        : integer;
+  signal   prbs_rd_en_cnt      : integer;
 begin
 
   -- RX data valid is high when the RX is valid and we are not receiving a K character
@@ -607,11 +607,12 @@ begin
       WR_FASTER_RD => true)  -- Set int_clk to WRCLK if faster than RDCLK
 
     port map(
-      DO    => TX_FIFO_DOUT,             -- Output data
-      EMPTY => tx_fifo_empty,           -- Output empty
-      FULL  => tx_fifo_full,            -- Output full
-      EOF   => open,                    -- Output EOF
-      BOF   => open,
+      DO        => TX_FIFO_DOUT,        -- Output data
+      EMPTY     => tx_fifo_empty,       -- Output empty
+      FULL      => tx_fifo_full,        -- Output full
+      HALF_FULL => open,
+      EOF       => open,                -- Output EOF
+      BOF       => open,
 
       DI    => txd_frame,               -- Input data
       RDCLK => VME_CLK,                 -- Input read clock

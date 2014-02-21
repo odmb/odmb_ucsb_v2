@@ -497,8 +497,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       fifo_out : in std_logic_vector(15 downto 0);
       fifo_eof : in std_logic;
 
-      fifo_empty_b : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs 
-
+      fifo_empty_b   : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs
+      fifo_half_full : in std_logic_vector(NFEB+2 downto 1);  -- 
 
 -- From CAFIFO to Data FIFOs
       cafifo_l1a           : out std_logic;
@@ -1189,6 +1189,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_out          : ext_dcfeb_fifo_data_type;
   signal pulse_eof40             : std_logic_vector(NFEB downto 1);
 
+  
   signal dcfeb_fifo_empty  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_aempty : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_afull  : std_logic_vector(NFEB downto 1);
@@ -1198,6 +1199,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
   signal data_fifo_empty_b                : std_logic_vector(NFEB+2 downto 1);
+  signal data_fifo_half_full              : std_logic_vector(NFEB+2 downto 1);
   signal alct_fifo_empty, otmb_fifo_empty : std_logic;
   signal alct_fifo_full, otmb_fifo_full   : std_logic;
 
@@ -1605,7 +1607,8 @@ begin
       fifo_out => fifo_out,
       fifo_eof => eof,
 
-      fifo_empty_b => data_fifo_empty_b,
+      fifo_empty_b   => data_fifo_empty_b,
+      fifo_half_full => data_fifo_half_full,
 
 -- From CAFIFO to Data FIFOs
       cafifo_l1a           => cafifo_l1a,
@@ -1919,6 +1922,7 @@ begin
         DO    => dcfeb_fifo_out(I),     -- Output data
         EMPTY => dcfeb_fifo_empty(I),   -- Output empty
         FULL  => dcfeb_fifo_full(I),    -- Output full
+        HALF_FULL => data_fifo_half_full(I),
         EOF   => eof_data_160(I),       -- Output EOF
         BOF   => open,
 
@@ -1977,6 +1981,7 @@ begin
       DO    => alct_fifo_data_out,      -- Output data
       EMPTY => alct_fifo_empty,         -- Output empty
       FULL  => alct_fifo_full,          -- Output full
+      HALF_FULL => data_fifo_half_full(9),
       EOF   => eof_data(NFEB+2),        -- Output EOF
       BOF   => open,
 
@@ -1999,6 +2004,7 @@ begin
       DO    => otmb_fifo_data_out,      -- Output data
       EMPTY => otmb_fifo_empty,         -- Output empty
       FULL  => otmb_fifo_full,          -- Output full
+      HALF_FULL => data_fifo_half_full(8),
       EOF   => eof_data(NFEB+1),        -- Output EOF
       BOF   => open,
 

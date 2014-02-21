@@ -19,11 +19,12 @@ entity FIFO_CASCADE is
     WR_FASTER_RD : boolean               := true
     );
   port(
-    DO    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-    EMPTY : out std_logic;
-    FULL  : out std_logic;
-    EOF   : out std_logic;
-    BOF   : out std_logic;
+    DO        : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    EMPTY     : out std_logic;
+    FULL      : out std_logic;
+    HALF_FULL : out std_logic;
+    EOF       : out std_logic;
+    BOF       : out std_logic;
 
     DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
     RDCLK : in std_logic;
@@ -167,13 +168,16 @@ begin
       RST         => RST,               -- Input reset
       WRCLK       => fifo_wrck(1),      -- Input write clock
       WREN        => fifo_wren(1)       -- Input write enable
-      );  
+      );
 
   --outputs of cascade (from the first and last fifos)
-  DO    <= fifo_out(1);                 --out
-  EMPTY <= fifo_empty(1);               --out
-  FULL  <= fifo_full(NFIFO);            --out
+  DO        <= fifo_out(1);             --out
+  EMPTY     <= fifo_empty(1);           --out
+  FULL      <= fifo_full(NFIFO);        --out
+  HALF_FULL <= fifo_full(NFIFO/2) when NFIFO mod 2 = 0 else
+                    fifo_full((NFIFO+1)/2);
+
   --out: tells you when packet has finished arriving at FIFO 1
   PULSE_EOF : PULSE_EDGE port map(EOF, open, WRCLK, RST, 1, fifo_in(1)(DATA_WIDTH-2));
-  BOF   <= fifo_in(1)(DATA_WIDTH-1);  --OUT: tells you when packet has started arriving at FIFO 1
+  BOF <= fifo_in(1)(DATA_WIDTH-1);  --OUT: tells you when packet has started arriving at FIFO 1
 end fifo_cascade_arch;

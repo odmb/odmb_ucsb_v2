@@ -61,17 +61,17 @@ architecture pcfifo_architecture of pcfifo is
 
 -- Guido 10/28 => split long data packets
   signal word_cnt_en, word_cnt_rst : std_logic := '0';
-  signal word_cnt       : integer range 0 to 65535;
-  signal byte_cnt        : integer range 0 to 131070;
+  signal word_cnt                  : integer range 0 to 65535;
+  signal byte_cnt                  : integer range 0 to 131070;
 
   -- IDLE_ETH ensures the interframe gap of 96 bits between packets
   signal idle_cnt_en, idle_cnt_rst : std_logic             := '0';
   signal idle_cnt                  : integer range 0 to 31 := 0;
 
-  signal dv_in_pulse, q_ld_in : std_logic := '0';
-  signal first_in             : std_logic := '1';
+  signal   dv_in_pulse, q_ld_in : std_logic := '0';
+  signal   first_in             : std_logic := '1';
   -- Clock cycles it takes to reach the end of the FIFO_CASCADE
-  constant nwait_fifo         : integer   := NFIFO * 8;
+  constant nwait_fifo           : integer   := NFIFO * 8;
 
   signal epkt_cnt_total : std_logic_vector(15 downto 0) := (others => '0');
   signal epkt_cnt_en    : std_logic;
@@ -95,11 +95,12 @@ begin
       WR_FASTER_RD => true)   -- Set int_clk to WRCLK if faster than RDCLK
 
     port map(
-      DO    => fifo_out,                -- Output data
-      EMPTY => fifo_empty,              -- Output empty
-      FULL  => fifo_full,               -- Output full
-      EOF   => open,                    -- Output EOF
-      BOF   => open,
+      DO        => fifo_out,            -- Output data
+      EMPTY     => fifo_empty,          -- Output empty
+      FULL      => fifo_full,           -- Output full
+      HALF_FULL => open,
+      EOF       => open,                -- Output EOF
+      BOF       => open,
 
       DI    => fifo_in,                 -- Input data
       RDCLK => clk_out,                 -- Input read clock
@@ -120,7 +121,7 @@ begin
 
 -- FSMs
   DS_LDIN  : DELAY_SIGNAL generic map (nwait_fifo) port map (q_ld_in, CLK_IN, nwait_fifo, ld_in);
-  LDIN2_PE  : pulse_edge port map(open, open, CLK_OUT, RST, 3, q_ld_in);
+  LDIN2_PE : pulse_edge port map(open, open, CLK_OUT, RST, 3, q_ld_in);
   LDIN_PE  : pulse_edge port map(ld_in_pulse, open, CLK_OUT, RST, 1, q_ld_in);
   LDOUT_PE : pulse_edge port map(ld_out_pulse, open, CLK_OUT, RST, 1, ld_out);
 
@@ -244,7 +245,7 @@ begin
 
       when FIFO_TX_FILL_BYTE =>
         dv_out            <= '1';
-        data_out          <= x"FF" & std_logic_vector(to_unsigned(byte_cnt,8));
+        data_out          <= x"FF" & std_logic_vector(to_unsigned(byte_cnt, 8));
         idle_cnt_rst      <= '0';
         idle_cnt_en       <= '0';
         word_cnt_rst      <= '0';

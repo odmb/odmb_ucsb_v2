@@ -67,7 +67,8 @@ entity ODMB_CTRL is
     fifo_out : in std_logic_vector(15 downto 0);
     fifo_eof : in std_logic;
 
-    fifo_empty_b : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs 
+    fifo_empty_b   : in std_logic_vector(NFEB+2 downto 1);  -- emptyf*(7 DOWNTO 1) - from FIFOs
+    fifo_half_full : in std_logic_vector(NFEB+2 downto 1);  -- 
 
 -- From CAFIFO to Data FIFOs
     cafifo_l1a           : out std_logic;
@@ -112,8 +113,8 @@ entity ODMB_CTRL is
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
-    ALCT_DAV_SYNC_OUT   : out std_logic;
-    OTMB_DAV_SYNC_OUT   : out std_logic;
+    ALCT_DAV_SYNC_OUT : out std_logic;
+    OTMB_DAV_SYNC_OUT : out std_logic;
 
     dcfeb_injpulse  : out std_logic;    -- inject - to DCFEBs
     dcfeb_extpulse  : out std_logic;    -- extpulse - to DCFEBs
@@ -280,8 +281,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       PEDESTAL      : in std_logic;
       PEDESTAL_OTMB : in std_logic;
 
-      ALCT_DAV_SYNC_OUT   : out std_logic;
-      OTMB_DAV_SYNC_OUT   : out std_logic;
+      ALCT_DAV_SYNC_OUT : out std_logic;
+      OTMB_DAV_SYNC_OUT : out std_logic;
 
       DCFEB_L1A       : out std_logic;
       DCFEB_L1A_MATCH : out std_logic_vector(NFEB downto 1);
@@ -338,9 +339,10 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       RENFIFO_B : out std_logic_vector(NFEB+2 downto 1);
 
 -- from FIFOs
-      FFOR_B      : in std_logic_vector(NFEB+2 downto 1);
-      DATAIN      : in std_logic_vector(15 downto 0);
-      DATAIN_LAST : in std_logic;
+      FIFO_HALF_FULL : in std_logic_vector(NFEB+2 downto 1);
+      FFOR_B         : in std_logic_vector(NFEB+2 downto 1);
+      DATAIN         : in std_logic_vector(15 downto 0);
+      DATAIN_LAST    : in std_logic;
 
 -- From LOADFIFO
       JOEF : in std_logic_vector(NFEB+2 downto 1);
@@ -565,7 +567,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
 -- LOADFIFO outputs
 
-  signal joef     : std_logic_vector(NFEB+2 downto 1);
+  signal joef : std_logic_vector(NFEB+2 downto 1);
 
   signal LOGICL : std_logic := '0';
   signal LOGICH : std_logic := '1';
@@ -661,8 +663,8 @@ begin
       PEDESTAL      => pedestal,
       PEDESTAL_OTMB => pedestal_otmb,
 
-      ALCT_DAV_SYNC_OUT   => ALCT_DAV_SYNC_OUT,
-      OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT,
+      ALCT_DAV_SYNC_OUT => ALCT_DAV_SYNC_OUT,
+      OTMB_DAV_SYNC_OUT => OTMB_DAV_SYNC_OUT,
 
       DCFEB_L1A       => dcfeb_l1a,
       DCFEB_L1A_MATCH => dcfeb_l1a_match,
@@ -746,9 +748,10 @@ begin
       RENFIFO_B => data_fifo_re,
 
 -- from Data FIFOs
-      FFOR_B      => fifo_empty_b,
-      DATAIN      => fifo_out(15 downto 0),
-      DATAIN_LAST => fifo_eof,
+      FIFO_HALF_FULL => fifo_half_full,
+      FFOR_B         => fifo_empty_b,
+      DATAIN         => fifo_out(15 downto 0),
+      DATAIN_LAST    => fifo_eof,
 
 -- From JTAGCOM
       JOEF => joef,                     -- from LOADFIFO
@@ -844,7 +847,7 @@ begin
 
 
 
-  ddu_eof   <= eof;  -- This counts the number of packets sent to the DDU
+  ddu_eof <= eof;  -- This counts the number of packets sent to the DDU
 
   CRC_CHECKER_PM : CRC_CHECKER
     port map (

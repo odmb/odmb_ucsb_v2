@@ -37,11 +37,12 @@ package ucsb_types is
       WR_FASTER_RD : boolean               := true
       );
     port(
-      DO    : out std_logic_vector(DATA_WIDTH-1 downto 0);
-      EMPTY : out std_logic;
-      FULL  : out std_logic;
-      EOF   : out std_logic;
-      BOF   : out std_logic;
+      DO        : out std_logic_vector(DATA_WIDTH-1 downto 0);
+      EMPTY     : out std_logic;
+      FULL      : out std_logic;
+      HALF_FULL : out std_logic;
+      EOF       : out std_logic;
+      BOF       : out std_logic;
 
       DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
       RDCLK : in std_logic;

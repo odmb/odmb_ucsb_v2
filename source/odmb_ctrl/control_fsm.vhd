@@ -41,9 +41,10 @@ entity CONTROL_FSM is
     RENFIFO_B : out std_logic_vector(NFEB+2 downto 1);
 
 -- from FIFOs
-    FFOR_B      : in std_logic_vector(NFEB+2 downto 1);
-    DATAIN      : in std_logic_vector(15 downto 0);
-    DATAIN_LAST : in std_logic;
+    FIFO_HALF_FULL : in std_logic_vector(NFEB+2 downto 1);
+    FFOR_B         : in std_logic_vector(NFEB+2 downto 1);
+    DATAIN         : in std_logic_vector(15 downto 0);
+    DATAIN_LAST    : in std_logic;
 
 -- From JTAGCOM
     JOEF : in std_logic_vector(NFEB+2 downto 1);
@@ -104,7 +105,7 @@ architecture CONTROL_arch of CONTROL_FSM is
   constant otmb_to_end      : std_logic                         := '0';
   constant dcfeb_to_end     : std_logic_vector(NFEB downto 1)   := (others => '0');
   constant data_fifo_full   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
-  constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
+  -- constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
 
   type   control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, WAIT_IDLE);
@@ -408,8 +409,8 @@ begin
   tail_word(3) <= x"F" & data_fifo_full(3 downto 1) & cafifo_lost_pckt(8) & dmb_l1pipe;
   tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1)
                   & data_fifo_full(7 downto 4);
-  tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & data_fifo_half(NFEB+2 downto NFEB+1)
-                  & otmb_to_end & data_fifo_half(NFEB downto 1);
+  tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & FIFO_HALF_FULL(NFEB+2 downto NFEB+1)
+                  & otmb_to_end & FIFO_HALF_FULL(NFEB downto 1);
   tail_word(6) <= x"E" & DAQMBID(11 downto 0);
   tail_word(7) <= x"E" & REG_CRC(22) & REG_CRC(10 downto 0);
   tail_word(8) <= x"E" & REG_CRC(23) & REG_CRC(21 downto 11);
