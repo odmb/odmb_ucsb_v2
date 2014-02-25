@@ -122,9 +122,9 @@ entity ODMB_UCSB_V2 is
 
 -- From J6/J7 (J3/J4) to FIFOs
 
-    otmb      : in std_logic_vector(17 downto 0);
-    alct      : in std_logic_vector(17 downto 0);
-    rawlct    : in std_logic_vector(NFEB downto 0);
+    otmb   : in std_logic_vector(17 downto 0);
+    alct   : in std_logic_vector(17 downto 0);
+    rawlct : in std_logic_vector(NFEB downto 0);
     --otmbffclk : in std_logic;
 
 -- From/To J3/J4 t/fromo ODMB_CTRL
@@ -265,13 +265,13 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Clock
 
-      clk160 : in std_logic;            -- For dcfeb prbs (160MHz)
-      clk80  : in std_logic;            -- For testctrl (80MHz)
-      clk    : in std_logic;            -- fpgaclk (40MHz)
-      clk_s1 : in std_logic;            -- midclk (10MHz) 
-      clk_s2 : in std_logic;            -- slowclk (2.5MHz)
-      clk_s3 : in std_logic;            -- slowclk2 (1.25MHz)
-      qpll_locked       : in  std_logic;
+      clk160      : in std_logic;       -- For dcfeb prbs (160MHz)
+      clk80       : in std_logic;       -- For testctrl (80MHz)
+      clk         : in std_logic;       -- fpgaclk (40MHz)
+      clk_s1      : in std_logic;       -- midclk (10MHz) 
+      clk_s2      : in std_logic;       -- slowclk (2.5MHz)
+      clk_s3      : in std_logic;       -- slowclk2 (1.25MHz)
+      qpll_locked : in std_logic;
 
 -- Reset
 
@@ -319,6 +319,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       REPROG_B        : out std_logic;
       TEST_INJ        : out std_logic;
       TEST_PLS        : out std_logic;
+      TEST_BC0        : out std_logic;
       TEST_PED        : out std_logic;
       TEST_LCT        : out std_logic;
       OTMB_LCT_RQST   : out std_logic;
@@ -543,8 +544,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
-      ALCT_DAV_SYNC_OUT   : out std_logic;
-      OTMB_DAV_SYNC_OUT   : out std_logic;
+      ALCT_DAV_SYNC_OUT : out std_logic;
+      OTMB_DAV_SYNC_OUT : out std_logic;
 
       dcfeb_injpulse  : out std_logic;  -- inject - to DCFEBs
       dcfeb_extpulse  : out std_logic;  -- extpls - to DCFEBs
@@ -567,7 +568,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
       OTMB_PUSH_DLY : in integer range 0 to 63;
       ALCT_PUSH_DLY : in integer range 0 to 63;
-      PUSH_DLY : in integer range 0 to 63;
+      PUSH_DLY      : in integer range 0 to 63;
       INJ_DLY       : in std_logic_vector(4 downto 0);
       EXT_DLY       : in std_logic_vector(4 downto 0);
       CALLCT_DLY    : in std_logic_vector(3 downto 0);
@@ -918,18 +919,18 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   constant NFIFO : integer := 4;
 
 -- Global signals
-  constant LOGICL   : std_logic := '0';
-  constant LOGICH   : std_logic := '1';
-  signal   FW_RESET : std_logic := '0';
-  signal   PB_PULSE : std_logic := '0';
-  signal   PB_B     : std_logic_vector(1 downto 0);
-  signal odmb_status     : std_logic_vector (15 downto 0);
+  constant LOGICL      : std_logic := '0';
+  constant LOGICH      : std_logic := '1';
+  signal   FW_RESET    : std_logic := '0';
+  signal   PB_PULSE    : std_logic := '0';
+  signal   PB_B        : std_logic_vector(1 downto 0);
+  signal   odmb_status : std_logic_vector (15 downto 0);
 
-  signal resync, test_inj, test_pls, test_ped, test_l1a, test_lct, test_pb_lct : std_logic := '0';
-  signal otmb_lct_rqst, otmb_ext_trig                                          : std_logic := '0';
-  signal l1acnt_rst, bxcnt_rst                                                 : std_logic := '0';
-  signal test_otmb_dav, test_alct_dav                                          : std_logic := '0';
-  signal otmb_push_dly_p1, alct_push_dly_p1 : integer range 0 to 64;
+  signal resync, test_inj, test_pls, test_ped, test_bc0, test_l1a, test_lct, test_pb_lct : std_logic := '0';
+  signal otmb_lct_rqst, otmb_ext_trig                                                    : std_logic := '0';
+  signal l1acnt_rst, bxcnt_rst                                                           : std_logic := '0';
+  signal test_otmb_dav, test_alct_dav                                                    : std_logic := '0';
+  signal otmb_push_dly_p1, alct_push_dly_p1                                              : integer range 0 to 64;
 
 -- VME Signals
 
@@ -986,7 +987,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_tck, int_tdo             : std_logic_vector(7 downto 1);
   signal odmb_tms, odmb_tdi           : std_logic;
   signal dcfeb_tms_out, dcfeb_tdi_out : std_logic;
-  signal isnot_ODMB_V3V4                : std_logic := '1';
+  signal isnot_ODMB_V3V4              : std_logic := '1';
 
 -- JTAG outputs from internal DCFEBs
 
@@ -1155,11 +1156,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal diagout_cfebjtag : std_logic_vector(17 downto 0);
   signal diagout_lvdbmon  : std_logic_vector(17 downto 0);
 
-  signal pon_rst_reg, fw_rst_reg, opt_rst_reg : std_logic_vector (31 downto 0) := (others => '0');
-  signal reset, opt_reset, fw_reset_q         : std_logic                      := '0';
-  signal opt_reset_pulse, opt_reset_pulse_q   : std_logic                      := '0';
-  signal l1a_reset_pulse, l1acnt_rst_pulse, l1acnt_rst_start    : std_logic                      := '0';
-  signal pon_reset                            : std_logic;
+  signal pon_rst_reg, fw_rst_reg, opt_rst_reg                : std_logic_vector (31 downto 0) := (others => '0');
+  signal reset, opt_reset, fw_reset_q                        : std_logic                      := '0';
+  signal opt_reset_pulse, opt_reset_pulse_q                  : std_logic                      := '0';
+  signal l1a_reset_pulse, l1acnt_rst_pulse, l1acnt_rst_start : std_logic                      := '0';
+  signal pon_reset                                           : std_logic;
 
   signal select_diagnostic : integer := 0;
 
@@ -1189,7 +1190,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_out          : ext_dcfeb_fifo_data_type;
   signal pulse_eof40             : std_logic_vector(NFEB downto 1);
 
-  
+
   signal dcfeb_fifo_empty  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_aempty : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_afull  : std_logic_vector(NFEB downto 1);
@@ -1225,17 +1226,17 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
-  constant push_dly : integer := 63;  -- It needs to be > alct/otmb_push_dly
-  signal alct_push_dly : integer range 0 to 63;
-  signal otmb_push_dly : integer range 0 to 63;
-  signal lct_l1a_dly   : std_logic_vector(5 downto 0);
-  signal inj_dly       : std_logic_vector(4 downto 0);
-  signal ext_dly       : std_logic_vector(4 downto 0);
-  signal callct_dly    : std_logic_vector(3 downto 0);
-  signal odmb_id       : std_logic_vector(15 downto 0);
-  signal nwords_dummy  : std_logic_vector(15 downto 0);
-  signal kill          : std_logic_vector(nfeb+2 downto 1);
-  signal crateid       : std_logic_vector(7 downto 0);
+  constant push_dly      : integer := 63;  -- It needs to be > alct/otmb_push_dly
+  signal   alct_push_dly : integer range 0 to 63;
+  signal   otmb_push_dly : integer range 0 to 63;
+  signal   lct_l1a_dly   : std_logic_vector(5 downto 0);
+  signal   inj_dly       : std_logic_vector(4 downto 0);
+  signal   ext_dly       : std_logic_vector(4 downto 0);
+  signal   callct_dly    : std_logic_vector(3 downto 0);
+  signal   odmb_id       : std_logic_vector(15 downto 0);
+  signal   nwords_dummy  : std_logic_vector(15 downto 0);
+  signal   kill          : std_logic_vector(nfeb+2 downto 1);
+  signal   crateid       : std_logic_vector(7 downto 0);
 
   -- From/to TESTFIFOS to test FIFOs
   signal TFF_DOUT    : std_logic_vector(15 downto 0);
@@ -1255,27 +1256,27 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- BPI Prom signals
 
-  signal bpi_rst           : std_logic;
-  signal vme_bpi_rst       : std_logic;
-  signal clk1mhz           : std_logic;
-  signal counter_clk1mhz   : integer                       := 0;
-  signal bpi_we            : std_logic;
-  signal bpi_re            : std_logic;
-  signal bpi_dsbl          : std_logic;
-  signal bpi_enbl          : std_logic;
-  signal bpi_busy          : std_logic;
-  signal bpi_load_data     : std_logic;
-  signal bpi_active        : std_logic;
-  signal bpi_execute       : std_logic;
-  signal bpi_cmd_fifo_data : std_logic_vector(15 downto 0);
-  signal bpi_rbk_fifo_data : std_logic_vector(15 downto 0);
-  signal bpi_rbk_wrd_cnt   : std_logic_vector(10 downto 0);
-  signal bpi_status        : std_logic_vector(15 downto 0);
-  signal bpi_timer         : std_logic_vector(31 downto 0);
-  signal bpi_data_from     : std_logic_vector(15 downto 0);
-  signal bpi_op            : std_logic_vector(1 downto 0);
-  signal bpi_addr          : std_logic_vector(22 downto 0);
-  signal bpi_data_to       : std_logic_vector(15 downto 0);
+  signal   bpi_rst           : std_logic;
+  signal   vme_bpi_rst       : std_logic;
+  signal   clk1mhz           : std_logic;
+  signal   counter_clk1mhz   : integer                       := 0;
+  signal   bpi_we            : std_logic;
+  signal   bpi_re            : std_logic;
+  signal   bpi_dsbl          : std_logic;
+  signal   bpi_enbl          : std_logic;
+  signal   bpi_busy          : std_logic;
+  signal   bpi_load_data     : std_logic;
+  signal   bpi_active        : std_logic;
+  signal   bpi_execute       : std_logic;
+  signal   bpi_cmd_fifo_data : std_logic_vector(15 downto 0);
+  signal   bpi_rbk_fifo_data : std_logic_vector(15 downto 0);
+  signal   bpi_rbk_wrd_cnt   : std_logic_vector(10 downto 0);
+  signal   bpi_status        : std_logic_vector(15 downto 0);
+  signal   bpi_timer         : std_logic_vector(31 downto 0);
+  signal   bpi_data_from     : std_logic_vector(15 downto 0);
+  signal   bpi_op            : std_logic_vector(1 downto 0);
+  signal   bpi_addr          : std_logic_vector(22 downto 0);
+  signal   bpi_data_to       : std_logic_vector(15 downto 0);
   constant dual_data_leds    : std_logic_vector(15 downto 0) := (others => '0');
 
   signal bpi_done       : std_logic;
@@ -1378,14 +1379,14 @@ begin
 
 -- Clock
 
-      clk160 => clk160,                 -- for dcfeb prbs (160 MHz)
-      clk80  => clk80,                  -- for testctrl (80MHz)
-      clk    => clk40,                  -- fpgaclk (40MHz)
-      clk_s1 => clk10,                  -- midclk (10MHz) 
-      clk_s2 => clk2p5,                 -- slowclk (2.5MHz)
-      clk_s3 => clk1p25,                -- slowclk2 (1.25MHz)
+      clk160      => clk160,            -- for dcfeb prbs (160 MHz)
+      clk80       => clk80,             -- for testctrl (80MHz)
+      clk         => clk40,             -- fpgaclk (40MHz)
+      clk_s1      => clk10,             -- midclk (10MHz) 
+      clk_s2      => clk2p5,            -- slowclk (2.5MHz)
+      clk_s3      => clk1p25,           -- slowclk2 (1.25MHz)
       QPLL_LOCKED => qpll_locked,
-      
+
 -- Reset
 
       rst       => reset,
@@ -1433,6 +1434,7 @@ begin
       test_inj        => test_inj,
       test_pls        => test_pls,
       test_ped        => test_ped,
+      test_bc0        => test_bc0,
       test_lct        => test_lct,
       OTMB_LCT_RQST   => otmb_lct_rqst,
       OTMB_EXT_TRIG   => otmb_ext_trig,
@@ -1652,8 +1654,8 @@ begin
 
 -- From/To DCFEBs (FF-EMU-MOD)
 
-      ALCT_DAV_SYNC_OUT   => ALCT_DAV_SYNC_OUT,
-      OTMB_DAV_SYNC_OUT   => OTMB_DAV_SYNC_OUT,
+      ALCT_DAV_SYNC_OUT => ALCT_DAV_SYNC_OUT,
+      OTMB_DAV_SYNC_OUT => OTMB_DAV_SYNC_OUT,
 
       dcfeb_l1a_match => int_l1a_match,  -- lctf(5 DOWNTO 1) - to DCFEBs
       dcfeb_l1a       => int_l1a,        -- febrst - to DCFEBs
@@ -1675,7 +1677,7 @@ begin
       LCT_L1A_DLY   => LCT_L1A_DLY,
       OTMB_PUSH_DLY => OTMB_PUSH_DLY,
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-      PUSH_DLY => PUSH_DLY,
+      PUSH_DLY      => PUSH_DLY,
       INJ_DLY       => INJ_DLY,
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
@@ -1919,12 +1921,12 @@ begin
         WR_FASTER_RD => true)   -- Set int_clk to WRCLK if faster than RDCLK
 
       port map(
-        DO    => dcfeb_fifo_out(I),     -- Output data
-        EMPTY => dcfeb_fifo_empty(I),   -- Output empty
-        FULL  => dcfeb_fifo_full(I),    -- Output full
+        DO        => dcfeb_fifo_out(I),    -- Output data
+        EMPTY     => dcfeb_fifo_empty(I),  -- Output empty
+        FULL      => dcfeb_fifo_full(I),   -- Output full
         HALF_FULL => data_fifo_half_full(I),
-        EOF   => eof_data_160(I),       -- Output EOF
-        BOF   => open,
+        EOF       => eof_data_160(I),      -- Output EOF
+        BOF       => open,
 
         DI    => eofgen_dcfeb_fifo_in(I),    -- Input data
         RDCLK => dduclk,                     -- Input read clock
@@ -1935,7 +1937,7 @@ begin
         );
 
     -- Delay EOF of DCFEBs by PUSH_DLY to be on CAFIFO time
-    PULSEEOF40    : PULSE_EDGE port map(pulse_eof40(I), open, clk40, reset, 1, eof_data_160(I));
+    PULSEEOF40  : PULSE_EDGE port map(pulse_eof40(I), open, clk40, reset, 1, eof_data_160(I));
     DS_EOF_PUSH : DELAY_SIGNAL port map(eof_data(I), clk40, push_dly, pulse_eof40(I));
 
   end generate GEN_DCFEB;
@@ -1974,16 +1976,16 @@ begin
     generic map (
       NFIFO        => 3,                -- number of FIFOs in cascade
       DATA_WIDTH   => 18,               -- With of data packets
-      FWFT         => true,           -- First word fall through
+      FWFT         => true,             -- First word fall through
       WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
 
     port map(
-      DO    => alct_fifo_data_out,      -- Output data
-      EMPTY => alct_fifo_empty,         -- Output empty
-      FULL  => alct_fifo_full,          -- Output full
+      DO        => alct_fifo_data_out,  -- Output data
+      EMPTY     => alct_fifo_empty,     -- Output empty
+      FULL      => alct_fifo_full,      -- Output full
       HALF_FULL => data_fifo_half_full(9),
-      EOF   => eof_data(NFEB+2),        -- Output EOF
-      BOF   => open,
+      EOF       => eof_data(NFEB+2),    -- Output EOF
+      BOF       => open,
 
       DI    => alct_fifo_data_in,       -- Input data
       RDCLK => dduclk,                  -- Input read clock
@@ -1997,16 +1999,16 @@ begin
     generic map (
       NFIFO        => 3,                -- number of FIFOs in cascade
       DATA_WIDTH   => 18,               -- With of data packets
-      FWFT         => true,           -- First word fall through
+      FWFT         => true,             -- First word fall through
       WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
 
     port map(
-      DO    => otmb_fifo_data_out,      -- Output data
-      EMPTY => otmb_fifo_empty,         -- Output empty
-      FULL  => otmb_fifo_full,          -- Output full
+      DO        => otmb_fifo_data_out,  -- Output data
+      EMPTY     => otmb_fifo_empty,     -- Output empty
+      FULL      => otmb_fifo_full,      -- Output full
       HALF_FULL => data_fifo_half_full(8),
-      EOF   => eof_data(NFEB+1),        -- Output EOF
-      BOF   => open,
+      EOF       => eof_data(NFEB+1),    -- Output EOF
+      BOF       => open,
 
       DI    => otmb_fifo_data_in,       -- Input data
       RDCLK => dduclk,                  -- Input read clock
@@ -2034,8 +2036,8 @@ begin
          dcfeb_fifo_out(5)(17)  when data_fifo_oe = "111101111" else
          dcfeb_fifo_out(6)(17)  when data_fifo_oe = "111011111" else
          dcfeb_fifo_out(7)(17)  when data_fifo_oe = "110111111" else
-         otmb_fifo_data_out(17) when data_fifo_oe = "101111111" else  
-         alct_fifo_data_out(17) when data_fifo_oe = "011111111" else  
+         otmb_fifo_data_out(17) when data_fifo_oe = "101111111" else
+         alct_fifo_data_out(17) when data_fifo_oe = "011111111" else
          '0';
 
   -- Sync alct and otmb to our clock. Probably not needed
@@ -2175,7 +2177,7 @@ begin
   dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
-  dcfeb_bc0       <= not ccb_bx0;       -- New signal to DCFEB for syncing
+  dcfeb_bc0       <= test_bc0 or not ccb_bx0;  -- New signal to DCFEB for syncing
 
   -- To QPLL
   qpll_autorestart <= '1';
@@ -2212,7 +2214,7 @@ begin
   l1acnt_rst_start <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse;
   PULSE_RESYNC : PULSE_EDGE port map(resync, open, clk40, logicl, 1, l1acnt_rst_pulse);
   PULSE_L1A    : PULSE_EDGE port map(l1acnt_rst_pulse, open, clk40, logicl, 20, l1acnt_rst_start);
-  l1acnt_rst <= l1acnt_rst_pulse or reset; -- reset is so long that it created problems
+  l1acnt_rst       <= l1acnt_rst_pulse or reset;  -- reset is so long that it created problems
   bxcnt_rst        <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
@@ -2535,7 +2537,7 @@ begin
   DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
   PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, gtx1_data_valid, reset, logich);
   LOCKED_CNT  : COUNT_EDGES port map(qpll_locked_cnt, qpll_locked, reset, '1');
-  
+
   NFEB_CNT : for dev in 1 to NFEB generate
   begin
     RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
@@ -2653,9 +2655,9 @@ begin
   odmb_status <= x"00" & "000" & orx_sd & vme_berr_b & qpll_error & QPLL_LOCKED & DONE_IN;
 
   odmb_status_pro : process (odmb_status, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
-                         l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
-                         data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, goodcrc_cnt,
-                         alct_dav_cnt, otmb_dav_cnt)
+                             l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
+                             data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, goodcrc_cnt,
+                             alct_dav_cnt, otmb_dav_cnt)
   begin
     
     case odmb_data_sel is

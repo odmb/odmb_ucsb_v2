@@ -38,6 +38,7 @@ entity VMEMON is
     TEST_PLS        : out std_logic;
     TEST_PED        : out std_logic;
     TEST_LCT        : out std_logic;
+    TEST_BC0        : out std_logic;
     OTMB_LCT_RQST   : out std_logic;
     OTMB_EXT_TRIG   : out std_logic;
 
@@ -67,61 +68,117 @@ architecture VMEMON_Arch of VMEMON is
   end component;
 
   signal dd_dtack, d_dtack, q_dtack : std_logic;
-  signal CMDDEV                     : unsigned(12 downto 0);
+  signal cmddev                     : unsigned(12 downto 0);
 
-  signal BUSY                                  : std_logic;
-  signal W_ODMB_CTRL, R_ODMB_CTRL, R_ODMB_DATA : std_logic;
-  signal W_DCFEB_CTRL, R_DCFEB_CTRL            : std_logic;
+  signal busy        : std_logic;
+  signal r_odmb_data : std_logic;
 
-  signal ODMB_CTRL_INNER, DCFEB_CTRL_INNER : std_logic_vector(15 downto 0) := (others => '0');
+  signal odmb_ctrl_inner  : std_logic_vector(15 downto 0) := (others => '0');
+  signal dcfeb_ctrl_inner : std_logic_vector(15 downto 0) := (others => '0');
 
-  signal OUT_TP_SEL, TP_SEL_INNER : std_logic_vector(15 downto 0) := (others => '0');
-  signal W_TP_SEL                 : std_logic                     := '0';
-  signal R_TP_SEL                 : std_logic                     := '0';
+  signal out_tp_sel, tp_sel_inner : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_tp_sel                 : std_logic                     := '0';
+  signal r_tp_sel                 : std_logic                     := '0';
 
-  signal ODMB_RST, DCFEB_RST                                : std_logic_vector(15 downto 0) := (others => '0');
-  signal RESYNC_RST, REPROG_RST, TEST_INJ_RST, TEST_PLS_RST : std_logic                     := '0';
-  signal LCT_RQST_RST, EXT_TRIG_RST, OPT_RESET_PULSE_RST    : std_logic                     := '0';
-  signal REPROG, TEST_LCT_RST, RESET_RST                    : std_logic                     := '0';
+  signal odmb_rst, dcfeb_rst        : std_logic_vector(15 downto 0) := (others => '0');
+  signal test_inj_rst, test_pls_rst : std_logic                     := '0';
+  signal resync_rst, reprog_rst     : std_logic                     := '0';
+  signal lct_rqst_rst, ext_trig_rst : std_logic                     := '0';
+  signal opt_reset_pulse_rst        : std_logic                     := '0';
+  signal reprog, test_lct_rst       : std_logic                     := '0';
+  signal reset_rst                  : std_logic                     := '0';
+  signal test_bc0_rst               : std_logic                     := '0';
 
-  signal OUT_LOOPBACK   : std_logic_vector(15 downto 0) := (others => '0');
-  signal LOOPBACK_INNER : std_logic_vector(2 downto 0);
-  signal W_LOOPBACK     : std_logic                     := '0';
-  signal R_LOOPBACK     : std_logic                     := '0';
+  signal out_loopback   : std_logic_vector(15 downto 0) := (others => '0');
+  signal loopback_inner : std_logic_vector(2 downto 0);
+  signal w_loopback     : std_logic                     := '0';
+  signal r_loopback     : std_logic                     := '0';
 
-  signal OUT_TXDIFFCTRL   : std_logic_vector(15 downto 0) := (others => '0');
-  signal TXDIFFCTRL_INNER : std_logic_vector(3 downto 0);
-  signal W_TXDIFFCTRL     : std_logic                     := '0';
-  signal R_TXDIFFCTRL     : std_logic                     := '0';
+  signal out_txdiffctrl   : std_logic_vector(15 downto 0) := (others => '0');
+  signal txdiffctrl_inner : std_logic_vector(3 downto 0);
+  signal w_txdiffctrl     : std_logic                     := '0';
+  signal r_txdiffctrl     : std_logic                     := '0';
 
-  signal OUT_DCFEB_DONE : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_DCFEB_DONE   : std_logic                     := '0';
+  signal out_dcfeb_done : std_logic_vector(15 downto 0) := (others => '0');
+  signal r_dcfeb_done   : std_logic                     := '0';
 
-  signal OUT_QPLL_LOCKED : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_QPLL_LOCKED   : std_logic                     := '0';
+  signal out_qpll_locked : std_logic_vector(15 downto 0) := (others => '0');
+  signal r_qpll_locked   : std_logic                     := '0';
+
+  signal raw_odmb_ctrl_inner, odmb_ctrl_en   : std_logic_vector(15 downto 0) := (others => '0');
+  signal raw_dcfeb_ctrl_inner, dcfeb_ctrl_en : std_logic_vector(15 downto 0) := (others => '0');
+
+  signal out_odmb_cal           : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_odmb_cal, r_odmb_cal : std_logic                     := '0';
+
+  signal w_odmb_rst : std_logic := '0';
+
+  signal out_mux_data_path                : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_mux_data_path, r_mux_data_path : std_logic                     := '0';
+
+  signal out_mux_lvmb           : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_mux_lvmb, r_mux_lvmb : std_logic                     := '0';
+
+  signal out_mux_trigger              : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_mux_trigger, r_mux_trigger : std_logic                     := '0';
+
+  signal out_kill_l1a           : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_kill_l1a, r_kill_l1a : std_logic                     := '0';
+
+  signal out_odmb_ped           : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_odmb_ped, r_odmb_ped : std_logic                     := '0';
+
+  signal out_cal_ped                          : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_cal_ped, r_cal_ped, test_ped_inner : std_logic                     := '0';
+
+  signal w_dcfeb_reprog  : std_logic := '0';
+  signal w_dcfeb_resync  : std_logic := '0';
+  signal w_dcfeb_pulse   : std_logic := '0';
+  signal w_opt_rst : std_logic := '0';
 
 begin
 
 -- generate CMDHIGH / generate WRITECTRL / generate READCTRL / generate READDATA
-  CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input  
+-- Variable that looks like the VME commands we input
+  cmddev <= unsigned(DEVICE & COMMAND & "00");
 
-  W_ODMB_CTRL  <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
-  R_ODMB_CTRL  <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
-  W_DCFEB_CTRL <= '1' when (CMDDEV = x"1010" and WRITER = '0') else '0';
-  R_DCFEB_CTRL <= '1' when (CMDDEV = x"1010" and WRITER = '1') else '0';
-  W_TP_SEL     <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
-  R_TP_SEL     <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
+  w_odmb_cal <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
+  r_odmb_cal <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
 
-  W_LOOPBACK    <= '1' when (CMDDEV = x"1100" and WRITER = '0') else '0';
-  R_LOOPBACK    <= '1' when (CMDDEV = x"1100" and WRITER = '1') else '0';
-  W_TXDIFFCTRL  <= '1' when (CMDDEV = x"1110" and WRITER = '0') else '0';
-  R_TXDIFFCTRL  <= '1' when (CMDDEV = x"1110" and WRITER = '1') else '0';
-  R_DCFEB_DONE  <= '1' when (CMDDEV = x"1120" and WRITER = '1') else '0';
-  R_QPLL_LOCKED <= '1' when (CMDDEV = x"1124" and WRITER = '1') else '0';
+  w_odmb_rst     <= '1' when (CMDDEV = x"1004" and WRITER = '0' and STROBE = '1') else '0';
+  w_opt_rst      <= '1' when (CMDDEV = x"1008" and WRITER = '0' and STROBE = '1') else '0';
+  w_dcfeb_reprog <= '1' when (CMDDEV = x"1010" and WRITER = '0' and STROBE = '1') else '0';
+  w_dcfeb_resync <= '1' when (CMDDEV = x"1014" and WRITER = '0' and STROBE = '1') else '0';
 
-  R_ODMB_DATA               <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
-  ODMB_DATA_SEL(7 downto 0) <= COMMAND(9 downto 2);
+  w_tp_sel <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
+  r_tp_sel <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
 
+  w_loopback    <= '1' when (CMDDEV = x"1100" and WRITER = '0') else '0';
+  r_loopback    <= '1' when (CMDDEV = x"1100" and WRITER = '1') else '0';
+  w_txdiffctrl  <= '1' when (CMDDEV = x"1110" and WRITER = '0') else '0';
+  r_txdiffctrl  <= '1' when (CMDDEV = x"1110" and WRITER = '1') else '0';
+  r_dcfeb_done  <= '1' when (CMDDEV = x"1120" and WRITER = '1') else '0';
+  r_qpll_locked <= '1' when (CMDDEV = x"1124" and WRITER = '1') else '0';
+
+  w_dcfeb_pulse <= '1' when (CMDDEV = x"1200" and WRITER = '0') else '0';
+
+  w_mux_data_path <= '1' when (CMDDEV = x"1300" and WRITER = '0') else '0';
+  r_mux_data_path <= '1' when (CMDDEV = x"1300" and WRITER = '1') else '0';
+  w_mux_trigger   <= '1' when (CMDDEV = x"1304" and WRITER = '0') else '0';
+  r_mux_trigger   <= '1' when (CMDDEV = x"1304" and WRITER = '1') else '0';
+  w_mux_lvmb      <= '1' when (CMDDEV = x"1308" and WRITER = '0') else '0';
+  r_mux_lvmb      <= '1' when (CMDDEV = x"1308" and WRITER = '1') else '0';
+
+  w_odmb_ped <= '1' when (CMDDEV = x"1400" and WRITER = '0') else '0';
+  r_odmb_ped <= '1' when (CMDDEV = x"1400" and WRITER = '1') else '0';
+  w_cal_ped  <= '1' when (CMDDEV = x"1404" and WRITER = '0') else '0';
+  r_cal_ped  <= '1' when (CMDDEV = x"1404" and WRITER = '1') else '0';
+  w_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '0') else '0';
+  r_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '1') else '0';
+
+  r_odmb_data <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C")
+                 else '0';
+  odmb_data_sel(7 downto 0) <= COMMAND(9 downto 2);
 
 -- Write TP_SEL
   GEN_TP_SEL : for I in 15 downto 0 generate
@@ -131,81 +188,139 @@ begin
   TP_SEL <= TP_SEL_INNER;
 
 -- Read TP_SEL
-  OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when (STROBE = '1' and R_TP_SEL = '1') else (others => 'Z');
+  OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when (STROBE = '1' and R_TP_SEL = '1')
+                             else (others => 'Z');
+
+  odmb_rst <= (8 => reset_rst, others => RST);
+
+  raw_odmb_ctrl_inner(5 downto 0)   <= INDATA(5 downto 0);
+  raw_odmb_ctrl_inner(6)            <= INDATA(0);
+  raw_odmb_ctrl_inner(7)            <= INDATA(0);
+  raw_odmb_ctrl_inner(8)            <= INDATA(0);
+  raw_odmb_ctrl_inner(9)            <= INDATA(0);
+  raw_odmb_ctrl_inner(10)           <= INDATA(0);
+  raw_odmb_ctrl_inner(12 downto 11) <= INDATA(1 downto 0);
+  raw_odmb_ctrl_inner(14 downto 13) <= INDATA(1 downto 0);
+  raw_odmb_ctrl_inner(15)           <= '0';
+  odmb_ctrl_en(5 downto 0)          <= (others => w_odmb_cal);
+  odmb_ctrl_en(6)                   <= '0';
+  odmb_ctrl_en(7)                   <= w_mux_data_path;
+  odmb_ctrl_en(8)                   <= w_odmb_rst;
+  odmb_ctrl_en(9)                   <= w_mux_trigger;
+  odmb_ctrl_en(10)                  <= w_mux_lvmb;
+  odmb_ctrl_en(12 downto 11)        <= (others => w_kill_l1a);
+  odmb_ctrl_en(14 downto 13)        <= (others => w_odmb_ped);
+  odmb_ctrl_en(15)                  <= '0';
+
+  PLS_FWRESET  : PULSE_EDGE port map(FW_RESET, open, slowclk, RST, 2, w_odmb_rst);
+  PLS_OPTRESET : PULSE_EDGE port map(OPT_RESET_PULSE, open, clk40, RST, 1, w_opt_rst);
+  PLS_L1ARESET : PULSE_EDGE port map(L1A_RESET_PULSE, open, clk40, RST, 1, w_dcfeb_resync);
+  PLS_REPROG   : PULSE_EDGE port map(reprog, open, slowclk, RST, 2, w_dcfeb_reprog);
+  REPROG_B <= not reprog;
+
+  FD_CALPED : FDCE port map(test_ped_inner, STROBE, w_cal_ped, RST, INDATA(0));
 
   GEN_ODMB_CTRL : for K in 0 to 15 generate
   begin
-    ODMB_RST(K) <= RESET_RST when K = 8 else
-                   RST;
-    ODMB_CTRL_K : FDCE port map (ODMB_CTRL_INNER(K), STROBE, W_ODMB_CTRL, ODMB_RST(K), INDATA(K));
+    ODMB_CTRL_K : FDCE port map (odmb_ctrl_inner(K), STROBE, odmb_ctrl_en(k),
+                                 odmb_rst(K), raw_odmb_ctrl_inner(K));
   end generate GEN_ODMB_CTRL;
-  PULSE_RESET : PULSE_EDGE port map(fw_reset, reset_rst, slowclk, rst, 2, odmb_ctrl_inner(8));
-  ODMB_CTRL <= ODMB_CTRL_INNER;
+  ODMB_CTRL <= odmb_ctrl_inner;
 
+  dcfeb_rst <= RST & RST & RST & RST & RST & RST & RST & test_bc0_rst
+               & opt_reset_pulse_rst & ext_trig_rst & lct_rqst_rst & test_lct_rst
+               & test_pls_rst & test_inj_rst & resync_rst & reprog_rst;
+
+  raw_dcfeb_ctrl_inner(0)            <= INDATA(0);
+  raw_dcfeb_ctrl_inner(1)            <= INDATA(0);
+  raw_dcfeb_ctrl_inner(6 downto 2)   <= INDATA(4 downto 0);
+  raw_dcfeb_ctrl_inner(7)            <= INDATA(0);
+  raw_dcfeb_ctrl_inner(9 downto 8)   <= INDATA(6 downto 5);
+  raw_dcfeb_ctrl_inner(15 downto 10) <= (others => '0');
+  dcfeb_ctrl_en(0)                   <= w_dcfeb_reprog;
+  dcfeb_ctrl_en(1)                   <= w_dcfeb_resync;
+  dcfeb_ctrl_en(6 downto 2)          <= (others => w_dcfeb_pulse);
+  dcfeb_ctrl_en(7)                   <= w_opt_rst;
+  dcfeb_ctrl_en(9 downto 8)          <= (others => w_dcfeb_pulse);
+  dcfeb_ctrl_en(15 downto 10)        <= (others => '0');
 
   GEN_DCFEB_CTRL : for K in 0 to 15 generate
   begin
-    DCFEB_RST(K) <= REPROG_RST when K = 0 else
-                    RESYNC_RST          when K = 1 else
-                    TEST_INJ_RST        when K = 2 else
-                    TEST_PLS_RST        when K = 3 else
-                    TEST_LCT_RST        when K = 4 else
-                    LCT_RQST_RST        when K = 5 else
-                    EXT_TRIG_RST        when K = 6 else
-                    OPT_RESET_PULSE_RST when K = 7 else
-                    RST;
-    ODMB_DCFEB_K : FDCE port map (DCFEB_CTRL_INNER(K), STROBE, W_DCFEB_CTRL, DCFEB_RST(K), INDATA(K));
+    ODMB_DCFEB_K : FDCE port map (dcfeb_ctrl_inner(K), STROBE, dcfeb_ctrl_en(k),
+                                  dcfeb_rst(K), raw_dcfeb_ctrl_inner(K));
   end generate GEN_DCFEB_CTRL;
-  PULSE_REPROG : PULSE_EDGE port map(reprog, reprog_rst, slowclk, rst, 2, dcfeb_ctrl_inner(0));
-  PULSE_RESYNC : PULSE_EDGE port map(l1a_reset_pulse, resync_rst, clk40, '0', 1, dcfeb_ctrl_inner(1));
-  PULSE_INJ    : PULSE_EDGE port map(test_inj, test_inj_rst, slowclk, rst, 2, dcfeb_ctrl_inner(2));
-  PULSE_PLS    : PULSE_EDGE port map(test_pls, test_pls_rst, slowclk, rst, 2, dcfeb_ctrl_inner(3));
-  PULSE_L1A    : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1, dcfeb_ctrl_inner(4));
-  PULSE_LCT    : PULSE_EDGE port map(otmb_lct_rqst, lct_rqst_rst, clk40, rst, 1, dcfeb_ctrl_inner(5));
-  PULSE_EXT    : PULSE_EDGE port map(otmb_ext_trig, ext_trig_rst, clk40, rst, 1, dcfeb_ctrl_inner(6));
-  PULSE_OPT    : PULSE_EDGE port map(opt_reset_pulse, opt_reset_pulse_rst, clk40, rst, 1, dcfeb_ctrl_inner(7));
-  REPROG_B   <= not REPROG;
-  DCFEB_CTRL <= DCFEB_CTRL_INNER;
+  PULSE_INJ : PULSE_EDGE port map(test_inj, test_inj_rst, slowclk, rst, 2,
+                                  dcfeb_ctrl_inner(2));
+  PULSE_PLS : PULSE_EDGE port map(test_pls, test_pls_rst, slowclk, rst, 2,
+                                  dcfeb_ctrl_inner(3));
+  PULSE_L1A : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1,
+                                  dcfeb_ctrl_inner(4));
+  PULSE_LCT : PULSE_EDGE port map(otmb_lct_rqst, lct_rqst_rst, clk40, rst, 1,
+                                  dcfeb_ctrl_inner(5));
+  PULSE_EXT : PULSE_EDGE port map(otmb_ext_trig, ext_trig_rst, clk40, rst, 1,
+                                  dcfeb_ctrl_inner(6));
+  PULSE_BC0 : PULSE_EDGE port map(test_bc0, test_bc0_rst, clk40, rst, 1,
+                                  dcfeb_ctrl_inner(8));
 
-  test_ped <= dcfeb_ctrl_inner(9);
+  DCFEB_CTRL <= dcfeb_ctrl_inner;
 
 -- Write LOOPBACK
   GEN_LOOPBACK : for I in 2 downto 0 generate
   begin
-    FD_W_LOOPBACK : FDCE port map(LOOPBACK_INNER(I), STROBE, W_LOOPBACK, RST, INDATA(I));
+    FD_W_LOOPBACK : FDCE port map(loopback_inner(I), STROBE, w_loopback,
+                                  RST, INDATA(I));
   end generate GEN_LOOPBACK;
-  LOOPBACK <= LOOPBACK_INNER;
+  LOOPBACK <= loopback_inner;
 
 -- Read LOOPBACK
-  OUT_LOOPBACK(15 downto 3) <= (others => '0');
-  OUT_LOOPBACK(2 downto 0)  <= LOOPBACK_INNER when (STROBE = '1' and R_LOOPBACK = '1') else
-                               (others => 'Z');
+  out_loopback(15 downto 3) <= (others => '0');
+  out_loopback(2 downto 0)  <= loopback_inner when (STROBE = '1' and r_loopback = '1')
+                               else (others => 'Z');
 
 -- Write TXDIFFCTRL
   GEN_TXDIFFCTRL : for I in 3 downto 0 generate
   begin
-    FD_W_TXDIFFCTRL : FDCE port map(TXDIFFCTRL_INNER(I), STROBE, W_TXDIFFCTRL, RST, INDATA(I));
+    FD_W_TXDIFFCTRL : FDCE port map(txdiffctrl_inner(I), STROBE, w_txdiffctrl,
+                                    RST, INDATA(I));
   end generate GEN_TXDIFFCTRL;
-  TXDIFFCTRL <= TXDIFFCTRL_INNER;
+  TXDIFFCTRL <= txdiffctrl_inner;
 
 -- Read TXDIFFCTRL
-  OUT_TXDIFFCTRL(15 downto 4) <= (others => '0');
-  OUT_TXDIFFCTRL(3 downto 0) <= TXDIFFCTRL_INNER when (STROBE = '1' and R_TXDIFFCTRL = '1') else (others => 'Z');
+  out_txdiffctrl(15 downto 4) <= (others => '0');
+  out_txdiffctrl(3 downto 0)  <= txdiffctrl_inner
+                                 when (STROBE = '1' and r_txdiffctrl = '1')
+                                 else (others => 'Z');
 
 -- Read DCFEB_DONE
-  OUT_DCFEB_DONE <= x"00" & '0' & DCFEB_DONE when (STROBE = '1' and R_DCFEB_DONE = '1') else (others => 'Z');
+  out_dcfeb_done <= x"00" & '0' & dcfeb_done when (STROBE = '1' and r_dcfeb_done = '1')
+                    else (others => 'Z');
 
 -- Read QPLL_LOCKED
-  OUT_QPLL_LOCKED <= x"000" & "000" & QPLL_LOCKED when (STROBE = '1' and R_QPLL_LOCKED = '1') else (others => 'Z');
+  out_qpll_locked <= x"000" & "000" & qpll_locked
+                     when (STROBE = '1' and r_qpll_locked = '1')
+                     else (others => 'Z');
 
-  OUTDATA <= ODMB_CTRL_INNER when (R_ODMB_CTRL = '1') else
-             DCFEB_CTRL_INNER when (R_DCFEB_CTRL = '1') else
-             OUT_TP_SEL       when (R_TP_SEL = '1') else
-             OUT_LOOPBACK     when (R_LOOPBACK = '1') else
-             OUT_TXDIFFCTRL   when (R_TXDIFFCTRL = '1') else
-             OUT_DCFEB_DONE   when (R_DCFEB_DONE = '1') else
-             OUT_QPLL_LOCKED  when (R_QPLL_LOCKED = '1') else
-             ODMB_DATA        when (R_ODMB_DATA = '1') else
+  out_odmb_cal      <= "00" & x"00" & odmb_ctrl_inner(5 downto 0);
+  out_mux_data_path <= "000" & x"000" & odmb_ctrl_inner(7);
+  out_mux_trigger   <= "000" & x"000" & odmb_ctrl_inner(9);
+  out_mux_lvmb      <= "000" & x"000" & odmb_ctrl_inner(10);
+  out_kill_l1a      <= "00" & x"000" & odmb_ctrl_inner(12 downto 11);
+  out_odmb_ped      <= "00" & x"000" & odmb_ctrl_inner(14 downto 13);
+  out_cal_ped       <= "000" & x"000" & test_ped_inner;
+
+  OUTDATA <= out_odmb_cal when (r_odmb_cal = '1') else
+             out_mux_data_path when (r_mux_data_path = '1') else
+             out_mux_trigger   when (r_mux_trigger = '1')   else
+             out_mux_lvmb      when (r_mux_lvmb = '1')      else
+             out_kill_l1a      when (r_kill_l1a = '1')      else
+             out_odmb_ped      when (r_odmb_ped = '1')      else
+             out_cal_ped       when (r_cal_ped = '1')       else
+             out_tp_sel        when (r_tp_sel = '1')        else
+             out_loopback      when (r_loopback = '1')      else
+             out_txdiffctrl    when (r_txdiffctrl = '1')    else
+             out_dcfeb_done    when (r_dcfeb_done = '1')    else
+             out_qpll_locked   when (r_qpll_locked = '1')   else
+             odmb_data         when (r_odmb_data = '1')     else
              (others => 'L');
 
   -- DTACK

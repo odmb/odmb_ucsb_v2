@@ -568,39 +568,39 @@ begin
   end process;
 
 -- Chip ScopePro ILA core
-  csp_systemtest_la_pm : csp_systemtest_la
-    port map (
-      CONTROL => CSP_FREE_AGENT_PORT_LA_CTRL,
-      CLK     => CLK,                   -- Good ol' 40MHz clock here
-      DATA    => free_agent_la_data,
-      TRIG0   => free_agent_la_trig
-      );
+  --csp_systemtest_la_pm : csp_systemtest_la
+  --  port map (
+  --    CONTROL => CSP_FREE_AGENT_PORT_LA_CTRL,
+  --    CLK     => CLK,                   -- Good ol' 40MHz clock here
+  --    DATA    => free_agent_la_data,
+  --    TRIG0   => free_agent_la_trig
+  --    );
 
-  free_agent_la_trig <= std_logic_vector(to_unsigned(wr_addr_out, 4)) &
-                        std_logic_vector(to_unsigned(rd_addr_out, 4));
-  free_agent_la_data <= l1acnt_dav_fifo_out(1)(4 downto 0)           -- [199:195]
-                        --& timeout_state_9  -- [196:195]                        
-                        & wait_cnt_en(9) & wait_cnt_rst(9)  -- [194:193]                        
-                        & l1a_dav_en(9) & l1acnt_dav_fifo_rd_en(9)  -- [192:191]                        
-                        & lost_pckt_en(9) & timeout_cnt_en(1) & timeout_cnt_rst(9)  -- [190:188]          
-                        & timeout_state_1  -- [187:186]                        
-                        & wait_cnt_en(1) & wait_cnt_rst(1)  -- [185:184]                        
-                        & l1a_dav_en(1) & l1acnt_dav_fifo_rd_en(1)  -- [183:182]                        
-                        & lost_pckt_en(1) & timeout_cnt_en(1) & timeout_cnt_rst(1)  -- [181:179]          
-                        & lost_pckt(csp3) & lost_pckt(csp2)  -- [178:161]                        
-                        & lost_pckt(csp1) & lost_pckt(rd_addr_out)  -- [160:143]                        
-                        & l1a_dav(csp3) & l1a_dav(csp2)  -- [142:125]                        
-                        & l1a_dav(csp1) & l1a_dav(rd_addr_out)  -- [124:107]                        
-                        & l1a_match(csp3) & l1a_match(csp2)  -- [106:89]                        
-                        & l1a_match(csp1) & l1a_match(rd_addr_out)  -- [88:71]                        
-                        & l1a_cnt(csp3)(3 downto 0) & l1a_cnt(csp2)(3 downto 0)  -- [70:63]                        
-                        & l1a_cnt(csp1)(3 downto 0) & l1a_cnt(rd_addr_out)(3 downto 0)  -- [62:55]       
-                        & EOF_DATA      -- [54:46]                        
-                        & ALCT_DV & OTMB_DV & dcfeb_dv  -- [45:37]                        
-                        & DCFEB0_DATA   -- [36:21]                        
-                        & L1A_MATCH_IN & L1A & POP     -- [20:10]
-                        & std_logic_vector(to_unsigned(wr_addr_out, 5))  -- [9:5]
-                        & std_logic_vector(to_unsigned(rd_addr_out, 5));  -- [4:0]
+  --free_agent_la_trig <= std_logic_vector(to_unsigned(wr_addr_out, 4)) &
+  --                      std_logic_vector(to_unsigned(rd_addr_out, 4));
+  --free_agent_la_data <= l1acnt_dav_fifo_out(1)(4 downto 0)           -- [199:195]
+  --                      --& timeout_state_9  -- [196:195]                        
+  --                      & wait_cnt_en(9) & wait_cnt_rst(9)  -- [194:193]                        
+  --                      & l1a_dav_en(9) & l1acnt_dav_fifo_rd_en(9)  -- [192:191]                        
+  --                      & lost_pckt_en(9) & timeout_cnt_en(1) & timeout_cnt_rst(9)  -- [190:188]          
+  --                      & timeout_state_1  -- [187:186]                        
+  --                      & wait_cnt_en(1) & wait_cnt_rst(1)  -- [185:184]                        
+  --                      & l1a_dav_en(1) & l1acnt_dav_fifo_rd_en(1)  -- [183:182]                        
+  --                      & lost_pckt_en(1) & timeout_cnt_en(1) & timeout_cnt_rst(1)  -- [181:179]          
+  --                      & lost_pckt(csp3) & lost_pckt(csp2)  -- [178:161]                        
+  --                      & lost_pckt(csp1) & lost_pckt(rd_addr_out)  -- [160:143]                        
+  --                      & l1a_dav(csp3) & l1a_dav(csp2)  -- [142:125]                        
+  --                      & l1a_dav(csp1) & l1a_dav(rd_addr_out)  -- [124:107]                        
+  --                      & l1a_match(csp3) & l1a_match(csp2)  -- [106:89]                        
+  --                      & l1a_match(csp1) & l1a_match(rd_addr_out)  -- [88:71]                        
+  --                      & l1a_cnt(csp3)(3 downto 0) & l1a_cnt(csp2)(3 downto 0)  -- [70:63]                        
+  --                      & l1a_cnt(csp1)(3 downto 0) & l1a_cnt(rd_addr_out)(3 downto 0)  -- [62:55]       
+  --                      & EOF_DATA      -- [54:46]                        
+  --                      & ALCT_DV & OTMB_DV & dcfeb_dv  -- [45:37]                        
+  --                      & DCFEB0_DATA   -- [36:21]                        
+  --                      & L1A_MATCH_IN & L1A & POP     -- [20:10]
+  --                      & std_logic_vector(to_unsigned(wr_addr_out, 5))  -- [9:5]
+  --                      & std_logic_vector(to_unsigned(rd_addr_out, 5));  -- [4:0]
   
 
 end cafifo_architecture;

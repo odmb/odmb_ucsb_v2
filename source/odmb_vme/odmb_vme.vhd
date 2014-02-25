@@ -22,7 +22,7 @@ use work.ucsb_types.all;
 entity ODMB_VME is
   generic (
     NREGS  : integer := 16;             -- Number of Configuration registers
-    NCONST : integer := 16;              -- Number of Protected registers
+    NCONST : integer := 16;             -- Number of Protected registers
     NFEB   : integer := 7               -- Number of DCFEBS
     );  
   port (
@@ -111,6 +111,7 @@ entity ODMB_VME is
     TEST_INJ        : out std_logic;
     TEST_PLS        : out std_logic;
     TEST_PED        : out std_logic;
+    TEST_BC0        : out std_logic;
     TEST_LCT        : out std_logic;
     OTMB_LCT_RQST   : out std_logic;
     OTMB_EXT_TRIG   : out std_logic;
@@ -352,6 +353,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       TEST_INJ        : out std_logic;
       TEST_PLS        : out std_logic;
       TEST_PED        : out std_logic;
+      TEST_BC0        : out std_logic;
       TEST_LCT        : out std_logic;
       OTMB_LCT_RQST   : out std_logic;
       OTMB_EXT_TRIG   : out std_logic;
@@ -370,7 +372,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
   component VMECONFREGS is
     generic (
       NREGS  : integer := 16;           -- Number of Configuration registers
-      NCONST : integer := 16;            -- Number of Protected registers
+      NCONST : integer := 16;           -- Number of Protected registers
       NFEB   : integer := 7             -- Number of DCFEBs
       );    
     port (
@@ -390,8 +392,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
 -- Configuration registers    
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
-    OTMB_PUSH_DLY : out integer range 0 to 63;
-    ALCT_PUSH_DLY : out integer range 0 to 63;
+      OTMB_PUSH_DLY : out integer range 0 to 63;
+      ALCT_PUSH_DLY : out integer range 0 to 63;
 
       INJ_DLY    : out std_logic_vector(4 downto 0);
       EXT_DLY    : out std_logic_vector(4 downto 0);
@@ -740,7 +742,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
 
   signal dtack_dev      : std_logic_vector(9 downto 0);
-  type dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
+  type   dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
   signal dev_outdata    : dev_array;
   signal device_index   : integer range 0 to 15;
   signal cmd_adrs_inner : std_logic_vector(17 downto 2);
@@ -857,6 +859,7 @@ begin
       TEST_INJ        => test_inj,
       TEST_PLS        => test_pls,
       TEST_PED        => test_ped,
+      TEST_BC0        => test_bc0,
       TEST_LCT        => test_lct,
       OTMB_LCT_RQST   => otmb_lct_rqst,
       OTMB_EXT_TRIG   => otmb_ext_trig,
@@ -890,7 +893,7 @@ begin
         INDATA  => VME_DATA_IN,
         OUTDATA => DEV_OUTDATA(4),
 
-        DTACK         => DTACK_DEV(4),
+        DTACK => DTACK_DEV(4),
 
         LCT_L1A_DLY   => LCT_L1A_DLY,
         OTMB_PUSH_DLY => OTMB_PUSH_DLY,
@@ -1228,7 +1231,7 @@ begin
   ext_vme_ga      <= vme_gap & vme_ga;
 
 -- To LVMB: V2 default low, V3 default high
-  PON_OE_B <= '0' when (odmb_id_inner(15 downto 12) /= x"3" and odmb_id_inner(15 downto 12) /= x"4") else '1';  
+  PON_OE_B    <= '0' when (odmb_id_inner(15 downto 12) /= x"3" and odmb_id_inner(15 downto 12) /= x"4") else '1';
   VME_DTACK_B <= not or_reduce(dtack_dev);
 
 

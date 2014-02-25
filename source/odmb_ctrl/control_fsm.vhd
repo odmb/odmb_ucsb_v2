@@ -409,8 +409,8 @@ begin
   tail_word(3) <= x"F" & data_fifo_full(3 downto 1) & cafifo_lost_pckt(8) & dmb_l1pipe;
   tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1)
                   & data_fifo_full(7 downto 4);
-  tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & FIFO_HALF_FULL(NFEB+2 downto NFEB+1)
-                  & otmb_to_end & FIFO_HALF_FULL(NFEB downto 1);
+  tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & not FIFO_HALF_FULL(NFEB+2 downto NFEB+1)
+                  & otmb_to_end & not FIFO_HALF_FULL(NFEB downto 1);
   tail_word(6) <= x"E" & DAQMBID(11 downto 0);
   tail_word(7) <= x"E" & REG_CRC(22) & REG_CRC(10 downto 0);
   tail_word(8) <= x"E" & REG_CRC(23) & REG_CRC(21 downto 11);
