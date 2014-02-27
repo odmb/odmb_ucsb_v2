@@ -118,7 +118,6 @@ entity ODMB_VME is
 
     tp_sel        : out std_logic_vector(15 downto 0);
     odmb_ctrl     : out std_logic_vector(15 downto 0);
-    dcfeb_ctrl    : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
     odmb_data     : in  std_logic_vector(15 downto 0);
     TXDIFFCTRL    : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
@@ -360,7 +359,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       TP_SEL        : out std_logic_vector(15 downto 0);
       ODMB_CTRL     : out std_logic_vector(15 downto 0);
-      DCFEB_CTRL    : out std_logic_vector(15 downto 0);
       ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
       ODMB_DATA     : in  std_logic_vector(15 downto 0);
       TXDIFFCTRL    : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
@@ -866,7 +864,6 @@ begin
 
       TP_SEL        => tp_sel,
       ODMB_CTRL     => odmb_ctrl,
-      DCFEB_CTRL    => dcfeb_ctrl,
       ODMB_DATA_SEL => odmb_data_sel,
       ODMB_DATA     => odmb_data,
       TXDIFFCTRL    => txdiffctrl,      -- Controls the TX voltage swing
@@ -1040,7 +1037,7 @@ begin
     port map(
       CSP_LVMB_LA_CTRL => CSP_LVMB_LA_CTRL,
 
-      SLOWCLK   => clk_s2,
+      SLOWCLK   => clk_s3,
       RST       => rst,
       PON_RESET => pon_reset,
 

@@ -327,7 +327,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       tp_sel        : out std_logic_vector(15 downto 0);
       odmb_ctrl     : out std_logic_vector(15 downto 0);
-      dcfeb_ctrl    : out std_logic_vector(15 downto 0);
       odmb_data_sel : out std_logic_vector(7 downto 0);
       odmb_data     : in  std_logic_vector(15 downto 0);
       TXDIFFCTRL    : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
@@ -1024,7 +1023,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   signal tp_sel_reg               : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg            : std_logic_vector(15 downto 0) := (others => '0');
-  signal dcfeb_ctrl_reg           : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_data_sel            : std_logic_vector(7 downto 0);
   signal odmb_data                : std_logic_vector(15 downto 0);
   signal mask_l1a, mask_l1a_match : std_logic                     := '0';
@@ -1441,7 +1439,6 @@ begin
 
       tp_sel        => tp_sel_reg,
       odmb_ctrl     => odmb_ctrl_reg,
-      dcfeb_ctrl    => dcfeb_ctrl_reg,
       odmb_data_sel => odmb_data_sel,
       odmb_data     => odmb_data,
       TXDIFFCTRL    => txdiffctrl,
@@ -2654,7 +2651,7 @@ begin
 
   odmb_status <= x"00" & "000" & orx_sd & vme_berr_b & qpll_error & QPLL_LOCKED & DONE_IN;
 
-  odmb_status_pro : process (odmb_status, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
+  odmb_status_pro : process (odmb_status, odmb_ctrl_reg, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
                              l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
                              data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, goodcrc_cnt,
                              alct_dav_cnt, otmb_dav_cnt)
@@ -2663,7 +2660,7 @@ begin
     case odmb_data_sel is
 
       when x"00" => odmb_data <= odmb_status;
-      when x"01" => odmb_data <= x"0000";
+      when x"01" => odmb_data <= odmb_ctrl_reg;
       when x"02" => odmb_data <= x"0000";
       when x"03" => odmb_data <= x"0000";
 

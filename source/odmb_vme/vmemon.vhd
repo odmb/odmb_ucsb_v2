@@ -44,7 +44,6 @@ entity VMEMON is
 
     TP_SEL        : out std_logic_vector(15 downto 0);
     ODMB_CTRL     : out std_logic_vector(15 downto 0);
-    DCFEB_CTRL    : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
     ODMB_DATA     : in  std_logic_vector(15 downto 0);
     TXDIFFCTRL    : out std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
@@ -74,13 +73,12 @@ architecture VMEMON_Arch of VMEMON is
   signal r_odmb_data : std_logic;
 
   signal odmb_ctrl_inner  : std_logic_vector(15 downto 0) := (others => '0');
-  signal dcfeb_ctrl_inner : std_logic_vector(15 downto 0) := (others => '0');
 
   signal out_tp_sel, tp_sel_inner : std_logic_vector(15 downto 0) := (others => '0');
   signal w_tp_sel                 : std_logic                     := '0';
   signal r_tp_sel                 : std_logic                     := '0';
 
-  signal odmb_rst, dcfeb_rst        : std_logic_vector(15 downto 0) := (others => '0');
+  signal odmb_rst        : std_logic_vector(15 downto 0) := (others => '0');
   signal test_inj_rst, test_pls_rst : std_logic                     := '0';
   signal resync_rst, reprog_rst     : std_logic                     := '0';
   signal lct_rqst_rst, ext_trig_rst : std_logic                     := '0';
@@ -106,7 +104,6 @@ architecture VMEMON_Arch of VMEMON is
   signal r_qpll_locked   : std_logic                     := '0';
 
   signal raw_odmb_ctrl_inner, odmb_ctrl_en   : std_logic_vector(15 downto 0) := (others => '0');
-  signal raw_dcfeb_ctrl_inner, dcfeb_ctrl_en : std_logic_vector(15 downto 0) := (others => '0');
 
   signal out_odmb_cal           : std_logic_vector(15 downto 0) := (others => '0');
   signal w_odmb_cal, r_odmb_cal : std_logic                     := '0';
@@ -131,15 +128,17 @@ architecture VMEMON_Arch of VMEMON is
   signal out_cal_ped                          : std_logic_vector(15 downto 0) := (others => '0');
   signal w_cal_ped, r_cal_ped, test_ped_inner : std_logic                     := '0';
 
+  signal w_dcfeb_pulse   : std_logic := '0';
+  signal dcfeb_pulse                          : std_logic_vector(5 downto 0) := (others => '0');
+
+
   signal w_dcfeb_reprog  : std_logic := '0';
   signal w_dcfeb_resync  : std_logic := '0';
-  signal w_dcfeb_pulse   : std_logic := '0';
   signal w_opt_rst : std_logic := '0';
 
 begin
 
--- generate CMDHIGH / generate WRITECTRL / generate READCTRL / generate READDATA
--- Variable that looks like the VME commands we input
+-- CMDDEV: Variable that looks like the VME commands we input
   cmddev <= unsigned(DEVICE & COMMAND & "00");
 
   w_odmb_cal <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
@@ -176,20 +175,15 @@ begin
   w_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '0') else '0';
   r_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '1') else '0';
 
-  r_odmb_data <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C")
-                 else '0';
+  r_odmb_data <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
   odmb_data_sel(7 downto 0) <= COMMAND(9 downto 2);
 
--- Write TP_SEL
-  GEN_TP_SEL : for I in 15 downto 0 generate
-  begin
-    FD_W_TP_SEL : FDCE port map(TP_SEL_INNER(I), STROBE, W_TP_SEL, RST, INDATA(I));
-  end generate GEN_TP_SEL;
-  TP_SEL <= TP_SEL_INNER;
-
--- Read TP_SEL
-  OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when (STROBE = '1' and R_TP_SEL = '1')
-                             else (others => 'Z');
+-- Resets
+  PLS_FWRESET  : PULSE_EDGE port map(FW_RESET, open, slowclk, RST, 2, w_odmb_rst);
+  PLS_OPTRESET : PULSE_EDGE port map(OPT_RESET_PULSE, open, clk40, RST, 1, w_opt_rst);
+  PLS_L1ARESET : PULSE_EDGE port map(L1A_RESET_PULSE, open, clk40, RST, 1, w_dcfeb_resync);
+  PLS_REPROG   : PULSE_EDGE port map(reprog, open, slowclk, RST, 2, w_dcfeb_reprog);
+  REPROG_B <= not reprog;
 
   odmb_rst <= (8 => reset_rst, others => RST);
 
@@ -212,12 +206,6 @@ begin
   odmb_ctrl_en(14 downto 13)        <= (others => w_odmb_ped);
   odmb_ctrl_en(15)                  <= '0';
 
-  PLS_FWRESET  : PULSE_EDGE port map(FW_RESET, open, slowclk, RST, 2, w_odmb_rst);
-  PLS_OPTRESET : PULSE_EDGE port map(OPT_RESET_PULSE, open, clk40, RST, 1, w_opt_rst);
-  PLS_L1ARESET : PULSE_EDGE port map(L1A_RESET_PULSE, open, clk40, RST, 1, w_dcfeb_resync);
-  PLS_REPROG   : PULSE_EDGE port map(reprog, open, slowclk, RST, 2, w_dcfeb_reprog);
-  REPROG_B <= not reprog;
-
   FD_CALPED : FDCE port map(test_ped_inner, STROBE, w_cal_ped, RST, INDATA(0));
 
   GEN_ODMB_CTRL : for K in 0 to 15 generate
@@ -227,42 +215,34 @@ begin
   end generate GEN_ODMB_CTRL;
   ODMB_CTRL <= odmb_ctrl_inner;
 
-  dcfeb_rst <= RST & RST & RST & RST & RST & RST & RST & test_bc0_rst
-               & opt_reset_pulse_rst & ext_trig_rst & lct_rqst_rst & test_lct_rst
-               & test_pls_rst & test_inj_rst & resync_rst & reprog_rst;
-
-  raw_dcfeb_ctrl_inner(0)            <= INDATA(0);
-  raw_dcfeb_ctrl_inner(1)            <= INDATA(0);
-  raw_dcfeb_ctrl_inner(6 downto 2)   <= INDATA(4 downto 0);
-  raw_dcfeb_ctrl_inner(7)            <= INDATA(0);
-  raw_dcfeb_ctrl_inner(9 downto 8)   <= INDATA(6 downto 5);
-  raw_dcfeb_ctrl_inner(15 downto 10) <= (others => '0');
-  dcfeb_ctrl_en(0)                   <= w_dcfeb_reprog;
-  dcfeb_ctrl_en(1)                   <= w_dcfeb_resync;
-  dcfeb_ctrl_en(6 downto 2)          <= (others => w_dcfeb_pulse);
-  dcfeb_ctrl_en(7)                   <= w_opt_rst;
-  dcfeb_ctrl_en(9 downto 8)          <= (others => w_dcfeb_pulse);
-  dcfeb_ctrl_en(15 downto 10)        <= (others => '0');
-
-  GEN_DCFEB_CTRL : for K in 0 to 15 generate
+-- DCFEB pulses  
+  GEN_dcfeb_pulse : for K in 0 to 5 generate
   begin
-    ODMB_DCFEB_K : FDCE port map (dcfeb_ctrl_inner(K), STROBE, dcfeb_ctrl_en(k),
-                                  dcfeb_rst(K), raw_dcfeb_ctrl_inner(K));
-  end generate GEN_DCFEB_CTRL;
+    dcfeb_pulse(K) <= w_dcfeb_pulse and STROBE and INDATA(K);
+  end generate GEN_dcfeb_pulse;
   PULSE_INJ : PULSE_EDGE port map(test_inj, test_inj_rst, slowclk, rst, 2,
-                                  dcfeb_ctrl_inner(2));
+                                  dcfeb_pulse(0));
   PULSE_PLS : PULSE_EDGE port map(test_pls, test_pls_rst, slowclk, rst, 2,
-                                  dcfeb_ctrl_inner(3));
+                                  dcfeb_pulse(1));
   PULSE_L1A : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1,
-                                  dcfeb_ctrl_inner(4));
+                                  dcfeb_pulse(2));
   PULSE_LCT : PULSE_EDGE port map(otmb_lct_rqst, lct_rqst_rst, clk40, rst, 1,
-                                  dcfeb_ctrl_inner(5));
+                                  dcfeb_pulse(3));
   PULSE_EXT : PULSE_EDGE port map(otmb_ext_trig, ext_trig_rst, clk40, rst, 1,
-                                  dcfeb_ctrl_inner(6));
+                                  dcfeb_pulse(4));
   PULSE_BC0 : PULSE_EDGE port map(test_bc0, test_bc0_rst, clk40, rst, 1,
-                                  dcfeb_ctrl_inner(8));
+                                  dcfeb_pulse(5));
 
-  DCFEB_CTRL <= dcfeb_ctrl_inner;
+-- Write TP_SEL
+  GEN_TP_SEL : for I in 15 downto 0 generate
+  begin
+    FD_W_TP_SEL : FDCE port map(TP_SEL_INNER(I), STROBE, W_TP_SEL, RST, INDATA(I));
+  end generate GEN_TP_SEL;
+  TP_SEL <= TP_SEL_INNER;
+
+-- Read TP_SEL
+  OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when (STROBE = '1' and R_TP_SEL = '1')
+                             else (others => 'Z');
 
 -- Write LOOPBACK
   GEN_LOOPBACK : for I in 2 downto 0 generate
