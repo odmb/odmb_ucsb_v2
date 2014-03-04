@@ -150,5 +150,6 @@ begin
   begin
     FDCE_REG_CRC : FDCE port map (REG_CRC(K), CLK, CRCEN, CRCRST, CRC(K));
   end generate GEN_REG_CRC;
-
+  REG_CRC(23 downto 22) <= (others => '0');
+  
 end CRC_CHECKER_arch;

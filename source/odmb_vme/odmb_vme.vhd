@@ -1211,7 +1211,10 @@ begin
 
   BPI_CFG_UL_PULSE <= bpi_cfg_ul_pulse_inner;
   BPI_CFG_DL_PULSE <= bpi_cfg_dl_pulse_inner;
-
+  GEN_DEV_OUTDATA : for dev in 10 to 15 generate
+  begin
+    dev_outdata(dev) <= (others => '0');
+  end generate GEN_DEV_OUTDATA;
   device_index <= to_integer(unsigned(cmd_adrs_inner(15 downto 12)));
   vme_data_out <= dev_outdata(device_index);
   cmd_adrs     <= cmd_adrs_inner;

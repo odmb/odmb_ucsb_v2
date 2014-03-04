@@ -6,6 +6,9 @@
 =           Tom Danielson, Adam Dishaw, Jack Bradmiller-Feld         =
 =                                                                    =
 ======================================================================
+V02-05, build 7: 03 March 2014, Manuel
+------------------------------------------
+Internal tag, already with V4 compatibility and reorganized device 3.
 
 V02-04, build A: 23 January 2014, Manuel
 ------------------------------------------

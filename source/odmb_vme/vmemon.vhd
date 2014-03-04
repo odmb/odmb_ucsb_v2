@@ -72,13 +72,13 @@ architecture VMEMON_Arch of VMEMON is
   signal busy        : std_logic;
   signal r_odmb_data : std_logic;
 
-  signal odmb_ctrl_inner  : std_logic_vector(15 downto 0) := (others => '0');
+  signal odmb_ctrl_inner : std_logic_vector(15 downto 0) := (others => '0');
 
   signal out_tp_sel, tp_sel_inner : std_logic_vector(15 downto 0) := (others => '0');
   signal w_tp_sel                 : std_logic                     := '0';
   signal r_tp_sel                 : std_logic                     := '0';
 
-  signal odmb_rst        : std_logic_vector(15 downto 0) := (others => '0');
+  signal odmb_rst                   : std_logic_vector(15 downto 0) := (others => '0');
   signal test_inj_rst, test_pls_rst : std_logic                     := '0';
   signal resync_rst, reprog_rst     : std_logic                     := '0';
   signal lct_rqst_rst, ext_trig_rst : std_logic                     := '0';
@@ -103,7 +103,7 @@ architecture VMEMON_Arch of VMEMON is
   signal out_qpll_locked : std_logic_vector(15 downto 0) := (others => '0');
   signal r_qpll_locked   : std_logic                     := '0';
 
-  signal raw_odmb_ctrl_inner, odmb_ctrl_en   : std_logic_vector(15 downto 0) := (others => '0');
+  signal raw_odmb_ctrl_inner, odmb_ctrl_en : std_logic_vector(15 downto 0) := (others => '0');
 
   signal out_odmb_cal           : std_logic_vector(15 downto 0) := (others => '0');
   signal w_odmb_cal, r_odmb_cal : std_logic                     := '0';
@@ -128,13 +128,13 @@ architecture VMEMON_Arch of VMEMON is
   signal out_cal_ped                          : std_logic_vector(15 downto 0) := (others => '0');
   signal w_cal_ped, r_cal_ped, test_ped_inner : std_logic                     := '0';
 
-  signal w_dcfeb_pulse   : std_logic := '0';
-  signal dcfeb_pulse                          : std_logic_vector(5 downto 0) := (others => '0');
+  signal w_dcfeb_pulse : std_logic                    := '0';
+  signal dcfeb_pulse   : std_logic_vector(5 downto 0) := (others => '0');
 
 
-  signal w_dcfeb_reprog  : std_logic := '0';
-  signal w_dcfeb_resync  : std_logic := '0';
-  signal w_opt_rst : std_logic := '0';
+  signal w_dcfeb_reprog : std_logic := '0';
+  signal w_dcfeb_resync : std_logic := '0';
+  signal w_opt_rst      : std_logic := '0';
 
 begin
 
@@ -175,7 +175,7 @@ begin
   w_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '0') else '0';
   r_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '1') else '0';
 
-  r_odmb_data <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
+  r_odmb_data               <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
   odmb_data_sel(7 downto 0) <= COMMAND(9 downto 2);
 
 -- Resets
@@ -207,6 +207,7 @@ begin
   odmb_ctrl_en(15)                  <= '0';
 
   FD_CALPED : FDCE port map(test_ped_inner, STROBE, w_cal_ped, RST, INDATA(0));
+  test_ped <= test_ped_inner;
 
   GEN_ODMB_CTRL : for K in 0 to 15 generate
   begin

@@ -121,7 +121,6 @@ begin
 
 -- FSMs
   DS_LDIN  : DELAY_SIGNAL generic map (nwait_fifo) port map (q_ld_in, CLK_IN, nwait_fifo, ld_in);
-  LDIN2_PE : pulse_edge port map(open, open, CLK_OUT, RST, 3, q_ld_in);
   LDIN_PE  : pulse_edge port map(ld_in_pulse, open, CLK_OUT, RST, 1, q_ld_in);
   LDOUT_PE : pulse_edge port map(ld_out_pulse, open, CLK_OUT, RST, 1, ld_out);
 

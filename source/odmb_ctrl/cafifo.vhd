@@ -111,7 +111,7 @@ architecture cafifo_architecture of cafifo is
   type   l1a_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(23 downto 0);
   signal l1a_cnt : l1a_cnt_array_type;
 
-  type   bx_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(15 downto 0);
+  type   bx_cnt_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(11 downto 0);
   signal bx_cnt : bx_cnt_array_type;
 
   type   l1a_array_type is array (CAFIFO_SIZE-1 downto 0) of std_logic_vector(NFEB+2 downto 1);
@@ -137,26 +137,26 @@ architecture cafifo_architecture of cafifo is
   signal timeout_current_state, timeout_next_state : timeout_state_vec;
 
   type     timeout_array is array (NFEB+2 downto 1) of integer range 0 to 800;
-  signal   timeout_cnt                      : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  constant timeout_max                      : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
+  signal   timeout_cnt : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+  constant timeout_max : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
   --constant timeout_max                     : timeout_array := (70, 70, 18, 18, 18, 18, 18, 18, 18);
-    -- count to these numbers before
-      -- timeout (7 us, 12 us)
-  
-  signal   timeout_state_1, timeout_state_9 : std_logic_vector(1 downto 0);
-  signal   timeout_cnt_en, timeout_cnt_rst  : std_logic_vector(NFEB+2 downto 1);
-  signal   lost_pckt, reg_lost_pckt         : l1a_array_type;
-  signal   l1a_dav_en                       : std_logic_vector(NFEB+2 downto 1);
-  signal   lost_pckt_en                     : std_logic_vector(NFEB+2 downto 1);
-  signal   wait_cnt                         : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  signal   wait_cnt_en, wait_cnt_rst        : std_logic_vector(NFEB+2 downto 1);
+  -- count to these numbers before
+  -- timeout (7 us, 12 us)
+
+  signal timeout_state_1, timeout_state_9 : std_logic_vector(1 downto 0);
+  signal timeout_cnt_en, timeout_cnt_rst  : std_logic_vector(NFEB+2 downto 1);
+  signal lost_pckt, reg_lost_pckt         : l1a_array_type;
+  signal l1a_dav_en                       : std_logic_vector(NFEB+2 downto 1);
+  signal lost_pckt_en                     : std_logic_vector(NFEB+2 downto 1);
+  signal wait_cnt                         : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+  signal wait_cnt_en, wait_cnt_rst        : std_logic_vector(NFEB+2 downto 1);
 
   -- Declare the csp stuff here
-  signal free_agent_la_data : std_logic_vector(199 downto 0);
-  signal free_agent_la_trig : std_logic_vector(7 downto 0);
-  constant csp1 : integer := 31;
-  constant csp2 : integer := 0;
-  constant csp3 : integer := 1;
+  signal   free_agent_la_data : std_logic_vector(199 downto 0);
+  signal   free_agent_la_trig : std_logic_vector(7 downto 0);
+  constant csp1               : integer := 31;
+  constant csp2               : integer := 0;
+  constant csp3               : integer := 1;
   
 begin
 
@@ -309,12 +309,12 @@ begin
       end loop;
     elsif rising_edge(clk) then
       if (cafifo_wren = '1') then
-        bx_cnt(wr_addr_out) <= bx_cnt_out;
+        bx_cnt(wr_addr_out) <= bx_cnt_out(11 downto 0);
       end if;
     end if;
   end process;
 
-  cafifo_bx_cnt <= bx_cnt(rd_addr_out)(11 downto 0);
+  cafifo_bx_cnt <= bx_cnt(rd_addr_out);
 
   l1a_match_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_match_in)
   begin
