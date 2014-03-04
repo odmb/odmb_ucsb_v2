@@ -1,14 +1,25 @@
 ======================================================================
 =                                                                    =
-=  ODMB_UCSB_V2: Official software for the ODMB.V2                   =
+=  ODMB_UCSB_V2: Official software for the ODMB                   =
 =                                                                    =
 =  AUTHORS: Guido Magazzu, Frank Golf, Manuel Franco Sevilla         =
 =           Tom Danielson, Adam Dishaw, Jack Bradmiller-Feld         =
 =                                                                    =
 ======================================================================
-V02-05, build 7: 03 March 2014, Manuel
+
+V03-00, build 0: 03 March 2014, Manuel
+------------------------------------------
+V4 compatibility.
+Reorganization of Device 3 commands.
+Avoid QPLL resets, and addition of QPLL unlock counter.
+Slowed LVMB clock down to 770 kHz.
+Added CRCs and FIFO_HALF_FULL signals to ODMB trailers.
+
+
+V02-05, build 7: 03 March 2014, Adam
 ------------------------------------------
 Internal tag, already with V4 compatibility and reorganized device 3.
+Removed ~1150 warnings.
 
 V02-04, build A: 23 January 2014, Manuel
 ------------------------------------------

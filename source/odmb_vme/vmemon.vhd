@@ -125,8 +125,8 @@ architecture VMEMON_Arch of VMEMON is
   signal out_odmb_ped           : std_logic_vector(15 downto 0) := (others => '0');
   signal w_odmb_ped, r_odmb_ped : std_logic                     := '0';
 
-  signal out_cal_ped                          : std_logic_vector(15 downto 0) := (others => '0');
-  signal w_cal_ped, r_cal_ped, test_ped_inner : std_logic                     := '0';
+  signal out_otmb_ped           : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_otmb_ped, r_otmb_ped : std_logic                     := '0';
 
   signal w_dcfeb_pulse : std_logic                    := '0';
   signal dcfeb_pulse   : std_logic_vector(5 downto 0) := (others => '0');
@@ -170,8 +170,8 @@ begin
 
   w_odmb_ped <= '1' when (CMDDEV = x"1400" and WRITER = '0') else '0';
   r_odmb_ped <= '1' when (CMDDEV = x"1400" and WRITER = '1') else '0';
-  w_cal_ped  <= '1' when (CMDDEV = x"1404" and WRITER = '0') else '0';
-  r_cal_ped  <= '1' when (CMDDEV = x"1404" and WRITER = '1') else '0';
+  w_otmb_ped <= '1' when (CMDDEV = x"1404" and WRITER = '0') else '0';
+  r_otmb_ped <= '1' when (CMDDEV = x"1404" and WRITER = '1') else '0';
   w_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '0') else '0';
   r_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '1') else '0';
 
@@ -203,11 +203,11 @@ begin
   odmb_ctrl_en(9)                   <= w_mux_trigger;
   odmb_ctrl_en(10)                  <= w_mux_lvmb;
   odmb_ctrl_en(12 downto 11)        <= (others => w_kill_l1a);
-  odmb_ctrl_en(14 downto 13)        <= (others => w_odmb_ped);
+  odmb_ctrl_en(13)                  <= w_odmb_ped;
+  odmb_ctrl_en(14)                  <= w_otmb_ped;
   odmb_ctrl_en(15)                  <= '0';
 
-  FD_CALPED : FDCE port map(test_ped_inner, STROBE, w_cal_ped, RST, INDATA(0));
-  test_ped <= test_ped_inner;
+  test_ped <= '0';
 
   GEN_ODMB_CTRL : for K in 0 to 15 generate
   begin
@@ -281,13 +281,13 @@ begin
                      when (STROBE = '1' and r_qpll_locked = '1')
                      else (others => 'Z');
 
-  out_odmb_cal      <= "00" & x"00" & odmb_ctrl_inner(5 downto 0);
+  out_odmb_cal      <= "000" & x"000" & odmb_ctrl_inner(0);
   out_mux_data_path <= "000" & x"000" & odmb_ctrl_inner(7);
   out_mux_trigger   <= "000" & x"000" & odmb_ctrl_inner(9);
   out_mux_lvmb      <= "000" & x"000" & odmb_ctrl_inner(10);
   out_kill_l1a      <= "00" & x"000" & odmb_ctrl_inner(12 downto 11);
-  out_odmb_ped      <= "00" & x"000" & odmb_ctrl_inner(14 downto 13);
-  out_cal_ped       <= "000" & x"000" & test_ped_inner;
+  out_odmb_ped      <= "000" & x"000" & odmb_ctrl_inner(13);
+  out_otmb_ped      <= "000" & x"000" & odmb_ctrl_inner(14);
 
   OUTDATA <= out_odmb_cal when (r_odmb_cal = '1') else
              out_mux_data_path when (r_mux_data_path = '1') else
@@ -295,7 +295,7 @@ begin
              out_mux_lvmb      when (r_mux_lvmb = '1')      else
              out_kill_l1a      when (r_kill_l1a = '1')      else
              out_odmb_ped      when (r_odmb_ped = '1')      else
-             out_cal_ped       when (r_cal_ped = '1')       else
+             out_otmb_ped      when (r_otmb_ped = '1')      else
              out_tp_sel        when (r_tp_sel = '1')        else
              out_loopback      when (r_loopback = '1')      else
              out_txdiffctrl    when (r_txdiffctrl = '1')    else

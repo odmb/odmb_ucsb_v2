@@ -560,9 +560,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
       lct_err : out std_logic;          -- To an LED in the original design
 
-      cal_mode   : in std_logic;
-      cal_trgsel : in std_logic;
-      cal_trgen  : in std_logic_vector(3 downto 0);
+      cal_mode : in std_logic;
 
       LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
       OTMB_PUSH_DLY : in integer range 0 to 63;
@@ -1019,7 +1017,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
   signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
   signal otmb_tx_inner                    : std_logic_vector(48 downto 0);
-  signal qpll_locked_cnt                  : std_logic_vector(15 downto 0);
+  signal qpll_unlocked_cnt                : std_logic_vector(15 downto 0);
+  signal qpll_unlocked                    : std_logic;
 
   signal tp_sel_reg               : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg            : std_logic_vector(15 downto 0) := (others => '0');
@@ -1208,6 +1207,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_otmb_dav, tc_otmb_dav : std_logic;
   signal tc_lct                    : std_logic_vector(NFEB downto 0);
 
+
+  signal clk1p5mhz                                                : std_logic;
+  signal clk1p5mhz_cnt                                            : integer   := 0;
   signal tc_run                                                   : std_logic;
   signal counter_clk, counter_clk_gl0, counter_clk_gl1, reset_cnt : integer   := 0;
   signal clk1, clk2, clk4, clk8, gl0_clk_slow, gl1_clk_2_slow     : std_logic := '0';
@@ -1329,9 +1331,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal prom_d_out      : std_logic_vector(15 downto 0);
 
   constant tp_1 : integer range 30 to 45 := 30;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  constant tp_2 : integer range 30 to 45 := 31;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  constant tp_3 : integer range 30 to 45 := 44;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  constant tp_4 : integer range 30 to 45 := 45;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  constant tp_2 : integer range 30 to 45 := 34;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  constant tp_3 : integer range 30 to 45 := 40;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  constant tp_4 : integer range 30 to 45 := 44;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
   --constant tp_4 : integer range 49 to 49 := 49;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
 
 begin
@@ -1382,7 +1384,7 @@ begin
       clk         => clk40,             -- fpgaclk (40MHz)
       clk_s1      => clk10,             -- midclk (10MHz) 
       clk_s2      => clk2p5,            -- slowclk (2.5MHz)
-      clk_s3      => clk1p25,           -- slowclk2 (1.25MHz)
+      clk_s3      => clk1p5mhz,         -- slowclk2 (1.5MHz)
       QPLL_LOCKED => qpll_locked,
 
 -- Reset
@@ -1667,9 +1669,7 @@ begin
 
       lct_err => lct_err,
 
-      cal_mode   => odmb_ctrl_reg(4),
-      cal_trgsel => odmb_ctrl_reg(5),
-      cal_trgen  => odmb_ctrl_reg(3 downto 0),
+      cal_mode => odmb_ctrl_reg(0),
 
       LCT_L1A_DLY   => LCT_L1A_DLY,
       OTMB_PUSH_DLY => OTMB_PUSH_DLY,
@@ -2284,6 +2284,16 @@ begin
   Divide_Frequency : process(clk40)
   begin
     if clk40'event and clk40 = '1' then
+      if clk1p5mhz_cnt = 13 then
+        clk1p5mhz_cnt <= 1;
+        if clk1p5mhz = '1' then
+          clk1p5mhz <= '0';
+        else
+          clk1p5mhz <= '1';
+        end if;
+      else
+        clk1p5mhz_cnt <= clk1p5mhz_cnt + 1;
+      end if;
       if counter_clk = 2500000 then
         counter_clk <= 1;
         if clk8 = '1' then
@@ -2527,13 +2537,13 @@ begin
   vauxn <= x"00" & p5v_lvmb_sm_n & p1v0_sm_n & therm1_n & p2v5_sm_n
            & p3v3_pp_sm_n & therm2_n & p5v_sm_n & lv_p3v3_sm_n;
 
-
+  qpll_unlocked <= not qpll_locked;
   INTL1A_CNT  : COUNT_EDGES port map(int_l1a_cnt, int_l1a, l1acnt_rst, logich);
   ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, int_alct_dav, reset, logich);
   OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, int_otmb_dav, reset, logich);
   DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
   PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, gtx1_data_valid, reset, logich);
-  LOCKED_CNT  : COUNT_EDGES port map(qpll_locked_cnt, qpll_locked, reset, '1');
+  LOCKED_CNT  : COUNT_EDGES port map(qpll_unlocked_cnt, qpll_locked, reset, '1');
 
   NFEB_CNT : for dev in 1 to NFEB generate
   begin
@@ -2751,7 +2761,7 @@ begin
       when x"4C" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
       when x"4D" => odmb_data <= "0000000" & cafifo_l1a_match_out;
       when x"4E" => odmb_data <= "0000000" & cafifo_l1a_dav;
-      when x"4F" => odmb_data <= qpll_locked_cnt;
+      when x"4F" => odmb_data <= qpll_unlocked_cnt;
 
       when x"51" => odmb_data <= data_fifo_re_cnt(1);  -- from control to FIFOs in top
       when x"52" => odmb_data <= data_fifo_re_cnt(2);  -- from control to FIFOs in top
