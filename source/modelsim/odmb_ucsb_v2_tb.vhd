@@ -674,9 +674,9 @@ begin
   go    <= '1' after 15 us;
   --goevent <= '1' after 300 us;
   goccb <= '1' after 29 us;
-  goccbcal0 <= '1', '0' after 20 us, '1' after 20.025 us;
+  goccbcal0 <= '1', '0' after 45 us, '1' after 45.025 us;
 
-  ccb_cal_tb <= goccbcal0 & goccbcal0 & goccbcal0;
+  ccb_cal_tb <= goccbcal0 & "11";
   
   qpll_clk40MHz_p  <= not qpll_clk40MHz_p  after 12.5 ns;
   qpll_clk40MHz_n  <= not qpll_clk40MHz_n  after 12.5 ns;

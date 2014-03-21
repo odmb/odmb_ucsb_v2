@@ -18,7 +18,7 @@ entity TRGCNTRL is
     CLK           : in std_logic;
     RAW_L1A       : in std_logic;
     RAW_LCT       : in std_logic_vector(NFEB downto 0);
-    CAL_LCT       : in std_logic_vector(NFEB downto 0);
+    CAL_LCT       : in std_logic;
     CAL_L1A       : in std_logic;
     LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
     OTMB_PUSH_DLY : in integer range 0 to 63;
@@ -27,10 +27,7 @@ entity TRGCNTRL is
     ALCT_DAV      : in std_logic;
     OTMB_DAV      : in std_logic;
 
-    JTRGEN        : in std_logic_vector(3 downto 0);
-    EAFEB         : in std_logic;
-    CMODE         : in std_logic;
-    CALTRGSEL     : in std_logic;
+    CAL_MODE      : in std_logic;
     KILL          : in std_logic_vector(NFEB+2 downto 1);
     PEDESTAL      : in std_logic;
     PEDESTAL_OTMB : in std_logic;
@@ -58,43 +55,33 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
       );
   end component;
 
-  constant logich : std_logic := '1';
-
-  signal JCALSEL, CAL_MODE    : std_logic;
   signal DLY_LCT, LCT, LCT_IN : std_logic_vector(NFEB downto 0);
   signal RAW_L1A_Q, L1A_IN    : std_logic;
   signal L1A                  : std_logic;
-  type LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
+  type   LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
   signal LCT_Q                : LCT_TYPE;
   signal LCT_ERR_D            : std_logic;
   signal L1A_MATCH            : std_logic_vector(NFEB downto 1);
   signal FIFO_L1A_MATCH_INNER : std_logic_vector(NFEB+2 downto 0);
 
-  signal otmb_dav_sync, alct_dav_sync : std_logic;
-  signal fifo_push_inner              : std_logic;
+  signal otmb_dav_sync, alct_dav_sync   : std_logic;
+  signal fifo_push_inner                : std_logic;
   signal push_otmb_diff, push_alct_diff : integer range 0 to 63;
 
 begin  --Architecture
 
--- Generate CAL_MODE / Generate JCALSEL
-  CAL_MODE <= CMODE and CALTRGSEL;
-  JCALSEL  <= JTRGEN(0) and CAL_MODE;
-
 -- Generate DLY_LCT
-  LCT_IN <= CAL_LCT when (JCALSEL = '1') else RAW_LCT;
+  LCT_IN <= (others => CAL_LCT) when (CAL_MODE = '1') else RAW_LCT;
   GEN_DLY_LCT : for K in 0 to NFEB generate
   begin
     LCTDLY_K : LCTDLY port map(LCT_IN(K), CLK, LCT_L1A_DLY, DLY_LCT(K));
   end generate GEN_DLY_LCT;
 
 -- Generate LCT
---  LCT(0) <= CAL_LCT(0) when (JCALSEL = '1') else DLY_LCT(0);
   LCT(0) <= DLY_LCT(0);
   GEN_LCT : for K in 1 to nfeb generate
   begin
     LCT(K) <= '0' when (KILL(K) = '1') else
---              LCT(0)     when (EAFEB = '1' and CAL_MODE = '0') else
---              CAL_LCT(K) when (JCALSEL = '1') else
               DLY_LCT(K);
   end generate GEN_LCT;
 
@@ -103,10 +90,9 @@ begin  --Architecture
   FDLCTERR : FD port map(LCT_ERR, CLK, LCT_ERR_D);
 
 -- Generate L1A / Generate DCFEB_L1A
-  L1A_IN <= CAL_L1A when (JTRGEN(1) = '1' and CAL_MODE = '1') else RAW_L1A;
+  L1A_IN <= CAL_L1A when CAL_MODE = '1' else RAW_L1A;
 
   FDL1A : FD port map(RAW_L1A_Q, CLK, L1A_IN);
---  L1A       <= CAL_L1A when (JTRGEN(1) = '1' and CAL_MODE = '1') else RAW_L1A_Q;
   L1A       <= RAW_L1A_Q;
   DCFEB_L1A <= L1A;
 
@@ -131,11 +117,11 @@ begin  --Architecture
     DS_L1AMATCH_PUSH : DELAY_SIGNAL port map(fifo_l1a_match_inner(K), clk, push_dly, l1a_match(K));
   end generate GEN_L1A_MATCH_PUSH_DLY;
 
-  push_otmb_diff <= push_dly-otmb_push_dly when push_dly > otmb_push_dly else 0;
+  push_otmb_diff               <= push_dly-otmb_push_dly when push_dly > otmb_push_dly else 0;
   DS_OTMB_PUSH : DELAY_SIGNAL port map(otmb_dav_sync, clk, push_otmb_diff, otmb_dav);
   fifo_l1a_match_inner(NFEB+1) <= (otmb_dav_sync or pedestal_otmb) and fifo_push_inner and not kill(NFEB+1);
 
-  push_alct_diff <= push_dly-alct_push_dly when push_dly > alct_push_dly else 0;
+  push_alct_diff               <= push_dly-alct_push_dly when push_dly > alct_push_dly else 0;
   DS_ALCT_PUSH : DELAY_SIGNAL port map(alct_dav_sync, clk, push_alct_diff, alct_dav);
   fifo_l1a_match_inner(NFEB+2) <= (alct_dav_sync or pedestal_otmb) and fifo_push_inner and not kill(NFEB+2);
 
