@@ -561,8 +561,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       lct_err : out std_logic;          -- To an LED in the original design
 
       cal_mode   : in std_logic;
-      cal_trgsel : in std_logic;
-      cal_trgen  : in std_logic_vector(3 downto 0);
 
       LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
       OTMB_PUSH_DLY : in integer range 0 to 63;
@@ -1667,9 +1665,7 @@ begin
 
       lct_err => lct_err,
 
-      cal_mode   => odmb_ctrl_reg(4),
-      cal_trgsel => odmb_ctrl_reg(5),
-      cal_trgen  => odmb_ctrl_reg(3 downto 0),
+      cal_mode   => odmb_ctrl_reg(0),
 
       LCT_L1A_DLY   => LCT_L1A_DLY,
       OTMB_PUSH_DLY => OTMB_PUSH_DLY,
