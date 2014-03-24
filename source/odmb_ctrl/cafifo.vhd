@@ -138,7 +138,7 @@ architecture cafifo_architecture of cafifo is
 
   type     timeout_array is array (NFEB+2 downto 1) of integer range 0 to 800;
   signal   timeout_cnt : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  constant timeout_max : timeout_array := (480, 680, 280, 280, 280, 280, 280, 280, 280);
+  constant timeout_max : timeout_array := (480, 680, 500, 500, 500, 500, 500, 500, 500);
   --constant timeout_max                     : timeout_array := (70, 70, 18, 18, 18, 18, 18, 18, 18);
   -- count to these numbers before
   -- timeout (7 us, 12 us)
@@ -593,7 +593,7 @@ begin
   --                      & l1a_dav(csp1) & l1a_dav(rd_addr_out)  -- [124:107]                        
   --                      & l1a_match(csp3) & l1a_match(csp2)  -- [106:89]                        
   --                      & l1a_match(csp1) & l1a_match(rd_addr_out)  -- [88:71]                        
-  --                      & l1a_cnt(csp3)(3 downto 0) & l1a_cnt(csp2)(3 downto 0)  -- [70:63]                        
+  --                      & l1a_cnt(csp3)(3 downto 0) & l1a_cnt(csp2)(3 downto 0)  -- [70:63]     
   --                      & l1a_cnt(csp1)(3 downto 0) & l1a_cnt(rd_addr_out)(3 downto 0)  -- [62:55]       
   --                      & EOF_DATA      -- [54:46]                        
   --                      & ALCT_DV & OTMB_DV & dcfeb_dv  -- [45:37]                        

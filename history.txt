@@ -7,6 +7,10 @@
 =                                                                    =
 ======================================================================
 
+V03-02, build 1: 23 March 2014, Manuel
+------------------------------------------
+Increased DCFEB timeout from 7 us to 12.5 us.
+
 V03-01, build 0: 20 March 2014, Manuel
 ------------------------------------------
 Connected the CAL_LCT of CALIBTRG and TRGCTRL to recover
