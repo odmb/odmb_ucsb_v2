@@ -7,9 +7,11 @@
 =                                                                    =
 ======================================================================
 
-V03-02, build 1: 23 March 2014, Manuel
+V03-02, build 3: 26 March 2014, Manuel
 ------------------------------------------
 Increased DCFEB timeout from 7 us to 12.5 us.
+Increased CCLK speed (ConfigRate in "Configuration options" of 
+"Generate programming file") from 2 MHz to 50 MHz.
 
 V03-01, build 0: 20 March 2014, Manuel
 ------------------------------------------
