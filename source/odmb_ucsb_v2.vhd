@@ -176,7 +176,7 @@ entity ODMB_UCSB_V2 is
 
 -- From/To Test Points
 
-    test_point : out std_logic_vector(49 downto 12);
+    test_point : out std_logic_vector(50 downto 13);
 
 -- From/To RX 
 
@@ -1326,10 +1326,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal prom_a_out      : std_logic_vector(22 downto 0);
   signal prom_d_out      : std_logic_vector(15 downto 0);
 
-  constant tp_1 : integer range 30 to 45 := 30;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  constant tp_2 : integer range 30 to 45 := 31;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  constant tp_3 : integer range 30 to 45 := 44;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
-  constant tp_4 : integer range 30 to 45 := 45;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  constant tp_1 : integer range 31 to 46 := 31;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  constant tp_2 : integer range 31 to 46 := 35;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  constant tp_3 : integer range 31 to 46 := 41;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
+  constant tp_4 : integer range 31 to 46 := 45;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
   --constant tp_4 : integer range 49 to 49 := 49;  -- DO NOT USE 46 or 48: DCFEB JTAG signals for ODMB.V2 
 
 begin
@@ -2806,24 +2806,24 @@ begin
   end process;
 
 
-  test_point(12) <= raw_lct(1);
-  test_point(14) <= raw_lct(2);
-  test_point(16) <= raw_lct(3);
-  test_point(18) <= raw_lct(4);
-  test_point(20) <= raw_lct(5);
-  test_point(22) <= raw_lct(6);
-  test_point(24) <= raw_lct(7);
-  test_point(13) <= int_l1a_match(1);
-  test_point(15) <= int_l1a_match(2);
-  test_point(17) <= int_l1a_match(3);
-  test_point(19) <= int_l1a_match(4);
-  test_point(21) <= int_l1a_match(5);
-  test_point(23) <= int_l1a_match(6);
-  test_point(25) <= int_l1a_match(7);
-  test_point(26) <= int_l1a;
-  test_point(27) <= gtx0_data_valid;
-  test_point(28) <= int_otmb_dav;
-  test_point(29) <= int_alct_dav;
+  test_point(13) <= raw_lct(1);
+  test_point(15) <= raw_lct(2);
+  test_point(17) <= raw_lct(3);
+  test_point(19) <= raw_lct(4);
+  test_point(21) <= raw_lct(5);
+  test_point(23) <= raw_lct(6);
+  test_point(25) <= raw_lct(7);
+  test_point(14) <= int_l1a_match(1);
+  test_point(16) <= int_l1a_match(2);
+  test_point(18) <= int_l1a_match(3);
+  test_point(20) <= int_l1a_match(4);
+  test_point(22) <= int_l1a_match(5);
+  test_point(24) <= int_l1a_match(6);
+  test_point(26) <= int_l1a_match(7);
+  test_point(27) <= int_l1a;
+  test_point(28) <= gtx0_data_valid;
+  test_point(29) <= int_otmb_dav;
+  test_point(30) <= int_alct_dav;
 
   --test_point(29) <= cafifo_l1a_dav(1);
   --test_point(30) <= cafifo_l1a_dav(2);
@@ -2840,10 +2840,10 @@ begin
   --test_point(44) <= '0';
   --test_point(46) <= '0';
 
-  test_point(46) <= dcfeb_tdi_out;
-  test_point(47) <= lct_err;
-  test_point(48) <= dcfeb_tms_out;
-  test_point(49) <= '1';
+  test_point(47) <= dcfeb_tdi_out;
+  test_point(48) <= lct_err;
+  test_point(49) <= dcfeb_tms_out;
+  test_point(50) <= '1';
 
   tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
                          int_otmb_dav, dcfeb_data, otmb_fifo_data_in, otmb_fifo_data_valid, int_alct_dav,
@@ -2853,19 +2853,20 @@ begin
                          int_l1a, cafifo_l1a,
                          otmb_lct_rqst, otmb_ext_trig, raw_l1a, ALCT_DAV_SYNC_OUT, OTMB_DAV_SYNC_OUT,
                          dcfeb_prbs_en, dcfeb_prbs_rst, dcfeb_prbs_rd_en, dcfeb_rxprbserr,
-                         int_lvmb_sclk, int_lvmb_sdin, lvmb_sdout, int_lvmb_csb, alct_qq, otmb_qq)
+                         int_lvmb_sclk, int_lvmb_sdin, lvmb_sdout, int_lvmb_csb, alct_qq, otmb_qq,
+                         nwords_dummy, lct_l1a_dly)
   begin
     case tp_sel_reg is
       when x"0000" =>
-        test_point(45 downto 30) <= (
-          tp_1   => gtx0_data_valid,
-          tp_2   => cafifo_l1a_dav(7),
-          tp_3   => int_l1a_match(7),
-          tp_4   => dcfeb_data_valid(7),
+        test_point(46 downto 31) <= (
+          tp_1   => '0',
+          tp_2   => '1',
+          tp_3   => nwords_dummy(0),
+          tp_4   => lct_l1a_dly(0),
           others => '0');
 
       when x"0001" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a_match(1),
           tp_2   => cafifo_l1a_dav(1),
           tp_3   => dcfeb_data(1)(0),
@@ -2873,7 +2874,7 @@ begin
           others => '0');
 
       when x"0002" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a_match(2),
           tp_2   => cafifo_l1a_dav(2),
           tp_3   => dcfeb_data(2)(0),
@@ -2881,7 +2882,7 @@ begin
           others => '0');
 
       when x"0003" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a_match(3),
           tp_2   => cafifo_l1a_dav(3),
           tp_3   => dcfeb_data(3)(0),
@@ -2889,7 +2890,7 @@ begin
           others => '0');
 
       when x"0004" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a_match(4),
           tp_2   => cafifo_l1a_dav(4),
           tp_3   => dcfeb_data(4)(0),
@@ -2897,7 +2898,7 @@ begin
           others => '0');
 
       when x"0005" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a_match(5),
           tp_2   => cafifo_l1a_dav(5),
           tp_3   => dcfeb_data(5)(0),
@@ -2905,7 +2906,7 @@ begin
           others => '0');
 
       when x"0006" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a_match(6),
           tp_2   => cafifo_l1a_dav(6),
           tp_3   => dcfeb_data(6)(0),
@@ -2913,7 +2914,7 @@ begin
           others => '0');
 
       when x"0007" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a_match(7),
           tp_2   => cafifo_l1a_dav(7),
           tp_3   => dcfeb_data(7)(0),
@@ -2921,7 +2922,7 @@ begin
           others => '0');
 
       when x"0008" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_otmb_dav,
           tp_2   => cafifo_l1a_dav(8),
           tp_3   => otmb_fifo_data_in(0),
@@ -2929,7 +2930,7 @@ begin
           others => '0');
 
       when x"0009" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_alct_dav,
           tp_2   => cafifo_l1a_dav(9),
           tp_3   => alct_fifo_data_in(0),
@@ -2937,7 +2938,7 @@ begin
           others => '0');
 
       when x"000A" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => ext_dcfeb_l1a_cnt7(0),
           tp_2   => dcfeb_l1a_dav7,
           tp_3   => dcfeb_data(7)(0),
@@ -2945,7 +2946,7 @@ begin
           others => '0');
 
       when x"0010" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => odmb_tdo,
           tp_2   => odmb_tdo,
           tp_3   => odmb_tdo,
@@ -2953,7 +2954,7 @@ begin
           others => '0');
 
       when x"0011" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => gtx1_data_valid,
           tp_2   => pc_tx_fifo_wren,
           tp_3   => pc_txd_frame(0),
@@ -2961,7 +2962,7 @@ begin
           others => '0');
 
       when x"0012" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => gtx1_data_valid,
           tp_2   => gl_pc_tx_ack,
           tp_3   => rom_cnt_out(0),
@@ -2969,7 +2970,7 @@ begin
           others => '0');
 
       when x"0013" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => dcfeb_tdi_out,
           tp_2   => dcfeb_tms_out,
           tp_3   => int_tdo(7),
@@ -2977,7 +2978,7 @@ begin
           others => '0');
 
       when x"0014" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_lct_rqst,
           tp_2   => otmb_ext_trig,
           tp_3   => raw_lct(0),
@@ -2985,7 +2986,7 @@ begin
           others => '0');
 
       when x"0015" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a,
           tp_2   => raw_l1a,
           tp_3   => raw_lct(0),
@@ -2993,7 +2994,7 @@ begin
           others => '0');
 
       when x"0016" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a,
           tp_2   => raw_l1a,
           tp_3   => alctdav,
@@ -3001,7 +3002,7 @@ begin
           others => '0');
 
       when x"0017" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a,
           tp_2   => raw_l1a,
           tp_3   => alct(16),
@@ -3009,7 +3010,7 @@ begin
           others => '0');
 
       when x"0018" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a,
           tp_2   => raw_l1a,
           tp_3   => otmb(16),
@@ -3017,7 +3018,7 @@ begin
           others => '0');
 
       when x"0019" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => ALCT_DAV_SYNC_OUT,
           tp_2   => cafifo_l1a,
           tp_3   => otmbdav,
@@ -3025,7 +3026,7 @@ begin
           others => '0');
 
       when x"001A" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => ccb_cal(2),
           tp_2   => ccb_cal(1),
           tp_3   => ccb_cal(0),
@@ -3033,7 +3034,7 @@ begin
           others => '0');
 
       when x"001B" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => ccb_cmd(4),
           tp_2   => ccb_cmd(3),
           tp_3   => ccb_cmd(2),
@@ -3041,7 +3042,7 @@ begin
           others => '0');
 
       when x"001C" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a,
           tp_2   => ccb_cal(1),
           tp_3   => ccb_cal(0),
@@ -3049,7 +3050,7 @@ begin
           others => '0');
 
       when x"001D" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => vme_ds_b(0),
           tp_2   => vme_as_b,
           tp_3   => vme_dtack_v6_b,
@@ -3057,7 +3058,7 @@ begin
           others => '0');
 
       when x"001E" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_rx(5),
           tp_2   => otmb_rx(4),
           tp_3   => otmb_rx(3),
@@ -3065,7 +3066,7 @@ begin
           others => '0');
 
       when x"001F" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_rx(1),
           tp_2   => otmb_rx(0),
           tp_3   => rawlct(1),
@@ -3073,7 +3074,7 @@ begin
           others => '0');
 
       when x"0020" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(48),
           tp_2   => otmb_tx(47),
           tp_3   => otmb_tx(46),
@@ -3081,7 +3082,7 @@ begin
           others => '0');
 
       when x"0021" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => alct_qq(17),
           tp_2   => alct_qq(16),
           tp_3   => alct_qq(15),
@@ -3089,7 +3090,7 @@ begin
           others => '0');
 
       when x"0022" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_qq(17),
           tp_2   => otmb_qq(16),
           tp_3   => otmb_qq(15),
@@ -3097,7 +3098,7 @@ begin
           others => '0');
 
       when x"0023" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(36),
           tp_2   => otmb_tx(35),
           tp_3   => otmb_tx(34),
@@ -3105,7 +3106,7 @@ begin
           others => '0');
 
       when x"0024" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(32),
           tp_2   => otmb_tx(31),
           tp_3   => otmb_tx(30),
@@ -3113,7 +3114,7 @@ begin
           others => '0');
 
       when x"0025" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(28),
           tp_2   => otmb_tx(27),
           tp_3   => otmb_tx(26),
@@ -3121,7 +3122,7 @@ begin
           others => '0');
 
       when x"0026" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(24),
           tp_2   => otmb_tx(23),
           tp_3   => otmb_tx(22),
@@ -3129,7 +3130,7 @@ begin
           others => '0');
 
       when x"0027" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(20),
           tp_2   => otmb_tx(19),
           tp_3   => otmb_tx(18),
@@ -3137,7 +3138,7 @@ begin
           others => '0');
 
       when x"0028" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(16),
           tp_2   => otmb_tx(15),
           tp_3   => otmb_tx(14),
@@ -3145,7 +3146,7 @@ begin
           others => '0');
 
       when x"0029" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(12),
           tp_2   => otmb_tx(11),
           tp_3   => otmb_tx(10),
@@ -3153,7 +3154,7 @@ begin
           others => '0');
 
       when x"002A" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(8),
           tp_2   => otmb_tx(7),
           tp_3   => otmb_tx(6),
@@ -3161,7 +3162,7 @@ begin
           others => '0');
 
       when x"002B" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(4),
           tp_2   => otmb_tx(3),
           tp_3   => otmb_tx(2),
@@ -3169,7 +3170,7 @@ begin
           others => '0');
 
       when x"002C" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => otmb_tx(0),
           tp_2   => raw_lct(1),
           tp_3   => rawlct(1),
@@ -3177,7 +3178,7 @@ begin
           others => '0');
 
       when x"002D" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => dcfeb_prbs_en,
           tp_2   => dcfeb_prbs_rst,
           tp_3   => dcfeb_prbs_rd_en,
@@ -3185,7 +3186,7 @@ begin
           others => '0');
 
       when x"002E" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => v6_jtag_sel_inner,
           tp_2   => v6_tck_inner,
           tp_3   => v6_tms_inner,
@@ -3193,7 +3194,7 @@ begin
           others => '0');
 
       when x"002F" =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => lvmb_sdout,
           tp_2   => int_lvmb_sclk,
           tp_3   => int_lvmb_sdin,
@@ -3201,7 +3202,7 @@ begin
           others => '0');
 
       when others =>
-        test_point(45 downto 30) <= (
+        test_point(46 downto 31) <= (
           tp_1   => int_l1a,
           tp_2   => raw_lct(1),
           tp_3   => rawlct(1),

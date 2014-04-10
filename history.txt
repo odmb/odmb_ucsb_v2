@@ -1,11 +1,15 @@
 ======================================================================
 =                                                                    =
-=  ODMB_UCSB_V2: Official software for the ODMB                   =
+=  ODMB_UCSB_V2: Official software for the ODMB                      =
 =                                                                    =
 =  AUTHORS: Guido Magazzu, Frank Golf, Manuel Franco Sevilla         =
 =           Tom Danielson, Adam Dishaw, Jack Bradmiller-Feld         =
 =                                                                    =
 ======================================================================
+
+V03-03, build 0: 26 March 2014, Manuel
+------------------------------------------
+Changes to bitgen file to allow slave mode.
 
 V03-02, build 3: 26 March 2014, Manuel
 ------------------------------------------

@@ -474,44 +474,44 @@ NET: "dcfeb_tdo[7]"		LOC = "J11" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "therm2_p"		LOC = "F14" | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE; #STAT2
 NET: "otmbdav"			LOC = "AG27" | IOSTANDARD = LVCMOS25; #STAT2
 
-NET: "test_point[12]"		LOC = "W26" | IOSTANDARD = LVCMOS25; #STAT2 tp23
-NET: "test_point[13]"		LOC = "U26" | IOSTANDARD = LVCMOS25; #STAT2	tp24
-NET: "test_point[14]"		LOC = "U27" | IOSTANDARD = LVCMOS25; #STAT2	tp25
-NET: "test_point[15]"		LOC = "U28" | IOSTANDARD = LVCMOS25; #STAT2	tp26
-NET: "test_point[16]"		LOC = "Y27" | IOSTANDARD = LVCMOS25; #STAT2	tp27
-NET: "test_point[17]"		LOC = "W27" | IOSTANDARD = LVCMOS25; #STAT2	tp28
-NET: "test_point[18]"		LOC = "Y28" | IOSTANDARD = LVCMOS25; #STAT2	tp29
-NET: "test_point[19]"		LOC = "U32" | IOSTANDARD = LVCMOS25; #STAT2	tp30
-NET: "test_point[20]"		LOC = "V29" | IOSTANDARD = LVCMOS25; #STAT2	tp31
-NET: "test_point[21]"		LOC = "U33" | IOSTANDARD = LVCMOS25; #STAT2	tp32
-NET: "test_point[22]"		LOC = "W29" | IOSTANDARD = LVCMOS25; #STAT2	tp33
-NET: "test_point[23]"		LOC = "Y29" | IOSTANDARD = LVCMOS25; #STAT2	tp34
-NET: "test_point[24]"		LOC = "W31" | IOSTANDARD = LVCMOS25; #STAT2	tp35
-NET: "test_point[25]"		LOC = "W32" | IOSTANDARD = LVCMOS25; #STAT2	tp36
-NET: "test_point[26]"		LOC = "Y32" | IOSTANDARD = LVCMOS25; #STAT2	tp37
-NET: "test_point[27]"		LOC = "Y33" | IOSTANDARD = LVCMOS25; #STAT2	tp38
-NET: "test_point[28]"		LOC = "Y34" | IOSTANDARD = LVCMOS25; #STAT2	tp39
-NET: "test_point[29]"		LOC = "Y31" | IOSTANDARD = LVCMOS25; #STAT2	tp40
-NET: "test_point[30]"		LOC = "AN14" | IOSTANDARD = LVCMOS25 | PULLDOWN; #STAT2    tp_1 
-NET: "test_point[31]"		LOC = "AP14" | IOSTANDARD = LVCMOS25; #STAT2    tp_2 
-NET: "test_point[32]"		LOC = "AP12" | IOSTANDARD = LVCMOS25; #STAT2    tp_3 
-NET: "test_point[33]"		LOC = "AN13" | IOSTANDARD = LVCMOS25; #STAT2    tp_4 
-NET: "test_point[34]"		LOC = "AP11" | IOSTANDARD = LVCMOS25; #STAT2    tp_5 
-NET: "test_point[35]"		LOC = "AN12" | IOSTANDARD = LVCMOS25; #STAT2    tp_6 
-NET: "test_point[36]"		LOC = "AG12" | IOSTANDARD = LVCMOS25; #STAT2    tp_7 
-NET: "test_point[37]"		LOC = "AM10" | IOSTANDARD = LVCMOS25; #STAT2    tp_8 
-NET: "test_point[38]"		LOC = "AH13" | IOSTANDARD = LVCMOS25; #STAT2    tp_9 
-NET: "test_point[39]"		LOC = "AH12" | IOSTANDARD = LVCMOS25; #STAT2   tp_10
-NET: "test_point[40]"		LOC = "AJ12" | IOSTANDARD = LVCMOS25; #STAT2   tp_11
-NET: "test_point[41]"		LOC = "AK13" | IOSTANDARD = LVCMOS25; #STAT2   tp_12
-NET: "test_point[42]"		LOC = "AM13" | IOSTANDARD = LVCMOS25; #STAT2   tp_13
-NET: "test_point[43]"		LOC = "AK12" | IOSTANDARD = LVCMOS25; #STAT2   tp_14
-NET: "test_point[44]"		LOC = "AL11" | IOSTANDARD = LVCMOS25; #STAT2   tp_15
-NET: "test_point[45]"		LOC = "AM11" | IOSTANDARD = LVCMOS25; #STAT2   tp_16
-NET: "test_point[46]"		LOC = "AK11" | IOSTANDARD = LVCMOS25; #STAT2   tp_17  #Connected to dcfeb_tdi
-NET: "test_point[47]"		LOC = "AL10" | IOSTANDARD = LVCMOS25; #STAT2   tp_18
-NET: "test_point[48]"		LOC = "AJ10" | IOSTANDARD = LVCMOS25; #STAT2   tp_19  #Connected to dcfeb_tms
-NET: "test_point[49]"		LOC = "AH10" | IOSTANDARD = LVCMOS25; #STAT2   tp_20
+NET: "test_point[13]"		LOC = "W26" | IOSTANDARD = LVCMOS25; #STAT2 tp23
+NET: "test_point[14]"		LOC = "U26" | IOSTANDARD = LVCMOS25; #STAT2	tp24
+NET: "test_point[15]"		LOC = "U27" | IOSTANDARD = LVCMOS25; #STAT2	tp25
+NET: "test_point[16]"		LOC = "U28" | IOSTANDARD = LVCMOS25; #STAT2	tp26
+NET: "test_point[17]"		LOC = "Y27" | IOSTANDARD = LVCMOS25; #STAT2	tp27
+NET: "test_point[18]"		LOC = "W27" | IOSTANDARD = LVCMOS25; #STAT2	tp28
+NET: "test_point[19]"		LOC = "Y28" | IOSTANDARD = LVCMOS25; #STAT2	tp29
+NET: "test_point[20]"		LOC = "U32" | IOSTANDARD = LVCMOS25; #STAT2	tp30
+NET: "test_point[21]"		LOC = "V29" | IOSTANDARD = LVCMOS25; #STAT2	tp31
+NET: "test_point[22]"		LOC = "U33" | IOSTANDARD = LVCMOS25; #STAT2	tp32
+NET: "test_point[23]"		LOC = "W29" | IOSTANDARD = LVCMOS25; #STAT2	tp33
+NET: "test_point[24]"		LOC = "Y29" | IOSTANDARD = LVCMOS25; #STAT2	tp34
+NET: "test_point[25]"		LOC = "W31" | IOSTANDARD = LVCMOS25; #STAT2	tp35
+NET: "test_point[26]"		LOC = "W32" | IOSTANDARD = LVCMOS25; #STAT2	tp36
+NET: "test_point[27]"		LOC = "Y32" | IOSTANDARD = LVCMOS25; #STAT2	tp37
+NET: "test_point[28]"		LOC = "Y33" | IOSTANDARD = LVCMOS25; #STAT2	tp38
+NET: "test_point[29]"		LOC = "Y34" | IOSTANDARD = LVCMOS25; #STAT2	tp39
+NET: "test_point[30]"		LOC = "Y31" | IOSTANDARD = LVCMOS25; #STAT2	tp40
+NET: "test_point[31]"		LOC = "AN14" | IOSTANDARD = LVCMOS25 | PULLDOWN; #STAT2    tp_1 
+NET: "test_point[32]"		LOC = "AP14" | IOSTANDARD = LVCMOS25; #STAT2    tp_2 
+NET: "test_point[33]"		LOC = "AP12" | IOSTANDARD = LVCMOS25; #STAT2    tp_3 
+NET: "test_point[34]"		LOC = "AN13" | IOSTANDARD = LVCMOS25; #STAT2    tp_4 
+NET: "test_point[35]"		LOC = "AP11" | IOSTANDARD = LVCMOS25; #STAT2    tp_5 
+NET: "test_point[36]"		LOC = "AN12" | IOSTANDARD = LVCMOS25; #STAT2    tp_6 
+NET: "test_point[37]"		LOC = "AG12" | IOSTANDARD = LVCMOS25; #STAT2    tp_7 
+NET: "test_point[38]"		LOC = "AM10" | IOSTANDARD = LVCMOS25; #STAT2    tp_8 
+NET: "test_point[39]"		LOC = "AH13" | IOSTANDARD = LVCMOS25; #STAT2    tp_9 
+NET: "test_point[40]"		LOC = "AH12" | IOSTANDARD = LVCMOS25; #STAT2   tp_10
+NET: "test_point[41]"		LOC = "AJ12" | IOSTANDARD = LVCMOS25; #STAT2   tp_11
+NET: "test_point[42]"		LOC = "AK13" | IOSTANDARD = LVCMOS25; #STAT2   tp_12
+NET: "test_point[43]"		LOC = "AM13" | IOSTANDARD = LVCMOS25; #STAT2   tp_13
+NET: "test_point[44]"		LOC = "AK12" | IOSTANDARD = LVCMOS25; #STAT2   tp_14
+NET: "test_point[45]"		LOC = "AL11" | IOSTANDARD = LVCMOS25; #STAT2   tp_15
+NET: "test_point[46]"		LOC = "AM11" | IOSTANDARD = LVCMOS25; #STAT2   tp_16
+NET: "test_point[47]"		LOC = "AK11" | IOSTANDARD = LVCMOS25; #STAT2   tp_17  #Connected to dcfeb_tdi
+NET: "test_point[48]"		LOC = "AL10" | IOSTANDARD = LVCMOS25; #STAT2   tp_18
+NET: "test_point[49]"		LOC = "AJ10" | IOSTANDARD = LVCMOS25; #STAT2   tp_19  #Connected to dcfeb_tms
+NET: "test_point[50]"		LOC = "AH10" | IOSTANDARD = LVCMOS25; #STAT2   tp_20
 
 #NET: "TP24"			LOC = "AP7" | IOSTANDARD = LVCMOS25; #STAT2
 #NET: "TP25"			LOC = "AN7" | IOSTANDARD = LVCMOS25; #STAT2
