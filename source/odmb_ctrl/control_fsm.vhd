@@ -66,7 +66,8 @@ entity CONTROL_FSM is
     cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
     cafifo_l1a_cnt   : in std_logic_vector(23 downto 0);
     cafifo_bx_cnt    : in std_logic_vector(11 downto 0);
-    cafifo_lost_pckt : in std_logic_vector(NFEB+2 downto 1)
+    cafifo_lost_pckt : in std_logic_vector(NFEB+2 downto 1);
+    cafifo_lone      : in std_logic
     );
 end CONTROL_FSM;
 
@@ -97,6 +98,9 @@ architecture CONTROL_arch of CONTROL_FSM is
   type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
   signal hdr_word, tail_word : hdr_tail_array;
 
+  type   lone_array is array (4 downto 1) of std_logic_vector(15 downto 0);
+  signal lone_word : lone_array;
+
   constant fmt_vers         : std_logic_vector(1 downto 0)      := "10";
   constant l1a_dav_mismatch : std_logic                         := '0';
   constant ovlp             : std_logic_vector(5 downto 1)      := "00000";
@@ -108,11 +112,13 @@ architecture CONTROL_arch of CONTROL_FSM is
   -- constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
 
-  type   control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, WAIT_IDLE);
+  type   control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, LONE, WAIT_IDLE);
   signal control_current_state, control_next_state, q_control_current_state : control_state := IDLE;
 
   signal   hdr_tail_cnt_en       : std_logic             := '0';
   signal   hdr_tail_cnt          : integer range 1 to 8  := 1;
+  signal   lone_cnt_en           : std_logic             := '0';
+  signal   lone_cnt              : integer range 1 to 4  := 1;
   signal   wait_cnt_en           : std_logic             := '0';
   signal   wait_cnt              : integer range 1 to 10 := 1;
   signal   dev_cnt_en            : std_logic             := '0';
@@ -184,11 +190,12 @@ begin
   FP_POP   : FD port map(fifo_pop_inner, CLKCMS, d_fifo_pop_inner);
 
   control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en, tx_cnt,
-                              tx_cnt_en, tx_cnt_rst, hdr_tail_cnt_en, wait_cnt_en)
+                              tx_cnt_en, tx_cnt_rst, hdr_tail_cnt_en, lone_cnt_en, wait_cnt_en)
   begin
     if (RST = '1') then
       control_current_state <= IDLE;
       hdr_tail_cnt          <= 1;
+      lone_cnt              <= 1;
       wait_cnt              <= 1;
       dev_cnt               <= 9;
       tx_cnt                <= 1;
@@ -205,6 +212,13 @@ begin
           hdr_tail_cnt <= 1;
         else
           hdr_tail_cnt <= hdr_tail_cnt + 1;
+        end if;
+      end if;
+      if(lone_cnt_en = '1') then
+        if(lone_cnt = 4) then
+          lone_cnt <= 1;
+        else
+          lone_cnt <= lone_cnt + 1;
         end if;
       end if;
       if(dev_cnt_en = '1') then
@@ -246,14 +260,15 @@ begin
     x"0"                   when others;
 
   control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav,
-                               hdr_word, hdr_tail_cnt, dev_cnt, tx_cnt, DATAIN, q_datain_last,
-                               tail_word, wait_cnt)
+                               hdr_word, hdr_tail_cnt, lone_cnt, dev_cnt, tx_cnt, DATAIN,
+                               q_datain_last, tail_word, wait_cnt, cafifo_lone)
   begin
     oefifo_b_inner  <= (others => '1');
     renfifo_b_inner <= (others => '1');
     eof_d           <= '0';
     fifo_pop_80     <= '0';
     hdr_tail_cnt_en <= '0';
+    lone_cnt_en     <= '0';
     wait_cnt_en     <= '0';
     dev_cnt_en      <= '0';
     tx_cnt_rst      <= '0';
@@ -265,6 +280,8 @@ begin
         dav_d  <= '0';
         if (or_reduce(cafifo_l1a_match) = '1') then
           control_next_state <= HEADER;
+        elsif cafifo_lone = '1' then
+          control_next_state <= LONE;
         else
           control_next_state <= IDLE;
         end if;
@@ -328,6 +345,20 @@ begin
           fifo_pop_80        <= '1';
         else
           control_next_state <= TAIL;
+          eof_d              <= '0';
+          fifo_pop_80        <= '0';
+        end if;
+
+      when LONE =>
+        dout_d          <= lone_word(lone_cnt);
+        dav_d           <= '1';
+        lone_cnt_en <= '1';
+        if (lone_cnt = 4) then
+          control_next_state <= WAIT_IDLE;
+          eof_d              <= '1';
+          fifo_pop_80        <= '1';
+        else
+          control_next_state <= LONE;
           eof_d              <= '0';
           fifo_pop_80        <= '0';
         end if;
@@ -415,5 +446,10 @@ begin
   tail_word(7) <= x"E" & REG_CRC(22) & REG_CRC(10 downto 0);
   tail_word(8) <= x"E" & REG_CRC(23) & REG_CRC(21 downto 11);
 
+  lone_word(1) <= x"8" & cafifo_l1a_cnt(11 downto 0);
+  lone_word(2) <= x"8" & cafifo_l1a_cnt(23 downto 12);
+  lone_word(3) <= x"8" & x"000";
+  lone_word(4) <= x"8" & cafifo_bx_cnt;
+  
 
 end CONTROL_arch;
