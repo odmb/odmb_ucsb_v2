@@ -84,6 +84,7 @@ architecture cafifo_architecture of cafifo is
   end component;
 
   signal wr_addr_en, rd_addr_en   : std_logic;
+  signal wr_addr_en_q, rd_addr_en_q   : std_logic:='0';
   signal wr_addr_out, rd_addr_out : integer := 0;
 
   signal cafifo_wren, cafifo_rden  : std_logic;
@@ -296,7 +297,7 @@ begin
       for index in 0 to CAFIFO_SIZE-1 loop
         l1a_cnt(index) <= (others => '1');
       end loop;
-    elsif rising_edge(clk) then
+    elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
         l1a_cnt(wr_addr_out) <= l1a_cnt_out;
       elsif (cafifo_rden = '1') then
@@ -313,7 +314,7 @@ begin
       for index in 0 to CAFIFO_SIZE-1 loop
         bx_cnt(index) <= (others => '0');
       end loop;
-    elsif rising_edge(clk) then
+    elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
         bx_cnt(wr_addr_out) <= bx_cnt_out(11 downto 0);
       end if;
@@ -328,7 +329,7 @@ begin
       for index in 0 to CAFIFO_SIZE-1 loop
         l1a_match(index) <= (others => '0');
       end loop;
-    elsif rising_edge(clk) then
+    elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
         l1a_match(wr_addr_out) <= l1a_match_in;
       elsif (cafifo_rden = '1') then
@@ -345,7 +346,7 @@ begin
       for index in 0 to CAFIFO_SIZE-1 loop
         lone(index) <= '0';
       end loop;
-    elsif rising_edge(clk) then
+    elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
         lone(wr_addr_out) <= lone_in;
       elsif (cafifo_rden = '1') then
@@ -486,21 +487,25 @@ begin
 
 
 -- Address Counters
-  addr_counter : process (clk, wr_addr_en, rd_addr_en, rst)
+
+  FD_WREN : FD port map(wr_addr_en_q, CLK, wr_addr_en);
+  FD_RDEN : FD port map(rd_addr_en_q, CLK, rd_addr_en);
+  
+  addr_counter : process (clk, wr_addr_en_q, rd_addr_en_q, rst)
     variable addr_rd_data, addr_wr_data : integer := 0;
   begin
     if (rst = '1') then
       addr_rd_data := 0;
       addr_wr_data := 0;
     elsif (rising_edge(clk)) then
-      if (wr_addr_en = '1') then
+      if (wr_addr_en_q = '1') then
         if (addr_wr_data = CAFIFO_SIZE-1) then
           addr_wr_data := 0;
         else
           addr_wr_data := addr_wr_data + 1;
         end if;
       end if;
-      if (rd_addr_en = '1') then
+      if (rd_addr_en_q = '1') then
         if (addr_rd_data = CAFIFO_SIZE-1) then
           addr_rd_data := 0;
         else
