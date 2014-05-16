@@ -254,9 +254,8 @@ begin
   LOOPBACK <= loopback_inner;
 
 -- Read LOOPBACK
-  out_loopback(15 downto 3) <= (others => '0');
-  out_loopback(2 downto 0)  <= loopback_inner when (STROBE = '1' and r_loopback = '1')
-                               else (others => 'Z');
+  out_loopback <= x"000" & '0' & loopback_inner when r_loopback = '1'
+                   else (others => 'Z');
 
 -- Write TXDIFFCTRL
   GEN_TXDIFFCTRL : for I in 3 downto 0 generate
@@ -266,21 +265,7 @@ begin
   end generate GEN_TXDIFFCTRL;
   TXDIFFCTRL <= txdiffctrl_inner;
 
--- Read TXDIFFCTRL
-  out_txdiffctrl(15 downto 4) <= (others => '0');
-  out_txdiffctrl(3 downto 0)  <= txdiffctrl_inner
-                                 when (STROBE = '1' and r_txdiffctrl = '1')
-                                 else (others => 'Z');
-
--- Read DCFEB_DONE
-  out_dcfeb_done <= x"00" & '0' & dcfeb_done when (STROBE = '1' and r_dcfeb_done = '1')
-                    else (others => 'Z');
-
--- Read QPLL_LOCKED
-  out_qpll_locked <= x"000" & "000" & qpll_locked
-                     when (STROBE = '1' and r_qpll_locked = '1')
-                     else (others => 'Z');
-
+-- Reads
   out_odmb_cal      <= "00" & x"00" & odmb_ctrl_inner(5 downto 0);
   out_mux_data_path <= "000" & x"000" & odmb_ctrl_inner(7);
   out_mux_trigger   <= "000" & x"000" & odmb_ctrl_inner(9);
@@ -288,20 +273,23 @@ begin
   out_kill_l1a      <= "00" & x"000" & odmb_ctrl_inner(12 downto 11);
   out_odmb_ped      <= "00" & x"000" & odmb_ctrl_inner(14 downto 13);
   out_cal_ped       <= "000" & x"000" & test_ped_inner;
+  out_txdiffctrl    <= x"000" & txdiffctrl_inner;
+  out_dcfeb_done    <= x"00" & '0' & dcfeb_done;
+  out_qpll_locked   <= x"000" & "000" & qpll_locked;
 
   OUTDATA <= out_odmb_cal when (r_odmb_cal = '1') else
              out_mux_data_path when (r_mux_data_path = '1') else
-             out_mux_trigger   when (r_mux_trigger = '1')   else
-             out_mux_lvmb      when (r_mux_lvmb = '1')      else
-             out_kill_l1a      when (r_kill_l1a = '1')      else
-             out_odmb_ped      when (r_odmb_ped = '1')      else
-             out_cal_ped       when (r_cal_ped = '1')       else
-             out_tp_sel        when (r_tp_sel = '1')        else
-             out_loopback      when (r_loopback = '1')      else
-             out_txdiffctrl    when (r_txdiffctrl = '1')    else
-             out_dcfeb_done    when (r_dcfeb_done = '1')    else
-             out_qpll_locked   when (r_qpll_locked = '1')   else
-             odmb_data         when (r_odmb_data = '1')     else
+             out_mux_trigger   when (r_mux_trigger = '1') else
+             out_mux_lvmb      when (r_mux_lvmb = '1') else
+             out_kill_l1a      when (r_kill_l1a = '1') else
+             out_odmb_ped      when (r_odmb_ped = '1') else
+             out_cal_ped       when (r_cal_ped = '1') else
+             out_tp_sel        when (r_tp_sel = '1') else
+             out_loopback      when (r_loopback = '1') else
+             out_txdiffctrl    when (r_txdiffctrl = '1') else
+             out_dcfeb_done    when (r_dcfeb_done = '1') else
+             out_qpll_locked   when (r_qpll_locked = '1') else
+             odmb_data         when (r_odmb_data = '1') else
              (others => 'L');
 
   -- DTACK

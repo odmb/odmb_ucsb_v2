@@ -2190,13 +2190,13 @@ begin
 -- Power ON reset [The FD is to avoid an event on an array]
   FD_FW_RESET  : FD port map(fw_reset_q, clk2p5, fw_reset);
   FD_OPT_RESET : FD port map(opt_reset_pulse_q, clk2p5, opt_reset_pulse);
-  pon_rst_reg <= x"0FFFFFFF" when (pll1_locked = '0') else
+  pon_rst_reg <= x"3FFFFFFF" when (pll1_locked = '0') else
                  pon_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
                  pon_rst_reg;
-  fw_rst_reg <= x"0FFFFFFF" when ((fw_reset_q = '0' and fw_reset = '1') or ccb_softrst = '0') else
+  fw_rst_reg <= x"3FFFFFFF" when ((fw_reset_q = '0' and fw_reset = '1') or ccb_softrst = '0') else
                 fw_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
                 fw_rst_reg;
-  opt_rst_reg <= x"0FFFFFFF" when (opt_reset_pulse_q = '0' and opt_reset_pulse = '1') else
+  opt_rst_reg <= x"3FFFFFFF" when (opt_reset_pulse_q = '0' and opt_reset_pulse = '1') else
                  opt_rst_reg(30 downto 0) & '0' when clk2p5'event and clk2p5 = '1' else
                  opt_rst_reg;
   pon_reset <= pon_rst_reg(31);
@@ -2595,7 +2595,8 @@ begin
         ledg(1) <= gl0_clk_slow;
         ledg(2) <= gl1_clk_2_slow;
         ledg(3) <= clk1;
-        ledg(4) <= pedestal;
+        --ledg(4) <= pedestal;
+        ledg(4) <= qpll_locked;
         ledg(5) <= testctrl_sel;
         ledg(6) <= gen_dcfeb_sel;
 

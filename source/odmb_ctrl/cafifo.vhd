@@ -142,9 +142,10 @@ architecture cafifo_architecture of cafifo is
   type timeout_state_vec is array (NFEB+2 downto 1) of timeout_state;
   signal timeout_current_state, timeout_next_state : timeout_state_vec;
 
-  type timeout_array is array (NFEB+2 downto 1) of integer range 0 to 800;
+  type timeout_array is array (NFEB+2 downto 1) of integer range 0 to 5000;
   signal timeout_cnt   : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  constant timeout_max : timeout_array := (480, 680, 500, 500, 500, 500, 500, 500, 500);
+  --constant timeout_max : timeout_array := (480, 680, 500, 500, 500, 500, 500, 500,500); -- Normal length
+  constant timeout_max : timeout_array := (2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000); --Debug
   --constant timeout_max                     : timeout_array := (70, 70, 18, 18, 18, 18, 18, 18, 18);
   -- count to these numbers before
   -- timeout (7 us, 12 us)
@@ -163,6 +164,11 @@ architecture cafifo_architecture of cafifo is
   constant csp1             : integer := 31;
   constant csp2             : integer := 0;
   constant csp3             : integer := 1;
+
+  -- Regs
+  signal lone_in_reg, cafifo_wren_d, lone_in_reg_d, cafifo_wren_dd : std_logic;
+  signal l1a_match_in_reg_d, l1a_match_in_reg : std_logic_vector(NFEB+2 downto 1);
+  signal bx_cnt_out_reg_d, bx_cnt_out_reg : std_logic_vector(11 downto 0);
   
 begin
 
@@ -186,12 +192,26 @@ begin
 
 -- Initial assignments
 
-  cafifo_wren <= l1a when (cafifo_full = '0') else '0';
+  cafifo_wren_dd <= l1a when (cafifo_full = '0') else '0';
+  FDWREND : FD port map(cafifo_wren_d, CLK, cafifo_wren_dd);
+  FDWREN : FD port map(cafifo_wren, CLK, cafifo_wren_d);
   --cafifo_wren <= or_reduce(l1a_match_in) when (cafifo_full = '0') else '0';  -- Avoids empty packets
   cafifo_rden <= pop;
 
   lone_in <= l1a and not or_reduce(l1a_match_in);
 
+  -- Adding flip-flops to make sure L1A_CNT has updated, and lone_in is synced with L1A_MATCH
+  FDLONED : FD port map(lone_in_reg_d, CLK, lone_in);
+  FDLONE : FD port map(lone_in_reg, CLK, lone_in_reg_d);
+  GEN_L1AM_REG : for dev in 1 to NFEB+2 generate
+    FDL1AMD : FD port map(l1a_match_in_reg_d(dev), CLK, l1a_match_in(dev));
+    FDL1AM : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
+  end generate GEN_L1AM_REG;
+  GEN_BX_REG : for dev in 0 to 11 generate
+    FDL1AMD : FD port map(bx_cnt_out_reg_d(dev), CLK, bx_cnt_out(dev));
+    FDL1AM : FD port map(bx_cnt_out_reg(dev), CLK, bx_cnt_out_reg_d(dev));
+  end generate GEN_BX_REG;
+ 
 -- RX FSMs
 
   --dcfeb_dv(1) <= dcfeb0_dv;
@@ -286,7 +306,7 @@ begin
         l1a_cnt_data := l1a_cnt_data + 1;
       end if;
     end if;
-    l1a_cnt_out <= l1a_cnt_data + 1;
+    l1a_cnt_out <= l1a_cnt_data;
   end process;
 
 ---------------------- Memory           ----------------------
@@ -308,7 +328,7 @@ begin
 
   cafifo_l1a_cnt <= l1a_cnt(rd_addr_out);
 
-  bx_cnt_fifo : process (cafifo_wren, wr_addr_out, bxcnt_rst, clk, bx_cnt_out)
+  bx_cnt_fifo : process (cafifo_wren, wr_addr_out, bxcnt_rst, clk, bx_cnt_out_reg)
   begin
     if (bxcnt_rst = '1') then
       for index in 0 to CAFIFO_SIZE-1 loop
@@ -316,14 +336,14 @@ begin
       end loop;
     elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
-        bx_cnt(wr_addr_out) <= bx_cnt_out(11 downto 0);
+        bx_cnt(wr_addr_out) <= bx_cnt_out_reg(11 downto 0);
       end if;
     end if;
   end process;
 
   cafifo_bx_cnt <= bx_cnt(rd_addr_out);
 
-  l1a_match_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_match_in)
+  l1a_match_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_match_in_reg)
   begin
     if rst = '1' then
       for index in 0 to CAFIFO_SIZE-1 loop
@@ -331,7 +351,7 @@ begin
       end loop;
     elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
-        l1a_match(wr_addr_out) <= l1a_match_in;
+        l1a_match(wr_addr_out) <= l1a_match_in_reg;
       elsif (cafifo_rden = '1') then
         l1a_match(rd_addr_out) <= (others => '0');
       end if;
@@ -340,7 +360,7 @@ begin
 
   cafifo_l1a_match <= l1a_match(rd_addr_out);
 
-  lone_fifo : process (cafifo_wren, wr_addr_out, rst, clk, lone_in)
+  lone_fifo : process (cafifo_wren, wr_addr_out, rst, clk, lone_in_reg)
   begin
     if rst = '1' then
       for index in 0 to CAFIFO_SIZE-1 loop
@@ -348,7 +368,7 @@ begin
       end loop;
     elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
-        lone(wr_addr_out) <= lone_in;
+        lone(wr_addr_out) <= lone_in_reg;
       elsif (cafifo_rden = '1') then
         lone(rd_addr_out) <= '0';
       end if;
@@ -360,7 +380,7 @@ begin
 --------------------------- GENERATE DAVS and LOSTS  -------------------------------
 
   GEN_L1ACNT_DAV : for dev in 1 to NFEB+2 generate
-    l1acnt_dav_fifo_wr_en(dev) <= l1a_match_in(dev);
+    l1acnt_dav_fifo_wr_en(dev) <= l1a_match_in_reg(dev);
     l1acnt_dav_fifo_in(dev)    <= l1a_cnt_out;
     --FIFORD       : FD port map(l1acnt_dav_fifo_rd_en(dev), clk, l1acnt_dav_fifo_rd_en_d(dev));
 
