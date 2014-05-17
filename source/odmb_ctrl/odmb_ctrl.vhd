@@ -9,7 +9,7 @@ entity ODMB_CTRL is
   generic (
     NFIFO       : integer range 1 to 16 := 16;  -- Number of FIFOs in PCFIFO
     NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
-    CAFIFO_SIZE : integer range 1 to 64 := 64  -- Number FIFO words in CAFIFO
+    CAFIFO_SIZE : integer range 1 to 128 := 128  -- Number FIFO words in CAFIFO
     );  
   port (
 
@@ -374,7 +374,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   component cafifo is
     generic (
       NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
-      CAFIFO_SIZE : integer range 1 to 64 := 16  -- Number of CAFIFO words
+      CAFIFO_SIZE : integer range 1 to 128 := 128  -- Number of CAFIFO words
       );  
     port(
 

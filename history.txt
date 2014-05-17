@@ -7,6 +7,12 @@
 =                                                                    =
 ======================================================================
 
+V03-04, build 8: 17 May 2014, Manuel
+------------------------------------------
+Added lone words when L1A but no L1A_MATCHes.
+Stopped sending PON_LOAD on resets.
+Made MASK_L1A 8 bits to mask individual L1A_MATCHes.
+
 V03-03, build 0: 26 March 2014, Manuel
 ------------------------------------------
 Changes to bitgen file to allow slave mode.

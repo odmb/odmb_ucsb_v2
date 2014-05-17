@@ -325,6 +325,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       OTMB_LCT_RQST   : out std_logic;
       OTMB_EXT_TRIG   : out std_logic;
 
+      MASK_L1A        : out std_logic_vector(NFEB downto 0);
       tp_sel        : out std_logic_vector(15 downto 0);
       odmb_ctrl     : out std_logic_vector(15 downto 0);
       odmb_data_sel : out std_logic_vector(7 downto 0);
@@ -444,6 +445,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
   component ODMB_CTRL is
+  generic (
+    NFIFO       : integer range 1 to 16 := 16;  -- Number of FIFOs in PCFIFO
+    NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
+    CAFIFO_SIZE : integer range 1 to 128 := 128  -- Number FIFO words in CAFIFO
+    );  
     port (
       CSP_FREE_AGENT_PORT_LA_CTRL  : inout std_logic_vector(35 downto 0);
       CSP_CONTROL_FSM_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
@@ -1023,11 +1029,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal otmb_tx_inner                    : std_logic_vector(48 downto 0);
   signal qpll_locked_cnt                  : std_logic_vector(15 downto 0);
 
+  signal mask_l1a : std_logic_vector(NFEB downto 0);
   signal tp_sel_reg               : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg            : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_data_sel            : std_logic_vector(7 downto 0);
   signal odmb_data                : std_logic_vector(15 downto 0);
-  signal mask_l1a, mask_l1a_match : std_logic                     := '0';
   signal pedestal                 : std_logic                     := '0';
 
   -- GIGALINK_PC 
@@ -1442,6 +1448,7 @@ begin
       OTMB_LCT_RQST   => otmb_lct_rqst,
       OTMB_EXT_TRIG   => otmb_ext_trig,
 
+      MASK_L1A      => mask_l1a,
       tp_sel        => tp_sel_reg,
       odmb_ctrl     => odmb_ctrl_reg,
       odmb_data_sel => odmb_data_sel,
@@ -1557,6 +1564,7 @@ begin
       );                                -- MBV : ODMB_VME
 
   MBC : ODMB_CTRL
+    generic map(CAFIFO_SIZE => 128)
     port map (
 
       CSP_FREE_AGENT_PORT_LA_CTRL  => csp_free_agent_port_la_ctrl,
@@ -1900,7 +1908,7 @@ begin
 
     dcfeb_tck(I) <= int_tck(I);
 
-    dcfeb_l1a_match(I) <= '0' when mask_l1a_match = '1' else int_l1a_match(I);
+    dcfeb_l1a_match(I) <= '0' when mask_l1a(I) = '1' else int_l1a_match(I);
 
     int_tdo(I) <= dcfeb_tdo(I) when (gen_dcfeb_sel = '0') else gen_tdo(I);
 
@@ -2157,9 +2165,6 @@ begin
   pb_b <= not pb;
   PULSE_PB : PULSE_EDGE port map(pb_pulse, open, clk40, reset, 1, pb_b(1));
 
-  mask_l1a       <= odmb_ctrl_reg(11);
-  mask_l1a_match <= odmb_ctrl_reg(12);
-
   -- From CCB - for production tests
   ccb_cmd_bxev <= ccb_cmd & ccb_evcntres & ccb_bxrst;
   GEN_CCB : for index in 0 to 7 generate
@@ -2178,7 +2183,7 @@ begin
   end generate GEN_CCB_FD;
 
   -- To DCFEBs
-  dcfeb_l1a       <= '0' when mask_l1a = '1' else int_l1a;
+  dcfeb_l1a       <= '0' when mask_l1a(0) = '1' else int_l1a;
   dcfeb_resync    <= resync;
   dcfeb_reprgen_b <= '0';
   dcfeb_bc0       <= test_bc0 or not ccb_bx0;  -- New signal to DCFEB for syncing

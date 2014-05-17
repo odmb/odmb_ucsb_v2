@@ -42,6 +42,7 @@ entity VMEMON is
     OTMB_LCT_RQST   : out std_logic;
     OTMB_EXT_TRIG   : out std_logic;
 
+    MASK_L1A        : out std_logic_vector(NFEB downto 0);
     TP_SEL        : out std_logic_vector(15 downto 0);
     ODMB_CTRL     : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -119,8 +120,9 @@ architecture VMEMON_Arch of VMEMON is
   signal out_mux_trigger              : std_logic_vector(15 downto 0) := (others => '0');
   signal w_mux_trigger, r_mux_trigger : std_logic                     := '0';
 
-  signal out_kill_l1a           : std_logic_vector(15 downto 0) := (others => '0');
-  signal w_kill_l1a, r_kill_l1a : std_logic                     := '0';
+  signal out_mask_l1a           : std_logic_vector(15 downto 0) := (others => '0');
+  signal mask_l1a_inner          : std_logic_vector(NFEB downto 0) := (others => '0');
+  signal w_mask_l1a, r_mask_l1a : std_logic                     := '0';
 
   signal out_odmb_ped           : std_logic_vector(15 downto 0) := (others => '0');
   signal w_odmb_ped, r_odmb_ped : std_logic                     := '0';
@@ -172,8 +174,8 @@ begin
   r_odmb_ped <= '1' when (CMDDEV = x"1400" and WRITER = '1') else '0';
   w_cal_ped  <= '1' when (CMDDEV = x"1404" and WRITER = '0') else '0';
   r_cal_ped  <= '1' when (CMDDEV = x"1404" and WRITER = '1') else '0';
-  w_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '0') else '0';
-  r_kill_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '1') else '0';
+  w_mask_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '0') else '0';
+  r_mask_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '1') else '0';
 
   r_odmb_data               <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
   odmb_data_sel(7 downto 0) <= COMMAND(9 downto 2);
@@ -202,7 +204,7 @@ begin
   odmb_ctrl_en(8)                   <= w_odmb_rst;
   odmb_ctrl_en(9)                   <= w_mux_trigger;
   odmb_ctrl_en(10)                  <= w_mux_lvmb;
-  odmb_ctrl_en(12 downto 11)        <= (others => w_kill_l1a);
+  odmb_ctrl_en(12 downto 11)        <= (others => w_mask_l1a);
   odmb_ctrl_en(14 downto 13)        <= (others => w_odmb_ped);
   odmb_ctrl_en(15)                  <= '0';
 
@@ -234,6 +236,17 @@ begin
   PULSE_BC0 : PULSE_EDGE port map(test_bc0, test_bc0_rst, clk40, rst, 1,
                                   dcfeb_pulse(5));
 
+-- Write MASK_L1A
+  GEN_MASK_L1A : for I in NFEB downto 0 generate
+  begin
+    FD_W_MASK_L1A : FDCE port map(MASK_L1A_INNER(I), STROBE, W_MASK_L1A, RST, INDATA(I));
+  end generate GEN_MASK_L1A;
+  MASK_L1A <= MASK_L1A_INNER;
+
+-- Read MASK_L1A
+  OUT_MASK_L1A(15 downto 0) <= x"00" & MASK_L1A_INNER when R_MASK_L1A = '1'
+                             else (others => 'Z');
+
 -- Write TP_SEL
   GEN_TP_SEL : for I in 15 downto 0 generate
   begin
@@ -242,7 +255,7 @@ begin
   TP_SEL <= TP_SEL_INNER;
 
 -- Read TP_SEL
-  OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when (STROBE = '1' and R_TP_SEL = '1')
+  OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when R_TP_SEL = '1'
                              else (others => 'Z');
 
 -- Write LOOPBACK
@@ -270,7 +283,6 @@ begin
   out_mux_data_path <= "000" & x"000" & odmb_ctrl_inner(7);
   out_mux_trigger   <= "000" & x"000" & odmb_ctrl_inner(9);
   out_mux_lvmb      <= "000" & x"000" & odmb_ctrl_inner(10);
-  out_kill_l1a      <= "00" & x"000" & odmb_ctrl_inner(12 downto 11);
   out_odmb_ped      <= "00" & x"000" & odmb_ctrl_inner(14 downto 13);
   out_cal_ped       <= "000" & x"000" & test_ped_inner;
   out_txdiffctrl    <= x"000" & txdiffctrl_inner;
@@ -281,7 +293,7 @@ begin
              out_mux_data_path when (r_mux_data_path = '1') else
              out_mux_trigger   when (r_mux_trigger = '1') else
              out_mux_lvmb      when (r_mux_lvmb = '1') else
-             out_kill_l1a      when (r_kill_l1a = '1') else
+             out_mask_l1a      when (r_mask_l1a = '1') else
              out_odmb_ped      when (r_odmb_ped = '1') else
              out_cal_ped       when (r_cal_ped = '1') else
              out_tp_sel        when (r_tp_sel = '1') else

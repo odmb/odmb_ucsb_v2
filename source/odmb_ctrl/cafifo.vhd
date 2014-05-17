@@ -18,7 +18,7 @@ use hdlmacro.hdlmacro.all;
 entity cafifo is
   generic (
     NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
-    CAFIFO_SIZE : integer range 1 to 64 := 32  -- Number of CAFIFO words
+    CAFIFO_SIZE : integer range 1 to 128 := 128  -- Number of CAFIFO words
     );
   port(
 
