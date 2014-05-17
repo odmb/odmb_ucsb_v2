@@ -508,8 +508,12 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       cafifo_l1a_dav       : out std_logic_vector(NFEB+2 downto 1);
       cafifo_bx_cnt        : out std_logic_vector(11 downto 0);
 
-      cafifo_wr_addr : out std_logic_vector(3 downto 0);
-      cafifo_rd_addr : out std_logic_vector(3 downto 0);
+      cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
+      cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
+    control_debug : out std_logic_vector(15 downto 0);
+      cafifo_debug               : out std_logic_vector(15 downto 0);
+      cafifo_wr_addr : out std_logic_vector(7 downto 0);
+      cafifo_rd_addr : out std_logic_vector(7 downto 0);
 
       ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
       dcfeb_l1a_dav7     : out std_logic;
@@ -1173,8 +1177,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal cafifo_l1a_cnt       : std_logic_vector(23 downto 0);
   signal cafifo_l1a_dav       : std_logic_vector(NFEB+2 downto 1);
   signal cafifo_bx_cnt        : std_logic_vector(11 downto 0);
-  signal cafifo_wr_addr       : std_logic_vector(3 downto 0);
-  signal cafifo_rd_addr       : std_logic_vector(3 downto 0);
+  signal cafifo_prev_next_l1a_match : std_logic_vector(15 downto 0);
+  signal cafifo_prev_next_l1a       : std_logic_vector(15 downto 0);
+  signal cafifo_debug, control_debug               : std_logic_vector(15 downto 0);
+  signal cafifo_wr_addr       : std_logic_vector(7 downto 0);
+  signal cafifo_rd_addr       : std_logic_vector(7 downto 0);
 
 
   type   dcfeb_fifo_data_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
@@ -1614,6 +1621,10 @@ begin
       cafifo_l1a_cnt       => cafifo_l1a_cnt,
       cafifo_l1a_dav       => cafifo_l1a_dav,
       cafifo_bx_cnt        => cafifo_bx_cnt,
+      cafifo_prev_next_l1a_match => cafifo_prev_next_l1a_match,
+      cafifo_prev_next_l1a       => cafifo_prev_next_l1a,
+      control_debug               => control_debug,
+      cafifo_debug               => cafifo_debug,
       cafifo_wr_addr       => cafifo_wr_addr,
       cafifo_rd_addr       => cafifo_rd_addr,
       ext_dcfeb_l1a_cnt7   => ext_dcfeb_l1a_cnt7,
@@ -2494,25 +2505,25 @@ begin
       TRIG0   => csp_bpi_la_trig
       );
 
-  csp_bpi_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
+  --csp_bpi_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
 
-  csp_bpi_la_data <= "00" & x"0"
-                     & bpi_cfg_ul_pulse & bpi_cfg_dl_pulse &clk40 & clk2p5  -- [293:290]
-                     & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
-                     & cmd_adrs         -- [284:269]
-                     & vme_data_in      -- [268:253]
-                     & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
-                     & bpi_cfg_reg_we & bpi_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
-                     & bpi_op & bpi_cfg_reg_in                -- [240:223]
-                     & bpi_status & bpi_timer                 -- [222:175]
-                     & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]
-                     & bpi_cmd_fifo_data & bpi_rbk_fifo_data  -- [140:109]
-                     & bpi_data_from & bpi_data_to            -- [108:77]
-                     & dual_data_leds   -- [76:61]
-                     & x"0000"          -- [60:45]
-                     & prom_control     -- [44:39]
-                     & prom_a_out       -- [38:16]
-                     & prom_d_out;      -- [15:0]
+  --csp_bpi_la_data <= "00" & x"0"
+  --                   & bpi_cfg_ul_pulse & bpi_cfg_dl_pulse &clk40 & clk2p5  -- [293:290]
+  --                   & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
+  --                   & cmd_adrs         -- [284:269]
+  --                   & vme_data_in      -- [268:253]
+  --                   & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
+  --                   & bpi_cfg_reg_we & bpi_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
+  --                   & bpi_op & bpi_cfg_reg_in                -- [240:223]
+  --                   & bpi_status & bpi_timer                 -- [222:175]
+  --                   & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]
+  --                   & bpi_cmd_fifo_data & bpi_rbk_fifo_data  -- [140:109]
+  --                   & bpi_data_from & bpi_data_to            -- [108:77]
+  --                   & dual_data_leds   -- [76:61]
+  --                   & x"0000"          -- [60:45]
+  --                   & prom_control     -- [44:39]
+  --                   & prom_a_out       -- [38:16]
+  --                   & prom_d_out;      -- [15:0]
 
 ------------------------------------  Monitoring  ------------------------------------
 ---------------------------------------------------------------------------------------
@@ -2596,7 +2607,7 @@ begin
         ledg(2) <= gl1_clk_2_slow;
         ledg(3) <= clk1;
         --ledg(4) <= pedestal;
-        ledg(4) <= qpll_locked;
+        ledg(4) <= not qpll_locked;
         ledg(5) <= testctrl_sel;
         ledg(6) <= gen_dcfeb_sel;
 
@@ -2651,20 +2662,23 @@ begin
   odmb_status_pro : process (odmb_status, odmb_ctrl_reg, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
                              l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
                              data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, data_fifo_oe_cnt, goodcrc_cnt,
-                             alct_dav_cnt, otmb_dav_cnt)
+                             alct_dav_cnt, otmb_dav_cnt, cafifo_rd_addr, cafifo_wr_addr,
+                             cafifo_prev_next_l1a_match, cafifo_prev_next_l1a, cafifo_debug, control_debug)
   begin
     
     case odmb_data_sel is
 
       when x"00" => odmb_data <= odmb_status;
       when x"01" => odmb_data <= odmb_ctrl_reg;
-      when x"02" => odmb_data <= x"0000";
-      when x"03" => odmb_data <= x"0000";
-
-      when x"04" => odmb_data <= "0000" & dcfeb_adc_mask(2);
-      when x"05" => odmb_data <= dcfeb_fsel(2)(15 downto 0);
-      when x"06" => odmb_data <= dcfeb_fsel(2)(31 downto 16);
-      when x"07" => odmb_data <= "00" & dcfeb_jtag_ir(2) & "000" & dcfeb_fsel(2)(31);
+                    
+      when x"02" => odmb_data <= cafifo_debug; --cafifo_empty & cafifo_full & cafifo_state_slv & timeout_state_1
+                                               --& timeout_state_9 & lone(rd_addr_out) & lost_pckt(rd_addr_out)(8 downto 2);
+      when x"03" => odmb_data <= cafifo_prev_next_l1a;
+      when x"04" => odmb_data <= cafifo_prev_next_l1a_match;
+                    
+      when x"05" => odmb_data <= control_debug; --'0' & dev_cnt_svl & '0' & hdr_tail_cnt_svl & current_state_svl;
+      when x"06" => odmb_data <= x"0000";
+      when x"07" => odmb_data <= x"0000";
 
       when x"08" => odmb_data <= "0000" & dcfeb_adc_mask(3);
       when x"09" => odmb_data <= dcfeb_fsel(3)(15 downto 0);
@@ -2729,7 +2743,7 @@ begin
       when x"3A" => odmb_data <= "00000000" & cafifo_l1a_cnt(23 downto 16);
       when x"3B" => odmb_data <= cafifo_l1a_cnt(15 downto 0);
       when x"3C" => odmb_data <= "0000" & cafifo_bx_cnt;
-      when x"3D" => odmb_data <= "00000000" & cafifo_rd_addr & cafifo_wr_addr;
+      when x"3D" => odmb_data <= cafifo_rd_addr & cafifo_wr_addr;
       when x"3E" => odmb_data <= "0000000" & cafifo_l1a_match_in;
       when x"3F" => odmb_data <= int_l1a_cnt;
 

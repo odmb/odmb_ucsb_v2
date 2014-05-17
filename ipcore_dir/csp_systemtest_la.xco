@@ -1,16 +1,40 @@
 ##############################################################
+#
+# Xilinx Core Generator version 12.4
+# Date: Sat May 17 14:48:31 2014
+#
 ##############################################################
+#
+#  This file contains the customisation parameters for a
+#  Xilinx CORE Generator IP GUI. It is strongly recommended
+#  that you do not manually alter this file as it may cause
+#  unexpected and unsupported behavior.
+#
 ##############################################################
+#
+# BEGIN Project Options
+SET addpads = false
+SET asysymbol = true
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = false
 SET designentry = VHDL
-SET BusFormat = BusFormatAngleBracketNotRipped
-SET devicefamily = virtex6
 SET device = xc6vlx130t
+SET devicefamily = virtex6
+SET flowvendor = Foundation_ISE
+SET formalverification = false
+SET foundationsym = false
+SET implementationfiletype = Ngc
 SET package = ff1156
+SET removerpms = false
+SET simulationfiles = Structural
 SET speedgrade = -1
-SET FlowVendor = Foundation_ISE
-SET VerilogSim = True
-SET VHDLSim = True
+SET verilogsim = true
+SET vhdlsim = true
+# END Project Options
+# BEGIN Select
 SELECT ILA_(ChipScope_Pro_-_Integrated_Logic_Analyzer) family Xilinx,_Inc. 1.03.a
+# END Select
+# BEGIN Parameters
 CSET component_name=csp_systemtest_la
 CSET counter_width_1=Disabled
 CSET counter_width_10=Disabled
@@ -101,3 +125,6 @@ CSET trigger_port_width_7=8
 CSET trigger_port_width_8=8
 CSET trigger_port_width_9=8
 CSET use_rpms=true
+# END Parameters
+GENERATE
+# CRC: 39bac1a4

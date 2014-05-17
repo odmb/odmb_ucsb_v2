@@ -65,8 +65,11 @@ entity cafifo is
     ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
     dcfeb_l1a_dav7     : out std_logic;
 
-    cafifo_wr_addr : out std_logic_vector(3 downto 0);
-    cafifo_rd_addr : out std_logic_vector(3 downto 0)
+    cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
+    cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
+    cafifo_debug               : out std_logic_vector(15 downto 0);
+    cafifo_wr_addr             : out std_logic_vector(7 downto 0);
+    cafifo_rd_addr             : out std_logic_vector(7 downto 0)
     );
 
 end cafifo;
@@ -83,9 +86,9 @@ architecture cafifo_architecture of cafifo is
       );
   end component;
 
-  signal wr_addr_en, rd_addr_en   : std_logic;
-  signal wr_addr_en_q, rd_addr_en_q   : std_logic:='0';
-  signal wr_addr_out, rd_addr_out : integer := 0;
+  signal wr_addr_en, rd_addr_en                               : std_logic;
+  signal wr_addr_en_q, rd_addr_en_q                           : std_logic := '0';
+  signal wr_addr_out, rd_addr_out, prev_rd_addr, next_rd_addr : integer   := 0;
 
   signal cafifo_wren, cafifo_rden  : std_logic;
   signal cafifo_empty, cafifo_full : std_logic;
@@ -145,7 +148,7 @@ architecture cafifo_architecture of cafifo is
   type timeout_array is array (NFEB+2 downto 1) of integer range 0 to 5000;
   signal timeout_cnt   : timeout_array := (0, 0, 0, 0, 0, 0, 0, 0, 0);
   --constant timeout_max : timeout_array := (480, 680, 500, 500, 500, 500, 500, 500,500); -- Normal length
-  constant timeout_max : timeout_array := (2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000); --Debug
+  constant timeout_max : timeout_array := (2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000);  --Debug
   --constant timeout_max                     : timeout_array := (70, 70, 18, 18, 18, 18, 18, 18, 18);
   -- count to these numbers before
   -- timeout (7 us, 12 us)
@@ -167,146 +170,50 @@ architecture cafifo_architecture of cafifo is
 
   -- Regs
   signal lone_in_reg, cafifo_wren_d, lone_in_reg_d, cafifo_wren_dd : std_logic;
-  signal l1a_match_in_reg_d, l1a_match_in_reg : std_logic_vector(NFEB+2 downto 1);
-  signal bx_cnt_out_reg_d, bx_cnt_out_reg : std_logic_vector(11 downto 0);
+  signal l1a_match_in_reg_d, l1a_match_in_reg                      : std_logic_vector(NFEB+2 downto 1);
+  signal bx_cnt_out_reg_d, bx_cnt_out_reg                          : std_logic_vector(11 downto 0);
+
+  -- Out
+  signal cafifo_state_slv : std_logic_vector(1 downto 0);
+
+  signal  bad_l1a_lone : std_logic;
   
 begin
-
-  cafifo_wr_addr <= std_logic_vector(to_unsigned(wr_addr_out, cafifo_wr_addr'length));
-  cafifo_rd_addr <= std_logic_vector(to_unsigned(rd_addr_out, cafifo_rd_addr'length));
-
-  -- Generate BX_CNT (page 5 TRGFIFO)
-  BX_CNT_CLR              <= BC0 or BXRST or BX_CNT_RST;
-  BX_CNT_A : CB16CE port map(BX_CNT_A_CEO, BX_CNT_INNER, BX_CNT_A_TC, CLK, LOGICH, BX_CNT_CLR);
-  BX_CNT_B : CB4CE port map(BX_CNT_B_CEO, BX_CNT_OUT(12), BX_CNT_OUT(13), BX_CNT_OUT(14), BX_CNT_OUT(15), BX_CNT_B_TC, CLK, LOGICH, RST);
-  BX_CNT_OUT(11 downto 0) <= BX_CNT_INNER(11 downto 0);
-
--- Generate BX_ORBIT (3563 bunch crossings) / Generate BX_CNT_RST (page 5)
--- BX_ORBIT <= '1' when (conv_integer(BX_CNT) = 3563) else '0';
--- 2048 + 1024 = 3072 + 256 = 3328 + 128 = 3456 + 64 = 3520 + 32 = 3552 + 11 = 3563
-  BX_ORBIT <= '1' when (BX_CNT_OUT = "0000110111101011") else '0';
-  FDCORBIT : FDC port map(BX_CNT_RST, CLK, BX_CNT_RST_RST, BX_ORBIT);
-  FDBXRST  : FD port map(BX_CNT_RST_RST, CLK, BX_CNT_RST);
-
-
 
 -- Initial assignments
 
   cafifo_wren_dd <= l1a when (cafifo_full = '0') else '0';
   FDWREND : FD port map(cafifo_wren_d, CLK, cafifo_wren_dd);
-  FDWREN : FD port map(cafifo_wren, CLK, cafifo_wren_d);
+  FDWREN  : FD port map(cafifo_wren, CLK, cafifo_wren_d);
   --cafifo_wren <= or_reduce(l1a_match_in) when (cafifo_full = '0') else '0';  -- Avoids empty packets
-  cafifo_rden <= pop;
+  cafifo_rden    <= pop;
 
   lone_in <= l1a and not or_reduce(l1a_match_in);
 
   -- Adding flip-flops to make sure L1A_CNT has updated, and lone_in is synced with L1A_MATCH
-  FDLONED : FD port map(lone_in_reg_d, CLK, lone_in);
-  FDLONE : FD port map(lone_in_reg, CLK, lone_in_reg_d);
+  FDLONED      : FD port map(lone_in_reg_d, CLK, lone_in);
+  FDLONE       : FD port map(lone_in_reg, CLK, lone_in_reg_d);
   GEN_L1AM_REG : for dev in 1 to NFEB+2 generate
     FDL1AMD : FD port map(l1a_match_in_reg_d(dev), CLK, l1a_match_in(dev));
-    FDL1AM : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
+    FDL1AM  : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
   end generate GEN_L1AM_REG;
   GEN_BX_REG : for dev in 0 to 11 generate
     FDL1AMD : FD port map(bx_cnt_out_reg_d(dev), CLK, bx_cnt_out(dev));
-    FDL1AM : FD port map(bx_cnt_out_reg(dev), CLK, bx_cnt_out_reg_d(dev));
+    FDL1AM  : FD port map(bx_cnt_out_reg(dev), CLK, bx_cnt_out_reg_d(dev));
   end generate GEN_BX_REG;
- 
--- RX FSMs
 
-  --dcfeb_dv(1) <= dcfeb0_dv;
-  --dcfeb_dv(2) <= dcfeb1_dv;
-  --dcfeb_dv(3) <= dcfeb2_dv;
-  --dcfeb_dv(4) <= dcfeb3_dv;
-  --dcfeb_dv(5) <= dcfeb4_dv;
-  --dcfeb_dv(6) <= dcfeb5_dv;
-  --dcfeb_dv(7) <= dcfeb6_dv;
-
-  --dcfeb_l1a_cnt(1) <= dcfeb0_data(11 downto 0) when (dcfeb0_dv = '1') else (others => '0');
-  --dcfeb_l1a_cnt(2) <= dcfeb1_data(11 downto 0) when (dcfeb1_dv = '1') else (others => '0');
-  --dcfeb_l1a_cnt(3) <= dcfeb2_data(11 downto 0) when (dcfeb2_dv = '1') else (others => '0');
-  --dcfeb_l1a_cnt(4) <= dcfeb3_data(11 downto 0) when (dcfeb3_dv = '1') else (others => '0');
-  --dcfeb_l1a_cnt(5) <= dcfeb4_data(11 downto 0) when (dcfeb4_dv = '1') else (others => '0');
-  --dcfeb_l1a_cnt(6) <= dcfeb5_data(11 downto 0) when (dcfeb5_dv = '1') else (others => '0');
-  --dcfeb_l1a_cnt(7) <= dcfeb6_data(11 downto 0) when (dcfeb6_dv = '1') else (others => '0');
-
-  --l1a_cnt_regs : process (dcfeb_l1a_cnt, rst, dcfebclk, reg_dcfeb_l1a_cnt)
-  --begin
-  --  for index_dcfeb in 1 to NFEB loop
-  --    if (rst = '1') then
-  --      reg_dcfeb_l1a_cnt(index_dcfeb) <= (others => '0');
-  --    elsif rising_edge(dcfebclk) then
-  --      reg_dcfeb_l1a_cnt(index_dcfeb) <= dcfeb_l1a_cnt(index_dcfeb);
-  --    end if;
-  --    ext_dcfeb_l1a_cnt(index_dcfeb) <= reg_dcfeb_l1a_cnt(index_dcfeb) & dcfeb_l1a_cnt(index_dcfeb);
-  --  end loop;
-
-  --end process;
-
-
-  --ext_dcfeb_l1a_cnt7 <= ext_dcfeb_l1a_cnt(7);
-  --dcfeb_l1a_dav7     <= dcfeb_l1a_dav(7);
-
-  --rx_fsm_regs : process (rx_next_state, rst, dcfebclk)
-  --begin
-  --  for dcfeb_index in 1 to NFEB loop
-  --    if (rst = '1') then
-  --      rx_current_state(dcfeb_index) <= RX_IDLE;
-  --    elsif rising_edge(dcfebclk) then
-  --      rx_current_state(dcfeb_index) <= rx_next_state(dcfeb_index);
-  --    end if;
-  --  end loop;
-  --end process;
-
-  --rx_fsm_logic : process (rx_current_state, dcfeb_dv)
-  --begin
-  --  for dcfeb_index in 1 to NFEB loop
-  --    case rx_current_state(dcfeb_index) is
-  --      when RX_IDLE =>
-  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
-  --        if (dcfeb_dv(dcfeb_index) = '1') then
-  --          rx_next_state(dcfeb_index) <= RX_HEADER1;
-  --        else
-  --          rx_next_state(dcfeb_index) <= RX_IDLE;
-  --        end if;
-
-  --      when RX_HEADER1 =>
-  --        dcfeb_l1a_dav(dcfeb_index) <= '1';
-  --        rx_next_state(dcfeb_index) <= RX_HEADER2;
-
-  --      when RX_HEADER2 =>
-  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
-  --        rx_next_state(dcfeb_index) <= RX_DW;
-
-  --      when RX_DW =>
-  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
-  --        if (dcfeb_dv(dcfeb_index) = '1') then
-  --          rx_next_state(dcfeb_index) <= RX_DW;
-  --        else
-  --          rx_next_state(dcfeb_index) <= RX_IDLE;
-  --        end if;
-
-  --      when others =>
-  --        dcfeb_l1a_dav(dcfeb_index) <= '0';
-  --        rx_next_state(dcfeb_index) <= RX_IDLE;
-
-  --    end case;
-  --  end loop;
-  --end process;
 
 -------------------- L1A Counter        --------------------
 
   l1a_counter : process (clk, l1a, l1acnt_rst)
-    variable l1a_cnt_data : std_logic_vector(23 downto 0);
   begin
     if (l1acnt_rst = '1') then
-      l1a_cnt_data := (others => '0');
+      l1a_cnt_out <= (others => '0');
     elsif (rising_edge(clk)) then
       if (l1a = '1') then
-        l1a_cnt_data := l1a_cnt_data + 1;
+        l1a_cnt_out <= l1a_cnt_out + 1;
       end if;
     end if;
-    l1a_cnt_out <= l1a_cnt_data;
   end process;
 
 ---------------------- Memory           ----------------------
@@ -510,32 +417,28 @@ begin
 
   FD_WREN : FD port map(wr_addr_en_q, CLK, wr_addr_en);
   FD_RDEN : FD port map(rd_addr_en_q, CLK, rd_addr_en);
-  
+
   addr_counter : process (clk, wr_addr_en_q, rd_addr_en_q, rst)
-    variable addr_rd_data, addr_wr_data : integer := 0;
   begin
     if (rst = '1') then
-      addr_rd_data := 0;
-      addr_wr_data := 0;
+      rd_addr_out <= 0;
+      wr_addr_out <= 0;
     elsif (rising_edge(clk)) then
       if (wr_addr_en_q = '1') then
-        if (addr_wr_data = CAFIFO_SIZE-1) then
-          addr_wr_data := 0;
+        if (wr_addr_out = CAFIFO_SIZE-1) then
+          wr_addr_out <= 0;
         else
-          addr_wr_data := addr_wr_data + 1;
+          wr_addr_out <= wr_addr_out + 1;
         end if;
       end if;
       if (rd_addr_en_q = '1') then
-        if (addr_rd_data = CAFIFO_SIZE-1) then
-          addr_rd_data := 0;
+        if (rd_addr_out = CAFIFO_SIZE-1) then
+          rd_addr_out <= 0;
         else
-          addr_rd_data := addr_rd_data + 1;
+          rd_addr_out <= rd_addr_out + 1;
         end if;
       end if;
     end if;
-
-    wr_addr_out <= addr_wr_data;
-    rd_addr_out <= addr_rd_data;
   end process;
 
 -- FSM
@@ -557,7 +460,7 @@ begin
         if (cafifo_wren = '1') then
           next_state <= FIFO_NOT_EMPTY;
           wr_addr_en <= '1';
-          rd_addr_en <= '0';
+           rd_addr_en <= '0';
         else
           next_state <= FIFO_EMPTY;
           wr_addr_en <= '0';
@@ -576,7 +479,7 @@ begin
           wr_addr_en <= '1';
           rd_addr_en <= '0';
         elsif (cafifo_rden = '1' and cafifo_wren = '0') then
-          if (rd_addr_out = wr_addr_out-1) then
+          if (rd_addr_out = wr_addr_out-1 or (rd_addr_out = CAFIFO_SIZE-1 and wr_addr_out = 0)) then
             next_state <= FIFO_EMPTY;
           else
             next_state <= FIFO_NOT_EMPTY;
@@ -615,40 +518,73 @@ begin
     end case;
   end process;
 
--- Chip ScopePro ILA core
-  --csp_systemtest_la_pm : csp_systemtest_la
-  --  port map (
-  --    CONTROL => CSP_FREE_AGENT_PORT_LA_CTRL,
-  --    CLK     => CLK,                   -- Good ol' 40MHz clock here
-  --    DATA    => free_agent_la_data,
-  --    TRIG0   => free_agent_la_trig
-  --    );
+  cafifo_state_slv <= "01" when current_state = FIFO_EMPTY else
+                      "10" when current_state = FIFO_NOT_EMPTY else
+                      "11" when current_state = FIFO_FULL else
+                      "00";
 
-  --free_agent_la_trig <= std_logic_vector(to_unsigned(wr_addr_out, 4)) &
-  --                      std_logic_vector(to_unsigned(rd_addr_out, 4));
-  --free_agent_la_data <= l1acnt_dav_fifo_out(1)(4 downto 0)           -- [199:195]
-  --                      --& timeout_state_9  -- [196:195]                        
-  --                      & wait_cnt_en(9) & wait_cnt_rst(9)  -- [194:193]                        
-  --                      & l1a_dav_en(9) & l1acnt_dav_fifo_rd_en(9)  -- [192:191]                        
-  --                      & lost_pckt_en(9) & timeout_cnt_en(1) & timeout_cnt_rst(9)  -- [190:188]          
-  --                      & timeout_state_1  -- [187:186]                        
-  --                      & wait_cnt_en(1) & wait_cnt_rst(1)  -- [185:184]                        
-  --                      & l1a_dav_en(1) & l1acnt_dav_fifo_rd_en(1)  -- [183:182]                        
-  --                      & lost_pckt_en(1) & timeout_cnt_en(1) & timeout_cnt_rst(1)  -- [181:179]          
-  --                      & lost_pckt(csp3) & lost_pckt(csp2)  -- [178:161]                        
-  --                      & lost_pckt(csp1) & lost_pckt(rd_addr_out)  -- [160:143]                        
-  --                      & l1a_dav(csp3) & l1a_dav(csp2)  -- [142:125]                        
-  --                      & l1a_dav(csp1) & l1a_dav(rd_addr_out)  -- [124:107]                        
-  --                      & l1a_match(csp3) & l1a_match(csp2)  -- [106:89]                        
-  --                      & l1a_match(csp1) & l1a_match(rd_addr_out)  -- [88:71]                        
-  --                      & l1a_cnt(csp3)(3 downto 0) & l1a_cnt(csp2)(3 downto 0)  -- [70:63]     
-  --                      & l1a_cnt(csp1)(3 downto 0) & l1a_cnt(rd_addr_out)(3 downto 0)  -- [62:55]       
-  --                      & EOF_DATA      -- [54:46]                        
-  --                      & ALCT_DV & OTMB_DV & dcfeb_dv  -- [45:37]                        
-  --                      & DCFEB0_DATA   -- [36:21]                        
-  --                      & L1A_MATCH_IN & L1A & POP     -- [20:10]
-  --                      & std_logic_vector(to_unsigned(wr_addr_out, 5))  -- [9:5]
-  --                      & std_logic_vector(to_unsigned(rd_addr_out, 5));  -- [4:0]
+  cafifo_debug <= cafifo_empty & cafifo_full & cafifo_state_slv & timeout_state_1 & timeout_state_9
+                  & lone(rd_addr_out) & lost_pckt(rd_addr_out)(8 downto 2);
+
+  prev_rd_addr               <= rd_addr_out-1 when rd_addr_out > 0             else CAFIFO_SIZE-1;
+  next_rd_addr               <= rd_addr_out+1 when rd_addr_out < CAFIFO_SIZE-1 else 0;
+  cafifo_prev_next_l1a_match <= l1a_match(prev_rd_addr)(8 downto 1) & l1a_match(next_rd_addr)(8 downto 1);
+  cafifo_prev_next_l1a       <= l1a_cnt(prev_rd_addr)(7 downto 0) & l1a_cnt(next_rd_addr)(7 downto 0);
+
+-- Chip ScopePro ILA core
+  csp_systemtest_la_pm : csp_systemtest_la
+    port map (
+      CONTROL => CSP_FREE_AGENT_PORT_LA_CTRL,
+      CLK     => CLK,                   -- Good ol' 40MHz clock here
+      DATA    => free_agent_la_data,
+      TRIG0   => free_agent_la_trig
+      );
+
+  bad_l1a_lone <= not or_reduce(l1a_match_in_reg) and not lone_in_reg and cafifo_wren;
+  free_agent_la_trig <= bad_l1a_lone & std_logic_vector(to_unsigned(wr_addr_out, 3)) &
+                        std_logic_vector(to_unsigned(rd_addr_out, 4));
+  free_agent_la_data <= l1acnt_dav_fifo_out(1)(4 downto 0)  -- [199:195]
+                        --& timeout_state_9  -- [196:195]                        
+                        & wait_cnt_en(9) & wait_cnt_rst(9)  -- [194:193]                        
+                        & l1a_dav_en(9) & l1acnt_dav_fifo_rd_en(9)  -- [192:191]                        
+                        & lost_pckt_en(9) & timeout_cnt_en(1) & timeout_cnt_rst(9)  -- [190:188]          
+                        & timeout_state_1  -- [187:186]                        
+                        & wait_cnt_en(1) & wait_cnt_rst(1)  -- [185:184]                        
+                        & l1a_dav_en(1) & l1acnt_dav_fifo_rd_en(1)  -- [183:182]                        
+                        & lost_pckt_en(1) & timeout_cnt_en(1) & timeout_cnt_rst(1)  -- [181:179]          
+                        & l1a_match_in_reg & lost_pckt(prev_rd_addr)  -- [178:161]                        
+                        & lost_pckt(next_rd_addr) & lost_pckt(rd_addr_out)  -- [160:143]                        
+                        & lone_in_reg & cafifo_wren & cafifo_rden & wr_addr_en_q & rd_addr_en_q  -- [142:138]
+                        & l1a_cnt_out(3 downto 0) -- [137:134]      
+                        & l1a_dav(prev_rd_addr)  -- [133:125]                        
+                        & l1a_dav(next_rd_addr) & l1a_dav(rd_addr_out)  -- [124:107]                        
+                        & l1a_match(csp3) & l1a_match(prev_rd_addr)  -- [106:89]                        
+                        & l1a_match(next_rd_addr) & l1a_match(rd_addr_out)  -- [88:71]                        
+                        & bad_l1a_lone & lone(prev_rd_addr) & lone(next_rd_addr) & lone(rd_addr_out) -- [70:67]
+                        & l1a_cnt(prev_rd_addr)(3 downto 0)  -- [66:63]     
+                        & l1a_cnt(next_rd_addr)(3 downto 0) & l1a_cnt(rd_addr_out)(3 downto 0)  -- [62:55]       
+                        & EOF_DATA      -- [54:46]                        
+                        & ALCT_DV & OTMB_DV & dcfeb_dv  -- [45:37]                        
+                        & DCFEB0_DATA   -- [36:21]                        
+                        & L1A_MATCH_IN & L1A & POP      -- [20:10]
+                        & std_logic_vector(to_unsigned(wr_addr_out, 5))  -- [9:5]
+                        & std_logic_vector(to_unsigned(rd_addr_out, 5));  -- [4:0]
   
+  cafifo_wr_addr <= std_logic_vector(to_unsigned(wr_addr_out, cafifo_wr_addr'length));
+  cafifo_rd_addr <= std_logic_vector(to_unsigned(rd_addr_out, cafifo_rd_addr'length));
+
+  -- Generate BX_CNT (page 5 TRGFIFO)
+  BX_CNT_CLR              <= BC0 or BXRST or BX_CNT_RST;
+  BX_CNT_A : CB16CE port map(BX_CNT_A_CEO, BX_CNT_INNER, BX_CNT_A_TC, CLK, LOGICH, BX_CNT_CLR);
+  BX_CNT_B : CB4CE port map(BX_CNT_B_CEO, BX_CNT_OUT(12), BX_CNT_OUT(13), BX_CNT_OUT(14), BX_CNT_OUT(15), BX_CNT_B_TC, CLK, LOGICH, RST);
+  BX_CNT_OUT(11 downto 0) <= BX_CNT_INNER(11 downto 0);
+
+-- Generate BX_ORBIT (3563 bunch crossings) / Generate BX_CNT_RST (page 5)
+-- BX_ORBIT <= '1' when (conv_integer(BX_CNT) = 3563) else '0';
+-- 2048 + 1024 = 3072 + 256 = 3328 + 128 = 3456 + 64 = 3520 + 32 = 3552 + 11 = 3563
+  BX_ORBIT <= '1' when (BX_CNT_OUT = "0000110111101011") else '0';
+  FDCORBIT : FDC port map(BX_CNT_RST, CLK, BX_CNT_RST_RST, BX_ORBIT);
+  FDBXRST  : FD port map(BX_CNT_RST_RST, CLK, BX_CNT_RST);
+
 
 end cafifo_architecture;

@@ -61,6 +61,9 @@ entity CONTROL_FSM is
 -- TO DDUFIFO
     EOF : out std_logic;
 
+-- DEBUG
+    control_debug : out std_logic_vector(15 downto 0);
+
 -- FROM CAFIFO
     cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
     cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
@@ -95,10 +98,10 @@ architecture CONTROL_arch of CONTROL_FSM is
 
   signal fifo_pop_80 : std_logic := '0';
 
-  type   hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
+  type hdr_tail_array is array (8 downto 1) of std_logic_vector(15 downto 0);
   signal hdr_word, tail_word : hdr_tail_array;
 
-  type   lone_array is array (4 downto 1) of std_logic_vector(15 downto 0);
+  type lone_array is array (4 downto 1) of std_logic_vector(15 downto 0);
   signal lone_word : lone_array;
 
   constant fmt_vers         : std_logic_vector(1 downto 0)      := "10";
@@ -112,23 +115,23 @@ architecture CONTROL_arch of CONTROL_FSM is
   -- constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
 
-  type   control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, LONE, WAIT_IDLE);
+  type control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, LONE, WAIT_IDLE);
   signal control_current_state, control_next_state, q_control_current_state : control_state := IDLE;
 
-  signal   hdr_tail_cnt_en       : std_logic             := '0';
-  signal   hdr_tail_cnt          : integer range 1 to 8  := 1;
-  signal   lone_cnt_en           : std_logic             := '0';
-  signal   lone_cnt              : integer range 1 to 4  := 1;
-  signal   wait_cnt_en           : std_logic             := '0';
-  signal   wait_cnt              : integer range 1 to 10 := 1;
-  signal   dev_cnt_en            : std_logic             := '0';
-  signal   dev_cnt               : integer range 1 to 9  := 9;
-  signal   tx_cnt_en, tx_cnt_rst : std_logic             := '0';
-  signal   tx_cnt                : integer range 1 to 4  := 1;
-  type     tx_cnt_array is array (1 to 9) of integer range 1 to 4;
+  signal hdr_tail_cnt_en       : std_logic             := '0';
+  signal hdr_tail_cnt          : integer range 1 to 8  := 1;
+  signal lone_cnt_en           : std_logic             := '0';
+  signal lone_cnt              : integer range 1 to 4  := 1;
+  signal wait_cnt_en           : std_logic             := '0';
+  signal wait_cnt              : integer range 1 to 10 := 1;
+  signal dev_cnt_en            : std_logic             := '0';
+  signal dev_cnt               : integer range 1 to 9  := 9;
+  signal tx_cnt_en, tx_cnt_rst : std_logic             := '0';
+  signal tx_cnt                : integer range 1 to 4  := 1;
+  type tx_cnt_array is array (1 to 9) of integer range 1 to 4;
   --signal   tx_cnt                : tx_cnt_array          := (1, 1, 1, 1, 1, 1, 1, 1, 1);
   --constant tx_cnt_max            : tx_cnt_array          := (4, 4, 4, 4, 4, 4, 4, 2, 2);
-  constant tx_cnt_max            : tx_cnt_array          := (3, 3, 3, 3, 3, 3, 3, 1, 1);
+  constant tx_cnt_max          : tx_cnt_array          := (3, 3, 3, 3, 3, 3, 3, 1, 1);
 
   signal reg_crc, crc : std_logic_vector(23 downto 0) := (others => '0');
 
@@ -180,6 +183,8 @@ begin
                          & q_datain_last & expect_pckt         -- [16:15]
                          & hdr_tail_cnt_svl & dev_cnt_svl      -- [14:5]
                          & current_state_svl & dav_inner;      -- [4:0]
+
+  control_debug <= '0' & dev_cnt_svl & '0' & hdr_tail_cnt_svl & current_state_svl;
 
 -- Needed because DATAIN_LAST does not arrive during the last word
   FDLAST : FD port map(q_datain_last, clk, DATAIN_LAST);
@@ -247,7 +252,8 @@ begin
     x"3"                      when WAIT_DEV,
     x"4"                      when TX_DEV,
     x"5"                      when TAIL,
-    x"6"                      when WAIT_IDLE,
+    x"6"                      when LONE,
+    x"7"                      when WAIT_IDLE,
     x"0"                      when others;
   
   with control_next_state select
@@ -256,7 +262,8 @@ begin
     x"3"                   when WAIT_DEV,
     x"4"                   when TX_DEV,
     x"5"                   when TAIL,
-    x"6"                   when WAIT_IDLE,
+    x"6"                   when LONE,
+    x"7"                   when WAIT_IDLE,
     x"0"                   when others;
 
   control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav,
@@ -350,8 +357,8 @@ begin
         end if;
 
       when LONE =>
-        dout_d          <= lone_word(lone_cnt);
-        dav_d           <= '1';
+        dout_d      <= lone_word(lone_cnt);
+        dav_d       <= '1';
         lone_cnt_en <= '1';
         if (lone_cnt = 4) then
           control_next_state <= WAIT_IDLE;

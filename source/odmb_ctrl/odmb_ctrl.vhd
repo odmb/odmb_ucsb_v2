@@ -78,8 +78,12 @@ entity ODMB_CTRL is
     cafifo_l1a_dav       : out std_logic_vector(NFEB+2 downto 1);
     cafifo_bx_cnt        : out std_logic_vector(11 downto 0);
 
-    cafifo_wr_addr : out std_logic_vector(3 downto 0);
-    cafifo_rd_addr : out std_logic_vector(3 downto 0);
+    cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
+    cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
+      control_debug : out std_logic_vector(15 downto 0);
+    cafifo_debug               : out std_logic_vector(15 downto 0);
+    cafifo_wr_addr             : out std_logic_vector(7 downto 0);
+    cafifo_rd_addr             : out std_logic_vector(7 downto 0);
 
     ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
     dcfeb_l1a_dav7     : out std_logic;
@@ -354,6 +358,9 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- TO PCFIFO
       EOF : out std_logic;
 
+-- DEBUG
+    control_debug : out std_logic_vector(15 downto 0);
+    
 -- FROM CAFIFO
       cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
       cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
@@ -414,8 +421,11 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       ext_dcfeb_l1a_cnt7 : out std_logic_vector(23 downto 0);
       dcfeb_l1a_dav7     : out std_logic;
 
-      cafifo_wr_addr : out std_logic_vector(3 downto 0);
-      cafifo_rd_addr : out std_logic_vector(3 downto 0)
+      cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
+      cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
+      cafifo_debug               : out std_logic_vector(15 downto 0);
+      cafifo_wr_addr             : out std_logic_vector(7 downto 0);
+      cafifo_rd_addr             : out std_logic_vector(7 downto 0)
       );
 
   end component;
@@ -699,8 +709,11 @@ begin
       ext_dcfeb_l1a_cnt7 => ext_dcfeb_l1a_cnt7,
       dcfeb_l1a_dav7     => dcfeb_l1a_dav7,
 
-      cafifo_wr_addr => cafifo_wr_addr,
-      cafifo_rd_addr => cafifo_rd_addr
+      cafifo_prev_next_l1a_match => cafifo_prev_next_l1a_match,
+      cafifo_prev_next_l1a       => cafifo_prev_next_l1a,
+      cafifo_debug               => cafifo_debug,
+      cafifo_wr_addr             => cafifo_wr_addr,
+      cafifo_rd_addr             => cafifo_rd_addr
       );
 
   CONTROL_FSM_PM : CONTROL_FSM
@@ -746,6 +759,9 @@ begin
 -- TO PCFIFO
       EOF => eof,
 
+-- DEBUG
+    control_debug => control_debug,
+      
 -- FROM CAFIFO
       cafifo_l1a_dav   => cafifo_l1a_dav_out,
       cafifo_l1a_match => cafifo_l1a_match_out_inner,
