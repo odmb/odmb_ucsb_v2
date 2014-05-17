@@ -157,7 +157,8 @@ begin  --Architecture
   pon_reset_b <= not pon_reset;
   FDPON      : FD port map(pon_reset_b1, slowclk, pon_reset_b);
   PULSEPON   : PULSE_EDGE port map(pon_pulse, open, slowclk, rst, 1, pon_reset_b1);
-  C_LOADON    <= (WRITEPOWER and STROBE) or pon_pulse;
+  --C_LOADON    <= (WRITEPOWER and STROBE) or pon_pulse;
+  C_LOADON    <= (WRITEPOWER and STROBE);
   FDC_LOADON : FDC port map (Q1_LOADON, C_LOADON, LOADON_INNER, '1');
   FD_LOADON1 : FD port map (Q2_LOADON, SLOWCLK, Q1_LOADON);
   FD_LOADON2 : FD port map (LOADON_INNER, SLOWCLK, Q2_LOADON);
@@ -219,21 +220,21 @@ begin  --Architecture
   DIAGLVDB_INNER(17 downto 0) <= x"000" & L_ADCDATA & BUSY & ADCCLK_INNER & CLKMON & CE_ADCDATA & SLOWCLK;
   DIAGLVDB                    <= DIAGLVDB_INNER;
 
-  csp_lvmb_la_pm : csp_lvmb_la
-    port map (
-      CONTROL => CSP_LVMB_LA_CTRL,
-      CLK     => SLOWCLK,
-      DATA    => csp_lvmb_la_data,
-      TRIG0   => csp_lvmb_la_trig
-      );
+  --csp_lvmb_la_pm : csp_lvmb_la
+  --  port map (
+  --    CONTROL => CSP_LVMB_LA_CTRL,
+  --    CLK     => SLOWCLK,
+  --    DATA    => csp_lvmb_la_data,
+  --    TRIG0   => csp_lvmb_la_trig
+  --    );
 
-  csp_lvmb_la_trig <= x"0" & "00" & WRITEADC & READMON;
-  csp_lvmb_la_data <= x"0000000000" & "00" &
-                      BUSY & RST & RSTBUSY &         -- (50:48)
-                      ASYNLOAD & LOADON_INNER & LVTURNON_INNER & CE_LOAD &  --(47:44)
-                      ADCIN & Q_ADCDATA(7) &         --ADC_OUT.  (43:42)
-                      Q_ADCDATA &       -- (41:34)
-                      Q_OUTDATA_FULL(15 downto 0) &  --(33:18)
-                      DIAGLVDB_INNER;   --(17:0)
+  --csp_lvmb_la_trig <= x"0" & "00" & WRITEADC & READMON;
+  --csp_lvmb_la_data <= x"0000000000" & "00" &
+  --                    BUSY & RST & RSTBUSY &         -- (50:48)
+  --                    ASYNLOAD & LOADON_INNER & LVTURNON_INNER & CE_LOAD &  --(47:44)
+  --                    ADCIN & Q_ADCDATA(7) &         --ADC_OUT.  (43:42)
+  --                    Q_ADCDATA &       -- (41:34)
+  --                    Q_OUTDATA_FULL(15 downto 0) &  --(33:18)
+  --                    DIAGLVDB_INNER;   --(17:0)
   
 end LVDBMON_Arch;

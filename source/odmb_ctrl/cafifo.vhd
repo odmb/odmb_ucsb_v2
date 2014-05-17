@@ -88,7 +88,7 @@ architecture cafifo_architecture of cafifo is
 
   signal wr_addr_en, rd_addr_en                               : std_logic;
   signal wr_addr_en_q, rd_addr_en_q                           : std_logic := '0';
-  signal wr_addr_out, rd_addr_out, prev_rd_addr, next_rd_addr : integer   := 0;
+  signal wr_addr_out, rd_addr_out, prev_rd_addr, next_rd_addr : integer   range 0 to CAFIFO_SIZE-1 := 0;
 
   signal cafifo_wren, cafifo_rden  : std_logic;
   signal cafifo_empty, cafifo_full : std_logic;

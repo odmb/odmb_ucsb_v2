@@ -8,6 +8,7 @@ use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.ucsb_types.all;
 
 entity TESTFIFOS is
   generic (
@@ -59,6 +60,11 @@ entity TESTFIFOS is
     DDU_RX_FIFO_RST     : out std_logic;
     DDU_RX_FIFO_RDEN    : out std_logic;
 
+    -- HEADER FIFO signals
+    DDU_DATA       : in std_logic_vector(15 downto 0);
+    DDU_DATA_VALID : in std_logic;
+    DDUCLK         : in std_logic;
+
     -- TFF (DCFEB test FIFOs)
     TFF_DOUT    : in  std_logic_vector(15 downto 0);
     TFF_WRD_CNT : in  std_logic_vector(11 downto 0);
@@ -96,16 +102,16 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   end component;
 
   signal dd_dtack, d_dtack, q_dtack : std_logic;
-  signal CMDDEV      : std_logic_vector(15 downto 0);
+  signal CMDDEV                     : std_logic_vector(15 downto 0);
 
-  type   FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
-  signal FIFO_RD                                : FIFO_RD_TYPE;
-  signal C_FIFO_RD                              : std_logic_vector(NFEB downto 1) := (others => '0');
-  signal OUT_TFF_READ                           : std_logic_vector(15 downto 0)   := (others => '0');
-  signal R_TFF_READ : std_logic                       := '0';
+  type FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
+  signal FIFO_RD      : FIFO_RD_TYPE;
+  signal C_FIFO_RD    : std_logic_vector(NFEB downto 1) := (others => '0');
+  signal OUT_TFF_READ : std_logic_vector(15 downto 0)   := (others => '0');
+  signal R_TFF_READ   : std_logic                       := '0';
 
-  signal OUT_TFF_WRD_CNT                                 : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_TFF_WRD_CNT : std_logic                     := '0';
+  signal OUT_TFF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_TFF_WRD_CNT   : std_logic                     := '0';
 
   signal OUT_TFF_SEL   : std_logic_vector(15 downto 0)   := (others => '0');
   signal TFF_SEL_INNER : std_logic_vector(NFEB downto 1) := (others => '0');
@@ -113,40 +119,40 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal W_TFF_SEL, R_TFF_SEL : std_logic := '0';
 
-  signal W_TFF_RST : std_logic                       := '0';
-  signal PULSE_TFF_RST, IN_TFF_RST           : std_logic_vector(NFEB downto 1) := (others => '0');
-  signal TFF_RST_INNER                       : std_logic_vector(NFEB downto 1) := (others => '0');
+  signal W_TFF_RST                 : std_logic                       := '0';
+  signal PULSE_TFF_RST, IN_TFF_RST : std_logic_vector(NFEB downto 1) := (others => '0');
+  signal TFF_RST_INNER             : std_logic_vector(NFEB downto 1) := (others => '0');
 
-  signal PC_TX_FF_RD                          : std_logic_vector(3 downto 0);
-  signal OUT_PC_TX_FF_READ                    : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_PC_TX_FF_READ, C_PC_TX_FF_RD       : std_logic                     := '0';
+  signal PC_TX_FF_RD                    : std_logic_vector(3 downto 0);
+  signal OUT_PC_TX_FF_READ              : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_TX_FF_READ, C_PC_TX_FF_RD : std_logic                     := '0';
 
-  signal OUT_PC_TX_FF_WRD_CNT                     : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_PC_TX_FF_WRD_CNT : std_logic                     := '0';
+  signal OUT_PC_TX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_TX_FF_WRD_CNT   : std_logic                     := '0';
 
   signal W_PC_TX_FF_RST : std_logic := '0';
 
-  signal PC_RX_FF_RD                          : std_logic_vector(3 downto 0);
-  signal OUT_PC_RX_FF_READ                    : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_PC_RX_FF_READ, C_PC_RX_FF_RD       : std_logic                     := '0';
+  signal PC_RX_FF_RD                    : std_logic_vector(3 downto 0);
+  signal OUT_PC_RX_FF_READ              : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_RX_FF_READ, C_PC_RX_FF_RD : std_logic                     := '0';
 
-  signal OUT_PC_RX_FF_WRD_CNT                     : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_PC_RX_FF_WRD_CNT : std_logic                     := '0';
+  signal OUT_PC_RX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_PC_RX_FF_WRD_CNT   : std_logic                     := '0';
 
   signal W_PC_RX_FF_RST : std_logic := '0';
 
-  signal DDU_TX_FF_RD                           : std_logic_vector(3 downto 0);
-  signal OUT_DDU_TX_FF_READ                     : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_DDU_TX_FF_READ, C_DDU_TX_FF_RD       : std_logic                     := '0';
+  signal DDU_TX_FF_RD                     : std_logic_vector(3 downto 0);
+  signal OUT_DDU_TX_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_DDU_TX_FF_READ, C_DDU_TX_FF_RD : std_logic                     := '0';
 
-  signal OUT_DDU_TX_FF_WRD_CNT                      : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_DDU_TX_FF_WRD_CNT : std_logic                     := '0';
+  signal OUT_DDU_TX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_DDU_TX_FF_WRD_CNT   : std_logic                     := '0';
 
   signal W_DDU_TX_FF_RST : std_logic := '0';
 
-  signal DDU_RX_FF_RD                           : std_logic_vector(3 downto 0);
-  signal OUT_DDU_RX_FF_READ                     : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_DDU_RX_FF_READ, C_DDU_RX_FF_RD       : std_logic                     := '0';
+  signal DDU_RX_FF_RD                     : std_logic_vector(3 downto 0);
+  signal OUT_DDU_RX_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_DDU_RX_FF_READ, C_DDU_RX_FF_RD : std_logic                     := '0';
 
   signal OUT_DDU_RX_FF_WRD_CNT                      : std_logic_vector(15 downto 0) := (others => '0');
   signal R_DDU_RX_FF_WRD_CNT, D_R_DDU_RX_FF_WRD_CNT : std_logic                     := '0';
@@ -154,11 +160,11 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal W_DDU_RX_FF_RST : std_logic := '0';
 
   -- OTMB FIFO
-  signal OTMB_FF_RD                         : std_logic_vector(3 downto 0);
-  signal OTMB_FIFO_DOUT                     : std_logic_vector(17 downto 0) := (others => '0');
-  signal OUT_OTMB_FF_READ                   : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_OTMB_FF_READ, C_OTMB_FF_RD       : std_logic                     := '0';
-  signal OTMB_FIFO_RDEN                     : std_logic                     := '0';
+  signal OTMB_FF_RD                   : std_logic_vector(3 downto 0);
+  signal OTMB_FIFO_DOUT               : std_logic_vector(17 downto 0) := (others => '0');
+  signal OUT_OTMB_FF_READ             : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_OTMB_FF_READ, C_OTMB_FF_RD : std_logic                     := '0';
+  signal OTMB_FIFO_RDEN               : std_logic                     := '0';
 
   signal OTMB_FIFO_WRD_CNT                      : std_logic_vector(11 downto 0) := (others => '0');
   signal OUT_OTMB_FF_WRD_CNT                    : std_logic_vector(15 downto 0) := (others => '0');
@@ -171,21 +177,37 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal otmb_fifo_rst, otmb_fifo_reset     : std_logic;
 
   -- ALCT FIFO
-  signal ALCT_FF_RD                         : std_logic_vector(3 downto 0);
-  signal ALCT_FIFO_DOUT                     : std_logic_vector(17 downto 0) := (others => '0');
-  signal OUT_ALCT_FF_READ                   : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_ALCT_FF_READ, C_ALCT_FF_RD       : std_logic                     := '0';
-  signal ALCT_FIFO_RDEN                     : std_logic                     := '0';
+  signal ALCT_FF_RD                   : std_logic_vector(3 downto 0);
+  signal ALCT_FIFO_DOUT               : std_logic_vector(17 downto 0) := (others => '0');
+  signal OUT_ALCT_FF_READ             : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_ALCT_FF_READ, C_ALCT_FF_RD : std_logic                     := '0';
+  signal ALCT_FIFO_RDEN               : std_logic                     := '0';
 
-  signal ALCT_FIFO_WRD_CNT                      : std_logic_vector(11 downto 0) := (others => '0');
-  signal OUT_ALCT_FF_WRD_CNT                    : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_ALCT_FF_WRD_CNT : std_logic                     := '0';
+  signal ALCT_FIFO_WRD_CNT   : std_logic_vector(11 downto 0) := (others => '0');
+  signal OUT_ALCT_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_ALCT_FF_WRD_CNT   : std_logic                     := '0';
 
   signal W_ALCT_FF_RST : std_logic := '0';
 
   signal alct_fifo_rd_cnt, alct_fifo_wr_cnt : std_logic_vector(10 downto 0);
   signal alct_fifo_empty, alct_fifo_full    : std_logic;
   signal alct_fifo_rst, alct_fifo_reset     : std_logic;
+
+  -- HDR FIFO
+  signal HDR_FF_RD                  : std_logic_vector(3 downto 0);
+  signal HDR_FIFO_DOUT              : std_logic_vector(15 downto 0) := (others => '0');
+  signal OUT_HDR_FF_READ            : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_HDR_FF_READ, C_HDR_FF_RD : std_logic                     := '0';
+  signal HDR_FIFO_RDEN              : std_logic                     := '0';
+
+  signal HDR_FIFO_WRD_CNT   : std_logic_vector(11 downto 0) := (others => '0');
+  signal OUT_HDR_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_HDR_FF_WRD_CNT   : std_logic                     := '0';
+
+  signal W_HDR_FF_RST, hdr_fifo_data_valid : std_logic := '0';
+
+  signal hdr_fifo_empty, hdr_fifo_full : std_logic;
+  signal hdr_fifo_rst, hdr_fifo_reset  : std_logic;
 
   
   
@@ -213,7 +235,7 @@ begin  --Architecture
 
   -- ddu_tx: 300 series
   r_ddu_tx_ff_read    <= '1' when (cmddev = x"1300")                                   else '0';
-  r_ddu_tx_ff_wrd_cnt <= '1' when (cmddev = x"130c")                                   else '0';
+  r_ddu_tx_ff_wrd_cnt <= '1' when (cmddev = x"130c") else '0';
   w_ddu_tx_ff_rst     <= '1' when (cmddev = x"1320" and WRITER = '0' and STROBE = '1') else '0';
 
   -- ddu_rx: 400 series
@@ -230,6 +252,11 @@ begin  --Architecture
   r_alct_ff_read    <= '1' when (cmddev = x"1600")                                   else '0';
   r_alct_ff_wrd_cnt <= '1' when (cmddev = x"160c")                                   else '0';
   w_alct_ff_rst     <= '1' when (cmddev = x"1620" and WRITER = '0' and STROBE = '1') else '0';
+
+  -- hdr: 700 series
+  r_hdr_ff_read    <= '1' when (cmddev = x"1700")                                   else '0';
+  r_hdr_ff_wrd_cnt <= '1' when (cmddev = x"170c")                                   else '0';
+  w_hdr_ff_rst     <= '1' when (cmddev = x"1720" and WRITER = '0' and STROBE = '1') else '0';
 
 -- Read TFF_READ
   GEN_TFF_READ : for I in 1 to NFEB generate
@@ -263,7 +290,7 @@ begin  --Architecture
                    "0100000" when TFF_SEL_CODE = "110" else
                    "1000000" when TFF_SEL_CODE = "111" else
                    "0000001";
-  TFF_SEL     <= TFF_SEL_INNER;
+  TFF_SEL <= TFF_SEL_INNER;
 
 -- Read TFF_SEL
   OUT_TFF_SEL(15 downto 3) <= (others => '0');
@@ -294,7 +321,7 @@ begin  --Architecture
                           (others => 'Z');
 
 -- Write PC_TX_FF_RST (Reset PC_TX FIFO)
-  PULSE_RESET_PC_TX     : PULSE_EDGE port map(PC_TX_FIFO_RST, open, slowclk, rst, 1, w_pc_tx_ff_rst);
+  PULSE_RESET_PC_TX : PULSE_EDGE port map(PC_TX_FIFO_RST, open, slowclk, rst, 1, w_pc_tx_ff_rst);
 
 -- Read PC_RX_FF_READ
   PC_RX_FF_RD(0)  <= R_PC_RX_FF_READ;
@@ -311,7 +338,7 @@ begin  --Architecture
                           (others => 'Z');
 
 -- Write PC_RX_FF_RST (Reset PC_RX FIFO)
-  PULSE_RESET_PC_RX     : PULSE_EDGE port map(pc_rx_fifo_rst, open, slowclk, rst, 1, w_pc_rx_ff_rst);
+  PULSE_RESET_PC_RX : PULSE_EDGE port map(pc_rx_fifo_rst, open, slowclk, rst, 1, w_pc_rx_ff_rst);
 
 -- Read DDU_TX_FF_READ
   DDU_TX_FF_RD(0)  <= R_DDU_TX_FF_READ;
@@ -330,7 +357,7 @@ begin  --Architecture
 
 
 -- Write DDU_TX_FF_RST (Reset DDU_TX FIFO)
-  PULSE_RESET_DDU_TX     : PULSE_EDGE port map(DDU_TX_FIFO_RST, open, SLOWCLK, RST, 1, w_ddu_tx_ff_rst);
+  PULSE_RESET_DDU_TX : PULSE_EDGE port map(DDU_TX_FIFO_RST, open, SLOWCLK, RST, 1, w_ddu_tx_ff_rst);
 
 -- Read DDU_RX_FF_READ
   DDU_RX_FF_RD(0)  <= R_DDU_RX_FF_READ;
@@ -349,7 +376,7 @@ begin  --Architecture
 
 
 -- Write DDU_RX_FF_RST (Reset DDU_RX FIFO)
-  PULSE_RESET_DDU_RX     : PULSE_EDGE port map(ddu_rx_fifo_rst, open, slowclk, rst, 1, w_ddu_rx_ff_rst);
+  PULSE_RESET_DDU_RX : PULSE_EDGE port map(ddu_rx_fifo_rst, open, slowclk, rst, 1, w_ddu_rx_ff_rst);
 
 -- Read OTMB_FF_READ
   OTMB_FF_RD(0)  <= R_OTMB_FF_READ;
@@ -369,7 +396,7 @@ begin  --Architecture
 
 
 -- Write OTMB_FF_RST (Reset OTMB FIFO)
-  PULSE_RESET_OTMB     : PULSE_EDGE port map(otmb_fifo_rst, open, clk40, rst, 1, w_otmb_ff_rst);
+  PULSE_RESET_OTMB : PULSE_EDGE port map(otmb_fifo_rst, open, clk40, rst, 1, w_otmb_ff_rst);
 
   otmb_fifo_reset <= otmb_fifo_rst or RST;
 
@@ -421,7 +448,7 @@ begin  --Architecture
                                        (others => 'Z');
 
 -- Write ALCT_FF_RST (Reset ALCT FIFO)
-  PULSE_RESET_ALCT     : PULSE_EDGE port map(alct_fifo_rst, open, clk40, rst, 1, w_alct_ff_rst);
+  PULSE_RESET_ALCT : PULSE_EDGE port map(alct_fifo_rst, open, clk40, rst, 1, w_alct_ff_rst);
   alct_fifo_reset <= alct_fifo_rst or RST;
 
   ALCT_FIFO : FIFO_DUALCLOCK_MACRO
@@ -456,22 +483,76 @@ begin  --Architecture
     port map(RST   => alct_fifo_reset, WRCLK => clk40, WREN => alct_fifo_data_valid, FULL => alct_fifo_full,
              RDCLK => slowclk, RDEN => alct_fifo_rden, COUNT => alct_fifo_wrd_cnt);
 
+-- Read HDR_FF_WRD_CNT
+  OUT_HDR_FF_WRD_CNT(15 downto 12) <= (others => '0');
+  OUT_HDR_FF_WRD_CNT(11 downto 0)  <= HDR_FIFO_WRD_CNT when (STROBE = '1' and R_HDR_FF_WRD_CNT = '1') else
+                                      (others => 'Z');
+
+-- Write HDR_FF_RST (Reset HDR FIFO)
+  PULSE_RESET_HDR : PULSE_EDGE port map(hdr_fifo_rst, open, clk40, rst, 1, w_hdr_ff_rst);
+  hdr_fifo_reset <= hdr_fifo_rst or RST;
+
+  hdr_fifo_data_valid <= '1' when (DDU_DATA_VALID = '1' and
+                                   (DDU_DATA(15 downto 12) = x"9" or DDU_DATA(15 downto 12) = x"A" or
+                                    DDU_DATA(15 downto 12) = x"F" or DDU_DATA(15 downto 12) = x"E" or
+                                    DDU_DATA(15 downto 12) = x"8")) else '0';
+
+  HDR_FIFO_CASCADE : FIFO_CASCADE
+    generic map (
+      NFIFO        => 4,                -- number of FIFOs in cascade
+      DATA_WIDTH   => 16,               -- With of data packets
+      FWFT         => true,             -- First word fall through
+      WR_FASTER_RD => true)  -- Set int_clk to WRCLK if faster than RDCLK
+
+    port map(
+      DO        => hdr_fifo_dout,       -- Output data
+      EMPTY     => hdr_fifo_empty,      -- Output empty
+      FULL      => hdr_fifo_full,       -- Output full
+      HALF_FULL => open,
+      EOF       => open,                -- Output EOF
+      BOF       => open,
+
+      DI    => DDU_DATA,                -- Input data
+      RDCLK => slowclk,                 -- Input read clock
+      RDEN  => hdr_fifo_rden,           -- Input read enable
+      RST   => hdr_fifo_rst,            -- Input reset
+      WRCLK => DDUCLK,                  -- Input write clock
+      WREN  => hdr_fifo_data_valid      -- Input write enable
+      );
+
+  HDR_WRD_COUNT : FIFOWORDS
+    generic map(12)
+    port map(RST   => hdr_fifo_reset, WRCLK => clk40, WREN => hdr_fifo_data_valid, FULL => hdr_fifo_full,
+             RDCLK => slowclk, RDEN => hdr_fifo_rden, COUNT => hdr_fifo_wrd_cnt);
+
+-- Read HDR_FF_READ
+  HDR_FF_RD(0)  <= R_HDR_FF_READ;
+  FDC_HDR_RD_EN1 : FDC port map(HDR_FF_RD(1), STROBE, C_HDR_FF_RD, HDR_FF_RD(0));
+  FDC_HDR_RD_EN2 : FDC port map(HDR_FF_RD(2), SLOWCLK, C_HDR_FF_RD, HDR_FF_RD(1));
+  FDC_HDR_RD_EN3 : FDC port map(HDR_FF_RD(3), SLOWCLK, C_HDR_FF_RD, HDR_FF_RD(2));
+  C_HDR_FF_RD   <= RST or HDR_FF_RD(3);
+  HDR_FIFO_RDEN <= HDR_FF_RD(2);
+
+  OUT_HDR_FF_READ <= HDR_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_HDR_FF_READ = '1') else (others => 'Z');
+
 -- General assignments
   OUTDATA <= OUT_TFF_READ when R_TFF_READ = '1' else
-             OUT_TFF_SEL           when R_TFF_SEL = '1'           else
-             OUT_TFF_WRD_CNT       when R_TFF_WRD_CNT = '1'       else
-             OUT_PC_TX_FF_READ     when R_PC_TX_FF_READ = '1'     else
-             OUT_PC_TX_FF_WRD_CNT  when R_PC_TX_FF_WRD_CNT = '1'  else
-             OUT_PC_RX_FF_READ     when R_PC_RX_FF_READ = '1'     else
-             OUT_PC_RX_FF_WRD_CNT  when R_PC_RX_FF_WRD_CNT = '1'  else
-             OUT_DDU_TX_FF_READ    when R_DDU_TX_FF_READ = '1'    else
+             OUT_TFF_SEL           when R_TFF_SEL = '1' else
+             OUT_TFF_WRD_CNT       when R_TFF_WRD_CNT = '1' else
+             OUT_PC_TX_FF_READ     when R_PC_TX_FF_READ = '1' else
+             OUT_PC_TX_FF_WRD_CNT  when R_PC_TX_FF_WRD_CNT = '1' else
+             OUT_PC_RX_FF_READ     when R_PC_RX_FF_READ = '1' else
+             OUT_PC_RX_FF_WRD_CNT  when R_PC_RX_FF_WRD_CNT = '1' else
+             OUT_DDU_TX_FF_READ    when R_DDU_TX_FF_READ = '1' else
              OUT_DDU_TX_FF_WRD_CNT when R_DDU_TX_FF_WRD_CNT = '1' else
-             OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1'    else
+             OUT_DDU_RX_FF_READ    when R_DDU_RX_FF_READ = '1' else
              OUT_DDU_RX_FF_WRD_CNT when R_DDU_RX_FF_WRD_CNT = '1' else
-             OUT_OTMB_FF_READ      when R_OTMB_FF_READ = '1'      else
-             OUT_OTMB_FF_WRD_CNT   when R_OTMB_FF_WRD_CNT = '1'   else
-             OUT_ALCT_FF_READ      when R_ALCT_FF_READ = '1'      else
-             OUT_ALCT_FF_WRD_CNT   when R_ALCT_FF_WRD_CNT = '1'   else
+             OUT_OTMB_FF_READ      when R_OTMB_FF_READ = '1' else
+             OUT_OTMB_FF_WRD_CNT   when R_OTMB_FF_WRD_CNT = '1' else
+             OUT_ALCT_FF_READ      when R_ALCT_FF_READ = '1' else
+             OUT_ALCT_FF_WRD_CNT   when R_ALCT_FF_WRD_CNT = '1' else
+             OUT_HDR_FF_READ       when R_HDR_FF_READ = '1' else
+             OUT_HDR_FF_WRD_CNT    when R_HDR_FF_WRD_CNT = '1' else
              (others => 'L');
 
   -- DTACK

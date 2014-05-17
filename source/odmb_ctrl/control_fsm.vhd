@@ -151,7 +151,7 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal d_fifo_pop_inner                 : std_logic                     := '0';
 
 
-  signal dev_cnt_svl, hdr_tail_cnt_svl : std_logic_vector(4 downto 0) := (others => '0');
+  signal dev_cnt_svl, hdr_tail_cnt_svl, lone_cnt_svl : std_logic_vector(4 downto 0) := (others => '0');
 
   signal current_state_svl, next_state_svl : std_logic_vector(3 downto 0) := (others => '0');
 
@@ -169,9 +169,10 @@ begin
   expect_pckt         <= or_reduce(cafifo_l1a_match);
   dev_cnt_svl         <= std_logic_vector(to_unsigned(dev_cnt, 5));
   hdr_tail_cnt_svl    <= std_logic_vector(to_unsigned(hdr_tail_cnt, 5));
+  lone_cnt_svl    <= std_logic_vector(to_unsigned(lone_cnt, 5));
 -- trigger assignments (8 bits)
-  control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & CAFIFO_L1A_CNT(4 downto 0);
-  control_fsm_la_data <= "0000" & x"0000"
+  control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & cafifo_lone & CAFIFO_L1A_CNT(3 downto 0);
+  control_fsm_la_data <= "00" & x"000" & lone_cnt_svl & cafifo_lone
                          & RST          -- [112:107]
                          & std_logic_vector(to_unsigned(wait_cnt, 5))  -- [102]
                          & CAFIFO_L1A_CNT(4 downto 0)          -- [101:97]

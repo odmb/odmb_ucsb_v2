@@ -1,12 +1,14 @@
 -- GIGALINK_DDU: Optical transmitter and receiver to/from the DDU (OT1, GL0)
 
 library ieee;
+library work;
+library unisim;
+library unimacro;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-library UNISIM;
-use UNISIM.vcomponents.all;
-library UNIMACRO;
-use UNIMACRO.vcomponents.all;
+use work.ucsb_types.all;
+use unisim.vcomponents.all;
+use unimacro.vcomponents.all;
 
 entity GIGALINK_DDU is
   generic (
@@ -172,8 +174,6 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
 
   -- FIFO signals
   signal tx_fifo_empty, tx_fifo_full    : std_logic := '0';
-  signal tx_fifo_rderr, tx_fifo_wrerr   : std_logic := '0';
-  signal tx_fifo_rdcout, tx_fifo_wrcout : std_logic_vector(10 downto 0);
   signal rx_fifo_empty, rx_fifo_full    : std_logic := '0';
   signal rx_fifo_rderr, rx_fifo_wrerr   : std_logic := '0';
   signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
@@ -281,31 +281,27 @@ begin
       GTXTEST_BIT1 => gtx0_gtxtest_bit1
       );
 
-  TX_FIFO : FIFO_DUALCLOCK_MACRO
+  TX_FIFO_CASCADE : FIFO_CASCADE
     generic map (
-      DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
-      ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
-      ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
-      DATA_WIDTH              => 16,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
-      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
-      FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
+      NFIFO        => 4,                -- number of FIFOs in cascade
+      DATA_WIDTH   => 16,               -- With of data packets
+      FWFT         => true,             -- First word fall through
+      WR_FASTER_RD => true)  -- Set int_clk to WRCLK if faster than RDCLK
 
-    port map (
-      RST         => tx_fifo_rst,       -- Input reset
-      ALMOSTEMPTY => open,              -- Output almost empty 
-      ALMOSTFULL  => open,              -- Output almost full
-      EMPTY       => tx_fifo_empty,     -- Output empty
-      FULL        => tx_fifo_full,      -- Output full
-      RDCOUNT     => tx_fifo_rdcout,    -- Output read count
-      RDERR       => tx_fifo_rderr,     -- Output read error
-      WRCOUNT     => tx_fifo_wrcout,    -- Output write count
-      WRERR       => tx_fifo_wrerr,     -- Output write error
-      DO          => TX_FIFO_DOUT,      -- Output data
-      RDCLK       => VME_CLK,           -- Input read clock
-      RDEN        => TX_FIFO_RDEN,      -- Input read enable
-      DI          => TXD,               -- Input data
-      WRCLK       => usr_clk,           -- Input write clock
-      WREN        => TXD_VLD            -- Input write enable
+    port map(
+      DO        => TX_FIFO_DOUT,        -- Output data
+      EMPTY     => tx_fifo_empty,       -- Output empty
+      FULL      => tx_fifo_full,        -- Output full
+      HALF_FULL => open,
+      EOF       => open,                -- Output EOF
+      BOF       => open,
+
+      DI    => TXD,               -- Input data
+      RDCLK => VME_CLK,                 -- Input read clock
+      RDEN  => TX_FIFO_RDEN,            -- Input read enable
+      RST   => tx_fifo_rst,             -- Input reset
+      WRCLK => usr_clk,                 -- Input write clock
+      WREN  => TXD_VLD             -- Input write enable
       );
 
   TX_WRD_COUNT : FIFOWORDS

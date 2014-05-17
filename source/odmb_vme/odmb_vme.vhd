@@ -468,6 +468,11 @@ architecture ODMB_VME_architecture of ODMB_VME is
       ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
       ddu_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
 
+      -- HEADER FIFO signals
+      DDU_DATA       : in std_logic_vector(15 downto 0);
+      DDU_DATA_VALID : in std_logic;
+      DDUCLK         : in std_logic;
+
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT    : in std_logic_vector(15 downto 0);
       TFF_WRD_CNT : in std_logic_vector(11 downto 0);
@@ -740,7 +745,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
 
   signal dtack_dev      : std_logic_vector(9 downto 0);
-  type   dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
+  type dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
   signal dev_outdata    : dev_array;
   signal device_index   : integer range 0 to 15;
   signal cmd_adrs_inner : std_logic_vector(17 downto 2);
@@ -965,6 +970,11 @@ begin
       ddu_rx_fifo_rden    => ddu_rx_fifo_rden,
       ddu_rx_fifo_dout    => ddu_rx_fifo_dout,
       ddu_rx_fifo_wrd_cnt => ddu_rx_fifo_wrd_cnt,
+
+      -- Header Fifo signals
+      ddu_data       => ddu_data,
+      ddu_data_valid => ddu_data_valid,
+      dduclk         => dduclk,
 
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT    => TFF_DOUT,
