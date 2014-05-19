@@ -7,6 +7,7 @@ library hdlmacro;
 use hdlmacro.hdlmacro.CB16CE;
 use hdlmacro.hdlmacro.IFD_1;
 use unisim.vcomponents.all;
+use work.ucsb_types.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.and_reduce;
 use ieee.std_logic_misc.or_reduce;
@@ -76,17 +77,6 @@ end CONTROL_FSM;
 
 architecture CONTROL_arch of CONTROL_FSM is
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   component csp_control_fsm_la is
     port (
       CLK     : in    std_logic := 'X';
@@ -154,7 +144,7 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal dev_cnt_svl, hdr_tail_cnt_svl, lone_cnt_svl : std_logic_vector(4 downto 0) := (others => '0');
 
   signal current_state_svl, next_state_svl : std_logic_vector(3 downto 0) := (others => '0');
-
+  signal bad_l1a_lone : std_logic := '0'; 
 begin
 
   -- csp ILA core
@@ -170,9 +160,12 @@ begin
   dev_cnt_svl         <= std_logic_vector(to_unsigned(dev_cnt, 5));
   hdr_tail_cnt_svl    <= std_logic_vector(to_unsigned(hdr_tail_cnt, 5));
   lone_cnt_svl    <= std_logic_vector(to_unsigned(lone_cnt, 5));
+  bad_l1a_lone<= '1' when (or_reduce(cafifo_l1a_match) = '0' and cafifo_lone = '0'
+                           and control_current_state /= IDLE and control_current_state /= WAIT_IDLE) else '0';
+  
 -- trigger assignments (8 bits)
-  control_fsm_la_trig <= expect_pckt & q_datain_last & dev_cnt_en & cafifo_lone & CAFIFO_L1A_CNT(3 downto 0);
-  control_fsm_la_data <= "00" & x"000" & lone_cnt_svl & cafifo_lone
+  control_fsm_la_trig <= expect_pckt & q_datain_last &bad_l1a_lone  & cafifo_lone & CAFIFO_L1A_CNT(3 downto 0);
+  control_fsm_la_data <= "0" & x"000" & bad_l1a_lone & lone_cnt_svl & cafifo_lone
                          & RST          -- [112:107]
                          & std_logic_vector(to_unsigned(wait_cnt, 5))  -- [102]
                          & CAFIFO_L1A_CNT(4 downto 0)          -- [101:97]
@@ -190,10 +183,8 @@ begin
 -- Needed because DATAIN_LAST does not arrive during the last word
   FDLAST : FD port map(q_datain_last, clk, DATAIN_LAST);
 
--- Get a 40 MHz pulse for FIFO_POP
-  --PULSE_FIFO_POP : PULSE_EDGE port map(fifo_pop_inner, open, CLKCMS, RST, 1, fifo_pop_80);
-  FP_POP80 : FDC port map(d_fifo_pop_inner, fifo_pop_80, fifo_pop_inner, '1');
-  FP_POP   : FD port map(fifo_pop_inner, CLKCMS, d_fifo_pop_inner);
+-- 40 MHz pulse for FIFO_POP
+  FDPOP : PULSE2SLOW port map(fifo_pop_inner, CLKCMS, CLK, RST, fifo_pop_80);
 
   control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en, tx_cnt,
                               tx_cnt_en, tx_cnt_rst, hdr_tail_cnt_en, lone_cnt_en, wait_cnt_en)

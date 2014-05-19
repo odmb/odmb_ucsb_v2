@@ -52,10 +52,10 @@ architecture pcfifo_architecture of pcfifo is
   signal tx_ack_q             : std_logic_vector(2 downto 0) := (others => '0');
   signal tx_ack_q_b           : std_logic                    := '1';
 
-  signal fifo_in, fifo_out   : std_logic_vector(17 downto 0);
-  signal fifo_empty          : std_logic;
-  signal fifo_full, fifo_rst : std_logic;
-  signal fifo_wren           : std_logic;
+  signal fifo_in, fifo_out : std_logic_vector(17 downto 0);
+  signal fifo_empty        : std_logic;
+  signal fifo_full         : std_logic;
+  signal fifo_wren         : std_logic;
 
   signal pkt_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
 
@@ -68,10 +68,10 @@ architecture pcfifo_architecture of pcfifo is
   signal idle_cnt_en, idle_cnt_rst : std_logic             := '0';
   signal idle_cnt                  : integer range 0 to 31 := 0;
 
-  signal   dv_in_pulse, q_ld_in : std_logic := '0';
-  signal   first_in             : std_logic := '1';
+  signal dv_in_pulse, q_ld_in : std_logic := '0';
+  signal first_in             : std_logic := '1';
   -- Clock cycles it takes to reach the end of the FIFO_CASCADE
-  constant nwait_fifo           : integer   := NFIFO * 8;
+  constant nwait_fifo         : integer   := NFIFO * 8;
 
   signal epkt_cnt_total : std_logic_vector(15 downto 0) := (others => '0');
   signal epkt_cnt_en    : std_logic;
@@ -80,13 +80,12 @@ begin
 
 
 -- FIFOs
-  DV_PULSE_EDGE : pulse_edge port map(dv_in_pulse, open, clk_in, rst, 1, dv_in);
-  FDLDIN        : FD port map(ld_in_q, clk_in, ld_in);
+  DV_PULSE : PULSE2SAME port map(dv_in_pulse, clk_in, rst, dv_in);
+  FDLDIN   : FD port map(ld_in_q, clk_in, ld_in);
 
-  FDFIRST  : FDCP port map(first_in, ld_in_q, dv_in_pulse, '1', rst);
+  FDFIRST : FDCP port map(first_in, ld_in_q, dv_in_pulse, '1', rst);
   fifo_wren <= dv_in;
   fifo_in   <= first_in & ld_in & data_in;
-  PULSERST : PULSE_EDGE port map(fifo_rst, open, clk_out, '0', 3, rst);
 
   PC_FIFO_CASCADE : FIFO_CASCADE
     generic map (
@@ -105,7 +104,7 @@ begin
       DI    => fifo_in,                 -- Input data
       RDCLK => clk_out,                 -- Input read clock
       RDEN  => pcfifo_rden,             -- Input read enable
-      RST   => fifo_rst,                -- Input reset
+      RST   => RST,                     -- Input reset
       WRCLK => clk_in,                  -- Input write clock
       WREN  => fifo_wren                -- Input write enable
       );
@@ -120,9 +119,9 @@ begin
   tx_ack_q_b <= not tx_ack_q(2);
 
 -- FSMs
-  DS_LDIN  : DELAY_SIGNAL generic map (nwait_fifo) port map (q_ld_in, CLK_IN, nwait_fifo, ld_in);
-  LDIN_PE  : pulse_edge port map(ld_in_pulse, open, CLK_OUT, RST, 1, q_ld_in);
-  LDOUT_PE : pulse_edge port map(ld_out_pulse, open, CLK_OUT, RST, 1, ld_out);
+  DS_LDIN     : DELAY_SIGNAL generic map (nwait_fifo) port map (q_ld_in, CLK_IN, nwait_fifo, ld_in);
+  LDIN_PULSE  : PULSE2SLOW port map(ld_in_pulse, CLK_OUT, CLK_IN, RST, q_ld_in);
+  LDOUT_PULSE : PULSE2SAME port map(ld_out_pulse, CLK_OUT, RST, ld_out);
 
 -- Generation of counter for total packets sent
   epkt_cnt_total_pro : process (rst, clk_out, epkt_cnt_en)

@@ -1949,7 +1949,7 @@ begin
         );
 
     -- Delay EOF of DCFEBs by PUSH_DLY to be on CAFIFO time
-    PULSEEOF40  : PULSE_EDGE port map(pulse_eof40(I), open, clk40, reset, 1, eof_data_160(I));
+    PULSEEOF40  : PULSE2SLOW port map(pulse_eof40(I), clk40, clk160, reset, eof_data_160(I));
     DS_EOF_PUSH : DELAY_SIGNAL port map(eof_data(I), clk40, push_dly, pulse_eof40(I));
 
   end generate GEN_DCFEB;
@@ -2163,7 +2163,7 @@ begin
   gen_dcfeb_sel <= odmb_ctrl_reg(7);
 
   pb_b <= not pb;
-  PULSE_PB : PULSE_EDGE port map(pb_pulse, open, clk40, reset, 1, pb_b(1));
+  PULSE_PB : PULSE2FAST port map(pb_pulse, clk40, reset, pb_b(1));
 
   -- From CCB - for production tests
   ccb_cmd_bxev <= ccb_cmd & ccb_evcntres & ccb_bxrst;
@@ -2221,9 +2221,9 @@ begin
 
   -- FIFOs require more than 1 clock cycle to properly reset
   l1acnt_rst_start <= not ccb_evcntres or not ccb_l1arst or l1a_reset_pulse;
-  PULSE_RESYNC : PULSE_EDGE port map(resync, open, clk40, logicl, 1, l1acnt_rst_pulse);
-  PULSE_L1A    : PULSE_EDGE port map(l1acnt_rst_pulse, open, clk40, logicl, 20, l1acnt_rst_start);
+  PULSE_L1A    : NPULSE2FAST port map(l1acnt_rst_pulse, clk40, logicl, 20, l1acnt_rst_start);
   l1acnt_rst       <= l1acnt_rst_pulse or reset;  -- reset is so long that it created problems
+  PULSE_RESYNC : PULSE2SAME port map(resync, clk40, logicl, l1acnt_rst_pulse);
   bxcnt_rst        <= not ccb_bxrst or reset;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);

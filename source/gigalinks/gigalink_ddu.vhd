@@ -127,17 +127,6 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
       );
   end component;
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   component FIFOWORDS is
     generic (WIDTH : integer := 16);
     port (
@@ -198,7 +187,7 @@ begin
 
   -- RX data valid is high when the RX is valid and we are not receiving a K character
   -- The pulse avoids some false positives during resets
-  PULSE_ALIGN : PULSE_EDGE port map(rxbyterealign_pulse, open, usr_clk, RST, 10000, gtx0_rxbyterealign_out);
+  PULSE_ALIGN : NPULSE2SAME port map(rxbyterealign_pulse, usr_clk, RST, 10000, gtx0_rxbyterealign_out);
   rxd_vld_inner <= '1' when (gtx0_rxvalid_out = '1' and gtx0_rxcharisk_out = x"0" and
                              rxbyterealign_pulse = '0') else '0';
   tx_ddu_data <= TXD  when TXD_VLD = '1' else IDLE;

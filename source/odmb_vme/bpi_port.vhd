@@ -6,6 +6,7 @@ library unisim;
 library hdlmacro;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use hdlmacro.hdlmacro.all;
 
@@ -66,18 +67,7 @@ architecture BPI_PORT_Arch of BPI_PORT is
       );
   end component;
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
-  signal cmddev : unsigned(12 downto 0);
+  signal cmddev : std_logic_vector (15 downto 0);
 
   signal bpi_port_csp_data : std_logic_vector(127 downto 0);
   signal bpi_port_csp_trig : std_logic_vector(7 downto 0);
@@ -131,7 +121,7 @@ architecture BPI_PORT_Arch of BPI_PORT is
 begin  --Architecture
 
 -- Decode instruction
-  CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input
+  cmddev <= "000" & DEVICE & COMMAND & "00";
 
   SEND_BPI_CFG_DL <= '1' when (CMDDEV = x"1000" and WRITE_B = '0'
                                and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';

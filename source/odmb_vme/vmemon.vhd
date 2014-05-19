@@ -3,9 +3,10 @@
 library ieee;
 library work;
 library unisim;
-use unisim.vcomponents.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.ucsb_types.all;
+use unisim.vcomponents.all;
 
 entity VMEMON is
   generic (
@@ -42,7 +43,7 @@ entity VMEMON is
     OTMB_LCT_RQST   : out std_logic;
     OTMB_EXT_TRIG   : out std_logic;
 
-    MASK_L1A        : out std_logic_vector(NFEB downto 0);
+    MASK_L1A      : out std_logic_vector(NFEB downto 0);
     TP_SEL        : out std_logic_vector(15 downto 0);
     ODMB_CTRL     : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -56,19 +57,8 @@ end VMEMON;
 
 architecture VMEMON_Arch of VMEMON is
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   signal dd_dtack, d_dtack, q_dtack : std_logic;
-  signal cmddev                     : unsigned(12 downto 0);
+  signal cmddev : std_logic_vector (15 downto 0);
 
   signal busy        : std_logic;
   signal r_odmb_data : std_logic;
@@ -79,14 +69,11 @@ architecture VMEMON_Arch of VMEMON is
   signal w_tp_sel                 : std_logic                     := '0';
   signal r_tp_sel                 : std_logic                     := '0';
 
-  signal odmb_rst                   : std_logic_vector(15 downto 0) := (others => '0');
-  signal test_inj_rst, test_pls_rst : std_logic                     := '0';
-  signal resync_rst, reprog_rst     : std_logic                     := '0';
-  signal lct_rqst_rst, ext_trig_rst : std_logic                     := '0';
-  signal opt_reset_pulse_rst        : std_logic                     := '0';
-  signal reprog, test_lct_rst       : std_logic                     := '0';
-  signal reset_rst                  : std_logic                     := '0';
-  signal test_bc0_rst               : std_logic                     := '0';
+  signal odmb_rst               : std_logic_vector(15 downto 0) := (others => '0');
+  signal resync_rst, reprog_rst : std_logic                     := '0';
+  signal opt_reset_pulse_rst    : std_logic                     := '0';
+  signal reprog                 : std_logic                     := '0';
+  signal reset_rst              : std_logic                     := '0';
 
   signal out_loopback   : std_logic_vector(15 downto 0) := (others => '0');
   signal loopback_inner : std_logic_vector(2 downto 0);
@@ -120,9 +107,9 @@ architecture VMEMON_Arch of VMEMON is
   signal out_mux_trigger              : std_logic_vector(15 downto 0) := (others => '0');
   signal w_mux_trigger, r_mux_trigger : std_logic                     := '0';
 
-  signal out_mask_l1a           : std_logic_vector(15 downto 0) := (others => '0');
-  signal mask_l1a_inner          : std_logic_vector(NFEB downto 0) := (others => '0');
-  signal w_mask_l1a, r_mask_l1a : std_logic                     := '0';
+  signal out_mask_l1a           : std_logic_vector(15 downto 0)   := (others => '0');
+  signal mask_l1a_inner         : std_logic_vector(NFEB downto 0) := (others => '0');
+  signal w_mask_l1a, r_mask_l1a : std_logic                       := '0';
 
   signal out_odmb_ped           : std_logic_vector(15 downto 0) := (others => '0');
   signal w_odmb_ped, r_odmb_ped : std_logic                     := '0';
@@ -141,7 +128,7 @@ architecture VMEMON_Arch of VMEMON is
 begin
 
 -- CMDDEV: Variable that looks like the VME commands we input
-  cmddev <= unsigned(DEVICE & COMMAND & "00");
+  cmddev <= "000" & DEVICE & COMMAND & "00";
 
   w_odmb_cal <= '1' when (CMDDEV = x"1000" and WRITER = '0') else '0';
   r_odmb_cal <= '1' when (CMDDEV = x"1000" and WRITER = '1') else '0';
@@ -181,10 +168,10 @@ begin
   odmb_data_sel(7 downto 0) <= COMMAND(9 downto 2);
 
 -- Resets
-  PLS_FWRESET  : PULSE_EDGE port map(FW_RESET, open, slowclk, RST, 2, w_odmb_rst);
-  PLS_OPTRESET : PULSE_EDGE port map(OPT_RESET_PULSE, open, clk40, RST, 1, w_opt_rst);
-  PLS_L1ARESET : PULSE_EDGE port map(L1A_RESET_PULSE, open, clk40, RST, 1, w_dcfeb_resync);
-  PLS_REPROG   : PULSE_EDGE port map(reprog, open, slowclk, RST, 2, w_dcfeb_reprog);
+  PLS_FWRESET  : NPULSE2SAME port map(FW_RESET, slowclk, RST, 2, w_odmb_rst);
+  PLS_OPTRESET : PULSE2FAST port map(OPT_RESET_PULSE, clk40, RST, w_opt_rst);
+  PLS_L1ARESET : PULSE2FAST port map(L1A_RESET_PULSE, clk40, RST, w_dcfeb_resync);
+  PLS_REPROG   : NPULSE2SAME port map(reprog, slowclk, RST, 2, w_dcfeb_reprog);
   REPROG_B <= not reprog;
 
   odmb_rst <= (8 => reset_rst, others => RST);
@@ -223,18 +210,12 @@ begin
   begin
     dcfeb_pulse(K) <= w_dcfeb_pulse and STROBE and INDATA(K);
   end generate GEN_dcfeb_pulse;
-  PULSE_INJ : PULSE_EDGE port map(test_inj, test_inj_rst, slowclk, rst, 2,
-                                  dcfeb_pulse(0));
-  PULSE_PLS : PULSE_EDGE port map(test_pls, test_pls_rst, slowclk, rst, 2,
-                                  dcfeb_pulse(1));
-  PULSE_L1A : PULSE_EDGE port map(test_lct, test_lct_rst, clk40, rst, 1,
-                                  dcfeb_pulse(2));
-  PULSE_LCT : PULSE_EDGE port map(otmb_lct_rqst, lct_rqst_rst, clk40, rst, 1,
-                                  dcfeb_pulse(3));
-  PULSE_EXT : PULSE_EDGE port map(otmb_ext_trig, ext_trig_rst, clk40, rst, 1,
-                                  dcfeb_pulse(4));
-  PULSE_BC0 : PULSE_EDGE port map(test_bc0, test_bc0_rst, clk40, rst, 1,
-                                  dcfeb_pulse(5));
+  PULSE_INJ : NPULSE2SAME port map(test_inj, slowclk, rst, 2, dcfeb_pulse(0));
+  PULSE_PLS : NPULSE2SAME port map(test_pls, slowclk, rst, 2, dcfeb_pulse(1));
+  PULSE_L1A : PULSE2FAST port map(test_lct, clk40, rst, dcfeb_pulse(2));
+  PULSE_LCT : PULSE2FAST port map(otmb_lct_rqst, clk40, rst, dcfeb_pulse(3));
+  PULSE_EXT : PULSE2FAST port map(otmb_ext_trig, clk40, rst, dcfeb_pulse(4));
+  PULSE_BC0 : PULSE2FAST port map(test_bc0, clk40, rst, dcfeb_pulse(5));
 
 -- Write MASK_L1A
   GEN_MASK_L1A : for I in NFEB downto 0 generate
@@ -245,7 +226,7 @@ begin
 
 -- Read MASK_L1A
   OUT_MASK_L1A(15 downto 0) <= x"00" & MASK_L1A_INNER when R_MASK_L1A = '1'
-                             else (others => 'Z');
+                               else (others => 'Z');
 
 -- Write TP_SEL
   GEN_TP_SEL : for I in 15 downto 0 generate
@@ -268,7 +249,7 @@ begin
 
 -- Read LOOPBACK
   out_loopback <= x"000" & '0' & loopback_inner when r_loopback = '1'
-                   else (others => 'Z');
+                  else (others => 'Z');
 
 -- Write TXDIFFCTRL
   GEN_TXDIFFCTRL : for I in 3 downto 0 generate

@@ -313,7 +313,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   end component;
 
   component CONTROL_FSM is
-    --component CONTROL is
     generic (
       NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
       );  
@@ -663,7 +662,7 @@ begin
   cafifo_l1a <= cafifo_push;
 
   CAFIFO_PM : cafifo
-    generic map (NFEB => NFEB, CAFIFO_SIZE => 32)
+    generic map (NFEB => NFEB, CAFIFO_SIZE => CAFIFO_SIZE)
     port map(
       CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
       clk                         => clk40,
@@ -717,7 +716,6 @@ begin
       );
 
   CONTROL_FSM_PM : CONTROL_FSM
-    --CONTROL_PM : CONTROL
     generic map(NFEB => NFEB)
     port map(
       CSP_CONTROL_FSM_PORT_LA_CTRL => CSP_CONTROL_FSM_PORT_LA_CTRL,
@@ -771,54 +769,6 @@ begin
       cafifo_lone      => cafifo_lone
       );
 
---  CONTROL_FSM_PM : CONTROL_FSM
---  --CONTROL_PM : CONTROL
---    generic map(NFEB => NFEB)
---    port map(
---      CLK    => dduclk,                 -- CLKDDU?
---      CLKCMS => clk40,
---      RST    => l1acnt_rst,
---      STATUS => status,
---      L1ARST => l1arst,                 -- from CCBCODE
-
----- From DMB_VME
---      RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
-
----- to GigaBit Link
---      DOUT => open,
---      DAV  => open,
-
----- to Data FIFOs
---      OEFIFO_B  => open,
---      RENFIFO_B => open,
-
----- from Data FIFOs
---      FFOR_B      => fifo_empty_b,
---      DATAIN      => fifo_out(15 downto 0),
---      DATAIN_LAST => fifo_eof,
-
----- From JTAGCOM
---      JOEF => joef,                     -- from LOADFIFO
-
----- From CONFREG and GA
---      DAQMBID => daqmbid,
-
----- FROM SW1
---      GIGAEN => LOGICH,
-
----- TO CAFIFO
---      FIFO_POP => open,
-
----- TO PCFIFO
---      EOF => open,
-
----- FROM CAFIFO
---      cafifo_l1a_dav   => cafifo_l1a_dav_out,
---      cafifo_l1a_match => cafifo_l1a_match_out_inner,
---      cafifo_l1a_cnt   => cafifo_l1a_cnt_out,
---      cafifo_bx_cnt    => cafifo_bx_cnt_out
---      );
-  
   PCFIFO_PM : pcfifo
     generic map (NFIFO => NFIFO)
 
@@ -838,8 +788,6 @@ begin
       dv_out   => pc_data_valid,
       data_out => pc_data
       );
-
-
 
 
   ddu_eof <= eof;  -- This counts the number of packets sent to the DDU

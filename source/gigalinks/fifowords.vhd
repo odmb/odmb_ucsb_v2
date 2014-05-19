@@ -1,8 +1,10 @@
--- FIFOWORDS: Counts number of words in FIFO
+-- FIFOWORDS: Counts number of words in a FIFO that is read slower than it is written
 
+library work;
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.std_logic_unsigned.all;
+use work.ucsb_types.all;
 
 entity FIFOWORDS is
   generic (
@@ -25,17 +27,6 @@ end FIFOWORDS;
 
 architecture FIFOWORDS_ARCH of FIFOWORDS is
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   type   word_state_type is (IDLE, WRITING, READING);
   signal word_next_state, word_current_state : word_state_type;
   signal word_wrcnt_en, word_rdcnt_en        : std_logic := '0';
@@ -43,7 +34,7 @@ architecture FIFOWORDS_ARCH of FIFOWORDS is
 
 begin
 
-  PULSE_RDEN : PULSE_EDGE port map(rden_pulse, open, WRCLK, RST, 1, RDEN);
+  PULSE_RDEN : PULSE2FAST port map(rden_pulse, WRCLK, RST, RDEN);
 
   word_cnt_proc : process (WRCLK, RST, word_wrcnt_en, FULL, word_rdcnt_en)
     variable word_cnt_data : std_logic_vector(WIDTH-1 downto 0);

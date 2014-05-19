@@ -8,6 +8,65 @@ package ucsb_types is
   
   type cfg_regs_array is array (0 to 15) of std_logic_vector(15 downto 0);
 
+  component PULSE2SLOW is
+    port (
+      DOUT     : out std_logic;
+      CLK_DOUT : in  std_logic;
+      CLK_DIN  : in  std_logic;
+      RST      : in  std_logic;
+      DIN      : in  std_logic
+      );
+  end component;
+
+  component PULSE2FAST is
+    port (
+      DOUT     : out std_logic;
+      CLK_DOUT : in  std_logic;
+      RST      : in  std_logic;
+      DIN      : in  std_logic
+      );
+  end component;
+
+  component PULSE2SAME is
+    port (
+      DOUT     : out std_logic;
+      CLK_DOUT : in  std_logic;
+      RST      : in  std_logic;
+      DIN      : in  std_logic
+      );
+  end component;
+
+  component NPULSE2FAST is
+    port (
+      DOUT     : out std_logic;
+      CLK_DOUT : in  std_logic;
+      RST      : in  std_logic;
+      NPULSE   : in  integer;
+      DIN      : in  std_logic
+      );
+  end component;
+
+  component NPULSE2SAME is
+    port (
+      DOUT     : out std_logic;
+      CLK_DOUT : in  std_logic;
+      RST      : in  std_logic;
+      NPULSE   : in  integer;
+      DIN      : in  std_logic
+      );
+  end component;
+
+  component NPULSE2SLOW is
+    port (
+      DOUT     : out std_logic;
+      CLK_DOUT : in  std_logic;
+      CLK_DIN  : in  std_logic;
+      RST      : in  std_logic;
+      NPULSE   : in  integer;
+      DIN      : in  std_logic
+      );
+  end component;
+
   component PULSE_EDGE is
     port (
       DOUT   : out std_logic;

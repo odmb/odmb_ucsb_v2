@@ -1,11 +1,13 @@
 -- FIFO_CASCADE: Cascades FIFOs to increase depth
 
 library ieee;
+library work;
 library unisim;
 library unimacro;
 library hdlmacro;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_1164.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 use hdlmacro.hdlmacro.all;
@@ -37,18 +39,6 @@ entity FIFO_CASCADE is
 end entity FIFO_CASCADE;
 
 architecture fifo_cascade_arch of FIFO_CASCADE is
-
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   type   fifo_data_type is array (NFIFO downto 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
   signal fifo_in, fifo_out        : fifo_data_type;
   signal fifo_aempty              : std_logic_vector(NFIFO downto 1);
@@ -178,6 +168,6 @@ begin
                     fifo_full((NFIFO+1)/2);
 
   --out: tells you when packet has finished arriving at FIFO 1
-  PULSE_EOF : PULSE_EDGE port map(EOF, open, WRCLK, RST, 1, fifo_in(1)(DATA_WIDTH-2));
+  PULSE_EOF : PULSE2SAME port map(EOF, WRCLK, RST, fifo_in(1)(DATA_WIDTH-2));
   BOF <= fifo_in(1)(DATA_WIDTH-1);  --OUT: tells you when packet has started arriving at FIFO 1
 end fifo_cascade_arch;

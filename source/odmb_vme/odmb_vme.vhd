@@ -689,18 +689,6 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
-
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   constant LOGICH : std_logic := '1';
   constant LOGICL : std_logic := '0';
 
@@ -1232,7 +1220,7 @@ begin
   vme_data_out <= dev_outdata(device_index);
   cmd_adrs     <= cmd_adrs_inner;
 
-  PULSE_LED : PULSE_EDGE port map(led_pulse, open, clk_s3, rst, 200000, strobe);
+  PULSE_LED : NPULSE2SAME port map(led_pulse, clk_s2, rst, 400000, strobe);
 
   vme_doe_b       <= doe_b;
   vme_doe         <= not doe_b;

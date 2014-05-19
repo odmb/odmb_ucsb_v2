@@ -1,16 +1,17 @@
+-- LVDBMON: Monitors voltages in LVMB and powers on/off DCFEBs+ALCT
+
 library ieee;
 library work;
 library unisim;
-use unisim.vcomponents.all;
+library hdlmacro;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-library hdlmacro;
+use work.ucsb_types.all;
+use unisim.vcomponents.all;
 use hdlmacro.hdlmacro.all;
 
-entity LVDBMON is
-  
+entity LVDBMON is  
   port (
-
     CSP_LVMB_LA_CTRL : inout std_logic_vector(35 downto 0);
 
     SLOWCLK   : in std_logic;
@@ -41,10 +42,7 @@ entity LVDBMON is
     );
 end LVDBMON;
 
-
-
 architecture LVDBMON_Arch of LVDBMON is
-
   component csp_lvmb_la is
     port (
       CLK     : in    std_logic := 'X';
@@ -54,41 +52,32 @@ architecture LVDBMON_Arch of LVDBMON is
       );
   end component;
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   signal pon_reset_b, pon_reset_b1, pon_pulse : std_logic;
 
-  signal BUSY                                                                  : std_logic;
-  signal WRITEADC, READMON, WRITEPOWER, READPOWER                              : std_logic;
-  signal READPOWERSTATUS, SELADC, READADC                                      : std_logic;
-  signal SELADC_vector                                                         : std_logic_vector(3 downto 1);
-  signal LVTURNON_INNER                                                        : std_logic_vector(8 downto 1);
-  signal D_OUTDATA, Q_OUTDATA, D_OUTDATA_2, Q_OUTDATA_2                        : std_logic;
-  signal D_DTACK_2, Q_DTACK_2, D_DTACK_4, Q_DTACK_4                            : std_logic;
-  signal C_LOADON, Q1_LOADON, Q2_LOADON                                        : std_logic;
-  signal LOADON_INNER, ADCCLK_INNER                                            : std_logic;
-  signal CE_ADCCLK, CLR_ADCCLK                                                 : std_logic;
-  signal RSTBUSY, CLKMON                                                       : std_logic;
-  signal CE1_BUSY, CE2_BUSY, CLR_BUSY, Q1_BUSY, Q2_BUSY, D_BUSY, DONEMON, LOAD : std_logic;
-  signal blank1, blank2                                                        : std_logic;
-  signal QTIME                                                                 : std_logic_vector(7 downto 0);
-  signal CLR1_LOAD, CLR2_LOAD, Q1_LOAD, Q2_LOAD                                : std_logic;
-  signal Q3_LOAD, Q4_LOAD, CE_LOAD, ASYNLOAD                                   : std_logic;
-  signal RDMONBK                                                               : std_logic;
-  signal CE_OUTDATA_FULL                                                       : std_logic;
-  signal Q_OUTDATA_FULL                                                        : std_logic_vector(15 downto 0);
-  signal SLI_ADCDATA, L_ADCDATA, CE_ADCDATA                                    : std_logic;
-  signal Q_ADCDATA                                                             : std_logic_vector(7 downto 0);
-  signal CMDDEV                                                                : unsigned(12 downto 0);
+  signal BUSY                                           : std_logic;
+  signal WRITEADC, READMON, WRITEPOWER, READPOWER       : std_logic;
+  signal READPOWERSTATUS, SELADC, READADC               : std_logic;
+  signal SELADC_vector                                  : std_logic_vector(3 downto 1);
+  signal LVTURNON_INNER                                 : std_logic_vector(8 downto 1);
+  signal D_OUTDATA, Q_OUTDATA, D_OUTDATA_2, Q_OUTDATA_2 : std_logic;
+  signal D_DTACK_2, Q_DTACK_2, D_DTACK_4, Q_DTACK_4     : std_logic;
+  signal C_LOADON, Q1_LOADON, Q2_LOADON                 : std_logic;
+  signal LOADON_INNER, ADCCLK_INNER                     : std_logic;
+  signal CE_ADCCLK, CLR_ADCCLK                          : std_logic;
+  signal RSTBUSY, CLKMON                                : std_logic;
+  signal CE1_BUSY, CE2_BUSY, CLR_BUSY                   : std_logic;
+  signal Q1_BUSY, Q2_BUSY, D_BUSY, DONEMON, LOAD        : std_logic;
+  signal blank1, blank2                                 : std_logic;
+  signal QTIME                                          : std_logic_vector(7 downto 0);
+  signal CLR1_LOAD, CLR2_LOAD, Q1_LOAD, Q2_LOAD         : std_logic;
+  signal Q3_LOAD, Q4_LOAD, CE_LOAD, ASYNLOAD            : std_logic;
+  signal RDMONBK                                        : std_logic;
+  signal CE_OUTDATA_FULL                                : std_logic;
+  signal Q_OUTDATA_FULL                                 : std_logic_vector(15 downto 0);
+  signal SLI_ADCDATA, L_ADCDATA, CE_ADCDATA             : std_logic;
+  signal Q_ADCDATA                                      : std_logic_vector(7 downto 0);
+
+  signal cmddev : std_logic_vector (15 downto 0);
 
   signal csp_lvmb_la_trig : std_logic_vector (7 downto 0);
   signal csp_lvmb_la_data : std_logic_vector (99 downto 0);
@@ -97,7 +86,7 @@ architecture LVDBMON_Arch of LVDBMON is
 begin  --Architecture
 
 -- Decode instruction
-  CMDDEV <= unsigned(DEVICE & COMMAND & "00");  -- Variable that looks like the VME commands we input
+  cmddev <= "000" & DEVICE & COMMAND & "00";
 
   WRITEADC        <= '1' when (CMDDEV = x"1000") else '0';
   READMON         <= '1' when (CMDDEV = x"1004") else '0';
@@ -156,7 +145,7 @@ begin  --Architecture
 -- Generate LOADON: from VME command and from Power-on reset
   pon_reset_b <= not pon_reset;
   FDPON      : FD port map(pon_reset_b1, slowclk, pon_reset_b);
-  PULSEPON   : PULSE_EDGE port map(pon_pulse, open, slowclk, rst, 1, pon_reset_b1);
+  PULSEPON   : PULSE2SAME port map(pon_pulse, slowclk, rst, pon_reset_b1);
   --C_LOADON    <= (WRITEPOWER and STROBE) or pon_pulse;
   C_LOADON    <= (WRITEPOWER and STROBE);
   FDC_LOADON : FDC port map (Q1_LOADON, C_LOADON, LOADON_INNER, '1');
@@ -166,7 +155,7 @@ begin  --Architecture
 -- Generate OUTDATA
   CE_OUTDATA_FULL      <= '1'                         when (BUSY = '1' and RSTBUSY = '0' and CLKMON = '0') else '0';
   SR16CE_OUTDATA : SR16CE port map (Q_OUTDATA_FULL, SLOWCLK, CE_OUTDATA_FULL, RST, ADCIN);
-  OUTDATA(15 downto 0) <= Q_OUTDATA_FULL(15 downto 0) when (RDMONBK = '1')                                 else
+  OUTDATA(15 downto 0) <= Q_OUTDATA_FULL(15 downto 0) when (RDMONBK = '1') else
                           (others => 'Z');
   SLI_ADCDATA <= 'L';
 
@@ -220,13 +209,13 @@ begin  --Architecture
   DIAGLVDB_INNER(17 downto 0) <= x"000" & L_ADCDATA & BUSY & ADCCLK_INNER & CLKMON & CE_ADCDATA & SLOWCLK;
   DIAGLVDB                    <= DIAGLVDB_INNER;
 
-  --csp_lvmb_la_pm : csp_lvmb_la
-  --  port map (
-  --    CONTROL => CSP_LVMB_LA_CTRL,
-  --    CLK     => SLOWCLK,
-  --    DATA    => csp_lvmb_la_data,
-  --    TRIG0   => csp_lvmb_la_trig
-  --    );
+  csp_lvmb_la_pm : csp_lvmb_la
+    port map (
+      CONTROL => CSP_LVMB_LA_CTRL,
+      CLK     => SLOWCLK,
+      DATA    => csp_lvmb_la_data,
+      TRIG0   => csp_lvmb_la_trig
+      );
 
   --csp_lvmb_la_trig <= x"0" & "00" & WRITEADC & READMON;
   --csp_lvmb_la_data <= x"0000000000" & "00" &
@@ -236,5 +225,5 @@ begin  --Architecture
   --                    Q_ADCDATA &       -- (41:34)
   --                    Q_OUTDATA_FULL(15 downto 0) &  --(33:18)
   --                    DIAGLVDB_INNER;   --(17:0)
-  
+
 end LVDBMON_Arch;
