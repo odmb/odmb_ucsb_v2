@@ -1115,7 +1115,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gtx1_data_valid          : std_logic;
 
   signal gl1_clk, gl1_clk_2_buf          : std_logic;
-  signal gl0_clk, gl0_clk_2, gl0_clk_buf : std_logic;
+  signal gl0_clk, gl0_clk_2 : std_logic;
   signal dduclk, pcclk                   : std_logic;
 
 -- PLL Signals
@@ -1706,7 +1706,7 @@ begin
   GIGALINK_DDU_PM : gigalink_ddu
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
-      REF_CLK_80 => dduclk,             -- 80 MHz for DDU data rate
+      REF_CLK_80 => gl0_clk,             -- 80 MHz for DDU data rate
       RST        => opt_reset,
       -- Transmitter signals
       TXD        => gtx0_data,          -- Data to be transmitted
@@ -2290,8 +2290,7 @@ begin
   -- Clock for DDU TX
   gl0_clk_buf_gtxe1 : IBUFDS_GTXE1 port map (I => gl0_clk_p, IB => gl0_clk_n, CEB => logicl,
                                              O => gl0_clk, ODIV2 => gl0_clk_2);
-  gl0_clk_bufg : BUFG port map (O => gl0_clk_buf, I => gl0_clk);
-  dduclk <= gl0_clk_buf;
+  gl0_clk_bufg : BUFG port map (O => dduclk, I => gl0_clk);
 
   Divide_Frequency : process(clk40)
   begin
@@ -2325,9 +2324,9 @@ begin
   FD2 : FD port map (clk2, clk4, clk2_inv);
   FD1 : FD port map (clk1, clk2, clk1_inv);
 
-  Divide_Frequency_gl0 : process(gl0_clk_buf)
+  Divide_Frequency_gl0 : process(dduclk)
   begin
-    if gl0_clk_buf'event and gl0_clk_buf = '1' then
+    if dduclk'event and dduclk = '1' then
       if counter_clk_gl0 = 10000000 then
         counter_clk_gl0 <= 1;
         if gl0_clk_slow = '1' then

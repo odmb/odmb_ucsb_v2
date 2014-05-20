@@ -123,15 +123,15 @@ begin  --Architecture
 -- Decode instruction
   cmddev <= "000" & DEVICE & COMMAND & "00";
 
-  SEND_BPI_CFG_DL <= '1' when (CMDDEV = x"1000" and WRITE_B = '0'
-                               and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
-  SEND_BPI_CFG_UL <= '1' when (CMDDEV = x"1004" and WRITE_B = '0'
-                               and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
+  SEND_BPI_CFG_DL <= '1' when (CMDDEV = x"1000" and WRITE_B = '0' and STROBE = '1' 
+                               and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
+  SEND_BPI_CFG_UL <= '1' when (CMDDEV = x"1004" and WRITE_B = '0' and STROBE = '1' 
+                               and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
 
-  SEND_BPI_CONST_DL <= '1' when (CMDDEV = x"1010" and WRITE_B = '0'
-                                 and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
-  SEND_BPI_CONST_UL <= '1' when (CMDDEV = x"1014" and WRITE_B = '0'
-                                 and STROBE = '1' and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
+  SEND_BPI_CONST_DL <= '1' when (CMDDEV = x"1010" and WRITE_B = '0' and STROBE = '1' 
+                                 and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
+  SEND_BPI_CONST_UL <= '1' when (CMDDEV = x"1014" and WRITE_B = '0' and STROBE = '1' 
+                                 and BPI_CFG_BUSY = '0' and BPI_CONST_BUSY = '0') else '0';
 
   SEND_BPI_RST <= '1' when (CMDDEV = x"1020" and WRITE_B = '0'
                             and STROBE = '1' and BPI_CFG_BUSY = '0') else '0';
@@ -153,7 +153,7 @@ begin  --Architecture
   -- Start Upload and Download CFG registers
   start_cfg_ul <= SEND_BPI_CFG_UL or rst_cfg_ul_pulse;
   PULSE_CFG_UL : PULSE_EDGE port map(BPI_CFG_UL_INNER, open, CLK, RST, 1, start_cfg_ul);
-  PULSE_CFG_DL : PULSE_EDGE port map(BPI_CFG_DL_INNER, open, CLK, RST, 1, SEND_BPI_CFG_DL);
+  PULSE_CFG_DL : PULSE2FAST port map(BPI_CFG_DL_INNER, CLK, RST, SEND_BPI_CFG_DL);
   BPI_CFG_UL   <= BPI_CFG_UL_INNER;
   BPI_CFG_DL   <= BPI_CFG_DL_INNER;
 
@@ -182,7 +182,7 @@ begin  --Architecture
   -- Start Upload and Download CONST registers
   start_const_ul <= SEND_BPI_CONST_UL or rst_const_ul_pulse;
   PULSE_CONST_UL : PULSE_EDGE port map(BPI_CONST_UL_INNER, open, CLK, RST, 1, start_const_ul);
-  PULSE_CONST_DL : PULSE_EDGE port map(BPI_CONST_DL_INNER, open, CLK, RST, 1, SEND_BPI_CONST_DL);
+  PULSE_CONST_DL : PULSE2FAST port map(BPI_CONST_DL_INNER, CLK, RST, SEND_BPI_CONST_DL);
   BPI_CONST_UL   <= BPI_CONST_UL_INNER;
   BPI_CONST_DL   <= BPI_CONST_DL_INNER;
 
@@ -219,8 +219,8 @@ begin  --Architecture
   start_w_cmd_fifo <= '1' when (w_cmd_fifo = '1' and STROBE = '1') else '0';
   PULSE_BPI_WE  : PULSE_EDGE port map(BPI_WE, open, CLK, RST, 1, start_w_cmd_fifo);
 
-  PULSE_BPI_ENBL : PULSE_EDGE port map(BPI_ENBL_INNER, open, CLK, RST, 1, SEND_BPI_ENBL);
-  PULSE_BPI_DSBL : PULSE_EDGE port map(BPI_DSBL_INNER, open, CLK, RST, 1, SEND_BPI_DSBL);
+  PULSE_BPI_ENBL : PULSE2FAST port map(BPI_ENBL_INNER, CLK, RST, SEND_BPI_ENBL);
+  PULSE_BPI_DSBL : PULSE2FAST port map(BPI_DSBL_INNER, CLK, RST, SEND_BPI_DSBL);
 
   BPI_RST  <= BPI_RST_INNER;
   BPI_ENBL <= BPI_ENBL_INNER;

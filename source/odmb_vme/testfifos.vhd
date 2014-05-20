@@ -206,8 +206,8 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal W_HDR_FF_RST, hdr_fifo_data_valid : std_logic := '0';
 
-  signal hdr_fifo_empty, hdr_fifo_full : std_logic;
-  signal hdr_fifo_rst, hdr_fifo_reset  : std_logic;
+  signal hdr_fifo_empty, hdr_fifo_full         : std_logic;
+  signal hdr_fifo_rst, hdr_fifo_reset, hdr_eof : std_logic;
 
   
   
@@ -235,7 +235,7 @@ begin  --Architecture
 
   -- ddu_tx: 300 series
   r_ddu_tx_ff_read    <= '1' when (cmddev = x"1300")                                   else '0';
-  r_ddu_tx_ff_wrd_cnt <= '1' when (cmddev = x"130c") else '0';
+  r_ddu_tx_ff_wrd_cnt <= '1' when (cmddev = x"130c")                                   else '0';
   w_ddu_tx_ff_rst     <= '1' when (cmddev = x"1320" and WRITER = '0' and STROBE = '1') else '0';
 
   -- ddu_rx: 400 series
@@ -509,7 +509,7 @@ begin  --Architecture
       EMPTY     => hdr_fifo_empty,      -- Output empty
       FULL      => hdr_fifo_full,       -- Output full
       HALF_FULL => open,
-      EOF       => open,                -- Output EOF
+      EOF       => hdr_eof,             -- Output EOF
       BOF       => open,
 
       DI    => DDU_DATA,                -- Input data
@@ -533,7 +533,7 @@ begin  --Architecture
   C_HDR_FF_RD   <= RST or HDR_FF_RD(3);
   HDR_FIFO_RDEN <= HDR_FF_RD(2);
 
-  OUT_HDR_FF_READ <= HDR_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_HDR_FF_READ = '1') else (others => 'Z');
+  OUT_HDR_FF_READ <= HDR_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_HDR_FF_READ = '1') else (others => hdr_eof);  -- EOF to avoid warning...
 
 -- General assignments
   OUTDATA <= OUT_TFF_READ when R_TFF_READ = '1' else

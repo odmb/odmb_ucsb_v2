@@ -356,19 +356,19 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
   signal rxdisperr_pulse     : std_logic := '0';
 
   -- PRBS signals
-  signal   gtx0_entxprbstst_in : std_logic_vector(2 downto 0);
-  signal   gtx0_enrxprbstst_in : std_logic_vector(2 downto 0);
-  signal   prbs_err_cnt_rst    : std_logic;
-  signal   prbs_en_pulse       : std_logic;
-  signal   prbs_rd_en_pulse    : std_logic;
-  signal   prbs_init_pulse     : std_logic;
-  signal   prbs_reset_pulse    : std_logic;
-  signal   prbs_rd_en_inner    : std_logic;
-  constant prbs_rst_cycles     : integer := 1;
-  constant prbs_length         : integer := 10001;
-  signal   prbs_en_cnt         : integer;
-  signal   prbs_rst_cnt        : integer;
-  signal   prbs_rd_en_cnt      : integer;
+  signal gtx0_entxprbstst_in : std_logic_vector(2 downto 0);
+  signal gtx0_enrxprbstst_in : std_logic_vector(2 downto 0);
+  signal prbs_err_cnt_rst    : std_logic;
+  signal prbs_en_pulse       : std_logic;
+  signal prbs_rd_en_pulse    : std_logic;
+  signal prbs_init_pulse     : std_logic;
+  signal prbs_reset_pulse    : std_logic;
+  signal prbs_rd_en_inner    : std_logic;
+  constant prbs_rst_cycles   : integer := 1;
+  constant prbs_length       : integer := 10001;
+  signal prbs_en_cnt         : integer;
+  signal prbs_rst_cnt        : integer;
+  signal prbs_rd_en_cnt      : integer;
 begin
 
   -- RX data valid is high when the RX is valid and we are not receiving a K character
@@ -663,13 +663,10 @@ begin
   prbs_en_cnt    <= prbs_length*to_integer(unsigned(prbs_en_tst_cnt))+prbs_rst_cnt;
   prbs_rd_en_cnt <= prbs_en_cnt-1;
 
-  PRBS_INIT_PE : PULSE_EDGE port map(prbs_init_pulse, open, usr_clk,
-                                     RST, prbs_length, PRBS_RX_EN);
-  PRBS_RST_PE : PULSE_EDGE port map(prbs_reset_pulse, open, usr_clk,
-                                    RST, prbs_rst_cnt, PRBS_RX_EN);
-  PRBS_RD_EN_PE : PULSE_EDGE port map(prbs_rd_en_pulse, open, usr_clk,
-                                      RST, prbs_rd_en_cnt, PRBS_RX_EN);
-  PRBS_EN_PE : PULSE_EDGE port map(prbs_en_pulse, open, usr_clk, RST, prbs_en_cnt, PRBS_RX_EN);
+  PRBS_INIT_PE  : NPULSE2FAST port map(prbs_init_pulse, usr_clk, RST, prbs_length, PRBS_RX_EN);
+  PRBS_RST_PE   : NPULSE2FAST port map(prbs_reset_pulse, usr_clk, RST, prbs_rst_cnt, PRBS_RX_EN);
+  PRBS_RD_EN_PE : NPULSE2FAST port map(prbs_rd_en_pulse, usr_clk, RST, prbs_rd_en_cnt, PRBS_RX_EN);
+  PRBS_EN_PE    : NPULSE2FAST port map(prbs_en_pulse, usr_clk, RST, prbs_en_cnt, PRBS_RX_EN);
 
   prbs_err_cnt_rst    <= prbs_reset_pulse and not prbs_init_pulse;
   prbs_rd_en_inner    <= prbs_en_pulse and not prbs_rd_en_pulse;

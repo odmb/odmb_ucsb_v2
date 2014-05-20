@@ -168,6 +168,6 @@ begin
                     fifo_full((NFIFO+1)/2);
 
   --out: tells you when packet has finished arriving at FIFO 1
-  PULSE_EOF : PULSE2SAME port map(EOF, WRCLK, RST, fifo_in(1)(DATA_WIDTH-2));
+  PULSE_EOF : PULSE2SAME port map(EOF, int_clk, RST, fifo_in(1)(DATA_WIDTH-2));
   BOF <= fifo_in(1)(DATA_WIDTH-1);  --OUT: tells you when packet has started arriving at FIFO 1
 end fifo_cascade_arch;

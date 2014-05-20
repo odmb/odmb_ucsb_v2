@@ -52,7 +52,7 @@ architecture LVDBMON_Arch of LVDBMON is
       );
   end component;
 
-  signal pon_reset_b, pon_reset_b1, pon_pulse : std_logic;
+  --signal pon_reset_b, pon_reset_b1, pon_pulse : std_logic;
 
   signal BUSY                                           : std_logic;
   signal WRITEADC, READMON, WRITEPOWER, READPOWER       : std_logic;
@@ -143,9 +143,9 @@ begin  --Architecture
   LVADCEN(6) <= '0' when SELADC_vector(3 downto 1) = "110" else '1';
 
 -- Generate LOADON: from VME command and from Power-on reset
-  pon_reset_b <= not pon_reset;
-  FDPON      : FD port map(pon_reset_b1, slowclk, pon_reset_b);
-  PULSEPON   : PULSE2SAME port map(pon_pulse, slowclk, rst, pon_reset_b1);
+  --pon_reset_b <= not pon_reset;
+  --FDPON      : FD port map(pon_reset_b1, slowclk, pon_reset_b);
+  --PULSEPON   : PULSE2SAME port map(pon_pulse, slowclk, rst, pon_reset_b1);
   --C_LOADON    <= (WRITEPOWER and STROBE) or pon_pulse;
   C_LOADON    <= (WRITEPOWER and STROBE);
   FDC_LOADON : FDC port map (Q1_LOADON, C_LOADON, LOADON_INNER, '1');

@@ -140,12 +140,12 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
       );
   end component;
 
-  constant IDLE          : std_logic_vector(15 downto 0) := x"50BC";
-  signal   tx_ddu_data   : std_logic_vector(15 downto 0) := (others => '0');
-  signal   tx_ddu_k      : std_logic_vector(1 downto 0)  := (others => '0');
-  signal   usr_clk       : std_logic                     := '0';
-  signal   rxd_inner     : std_logic_vector(15 downto 0) := (others => '0');
-  signal   rxd_vld_inner : std_logic                     := '0';
+  constant IDLE        : std_logic_vector(15 downto 0) := x"50BC";
+  signal tx_ddu_data   : std_logic_vector(15 downto 0) := (others => '0');
+  signal tx_ddu_k      : std_logic_vector(1 downto 0)  := (others => '0');
+  signal usr_clk       : std_logic                     := '0';
+  signal rxd_inner     : std_logic_vector(15 downto 0) := (others => '0');
+  signal rxd_vld_inner : std_logic                     := '0';
 
   -- wrapper_gigalink_ddu inputs
   signal gtxtest_in            : std_logic_vector(12 downto 0) := "1000000000000";
@@ -168,22 +168,23 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
 
   -- PRBS signals
-  signal   gtx0_entxprbstst_in : std_logic_vector(2 downto 0);
-  signal   gtx0_enrxprbstst_in : std_logic_vector(2 downto 0);
-  signal   prbs_err_cnt_rst    : std_logic;
-  signal   prbs_en_pulse       : std_logic;
-  signal   prbs_rd_en_pulse    : std_logic;
-  signal   prbs_init_pulse     : std_logic;
-  signal   prbs_reset_pulse    : std_logic;
-  signal   prbs_rd_en_inner    : std_logic;
-  constant prbs_rst_cycles     : integer := 1;
-  constant prbs_length         : integer := 10001;
-  signal   prbs_en_cnt         : integer;
-  signal   prbs_rst_cnt        : integer;
-  signal   prbs_rd_en_cnt      : integer;
+  signal gtx0_entxprbstst_in : std_logic_vector(2 downto 0);
+  signal gtx0_enrxprbstst_in : std_logic_vector(2 downto 0);
+  signal prbs_err_cnt_rst    : std_logic;
+  signal prbs_en_pulse       : std_logic;
+  signal prbs_rd_en_pulse    : std_logic;
+  signal prbs_init_pulse     : std_logic;
+  signal prbs_reset_pulse    : std_logic;
+  signal prbs_rd_en_inner    : std_logic;
+  constant prbs_rst_cycles   : integer := 1;
+  constant prbs_length       : integer := 10001;
+  signal prbs_en_cnt         : integer;
+  signal prbs_rst_cnt        : integer;
+  signal prbs_rd_en_cnt      : integer;
 begin
 
   BUFG_USR : BUFG port map(O => usr_clk, I => ref_clk_80);
+  --usr_clk <= ref_clk_80;
 
   -- RX data valid is high when the RX is valid and we are not receiving a K character
   -- The pulse avoids some false positives during resets
@@ -285,12 +286,12 @@ begin
       EOF       => open,                -- Output EOF
       BOF       => open,
 
-      DI    => TXD,               -- Input data
+      DI    => TXD,                     -- Input data
       RDCLK => VME_CLK,                 -- Input read clock
       RDEN  => TX_FIFO_RDEN,            -- Input read enable
       RST   => tx_fifo_rst,             -- Input reset
       WRCLK => usr_clk,                 -- Input write clock
-      WREN  => TXD_VLD             -- Input write enable
+      WREN  => TXD_VLD                  -- Input write enable
       );
 
   TX_WRD_COUNT : FIFOWORDS
@@ -334,13 +335,10 @@ begin
   prbs_en_cnt    <= prbs_length*to_integer(unsigned(prbs_en_tst_cnt))+prbs_rst_cnt;
   prbs_rd_en_cnt <= prbs_en_cnt-1;
 
-  PRBS_INIT_PE : PULSE_EDGE port map(prbs_init_pulse, open, usr_clk,
-                                     RST, prbs_length, PRBS_RX_EN);
-  PRBS_RST_PE : PULSE_EDGE port map(prbs_reset_pulse, open, usr_clk,
-                                    RST, prbs_rst_cnt, PRBS_RX_EN);
-  PRBS_RD_EN_PE : PULSE_EDGE port map(prbs_rd_en_pulse, open, usr_clk,
-                                      RST, prbs_rd_en_cnt, PRBS_RX_EN);
-  PRBS_EN_PE : PULSE_EDGE port map(prbs_en_pulse, open, usr_clk, RST, prbs_en_cnt, PRBS_RX_EN);
+  PRBS_INIT_PE  : NPULSE2FAST port map(prbs_init_pulse, usr_clk, RST, prbs_length, PRBS_RX_EN);
+  PRBS_RST_PE   : NPULSE2FAST port map(prbs_reset_pulse, usr_clk, RST, prbs_rst_cnt, PRBS_RX_EN);
+  PRBS_RD_EN_PE : NPULSE2FAST port map(prbs_rd_en_pulse, usr_clk, RST, prbs_rd_en_cnt, PRBS_RX_EN);
+  PRBS_EN_PE    : NPULSE2FAST port map(prbs_en_pulse, usr_clk, RST, prbs_en_cnt, PRBS_RX_EN);
 
   prbs_err_cnt_rst    <= prbs_reset_pulse and not prbs_init_pulse;
   prbs_rd_en_inner    <= prbs_en_pulse and not prbs_rd_en_pulse;
