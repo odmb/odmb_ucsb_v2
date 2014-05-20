@@ -24,7 +24,7 @@ entity cafifo is
 
     CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
     clk                         : in    std_logic;
-    dcfebclk                    : in    std_logic;
+    dduclk                    : in    std_logic;
     rst                         : in    std_logic;
     l1acnt_rst                  : in    std_logic;
     bxcnt_rst                   : in    std_logic;
@@ -320,18 +320,6 @@ begin
     CAFIFO_L1A_DAV(dev)   <= l1a_dav(rd_addr_out)(dev);
     CAFIFO_LOST_PCKT(dev) <= lost_pckt(rd_addr_out)(dev);
   end generate GEN_L1ACNT_DAV;
-
-  --GEN_L1A_DAV : for index in 0 to CAFIFO_SIZE-1 generate
-  --  FDDAV : FD port map(reg_l1a_dav(index)(dev), dcfebclk, l1a_dav(index)(dev));
-  --  l1a_dav(index)(dev) <= '0' when (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) else
-  --                         '1' when (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and l1a_dav_en(dev) = '1') else
-  --                         reg_l1a_dav(index)(dev);
-  --  FDLOST : FD port map(reg_lost_pckt(index)(dev), dcfebclk, lost_pckt(index)(dev));
-  --  lost_pckt(index)(dev) <= '0' when (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) else
-  --                           '1' when (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and lost_pckt_en(dev) = '1') else
-  --                           reg_lost_pckt(index)(dev);
-
-  --end generate GEN_L1A_DAV;
 
   DAV_LOST_PRO : process(RST, CLK, cafifo_rden, rd_addr_out, l1a_dav_en, lost_pckt_en)
   begin

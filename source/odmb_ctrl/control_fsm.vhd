@@ -165,9 +165,9 @@ begin
   
 -- trigger assignments (8 bits)
   control_fsm_la_trig <= expect_pckt & q_datain_last &bad_l1a_lone  & cafifo_lone & CAFIFO_L1A_CNT(3 downto 0);
-  control_fsm_la_data <= "0" & x"000" & bad_l1a_lone & lone_cnt_svl & cafifo_lone
-                         & RST          -- [112:107]
-                         & std_logic_vector(to_unsigned(wait_cnt, 5))  -- [102]
+  control_fsm_la_data <= "0" & x"000" 
+                         & bad_l1a_lone & lone_cnt_svl & cafifo_lone & RST          -- [114:107]
+                         & std_logic_vector(to_unsigned(wait_cnt, 5))  -- [106:102]
                          & CAFIFO_L1A_CNT(4 downto 0)          -- [101:97]
                          & FFOR_B & cafifo_lost_pckt           -- [96:79]
                          & next_state_svl & eof_inner & fifo_pop_inner & fifo_pop_80  -- [78:72]

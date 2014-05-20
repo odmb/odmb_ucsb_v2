@@ -1206,6 +1206,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_full   : std_logic_vector(NFEB downto 1);
 
   signal eof_data_160 : std_logic_vector(NFEB downto 1);
+  signal eof_data_80_alct, eof_data_80_otmb : std_logic;
 
 
   signal data_fifo_empty_b                : std_logic_vector(NFEB+2 downto 1);
@@ -1996,7 +1997,7 @@ begin
       EMPTY     => alct_fifo_empty,     -- Output empty
       FULL      => alct_fifo_full,      -- Output full
       HALF_FULL => data_fifo_half_full(9),
-      EOF       => eof_data(NFEB+2),    -- Output EOF
+      EOF       => eof_data_80_alct,    -- Output EOF
       BOF       => open,
 
       DI    => alct_fifo_data_in,       -- Input data
@@ -2019,7 +2020,7 @@ begin
       EMPTY     => otmb_fifo_empty,     -- Output empty
       FULL      => otmb_fifo_full,      -- Output full
       HALF_FULL => data_fifo_half_full(8),
-      EOF       => eof_data(NFEB+1),    -- Output EOF
+      EOF       => eof_data_80_otmb,    -- Output EOF
       BOF       => open,
 
       DI    => otmb_fifo_data_in,       -- Input data
@@ -2029,6 +2030,9 @@ begin
       WRCLK => clk40,                   -- Input write clock
       WREN  => otmb_fifo_data_valid     -- Input write enable
       );
+  
+    PULSEEOFALCT  : PULSE2SLOW port map(eof_data(NFEB+2), clk40, dduclk, reset, eof_data_80_alct);
+    PULSEEOFOTMB  : PULSE2SLOW port map(eof_data(NFEB+1), clk40, dduclk, reset, eof_data_80_otmb);
 
 -- FIFO MUX
   fifo_out <= dcfeb_fifo_out(1)(15 downto 0) when data_fifo_oe = "111111110" else
@@ -2539,10 +2543,10 @@ begin
            & p3v3_pp_sm_n & therm2_n & p5v_sm_n & lv_p3v3_sm_n;
 
 
-  INTL1A_CNT  : COUNT_EDGES port map(int_l1a_cnt, int_l1a, l1acnt_rst, logich);
-  ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, int_alct_dav, reset, logich);
-  OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, int_otmb_dav, reset, logich);
-  DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, ddu_eof, reset, logich);
+  INTL1A_CNT  : COUNT_EDGES port map(int_l1a_cnt, clk40, l1acnt_rst, int_l1a);
+  ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, clk40, reset, int_alct_dav);
+  OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, clk40, reset, int_otmb_dav);
+  DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, clk40, reset, ddu_eof);
   PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, gtx1_data_valid, reset, logich);
   LOCKED_CNT  : COUNT_EDGES port map(qpll_locked_cnt, qpll_locked, reset, '1');
 
@@ -2557,7 +2561,7 @@ begin
   begin
     FIFOOE_CNT    : COUNT_EDGES port map(data_fifo_oe_cnt(dev), data_fifo_oe(dev), reset, logich);
     FIFORE_CNT    : COUNT_EDGES port map(data_fifo_re_cnt(dev), data_fifo_re(dev), reset, logich);
-    L1AMATCH_CNT  : COUNT_EDGES port map(l1a_match_cnt(dev), cafifo_l1a_match_in(dev), reset, logich);
+    L1AMATCH_CNT  : COUNT_EDGES port map(l1a_match_cnt(dev), clk40, reset, cafifo_l1a_match_in(dev));
     PACKET_CNT    : COUNT_EDGES port map(into_cafifo_dav_cnt(dev), into_cafifo_dav(dev), reset, logich);
     DATAEOF_CNT   : COUNT_EDGES port map(eof_data_cnt(dev), eof_data(dev), reset, logich);
     CAFIFODAV_CNT : COUNT_EDGES port map(cafifo_l1a_dav_cnt(dev), cafifo_l1a_dav(dev), reset, logich);

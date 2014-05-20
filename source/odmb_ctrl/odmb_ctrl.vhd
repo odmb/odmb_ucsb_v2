@@ -3,6 +3,7 @@
 library ieee;
 library work;
 use work.Latches_Flipflops.all;
+use work.ucsb_types.all;
 use ieee.std_logic_1164.all;
 
 entity ODMB_CTRL is
@@ -666,7 +667,7 @@ begin
     port map(
       CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
       clk                         => clk40,
-      dcfebclk                    => clk80,
+      dduclk                    => dduclk,
       rst                         => l1acnt_rst,
       l1acnt_rst                  => l1acnt_rst,
       bxcnt_rst                   => bxcnt_rst,
@@ -719,7 +720,7 @@ begin
     generic map(NFEB => NFEB)
     port map(
       CSP_CONTROL_FSM_PORT_LA_CTRL => CSP_CONTROL_FSM_PORT_LA_CTRL,
-      CLK                          => dduclk,  -- CLKDDU?
+      CLK                          => dduclk, 
       CLKCMS                       => clk40,
       RST                          => l1acnt_rst,
       STATUS                       => status,
@@ -789,8 +790,8 @@ begin
       data_out => pc_data
       );
 
-
-  ddu_eof <= eof;  -- This counts the number of packets sent to the DDU
+  DDUEOF_PULSE : PULSE2SLOW port map(ddu_eof, clk40, dduclk, RESET, eof);
+  --ddu_eof <= eof;  -- This counts the number of packets sent to the DDU
 
   CRC_CHECKER_PM : CRC_CHECKER
     port map (
