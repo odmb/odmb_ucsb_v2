@@ -4,6 +4,7 @@
 -- packets have finished arriving.
 
 library ieee;
+library work;
 library unisim;
 library unimacro;
 library hdlmacro;
@@ -11,6 +12,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
 use ieee.std_logic_unsigned.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 use hdlmacro.hdlmacro.all;
@@ -24,7 +26,7 @@ entity cafifo is
 
     CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
     clk                         : in    std_logic;
-    dduclk                    : in    std_logic;
+    dduclk                      : in    std_logic;
     rst                         : in    std_logic;
     l1acnt_rst                  : in    std_logic;
     bxcnt_rst                   : in    std_logic;
@@ -175,8 +177,11 @@ architecture cafifo_architecture of cafifo is
   -- Out
   signal cafifo_state_slv : std_logic_vector(1 downto 0);
 
-  signal bad_l1a_lone, bad_rdwr_addr : std_logic := '0';
-  
+  signal bad_l1a_lone, bad_rdwr_addr   : std_logic := '0';
+  signal current_l1a_match, current_l1a_dav, current_lost_pckt    : std_logic_vector(NFEB+2 downto 1);
+  signal current_bx_cnt                : std_logic_vector(11 downto 0);
+  signal current_l1a_cnt : std_logic_vector(23 downto 0);
+  signal current_lone : std_logic;
 begin
 
 -- Initial assignments
@@ -193,14 +198,29 @@ begin
   FDLONED      : FD port map(lone_in_reg_d, CLK, lone_in);
   FDLONE       : FD port map(lone_in_reg, CLK, lone_in_reg_d);
   GEN_L1AM_REG : for dev in 1 to NFEB+2 generate
-    FDL1AMD : FD port map(l1a_match_in_reg_d(dev), CLK, l1a_match_in(dev));
-    FDL1AM  : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
+    FDL1AMD       : FD port map(l1a_match_in_reg_d(dev), CLK, l1a_match_in(dev));
+    FDL1AM        : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
+    CF_L1AM_CROSS : CROSSCLOCK port map(CAFIFO_L1A_MATCH(dev), dduclk, clk, RST, current_l1a_match(dev));
+    CF_DAV_CROSS : CROSSCLOCK port map(CAFIFO_L1A_DAV(dev), dduclk, clk, RST, current_l1a_dav(dev));
+    CF_LOST_CROSS : CROSSCLOCK port map(CAFIFO_LOST_PCKT(dev), dduclk, clk, RST, current_lost_pckt(dev));
   end generate GEN_L1AM_REG;
   GEN_BX_REG : for dev in 0 to 11 generate
-    FDL1AMD : FD port map(bx_cnt_out_reg_d(dev), CLK, bx_cnt_out(dev));
-    FDL1AM  : FD port map(bx_cnt_out_reg(dev), CLK, bx_cnt_out_reg_d(dev));
+    FDL1AMD     : FD port map(bx_cnt_out_reg_d(dev), CLK, bx_cnt_out(dev));
+    FDL1AM      : FD port map(bx_cnt_out_reg(dev), CLK, bx_cnt_out_reg_d(dev));
+    CF_BX_CROSS : CROSSCLOCK port map(CAFIFO_BX_CNT(dev), dduclk, clk, RST, current_bx_cnt(dev));
   end generate GEN_BX_REG;
+  GEN_L1A_REG : for dev in 0 to 23 generate
+  CF_L1A_CROSS  : CROSSCLOCK port map(CAFIFO_L1A_CNT(dev), dduclk, clk, RST, current_l1a_cnt(dev));
+  end generate GEN_L1A_REG;
 
+  current_l1a_match <= l1a_match(rd_addr_out);
+  current_bx_cnt    <= bx_cnt(rd_addr_out);
+  current_lone      <= lone(rd_addr_out);
+  current_l1a_cnt   <= l1a_cnt(rd_addr_out);
+  current_l1a_dav   <= l1a_dav(rd_addr_out);
+  current_lost_pckt   <= lost_pckt(rd_addr_out);
+  
+  CF_LONE_CROSS : CROSSCLOCK port map(CAFIFO_LONE, dduclk, clk, RST, current_lone);
 
 -------------------- L1A Counter        --------------------
 
@@ -232,7 +252,6 @@ begin
     end if;
   end process;
 
-  cafifo_l1a_cnt <= l1a_cnt(rd_addr_out);
 
   bx_cnt_fifo : process (cafifo_wren, wr_addr_out, bxcnt_rst, clk, bx_cnt_out_reg)
   begin
@@ -247,7 +266,6 @@ begin
     end if;
   end process;
 
-  cafifo_bx_cnt <= bx_cnt(rd_addr_out);
 
   l1a_match_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_match_in_reg)
   begin
@@ -264,7 +282,6 @@ begin
     end if;
   end process;
 
-  cafifo_l1a_match <= l1a_match(rd_addr_out);
 
   lone_fifo : process (cafifo_wren, wr_addr_out, rst, clk, lone_in_reg)
   begin
@@ -281,7 +298,6 @@ begin
     end if;
   end process;
 
-  cafifo_lone <= lone(rd_addr_out);
 
 --------------------------- GENERATE DAVS and LOSTS  -------------------------------
 
@@ -316,27 +332,24 @@ begin
         RDEN        => l1acnt_dav_fifo_rd_en(dev),   -- Input read enable
         DO          => l1acnt_dav_fifo_out(dev)      -- Output data
         );
-
-    CAFIFO_L1A_DAV(dev)   <= l1a_dav(rd_addr_out)(dev);
-    CAFIFO_LOST_PCKT(dev) <= lost_pckt(rd_addr_out)(dev);
   end generate GEN_L1ACNT_DAV;
 
   DAV_LOST_PRO : process(RST, CLK, cafifo_rden, rd_addr_out, l1a_dav_en, lost_pckt_en)
   begin
     for dev in 1 to NFEB+2 loop
-    for index in 0 to CAFIFO_SIZE-1 loop
-      if (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) then
-        l1a_dav(index)(dev)   <= '0';
-        lost_pckt(index)(dev) <= '0';
-      elsif rising_edge(CLK) then
-        if (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and l1a_dav_en(dev) = '1') then
-          l1a_dav(index)(dev) <= '1';
+      for index in 0 to CAFIFO_SIZE-1 loop
+        if (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) then
+          l1a_dav(index)(dev)   <= '0';
+          lost_pckt(index)(dev) <= '0';
+        elsif rising_edge(CLK) then
+          if (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and l1a_dav_en(dev) = '1') then
+            l1a_dav(index)(dev) <= '1';
+          end if;
+          if (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and lost_pckt_en(dev) = '1') then
+            lost_pckt(index)(dev) <= '1';
+          end if;
         end if;
-        if (l1acnt_dav_fifo_out(dev) = l1a_cnt(index) and lost_pckt_en(dev) = '1') then
-          lost_pckt(index)(dev) <= '1';
-        end if;
-      end if;
-    end loop;
+      end loop;
     end loop;
   end process;
 

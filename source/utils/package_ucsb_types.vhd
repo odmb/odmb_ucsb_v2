@@ -8,6 +8,16 @@ package ucsb_types is
   
   type cfg_regs_array is array (0 to 15) of std_logic_vector(15 downto 0);
 
+  component CROSSCLOCK is
+    port (
+      DOUT     : out std_logic;
+      CLK_DOUT : in  std_logic;
+      CLK_DIN  : in  std_logic;
+      RST      : in  std_logic;
+      DIN      : in  std_logic
+      );
+  end component;
+
   component PULSE2SLOW is
     port (
       DOUT     : out std_logic;

@@ -380,7 +380,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
       CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       clk                         : in    std_logic;
-      dcfebclk                    : in    std_logic;
+      dduclk                    : in    std_logic;
       rst                         : in    std_logic;
       l1acnt_rst                  : in    std_logic;
       bxcnt_rst                   : in    std_logic;
