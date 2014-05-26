@@ -209,13 +209,13 @@ begin  --Architecture
   DIAGLVDB_INNER(17 downto 0) <= x"000" & L_ADCDATA & BUSY & ADCCLK_INNER & CLKMON & CE_ADCDATA & SLOWCLK;
   DIAGLVDB                    <= DIAGLVDB_INNER;
 
-  csp_lvmb_la_pm : csp_lvmb_la
-    port map (
-      CONTROL => CSP_LVMB_LA_CTRL,
-      CLK     => SLOWCLK,
-      DATA    => csp_lvmb_la_data,
-      TRIG0   => csp_lvmb_la_trig
-      );
+  --csp_lvmb_la_pm : csp_lvmb_la
+  --  port map (
+  --    CONTROL => CSP_LVMB_LA_CTRL,
+  --    CLK     => SLOWCLK,
+  --    DATA    => csp_lvmb_la_data,
+  --    TRIG0   => csp_lvmb_la_trig
+  --    );
 
   --csp_lvmb_la_trig <= x"0" & "00" & WRITEADC & READMON;
   --csp_lvmb_la_data <= x"0000000000" & "00" &

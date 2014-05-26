@@ -15,6 +15,7 @@ entity TESTFIFOS is
     NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );    
   port (
+    CSP_LVMB_LA_CTRL : inout std_logic_vector(35 downto 0);
 
     SLOWCLK : in std_logic;
     RST     : in std_logic;
@@ -76,28 +77,12 @@ end TESTFIFOS;
 
 
 architecture TESTFIFOS_Arch of TESTFIFOS is
-
-  component PULSE_EDGE is
+  component csp_lvmb_la is
     port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
-  component FIFOWORDS is
-    generic (WIDTH : integer := 16);
-    port (
-      RST   : in  std_logic;
-      WRCLK : in  std_logic;
-      WREN  : in  std_logic;
-      FULL  : in  std_logic;
-      RDCLK : in  std_logic;
-      RDEN  : in  std_logic;
-      COUNT : out std_logic_vector(WIDTH-1 downto 0)
+      CLK     : in    std_logic := 'X';
+      DATA    : in    std_logic_vector (99 downto 0);
+      TRIG0   : in    std_logic_vector (7 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
       );
   end component;
 
@@ -209,7 +194,9 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal hdr_fifo_empty, hdr_fifo_full         : std_logic;
   signal hdr_fifo_rst, hdr_fifo_reset, hdr_eof : std_logic;
 
-  
+   signal csp_lvmb_la_trig : std_logic_vector (7 downto 0);
+  signal csp_lvmb_la_data : std_logic_vector (99 downto 0);
+ 
   
 begin  --Architecture
 
@@ -555,10 +542,28 @@ begin  --Architecture
              OUT_HDR_FF_WRD_CNT    when R_HDR_FF_WRD_CNT = '1' else
              (others => 'L');
 
-  -- DTACK
+  -- DTACK 
   dd_dtack <= STROBE and DEVICE;
   FD_D_DTACK : FDC port map(d_dtack, dd_dtack, q_dtack, '1');
   FD_Q_DTACK : FD port map(q_dtack, SLOWCLK, d_dtack);
   DTACK    <= q_dtack;
   
+  csp_lvmb_la_pm : csp_lvmb_la
+    port map (
+      CONTROL => CSP_LVMB_LA_CTRL,
+      CLK     => DDUCLK,
+      DATA    => csp_lvmb_la_data,
+      TRIG0   => csp_lvmb_la_trig
+      );
+
+  csp_lvmb_la_trig <= R_HDR_FF_READ & hdr_fifo_data_valid & DDU_DATA_VALID
+                      & hdr_fifo_rden & DDU_DATA(15 downto 12);
+  csp_lvmb_la_data <= x"0000000" & "0" 
+                      & R_HDR_FF_WRD_CNT & R_HDR_FF_READ                 -- (71:69)
+                      & STROBE & q_dtack & WRITER                        -- (68:66)
+                      & cmddev                                           -- (65:50)
+                      & HDR_FIFO_WRD_CNT                                 -- (49:38)
+                      & hdr_fifo_rst & hdr_fifo_dout                     -- (37:21)
+                      & hdr_fifo_empty & hdr_fifo_full & hdr_fifo_rden   -- (20:18)
+                      & DDU_DATA & DDU_DATA_VALID & hdr_fifo_data_valid; -- (17:0)
 end TESTFIFOS_Arch;

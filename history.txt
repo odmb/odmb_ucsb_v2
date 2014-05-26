@@ -7,6 +7,17 @@
 =                                                                    =
 ======================================================================
 
+V03-05, build 2: 25 May 2014, Manuel
+------------------------------------------
+Added CROSSCLOCK to sync signals from CAFIFO to CONTROL_FSM.
+Added PULSE2SLOW/SAME/FAST to properly send pulses across
+different clock domains. Synchronization seems good now.
+Added ability to mask L1A_MATCH and still receive data.
+Delayed CAFIFO_L1A_MATCH and CAFIFO_LONE to fix bug where L1A was 
+sometimes from CAFIFO row before updating.
+No longer changes "power on" status of DCFEBs/ALCTs on resets.
+DDU TX FIFO increased to 8,000 words to read packets via VME.
+
 V03-04, build 8: 17 May 2014, Manuel
 ------------------------------------------
 Added lone words when L1A but no L1A_MATCHes.

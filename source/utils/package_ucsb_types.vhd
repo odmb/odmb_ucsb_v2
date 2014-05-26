@@ -134,6 +134,20 @@ package ucsb_types is
       );
   end component;
   
+  component FIFOWORDS is
+    generic (WIDTH : integer := 16);
+    port (
+      RST   : in  std_logic;
+      WRCLK : in  std_logic;
+      WREN  : in  std_logic;
+      FULL  : in  std_logic;
+      RDCLK : in  std_logic;
+      RDEN  : in  std_logic;
+      COUNT : out std_logic_vector(WIDTH-1 downto 0)
+      );
+  end component;
+
+  
 
 end ucsb_types;
 

@@ -113,7 +113,7 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal lone_cnt_en           : std_logic             := '0';
   signal lone_cnt              : integer range 1 to 4  := 1;
   signal wait_cnt_en           : std_logic             := '0';
-  signal wait_cnt              : integer range 1 to 10 := 1;
+  signal wait_cnt              : integer range 1 to 16 := 1;
   signal dev_cnt_en            : std_logic             := '0';
   signal dev_cnt               : integer range 1 to 9  := 9;
   signal tx_cnt_en, tx_cnt_rst : std_logic             := '0';
@@ -198,7 +198,7 @@ begin
       tx_cnt                <= 1;
     elsif rising_edge(CLK) then
       if(wait_cnt_en = '1') then
-        if(wait_cnt = 10) then
+        if(wait_cnt = 16) then
           wait_cnt <= 1;
         else
           wait_cnt <= wait_cnt + 1;
@@ -338,35 +338,41 @@ begin
         dout_d          <= tail_word(hdr_tail_cnt);
         dav_d           <= '1';
         hdr_tail_cnt_en <= '1';
+        if (hdr_tail_cnt = 5) then -- With the synchronization ~13 cc to increase rd_addr_ou
+          fifo_pop_80        <= '1';
+        else
+          fifo_pop_80        <= '0';
+        end if;
         if (hdr_tail_cnt = 8) then
           control_next_state <= WAIT_IDLE;
           eof_d              <= '1';
-          fifo_pop_80        <= '1';
         else
           control_next_state <= TAIL;
           eof_d              <= '0';
-          fifo_pop_80        <= '0';
         end if;
 
       when LONE =>
         dout_d      <= lone_word(lone_cnt);
         dav_d       <= '1';
         lone_cnt_en <= '1';
+        if (lone_cnt = 1) then -- With the synchronization ~13 cc to increase rd_addr_ou
+          fifo_pop_80        <= '1';
+        else
+          fifo_pop_80        <= '0';
+        end if;
         if (lone_cnt = 4) then
           control_next_state <= WAIT_IDLE;
           eof_d              <= '1';
-          fifo_pop_80        <= '1';
         else
           control_next_state <= LONE;
           eof_d              <= '0';
-          fifo_pop_80        <= '0';
         end if;
 
       when WAIT_IDLE =>
         dout_d      <= (others => '0');
         dav_d       <= '0';
         wait_cnt_en <= '1';
-        if (wait_cnt = 10) then
+        if (wait_cnt = 16) then
           control_next_state <= IDLE;
         else
           control_next_state <= WAIT_IDLE;

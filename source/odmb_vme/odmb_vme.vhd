@@ -116,7 +116,7 @@ entity ODMB_VME is
     OTMB_LCT_RQST   : out std_logic;
     OTMB_EXT_TRIG   : out std_logic;
 
-    MASK_L1A        : out std_logic_vector(NFEB downto 0);
+    MASK_L1A      : out std_logic_vector(NFEB downto 0);
     tp_sel        : out std_logic_vector(15 downto 0);
     odmb_ctrl     : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -358,7 +358,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       OTMB_LCT_RQST   : out std_logic;
       OTMB_EXT_TRIG   : out std_logic;
 
-      MASK_L1A        : out std_logic_vector(NFEB downto 0);
+      MASK_L1A      : out std_logic_vector(NFEB downto 0);
       TP_SEL        : out std_logic_vector(15 downto 0);
       ODMB_CTRL     : out std_logic_vector(15 downto 0);
       ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -429,6 +429,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       NFEB : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
       );    
     port (
+      CSP_LVMB_LA_CTRL : inout std_logic_vector(35 downto 0);
 
       SLOWCLK : in std_logic;
       RST     : in std_logic;
@@ -922,6 +923,8 @@ begin
 
   DEV5_TESTFIFOS : TESTFIFOS
     port map (
+      CSP_LVMB_LA_CTRL => CSP_LVMB_LA_CTRL,
+
       SLOWCLK => CLK_S2,
       RST     => RST,
       CLK40   => CLK,

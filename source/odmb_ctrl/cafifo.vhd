@@ -177,11 +177,12 @@ architecture cafifo_architecture of cafifo is
   -- Out
   signal cafifo_state_slv : std_logic_vector(1 downto 0);
 
-  signal bad_l1a_lone, bad_rdwr_addr   : std_logic := '0';
-  signal current_l1a_match, current_l1a_dav, current_lost_pckt    : std_logic_vector(NFEB+2 downto 1);
-  signal current_bx_cnt                : std_logic_vector(11 downto 0);
-  signal current_l1a_cnt : std_logic_vector(23 downto 0);
-  signal current_lone : std_logic;
+  signal bad_l1a_lone, bad_rdwr_addr            : std_logic := '0';
+  signal current_l1a_match, current_l1a_match_d : std_logic_vector(NFEB+2 downto 1);
+  signal current_l1a_dav, current_lost_pckt     : std_logic_vector(NFEB+2 downto 1);
+  signal current_bx_cnt                         : std_logic_vector(11 downto 0);
+  signal current_l1a_cnt                        : std_logic_vector(23 downto 0);
+  signal current_lone, current_lone_d           : std_logic;
 begin
 
 -- Initial assignments
@@ -195,13 +196,16 @@ begin
   lone_in <= l1a and not or_reduce(l1a_match_in);
 
   -- Adding flip-flops to make sure L1A_CNT has updated, and lone_in is synced with L1A_MATCH
+  -- Using CROSSCLOCK to cross into the DDU clock domain
+  -- Add FDC to LONE and L1A_MATCH to ensure L1A_CNT has been updated in the ODMB header
   FDLONED      : FD port map(lone_in_reg_d, CLK, lone_in);
   FDLONE       : FD port map(lone_in_reg, CLK, lone_in_reg_d);
   GEN_L1AM_REG : for dev in 1 to NFEB+2 generate
     FDL1AMD       : FD port map(l1a_match_in_reg_d(dev), CLK, l1a_match_in(dev));
     FDL1AM        : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
-    CF_L1AM_CROSS : CROSSCLOCK port map(CAFIFO_L1A_MATCH(dev), dduclk, clk, RST, current_l1a_match(dev));
-    CF_DAV_CROSS : CROSSCLOCK port map(CAFIFO_L1A_DAV(dev), dduclk, clk, RST, current_l1a_dav(dev));
+    CF_L1AM_CROSS : CROSSCLOCK port map(current_l1a_match_d(dev), dduclk, clk, RST, current_l1a_match(dev));
+    CF_L1AM_FD    : FDC port map(CAFIFO_L1A_MATCH(dev), dduclk, RST, current_l1a_match_d(dev));
+    CF_DAV_CROSS  : CROSSCLOCK port map(CAFIFO_L1A_DAV(dev), dduclk, clk, RST, current_l1a_dav(dev));
     CF_LOST_CROSS : CROSSCLOCK port map(CAFIFO_LOST_PCKT(dev), dduclk, clk, RST, current_lost_pckt(dev));
   end generate GEN_L1AM_REG;
   GEN_BX_REG : for dev in 0 to 11 generate
@@ -210,7 +214,7 @@ begin
     CF_BX_CROSS : CROSSCLOCK port map(CAFIFO_BX_CNT(dev), dduclk, clk, RST, current_bx_cnt(dev));
   end generate GEN_BX_REG;
   GEN_L1A_REG : for dev in 0 to 23 generate
-  CF_L1A_CROSS  : CROSSCLOCK port map(CAFIFO_L1A_CNT(dev), dduclk, clk, RST, current_l1a_cnt(dev));
+    CF_L1A_CROSS : CROSSCLOCK port map(CAFIFO_L1A_CNT(dev), dduclk, clk, RST, current_l1a_cnt(dev));
   end generate GEN_L1A_REG;
 
   current_l1a_match <= l1a_match(rd_addr_out);
@@ -218,9 +222,10 @@ begin
   current_lone      <= lone(rd_addr_out);
   current_l1a_cnt   <= l1a_cnt(rd_addr_out);
   current_l1a_dav   <= l1a_dav(rd_addr_out);
-  current_lost_pckt   <= lost_pckt(rd_addr_out);
-  
-  CF_LONE_CROSS : CROSSCLOCK port map(CAFIFO_LONE, dduclk, clk, RST, current_lone);
+  current_lost_pckt <= lost_pckt(rd_addr_out);
+
+  CF_LONE_CROSS : CROSSCLOCK port map(current_lone_d, dduclk, clk, RST, current_lone);
+  CF_LONE_FD    : FDC port map(CAFIFO_LONE, dduclk, RST, current_lone_d);
 
 -------------------- L1A Counter        --------------------
 
