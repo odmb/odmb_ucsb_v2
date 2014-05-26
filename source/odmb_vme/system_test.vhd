@@ -1,11 +1,13 @@
 -- SYSTEM_TEST: Provides utilities for testing components of ODMB
 
 library ieee;
+library work;
 library unisim;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 
 entity SYSTEM_TEST is
@@ -65,17 +67,6 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
   --    );
   --end component;
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   component PRBS_GEN is
     port (
       DOUT : out std_logic;
@@ -83,19 +74,6 @@ architecture SYSTEM_TEST_Arch of SYSTEM_TEST is
       CLK    : in std_logic;
       RST    : in std_logic;
       ENABLE : in std_logic
-      );
-  end component;
-
-  component COUNT_EDGES is
-    generic (
-      WIDTH : integer := 16
-      );
-    port (
-      COUNT : out std_logic_vector(WIDTH-1 downto 0);
-
-      CLK : in std_logic;
-      RST : in std_logic;
-      CE  : in std_logic
       );
   end component;
 
@@ -267,7 +245,7 @@ begin
 
   -- OTMB PRBS TX test
   otmb_prbs_tx_en   <= q_otmb_tx(48);
-  TX_EN_CNT        : COUNT_EDGES port map(otmb_prbs_tx_en_cnt, otmb_prbs_tx_en, rst, '1');
+  TX_EN_CNT        : COUNT_EDGES port map(otmb_prbs_tx_en_cnt, CLK, rst, otmb_prbs_tx_en);
   otmb_prbs_tx_en_b <= not otmb_prbs_tx_en;
   PULSEOTMB_TX_RST : PULSE_EDGE port map(pulse_otmb_prbs_tx_end, open, SLOWCLK, RST, 2, otmb_prbs_tx_en_b);
   otmb_prbs_tx_rst  <= pulse_otmb_prbs_tx_end or RST;

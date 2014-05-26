@@ -47,6 +47,7 @@ module dmb_receiver #(
     output [15:0]     DCFEB7_DATA,
     output [7:1]      DCFEB_DATA_VALID,
     output [7:1]      CRC_VALID,
+    output 	      DCFEBCLK, 
     // Internal signals
     input 	      FIFO_VME_MODE,
     input [7:1]       FIFO_RST,
@@ -135,6 +136,8 @@ module dmb_receiver #(
    // Main body of code
    //-----------------------------------------------------------------------------
 
+   assign DCFEBCLK = usr_clk_wordwise;
+   
    //--------------------------------------------------------------------
    // GTX PMA reset circuitry
    //--------------------------------------------------------------------

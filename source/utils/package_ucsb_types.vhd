@@ -8,6 +8,18 @@ package ucsb_types is
   
   type cfg_regs_array is array (0 to 15) of std_logic_vector(15 downto 0);
 
+  component FDVEC is
+    generic (
+      VEC_MIN : integer := 0;
+      VEC_MAX : integer := 15);
+    port (
+      DOUT : out std_logic_vector(VEC_MAX downto VEC_MIN);
+      CLK  : in  std_logic;
+      RST  : in  std_logic;
+      DIN  : in  std_logic_vector(VEC_MAX downto VEC_MIN)
+      );
+  end component;
+
   component CROSSCLOCK is
     port (
       DOUT     : out std_logic;
@@ -133,7 +145,7 @@ package ucsb_types is
       SIGNAL2 : in std_logic
       );
   end component;
-  
+
   component FIFOWORDS is
     generic (WIDTH : integer := 16);
     port (
@@ -147,7 +159,20 @@ package ucsb_types is
       );
   end component;
 
-  
+   component COUNT_EDGES is
+    generic (
+      WIDTH : integer := 16
+      );
+    port (
+      COUNT : out std_logic_vector(WIDTH-1 downto 0);
+
+      CLK : in std_logic;
+      RST : in std_logic;
+      DIN  : in std_logic
+      );
+  end component;
+
+ 
 
 end ucsb_types;
 
