@@ -1,7 +1,7 @@
 ##############################################################
 #
-# Xilinx Core Generator version 12.4
-# Date: Thu Dec 05 01:13:32 2013
+# Xilinx Core Generator version 14.7
+# Date: Thu May 29 08:43:10 2014
 #
 ##############################################################
 #
@@ -12,12 +12,16 @@
 #
 ##############################################################
 #
+#  Generated from component: xilinx.com:ip:chipscope_icon:1.04.a
+#
+##############################################################
+#
 # BEGIN Project Options
 SET addpads = false
 SET asysymbol = true
 SET busformat = BusFormatAngleBracketNotRipped
 SET createndf = false
-SET designentry = VHDL
+SET designentry = Verilog
 SET device = xc6vlx130t
 SET devicefamily = virtex6
 SET flowvendor = Foundation_ISE
@@ -26,10 +30,10 @@ SET foundationsym = false
 SET implementationfiletype = Ngc
 SET package = ff1156
 SET removerpms = false
-SET simulationfiles = Structural
+SET simulationfiles = Behavioral
 SET speedgrade = -1
 SET verilogsim = true
-SET vhdlsim = true
+SET vhdlsim = false
 # END Project Options
 # BEGIN Select
 SELECT ICON_(ChipScope_Pro_-_Integrated_Controller) family Xilinx,_Inc. 1.04.a
@@ -43,5 +47,8 @@ CSET use_softbscan=false
 CSET use_unused_bscan=false
 CSET user_scan_chain=USER1
 # END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2013-10-13T14:13:09Z
+# END Extra information
 GENERATE
-# CRC: 77b28e25
+# CRC: 7c542044

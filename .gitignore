@@ -54,7 +54,7 @@ xst/
 *.mcs
 *.cfi
 *.prm
-ipcore_dir/*.*
+ipcore_dir/*
 !ipcore_dir/*.vhd
 !ipcore_dir/*.xco
 !ipcore_dir/*.ngc

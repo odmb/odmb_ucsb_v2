@@ -658,6 +658,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       -- Global signals
       REF_CLK_80 : in std_logic;        -- 80 MHz for DDU data rate
       RST        : in std_logic;
+      USRCLK  : out std_logic;            -- Data clock coming from the TX PLL
 
       -- Transmitter signals
       TXD        : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
@@ -1100,7 +1101,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal gtx1_data                : std_logic_vector(15 downto 0);
   signal gtx1_data_valid          : std_logic;
 
-  signal gl1_clk, gl1_clk_2_buf : std_logic;
+  signal gl1_clk : std_logic;
   signal gl0_clk, gl0_clk_2     : std_logic;
   signal dduclk, pcclk          : std_logic;
 
@@ -1551,7 +1552,7 @@ begin
       );                                -- MBV : ODMB_VME
 
   MBC : ODMB_CTRL
-    generic map(CAFIFO_SIZE => 128)
+    generic map(CAFIFO_SIZE => 32)
     port map (
 
       CSP_FREE_AGENT_PORT_LA_CTRL  => csp_free_agent_port_la_ctrl,
@@ -1695,6 +1696,7 @@ begin
     port map (
       REF_CLK_80 => gl0_clk,            -- 80 MHz for DDU data rate
       RST        => opt_reset,
+      USRCLK        => dduclk,
       -- Transmitter signals
       TXD        => gtx0_data,          -- Data to be transmitted
       TXD_VLD    => gtx0_data_valid,    -- Flag for valid data;
@@ -1742,7 +1744,7 @@ begin
       TX_ACK  => gl_pc_tx_ack,  -- TX acknowledgement (ethernet header has finished)
       TXD_N   => gl1_tx_n,              -- GTX transmit data out - signal
       TXD_P   => gl1_tx_p,              -- GTX transmit data out + signal
-      USRCLK  => gl1_clk_2_buf,
+      USRCLK  => pcclk,
 
       TXDIFFCTRL  => txdiffctrl,        -- Controls the TX voltage swing
       LOOPBACK    => loopback,          -- For internal loopback tests
@@ -1789,7 +1791,7 @@ begin
       --DAQ_RX_160REFCLK_115_0 => gl0_clk,  -- For the DDU TX simulation
 
       --DAQ_RX_125REFCLK       => gl1_clk,
-      --DMBVME_CLK_S2          => gl1_clk_2_buf,  -- Data clock for the PC TX simulation
+      --DMBVME_CLK_S2          => pcclk,  -- Data clock for the PC TX simulation
       --DAQ_RX_160REFCLK_115_0       => clk40,    -- For the PC TX simulation
 
       DAQ_RX_125REFCLK       => clk40,
@@ -2277,12 +2279,10 @@ begin
   -- Clock for PC TX
   gl1_clk_buf_gtxe1 : IBUFDS_GTXE1 port map (I => gl1_clk_p, IB => gl1_clk_n, CEB => '0',
                                              O => gl1_clk, ODIV2 => open);
-  pcclk <= gl1_clk_2_buf;
 
   -- Clock for DDU TX
   gl0_clk_buf_gtxe1 : IBUFDS_GTXE1 port map (I => gl0_clk_p, IB => gl0_clk_n, CEB => '0',
                                              O => gl0_clk, ODIV2 => gl0_clk_2);
-  gl0_clk_bufg : BUFG port map (O => dduclk, I => gl0_clk);
 
   Divide_Frequency : process(clk40)
   begin
@@ -2332,9 +2332,9 @@ begin
     end if;
   end process Divide_Frequency_gl0;
 
-  Divide_Frequency_gl1 : process(gl1_clk_2_buf)
+  Divide_Frequency_gl1 : process(pcclk)
   begin
-    if gl1_clk_2_buf'event and gl1_clk_2_buf = '1' then
+    if pcclk'event and pcclk = '1' then
       if counter_clk_gl1 = 15625000 then
         counter_clk_gl1 <= 1;
         if gl1_clk_2_slow = '1' then
@@ -2535,7 +2535,7 @@ begin
   ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, clk40, reset, int_alct_dav);
   OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, clk40, reset, int_otmb_dav);
   DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, clk40, reset, ddu_eof);
-  PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, gl1_clk_2_buf, reset, gtx1_data_valid);
+  PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, pcclk, reset, gtx1_data_valid);
   LOCKED_CNT  : COUNT_EDGES port map(qpll_locked_cnt, dduclk, reset, qpll_locked);
 
   NFEB_CNT : for dev in 1 to NFEB generate

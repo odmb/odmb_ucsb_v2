@@ -89,7 +89,7 @@ architecture cafifo_architecture of cafifo is
   end component;
 
   signal wr_addr_en, rd_addr_en                               : std_logic;
-  signal wr_addr_en_q, rd_addr_en_q                           : std_logic                        := '0';
+  signal cafifo_wren_q, cafifo_rden_q                           : std_logic                        := '0';
   signal wr_addr_out, rd_addr_out, prev_rd_addr, next_rd_addr : integer range 0 to CAFIFO_SIZE-1 := 0;
 
   signal cafifo_wren, cafifo_rden  : std_logic;
@@ -178,11 +178,11 @@ architecture cafifo_architecture of cafifo is
   signal cafifo_state_slv : std_logic_vector(1 downto 0);
 
   signal bad_l1a_lone, bad_rdwr_addr            : std_logic := '0';
-  signal current_l1a_match, current_l1a_match_d : std_logic_vector(NFEB+2 downto 1);
+  signal current_l1a_match, current_l1a_match_d, current_l1a_match_dd : std_logic_vector(NFEB+2 downto 1);
   signal current_l1a_dav, current_lost_pckt     : std_logic_vector(NFEB+2 downto 1);
   signal current_bx_cnt                         : std_logic_vector(11 downto 0);
   signal current_l1a_cnt                        : std_logic_vector(23 downto 0);
-  signal current_lone, current_lone_d           : std_logic;
+  signal current_lone, current_lone_d, current_lone_dd           : std_logic;
 begin
 
 -- Initial assignments
@@ -203,8 +203,9 @@ begin
   GEN_L1AM_REG : for dev in 1 to NFEB+2 generate
     FDL1AMD       : FD port map(l1a_match_in_reg_d(dev), CLK, l1a_match_in(dev));
     FDL1AM        : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
-    CF_L1AM_CROSS : CROSSCLOCK port map(current_l1a_match_d(dev), dduclk, clk, RST, current_l1a_match(dev));
-    CF_L1AM_FD    : FDC port map(CAFIFO_L1A_MATCH(dev), dduclk, RST, current_l1a_match_d(dev));
+    CF_L1AM_FD    : FDC port map(current_l1a_match_d(dev), clk, RST, current_l1a_match(dev));
+    CF_L1AM_FDD    : FDC port map(current_l1a_match_dd(dev), clk, RST, current_l1a_match_d(dev));
+    CF_L1AM_CROSS : CROSSCLOCK port map(CAFIFO_L1A_MATCH(dev), dduclk, clk, RST, current_l1a_match_dd(dev));
     CF_DAV_CROSS  : CROSSCLOCK port map(CAFIFO_L1A_DAV(dev), dduclk, clk, RST, current_l1a_dav(dev));
     CF_LOST_CROSS : CROSSCLOCK port map(CAFIFO_LOST_PCKT(dev), dduclk, clk, RST, current_lost_pckt(dev));
   end generate GEN_L1AM_REG;
@@ -224,8 +225,9 @@ begin
   current_l1a_dav   <= l1a_dav(rd_addr_out);
   current_lost_pckt <= lost_pckt(rd_addr_out);
 
-  CF_LONE_CROSS : CROSSCLOCK port map(current_lone_d, dduclk, clk, RST, current_lone);
-  CF_LONE_FD    : FDC port map(CAFIFO_LONE, dduclk, RST, current_lone_d);
+  CF_LONE_FD    : FDC port map(current_lone_d, clk, RST, current_lone);
+  CF_LONE_FDD    : FDC port map(current_lone_dd, clk, RST, current_lone_d);
+  CF_LONE_CROSS : CROSSCLOCK port map(CAFIFO_LONE, dduclk, clk, RST, current_lone_dd);
 
 -------------------- L1A Counter        --------------------
 
@@ -445,23 +447,23 @@ begin
 
 -- Address Counters
 
-  FD_WREN : FD port map(wr_addr_en_q, CLK, wr_addr_en);
-  FD_RDEN : FD port map(rd_addr_en_q, CLK, rd_addr_en);
+  FD_WREN : FDC port map(cafifo_wren_q, CLK, RST, cafifo_wren);
+  FD_RDEN : FDC port map(cafifo_rden_q, CLK, RST,cafifo_rden );
 
-  addr_counter : process (clk, wr_addr_en_q, rd_addr_en_q, rst)
+  addr_counter : process (clk, wr_addr_en, rd_addr_en, rst)
   begin
     if (rst = '1') then
       rd_addr_out <= 0;
       wr_addr_out <= 0;
     elsif (rising_edge(clk)) then
-      if (wr_addr_en_q = '1') then
+      if (wr_addr_en = '1') then
         if (wr_addr_out = CAFIFO_SIZE-1) then
           wr_addr_out <= 0;
         else
           wr_addr_out <= wr_addr_out + 1;
         end if;
       end if;
-      if (rd_addr_en_q = '1') then
+      if (rd_addr_en = '1') then
         if (rd_addr_out = CAFIFO_SIZE-1) then
           rd_addr_out <= 0;
         else
@@ -481,13 +483,13 @@ begin
     end if;
   end process;
 
-  fsm_logic : process (cafifo_wren, cafifo_rden, current_state, wr_addr_out, rd_addr_out)
+  fsm_logic : process (cafifo_wren_q, cafifo_rden_q, current_state, wr_addr_out, rd_addr_out)
   begin
     case current_state is
       when FIFO_EMPTY =>
         cafifo_empty <= '1';
         cafifo_full  <= '0';
-        if (cafifo_wren = '1') then
+        if (cafifo_wren_q = '1') then
           next_state <= FIFO_NOT_EMPTY;
           wr_addr_en <= '1';
           rd_addr_en <= '0';
@@ -500,7 +502,7 @@ begin
       when FIFO_NOT_EMPTY =>
         cafifo_empty <= '0';
         cafifo_full  <= '0';
-        if (cafifo_wren = '1' and cafifo_rden = '0') then
+        if (cafifo_wren_q = '1' and cafifo_rden_q = '0') then
           if ((wr_addr_out = rd_addr_out-1) or (wr_addr_out = CAFIFO_SIZE-1 and rd_addr_out = 0)) then
             next_state <= FIFO_FULL;
           else
@@ -508,7 +510,7 @@ begin
           end if;
           wr_addr_en <= '1';
           rd_addr_en <= '0';
-        elsif (cafifo_rden = '1' and cafifo_wren = '0') then
+        elsif (cafifo_rden_q = '1' and cafifo_wren_q = '0') then
           if (rd_addr_out = wr_addr_out-1 or (rd_addr_out = CAFIFO_SIZE-1 and wr_addr_out = 0)) then
             next_state <= FIFO_EMPTY;
           else
@@ -516,7 +518,7 @@ begin
           end if;
           rd_addr_en <= '1';
           wr_addr_en <= '0';
-        elsif (cafifo_rden = '1' and cafifo_wren = '1') then
+        elsif (cafifo_rden_q = '1' and cafifo_wren_q = '1') then
           next_state <= FIFO_NOT_EMPTY;
           wr_addr_en <= '1';
           rd_addr_en <= '1';
@@ -530,7 +532,7 @@ begin
         cafifo_empty <= '0';
         cafifo_full  <= '1';
         wr_addr_en   <= '0';
-        if (cafifo_rden = '1') then
+        if (cafifo_rden_q = '1') then
           next_state <= FIFO_NOT_EMPTY;
           rd_addr_en <= '1';
         else
@@ -572,26 +574,28 @@ begin
 
   bad_l1a_lone <= not or_reduce(l1a_match_in_reg) and not lone_in_reg and cafifo_wren;
   bad_rdwr_addr <= '1' when (rd_addr_out /= wr_addr_out and or_reduce(l1a_match(rd_addr_out)) = '0'
-                             and lone(rd_addr_out) = '0' and rd_addr_en = '0' and rd_addr_en_q = '0') else '0';
+                             and cafifo_rden = '0'
+                             and lone(rd_addr_out) = '0' and rd_addr_en = '0' and rd_addr_en = '0') else '0';
 
-  free_agent_la_trig <= lost_pckt_en(4 downto 1) &
-                        bad_rdwr_addr & std_logic_vector(to_unsigned(rd_addr_out, 3));
+  free_agent_la_trig <= or_reduce(lost_pckt_en(7 downto 1)) & or_reduce(current_lost_pckt(7 downto 1)) &
+                        bad_l1a_lone & bad_rdwr_addr & cafifo_full &
+                        std_logic_vector(to_unsigned(rd_addr_out, 3));
   free_agent_la_data <= l1acnt_dav_fifo_out(1)(4 downto 0)  -- [199:195]
                         --& timeout_state_9  -- [196:195]                        
                         & wait_cnt_en(2) & wait_cnt_rst(2)  -- [194:193]                        
                         & timeout_state_9   -- [192:191]                        
-                        & l1acnt_dav_fifo_rd_en(2) & timeout_cnt_en(1) & timeout_cnt_rst(2)  -- [190:188]          
+                        & cafifo_state_slv & timeout_cnt_en(1)   -- [190:188]          
                         & timeout_state_1  -- [187:186]                        
                         & wait_cnt_en(1) & wait_cnt_rst(1)  -- [185:184]                        
                         & l1a_dav_en(1) & l1acnt_dav_fifo_rd_en(1)  -- [183:182]                        
                         & lost_pckt_en(1) & timeout_cnt_en(1) & timeout_cnt_rst(1)  -- [181:179]          
-                        & l1a_match_in_reg & lost_pckt(prev_rd_addr)  -- [178:161]                        
+                        & l1a_dav_en(9 downto 1) & lost_pckt(prev_rd_addr)  -- [178:161]                        
                         & lost_pckt(next_rd_addr) & lost_pckt(rd_addr_out)  -- [160:143]                        
-                        & lone_in_reg & cafifo_wren & cafifo_rden & wr_addr_en_q & rd_addr_en_q  -- [142:138]
+                        & lone_in_reg & cafifo_wren & cafifo_rden & wr_addr_en & rd_addr_en  -- [142:138]
                         & l1a_cnt_out(3 downto 0)       -- [137:134]      
                         & l1a_dav(prev_rd_addr)  -- [133:125]                        
                         & l1a_dav(next_rd_addr) & l1a_dav(rd_addr_out)  -- [124:107]                        
-                        & lost_pckt_en(4 downto 1) & l1a_dav_en(4 downto 1)  -- [106:99]
+                        & lost_pckt_en(8 downto 1)   -- [106:99]
                         & bad_rdwr_addr & l1a_match(prev_rd_addr)  -- [98:89]
                         & l1a_match(next_rd_addr) & l1a_match(rd_addr_out)  -- [88:71]                        
                         & bad_l1a_lone & lone(prev_rd_addr) & lone(next_rd_addr) & lone(rd_addr_out)  -- [70:67]

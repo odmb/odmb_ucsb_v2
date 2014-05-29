@@ -22,7 +22,7 @@ begin
 
   FD0 : FDC port map(pulse(0), CLK_DOUT, RST, DIN);
   FD1 : FDC port map(pulse(1), CLK_DOUT, RST, pulse(0));
-  FD2 : FDC port map(pulse(2), CLK_DOUT, RST, pulse(2));
+  FD2 : FDC port map(pulse(2), CLK_DOUT, RST, pulse(1));
 
   DOUT <= pulse(1) and not pulse(2);
   

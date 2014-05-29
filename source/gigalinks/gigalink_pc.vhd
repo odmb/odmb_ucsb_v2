@@ -17,9 +17,8 @@ entity GIGALINK_PC is
   port (
     -- Global signals
     RST    : in std_logic;
-    --REFCLK_N : in std_logic;            -- 125 MHz for PC data rate
-    --REFCLK_P : in std_logic;            -- 125 MHz for PC data rate
     REFCLK : in std_logic;              -- 125 MHz for PC data rate
+    USRCLK  : out std_logic;            -- Data clock coming from the TX PLL
 
     -- Transmitter signals
     TXD     : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
@@ -27,7 +26,6 @@ entity GIGALINK_PC is
     TX_ACK  : out std_logic;  -- TX acknowledgement (ethernet header has finished)
     TXD_N   : out std_logic;            -- GTX transmit data out - signal
     TXD_P   : out std_logic;            -- GTX transmit data out + signal
-    USRCLK  : out std_logic;            -- Data clock coming from the TX PLL
 
     TXDIFFCTRL : in std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
     LOOPBACK   : in std_logic_vector(2 downto 0);  -- For internal loopback tests

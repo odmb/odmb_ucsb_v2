@@ -18,6 +18,7 @@ entity GIGALINK_DDU is
     -- Global signals
     REF_CLK_80 : in std_logic;          -- 80 MHz for DDU data rate
     RST        : in std_logic;
+    USRCLK  : out std_logic;            -- Data clock coming from the TX PLL
 
     -- Transmitter signals
     TXD        : in  std_logic_vector(15 downto 0);  -- Data to be transmitted
@@ -184,7 +185,7 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
 begin
 
   BUFG_USR : BUFG port map(O => usr_clk, I => ref_clk_80);
-  --usr_clk <= ref_clk_80;
+  USRCLK <= usr_clk;
 
   -- RX data valid is high when the RX is valid and we are not receiving a K character
   -- The pulse avoids some false positives during resets
