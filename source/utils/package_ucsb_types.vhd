@@ -122,8 +122,6 @@ package ucsb_types is
       EMPTY     : out std_logic;
       FULL      : out std_logic;
       HALF_FULL : out std_logic;
-      EOF       : out std_logic;
-      BOF       : out std_logic;
 
       DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
       RDCLK : in std_logic;

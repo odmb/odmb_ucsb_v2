@@ -192,7 +192,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal W_HDR_FF_RST, hdr_fifo_data_valid : std_logic := '0';
 
   signal hdr_fifo_empty, hdr_fifo_full         : std_logic;
-  signal hdr_fifo_rst, hdr_fifo_reset, hdr_eof : std_logic;
+  signal hdr_fifo_rst, hdr_fifo_reset : std_logic;
 
    signal csp_lvmb_la_trig : std_logic_vector (7 downto 0);
   signal csp_lvmb_la_data : std_logic_vector (99 downto 0);
@@ -496,8 +496,6 @@ begin  --Architecture
       EMPTY     => hdr_fifo_empty,      -- Output empty
       FULL      => hdr_fifo_full,       -- Output full
       HALF_FULL => open,
-      EOF       => hdr_eof,             -- Output EOF
-      BOF       => open,
 
       DI    => DDU_DATA,                -- Input data
       RDCLK => slowclk,                 -- Input read clock
@@ -520,7 +518,7 @@ begin  --Architecture
   C_HDR_FF_RD   <= RST or HDR_FF_RD(3);
   HDR_FIFO_RDEN <= HDR_FF_RD(2);
 
-  OUT_HDR_FF_READ <= HDR_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_HDR_FF_READ = '1') else (others => hdr_eof);  -- EOF to avoid warning...
+  OUT_HDR_FF_READ <= HDR_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_HDR_FF_READ = '1') else (others => '1');  -- EOF to avoid warning...
 
 -- General assignments
   OUTDATA <= OUT_TFF_READ when R_TFF_READ = '1' else

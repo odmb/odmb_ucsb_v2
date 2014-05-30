@@ -254,7 +254,8 @@ begin
     elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
         l1a_cnt(wr_addr_out) <= l1a_cnt_out;
-      elsif (cafifo_rden = '1') then
+      end if;
+      if (cafifo_rden = '1') then
         l1a_cnt(rd_addr_out) <= (others => '1');
       end if;
     end if;
@@ -284,7 +285,8 @@ begin
     elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
         l1a_match(wr_addr_out) <= l1a_match_in_reg;
-      elsif (cafifo_rden = '1') then
+      end if;
+      if (cafifo_rden = '1') then
         l1a_match(rd_addr_out) <= (others => '0');
       end if;
     end if;
@@ -300,7 +302,8 @@ begin
     elsif falling_edge(clk) then
       if (cafifo_wren = '1') then
         lone(wr_addr_out) <= lone_in_reg;
-      elsif (cafifo_rden = '1') then
+      end if;
+      if (cafifo_rden = '1') then
         lone(rd_addr_out) <= '0';
       end if;
     end if;

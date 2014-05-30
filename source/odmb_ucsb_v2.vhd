@@ -892,6 +892,34 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   end component;
 
 
+component datafifo_dcfeb IS
+  PORT (
+    rst : IN STD_LOGIC;
+    wr_clk : IN STD_LOGIC;
+    rd_clk : IN STD_LOGIC;
+    din : IN STD_LOGIC_VECTOR(17 DOWNTO 0);
+    wr_en : IN STD_LOGIC;
+    rd_en : IN STD_LOGIC;
+    dout : OUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    full : OUT STD_LOGIC;
+    empty : OUT STD_LOGIC;
+    prog_full : OUT STD_LOGIC
+  );
+END component;
+component datafifo_40mhz IS
+  PORT (
+    rst : IN STD_LOGIC;
+    wr_clk : IN STD_LOGIC;
+    rd_clk : IN STD_LOGIC;
+    din : IN STD_LOGIC_VECTOR(17 DOWNTO 0);
+    wr_en : IN STD_LOGIC;
+    rd_en : IN STD_LOGIC;
+    dout : OUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    full : OUT STD_LOGIC;
+    empty : OUT STD_LOGIC;
+    prog_full : OUT STD_LOGIC
+  );
+END component;
 -- Adding csp for bpi signals here
   component csp_bpi_la is
     port(
@@ -1914,32 +1942,48 @@ begin
         );
 
     
-    DCFEB_FIFO_CASCADE : FIFO_CASCADE
-      generic map (
-        NFIFO        => NFIFO,          -- number of FIFOs in cascade
-        DATA_WIDTH   => 18,             -- With of data packets
-        FWFT         => true,           -- First word fall through
-        WR_FASTER_RD => true)   -- Set int_clk to WRCLK if faster than RDCLK
+  datafifo_dcfeb_pm : datafifo_dcfeb 
+  PORT MAP(
+    rst       => l1acnt_rst,
+    wr_clk    => clk160,
+    rd_clk    => dduclk,
+    din       => eofgen_dcfeb_fifo_in(I),
+    wr_en     => eofgen_dcfeb_data_valid(I),
+    rd_en     => data_fifo_re(I),
+    dout      => dcfeb_fifo_out(I),
+    full      => dcfeb_fifo_full(I),
+    empty     => dcfeb_fifo_empty(I),
+    prog_full => data_fifo_half_full(I)
+  );
+    
+  PULSEEOFDCFEB : PULSE2SLOW port map(pulse_eof40(i), clk40, clk160, reset, eofgen_dcfeb_fifo_in(I)(17));
+    DS_EOF_PUSH : DELAY_SIGNAL port map(eof_data(I), clk40, push_dly, pulse_eof40(I));
 
-      port map(
-        DO        => dcfeb_fifo_out(I),    -- Output data
-        EMPTY     => dcfeb_fifo_empty(I),  -- Output empty
-        FULL      => dcfeb_fifo_full(I),   -- Output full
-        HALF_FULL => data_fifo_half_full(I),
-        EOF       => eof_data_80(I),      -- Output EOF
-        BOF       => open,
+  --DCFEB_FIFO_CASCADE : FIFO_CASCADE
+  --    generic map (
+  --      NFIFO        => NFIFO,          -- number of FIFOs in cascade
+  --      DATA_WIDTH   => 18,             -- With of data packets
+  --      FWFT         => true,           -- First word fall through
+  --      WR_FASTER_RD => true)   -- Set int_clk to WRCLK if faster than RDCLK
 
-        DI    => eofgen_dcfeb_fifo_in(I),    -- Input data
-        RDCLK => dduclk,                     -- Input read clock
-        RDEN  => data_fifo_re(I),            -- Input read enable
-        RST   => l1acnt_rst,                 -- Input reset
-        WRCLK => clk160,                     -- Input write clock
-        WREN  => eofgen_dcfeb_data_valid(I)  -- Input write enable
-        );
+  --    port map(
+  --      DO        => dcfeb_fifo_out(I),    -- Output data
+  --      EMPTY     => dcfeb_fifo_empty(I),  -- Output empty
+  --      FULL      => dcfeb_fifo_full(I),   -- Output full
+  --      HALF_FULL => data_fifo_half_full(I),
+  --      EOF       => eof_data_80(I),      -- Output EOF
+  --      BOF       => open,
+
+  --      DI    => eofgen_dcfeb_fifo_in(I),    -- Input data
+  --      RDCLK => dduclk,                     -- Input read clock
+  --      RDEN  => data_fifo_re(I),            -- Input read enable
+  --      RST   => l1acnt_rst,                 -- Input reset
+  --      WRCLK => clk160,                     -- Input write clock
+  --      WREN  => eofgen_dcfeb_data_valid(I)  -- Input write enable
+  --      );
 
     -- Delay EOF of DCFEBs by PUSH_DLY to be on CAFIFO time
-    PULSEEOF40  : PULSE2SLOW port map(pulse_eof40(I), clk40, dduclk, reset, eof_data_80(I));
-    DS_EOF_PUSH : DELAY_SIGNAL port map(eof_data(I), clk40, push_dly, pulse_eof40(I));
+    --PULSEEOF40  : PULSE2SLOW port map(pulse_eof40(I), clk40, dduclk, reset, eof_data_80(I));
 
   end generate GEN_DCFEB;
 
@@ -1973,54 +2017,84 @@ begin
                   otmb(16 downto 15) & alct(14 downto 0) &
                   otmb(14 downto 0) when IS_SIMULATION = 0 else otmb_tx_tb;
 
-  ALCT_FIFO_CASCADE : FIFO_CASCADE
-    generic map (
-      NFIFO        => 3,                -- number of FIFOs in cascade
-      DATA_WIDTH   => 18,               -- With of data packets
-      FWFT         => true,             -- First word fall through
-      WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
+  datafifo_alct_pm : datafifo_40mhz 
+  PORT MAP(
+    rst       => l1acnt_rst,
+    wr_clk    => clk40, 
+    rd_clk    => dduclk, 
+    din       => alct_fifo_data_in,
+    wr_en     => alct_fifo_data_valid,
+    rd_en     => data_fifo_re(NFEB+2),
+    dout      => alct_fifo_data_out, 
+    full      => alct_fifo_full,
+    empty     => alct_fifo_empty,
+    prog_full => data_fifo_half_full(NFEB+2)      
+  );
 
-    port map(
-      DO        => alct_fifo_data_out,  -- Output data
-      EMPTY     => alct_fifo_empty,     -- Output empty
-      FULL      => alct_fifo_full,      -- Output full
-      HALF_FULL => data_fifo_half_full(9),
-      EOF       => eof_data_80(NFEB+2),    -- Output EOF
-      BOF       => open,
+  datafifo_otmb_pm : datafifo_40mhz 
+  PORT MAP(
+    rst       => l1acnt_rst,
+    wr_clk    => clk40, 
+    rd_clk    => dduclk, 
+    din       => otmb_fifo_data_in,
+    wr_en     => otmb_fifo_data_valid,
+    rd_en     => data_fifo_re(NFEB+1),
+    dout      => otmb_fifo_data_out, 
+    full      => otmb_fifo_full,
+    empty     => otmb_fifo_empty,
+    prog_full => data_fifo_half_full(NFEB+1)      
+  );
 
-      DI    => alct_fifo_data_in,       -- Input data
-      RDCLK => dduclk,                  -- Input read clock
-      RDEN  => data_fifo_re(NFEB+2),    -- Input read enable
-      RST   => l1acnt_rst,              -- Input reset
-      WRCLK => clk40,                   -- Input write clock
-      WREN  => alct_fifo_data_valid     -- Input write enable
-      );
+  PULSEEOFALCT : PULSE2SAME port map(eof_data(NFEB+2), clk40, reset, alct_fifo_data_in(17));
+  PULSEEOFOTMB : PULSE2SAME port map(eof_data(NFEB+1), clk40, reset, otmb_fifo_data_in(17));
 
-  OTMB_FIFO_CASCADE : FIFO_CASCADE
-    generic map (
-      NFIFO        => 3,                -- number of FIFOs in cascade
-      DATA_WIDTH   => 18,               -- With of data packets
-      FWFT         => true,             -- First word fall through
-      WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
 
-    port map(
-      DO        => otmb_fifo_data_out,  -- Output data
-      EMPTY     => otmb_fifo_empty,     -- Output empty
-      FULL      => otmb_fifo_full,      -- Output full
-      HALF_FULL => data_fifo_half_full(8),
-      EOF       => eof_data_80(NFEB+1),    -- Output EOF
-      BOF       => open,
+--ALCT_FIFO_CASCADE : FIFO_CASCADE
+  --  generic map (
+  --    NFIFO        => 3,                -- number of FIFOs in cascade
+  --    DATA_WIDTH   => 18,               -- With of data packets
+  --    FWFT         => true,             -- First word fall through
+  --    WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
 
-      DI    => otmb_fifo_data_in,       -- Input data
-      RDCLK => dduclk,                  -- Input read clock
-      RDEN  => data_fifo_re(NFEB+1),    -- Input read enable
-      RST   => l1acnt_rst,              -- Input reset
-      WRCLK => clk40,                   -- Input write clock
-      WREN  => otmb_fifo_data_valid     -- Input write enable
-      );
+  --  port map(
+  --    DO        => alct_fifo_data_out,  -- Output data
+  --    EMPTY     => alct_fifo_empty,     -- Output empty
+  --    FULL      => alct_fifo_full,      -- Output full
+  --    HALF_FULL => data_fifo_half_full(9),
+  --    EOF       => eof_data_80(NFEB+2),    -- Output EOF
+  --    BOF       => open,
 
-  PULSEEOFALCT : PULSE2SLOW port map(eof_data(NFEB+2), clk40, dduclk, reset, eof_data_80(NFEB+2));
-  PULSEEOFOTMB : PULSE2SLOW port map(eof_data(NFEB+1), clk40, dduclk, reset, eof_data_80(NFEB+1));
+  --    DI    => alct_fifo_data_in,       -- Input data
+  --    RDCLK => dduclk,                  -- Input read clock
+  --    RDEN  => data_fifo_re(NFEB+2),    -- Input read enable
+  --    RST   => l1acnt_rst,              -- Input reset
+  --    WRCLK => clk40,                   -- Input write clock
+  --    WREN  => alct_fifo_data_valid     -- Input write enable
+  --    );
+
+  --OTMB_FIFO_CASCADE : FIFO_CASCADE
+  --  generic map (
+  --    NFIFO        => 3,                -- number of FIFOs in cascade
+  --    DATA_WIDTH   => 18,               -- With of data packets
+  --    FWFT         => true,             -- First word fall through
+  --    WR_FASTER_RD => false)  -- Set int_clk to WRCLK if faster than RDCLK
+
+  --  port map(
+  --    DO        => otmb_fifo_data_out,  -- Output data
+  --    EMPTY     => otmb_fifo_empty,     -- Output empty
+  --    FULL      => otmb_fifo_full,      -- Output full
+  --    HALF_FULL => data_fifo_half_full(8),
+  --    EOF       => eof_data_80(NFEB+1),    -- Output EOF
+  --    BOF       => open,
+
+  --    DI    => otmb_fifo_data_in,       -- Input data
+  --    RDCLK => dduclk,                  -- Input read clock
+  --    RDEN  => data_fifo_re(NFEB+1),    -- Input read enable
+  --    RST   => l1acnt_rst,              -- Input reset
+  --    WRCLK => clk40,                   -- Input write clock
+  --    WREN  => otmb_fifo_data_valid     -- Input write enable
+  --    );
+
 
 -- FIFO MUX
   fifo_out <= dcfeb_fifo_out(1)(15 downto 0) when data_fifo_oe = "111111110" else

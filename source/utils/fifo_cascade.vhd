@@ -25,8 +25,6 @@ entity FIFO_CASCADE is
     EMPTY     : out std_logic;
     FULL      : out std_logic;
     HALF_FULL : out std_logic;
-    EOF       : out std_logic;
-    BOF       : out std_logic;
 
     DI    : in std_logic_vector(DATA_WIDTH-1 downto 0);
     RDCLK : in std_logic;
@@ -50,10 +48,6 @@ architecture fifo_cascade_arch of FIFO_CASCADE is
   type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
   signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
   signal int_clk                  : std_logic := '0';
-  -- Clock cycles it takes to reach the end of the FIFO_CASCADE
-  constant nwait_fifo         : integer   := NFIFO * 6;
-  signal eof_int, eof_delayed : std_logic := '0';
-  --signal wr_faster_rd_sv : std_logic := '0';
 
 begin
 
@@ -174,9 +168,4 @@ begin
   HALF_FULL <= fifo_full(NFIFO/2) when NFIFO mod 2 = 0 else
                     fifo_full((NFIFO+1)/2);
 
-  --out: tells you when packet has finished arriving at FIFO 1
-  EOF_PULSE : PULSE2FAST port map(eof_int, int_clk, RST, DI(DATA_WIDTH-2));
-  EOF_DELAY : DELAY_SIGNAL generic map (nwait_fifo) port map (eof_delayed, int_clk, nwait_fifo, eof_int);
-  EOF_PULSE2 : PULSE2SLOW port map(EOF, RDCLK, int_clk, RST, eof_delayed);
-  BOF <= fifo_in(1)(DATA_WIDTH-1);  --OUT: tells you when packet has started arriving at FIFO 1
 end fifo_cascade_arch;

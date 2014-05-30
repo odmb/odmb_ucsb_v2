@@ -98,8 +98,6 @@ begin
       EMPTY     => fifo_empty,          -- Output empty
       FULL      => fifo_full,           -- Output full
       HALF_FULL => open,
-      EOF       => open,                -- Output EOF
-      BOF       => open,
 
       DI    => fifo_in,                 -- Input data
       RDCLK => clk_out,                 -- Input read clock

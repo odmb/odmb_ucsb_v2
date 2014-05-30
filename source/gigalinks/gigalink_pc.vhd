@@ -609,8 +609,6 @@ begin
       EMPTY     => tx_fifo_empty,       -- Output empty
       FULL      => tx_fifo_full,        -- Output full
       HALF_FULL => open,
-      EOF       => open,                -- Output EOF
-      BOF       => open,
 
       DI    => txd_frame,               -- Input data
       RDCLK => VME_CLK,                 -- Input read clock
