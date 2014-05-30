@@ -50,11 +50,18 @@ architecture fifo_cascade_arch of FIFO_CASCADE is
   type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
   signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
   signal int_clk                  : std_logic := '0';
+  -- Clock cycles it takes to reach the end of the FIFO_CASCADE
+  constant nwait_fifo         : integer   := NFIFO * 6;
+  signal eof_int, eof_delayed : std_logic := '0';
+  --signal wr_faster_rd_sv : std_logic := '0';
 
 begin
 
-  int_clk <= WRCLK when (WR_FASTER_RD) else RDCLK;
+  --wr_faster_rd_sv <= '1' when (WR_FASTER_RD) else '0';
+  --MUX_INTCLK : BUFGMUX port map(O => int_clk, I0 => RDCLK, I1 => WRCLK, S => wr_faster_rd_sv);
 
+   int_clk <= WRCLK when (WR_FASTER_RD) else RDCLK;
+  
   -- this is actually the input FIFO
   fifo_wrck(NFIFO) <= WRCLK;
   fifo_wren(NFIFO) <= WREN;
@@ -168,6 +175,8 @@ begin
                     fifo_full((NFIFO+1)/2);
 
   --out: tells you when packet has finished arriving at FIFO 1
-  PULSE_EOF : PULSE2SAME port map(EOF, int_clk, RST, fifo_in(1)(DATA_WIDTH-2));
+  EOF_PULSE : PULSE2FAST port map(eof_int, int_clk, RST, DI(DATA_WIDTH-2));
+  EOF_DELAY : DELAY_SIGNAL generic map (nwait_fifo) port map (eof_delayed, int_clk, nwait_fifo, eof_int);
+  EOF_PULSE2 : PULSE2SLOW port map(EOF, RDCLK, int_clk, RST, eof_delayed);
   BOF <= fifo_in(1)(DATA_WIDTH-1);  --OUT: tells you when packet has started arriving at FIFO 1
 end fifo_cascade_arch;

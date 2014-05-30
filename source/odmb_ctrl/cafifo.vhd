@@ -69,6 +69,7 @@ entity cafifo is
 
     cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
     cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
+    control_debug               : in std_logic_vector(143 downto 0);
     cafifo_debug               : out std_logic_vector(15 downto 0);
     cafifo_wr_addr             : out std_logic_vector(7 downto 0);
     cafifo_rd_addr             : out std_logic_vector(7 downto 0)
@@ -82,8 +83,8 @@ architecture cafifo_architecture of cafifo is
   component csp_systemtest_la is
     port (
       CLK     : in    std_logic := 'X';
-      DATA    : in    std_logic_vector (199 downto 0);
-      TRIG0   : in    std_logic_vector (7 downto 0);
+      DATA    : in    std_logic_vector (399 downto 0);
+      TRIG0   : in    std_logic_vector (19 downto 0);
       CONTROL : inout std_logic_vector (35 downto 0)
       );
   end component;
@@ -163,8 +164,8 @@ architecture cafifo_architecture of cafifo is
   signal wait_cnt_en, wait_cnt_rst        : std_logic_vector(NFEB+2 downto 1);
 
   -- Declare the csp stuff here
-  signal free_agent_la_data : std_logic_vector(199 downto 0);
-  signal free_agent_la_trig : std_logic_vector(7 downto 0);
+  signal free_agent_la_data : std_logic_vector(399 downto 0);
+  signal free_agent_la_trig : std_logic_vector(19 downto 0);
   constant csp1             : integer := 31;
   constant csp2             : integer := 0;
   constant csp3             : integer := 1;
@@ -578,10 +579,12 @@ begin
                              and lone(rd_addr_out) = '0' and rd_addr_en = '0' and rd_addr_en = '0') else '0';
 
   free_agent_la_trig <= or_reduce(lost_pckt_en(7 downto 1)) & or_reduce(current_lost_pckt(7 downto 1)) &
-                        bad_l1a_lone & bad_rdwr_addr & cafifo_full &
-                        std_logic_vector(to_unsigned(rd_addr_out, 3));
-  free_agent_la_data <= l1acnt_dav_fifo_out(1)(4 downto 0)  -- [199:195]
-                        --& timeout_state_9  -- [196:195]                        
+                        bad_l1a_lone & bad_rdwr_addr & cafifo_full & control_debug(9) & cafifo_wren & cafifo_rden &
+                        std_logic_vector(to_unsigned(rd_addr_out, 6)) &
+                        std_logic_vector(to_unsigned(wr_addr_out, 6));
+  free_agent_la_data <= x"0000000000" & x"0000" 
+                        & control_debug
+                        & l1acnt_dav_fifo_out(1)(4 downto 0)  -- [199:195]
                         & wait_cnt_en(2) & wait_cnt_rst(2)  -- [194:193]                        
                         & timeout_state_9   -- [192:191]                        
                         & cafifo_state_slv & timeout_cnt_en(1)   -- [190:188]          

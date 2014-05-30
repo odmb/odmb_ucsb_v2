@@ -1115,7 +1115,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pll_clk40, clk40     : std_logic;  -- fastclk (40MHz) 
   signal pll_clk10, clk10     : std_logic;  -- midclk  (10MHz) 
   signal pll_clk5, clk5       : std_logic;  -- Generates clk2p5 and clk1p25
-  signal clk2p5, clk2p5_inv   : std_logic;  -- slowclk (2.5MHz)
+  signal clk2p5, clk2p5_unbuf, clk2p5_inv   : std_logic;  -- slowclk (2.5MHz)
   signal clk1p25, clk1p25_inv : std_logic;  -- slowclk2 (1.25MHz)
 
 
@@ -1192,9 +1192,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_afull  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_full   : std_logic_vector(NFEB downto 1);
 
-  signal eof_data_160                       : std_logic_vector(NFEB downto 1);
-  signal eof_data_80_alct, eof_data_80_otmb : std_logic;
-
+  signal eof_data_80                       : std_logic_vector(NFEB+2 downto 1);
 
   signal data_fifo_empty_b                : std_logic_vector(NFEB+2 downto 1);
   signal data_fifo_half_full              : std_logic_vector(NFEB+2 downto 1);
@@ -1928,7 +1926,7 @@ begin
         EMPTY     => dcfeb_fifo_empty(I),  -- Output empty
         FULL      => dcfeb_fifo_full(I),   -- Output full
         HALF_FULL => data_fifo_half_full(I),
-        EOF       => eof_data_160(I),      -- Output EOF
+        EOF       => eof_data_80(I),      -- Output EOF
         BOF       => open,
 
         DI    => eofgen_dcfeb_fifo_in(I),    -- Input data
@@ -1940,7 +1938,7 @@ begin
         );
 
     -- Delay EOF of DCFEBs by PUSH_DLY to be on CAFIFO time
-    PULSEEOF40  : PULSE2SLOW port map(pulse_eof40(I), clk40, clk160, reset, eof_data_160(I));
+    PULSEEOF40  : PULSE2SLOW port map(pulse_eof40(I), clk40, dduclk, reset, eof_data_80(I));
     DS_EOF_PUSH : DELAY_SIGNAL port map(eof_data(I), clk40, push_dly, pulse_eof40(I));
 
   end generate GEN_DCFEB;
@@ -1987,7 +1985,7 @@ begin
       EMPTY     => alct_fifo_empty,     -- Output empty
       FULL      => alct_fifo_full,      -- Output full
       HALF_FULL => data_fifo_half_full(9),
-      EOF       => eof_data_80_alct,    -- Output EOF
+      EOF       => eof_data_80(NFEB+2),    -- Output EOF
       BOF       => open,
 
       DI    => alct_fifo_data_in,       -- Input data
@@ -2010,7 +2008,7 @@ begin
       EMPTY     => otmb_fifo_empty,     -- Output empty
       FULL      => otmb_fifo_full,      -- Output full
       HALF_FULL => data_fifo_half_full(8),
-      EOF       => eof_data_80_otmb,    -- Output EOF
+      EOF       => eof_data_80(NFEB+1),    -- Output EOF
       BOF       => open,
 
       DI    => otmb_fifo_data_in,       -- Input data
@@ -2021,8 +2019,8 @@ begin
       WREN  => otmb_fifo_data_valid     -- Input write enable
       );
 
-  PULSEEOFALCT : PULSE2SLOW port map(eof_data(NFEB+2), clk40, dduclk, reset, eof_data_80_alct);
-  PULSEEOFOTMB : PULSE2SLOW port map(eof_data(NFEB+1), clk40, dduclk, reset, eof_data_80_otmb);
+  PULSEEOFALCT : PULSE2SLOW port map(eof_data(NFEB+2), clk40, dduclk, reset, eof_data_80(NFEB+2));
+  PULSEEOFOTMB : PULSE2SLOW port map(eof_data(NFEB+1), clk40, dduclk, reset, eof_data_80(NFEB+1));
 
 -- FIFO MUX
   fifo_out <= dcfeb_fifo_out(1)(15 downto 0) when data_fifo_oe = "111111110" else
@@ -2421,11 +2419,12 @@ begin
   clk40_buf : BUFG port map (I => pll_clk40, O => clk40);
   clk10_buf : BUFG port map (I => pll_clk10, O => clk10);
   clk5_buf  : BUFG port map (I => pll_clk5, O => clk5);
+  clk2p5_buf  : BUFG port map (I => clk2p5_unbuf, O => clk2p5);
 
 -- Frequency dividers for the 2.5 and 1.25 MHz clocks which are too slow for the PLL 
-  clk2p5_inv  <= not clk2p5;
+  clk2p5_inv  <= not clk2p5_unbuf;
   clk1p25_inv <= not clk1p25;
-  FD2p5  : FD port map (D => clk2p5_inv, C => clk5, Q => clk2p5);
+  FD2p5  : FD port map (D => clk2p5_inv, C => clk5, Q => clk2p5_unbuf);
   FD1p25 : FD port map (D => clk1p25_inv, C => clk2p5, Q => clk1p25);
 
 

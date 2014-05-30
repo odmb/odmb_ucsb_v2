@@ -63,7 +63,7 @@ entity CONTROL_FSM is
     EOF : out std_logic;
 
 -- DEBUG
-    control_debug : out std_logic_vector(15 downto 0);
+    control_debug : out std_logic_vector(143 downto 0);
 
 -- FROM CAFIFO
     cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
@@ -144,7 +144,8 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal dev_cnt_svl, hdr_tail_cnt_svl, lone_cnt_svl : std_logic_vector(4 downto 0) := (others => '0');
 
   signal current_state_svl, next_state_svl : std_logic_vector(3 downto 0) := (others => '0');
-  signal bad_l1a_lone : std_logic := '0'; 
+  signal bad_l1a_lone, bad_l1a_change, bad_l1a_change40 : std_logic := '0'; 
+  signal  cafifo_l1a_cnt_reg   : std_logic_vector(23 downto 0);
 begin
 
   -- csp ILA core
@@ -162,10 +163,13 @@ begin
   lone_cnt_svl    <= std_logic_vector(to_unsigned(lone_cnt, 5));
   bad_l1a_lone<= '1' when (or_reduce(cafifo_l1a_match) = '0' and cafifo_lone = '0'
                            and control_current_state /= IDLE and control_current_state /= WAIT_IDLE) else '0';
-  
+  FD_CFL1A : FDVEC generic map(0, 23) port map(cafifo_l1a_cnt_reg, clk, rst, CAFIFO_L1A_CNT);
+  bad_l1a_change <= '1' when (cafifo_l1a_cnt_reg /= CAFIFO_L1A_CNT and control_current_state /= IDLE
+                              and control_current_state /= WAIT_IDLE) else '0';
+  FDBADL1A : PULSE2SLOW port map(bad_l1a_change40, CLKCMS, CLK, RST, bad_l1a_change);
 -- trigger assignments (8 bits)
-  control_fsm_la_trig <= expect_pckt & q_datain_last &bad_l1a_lone  & cafifo_lone & CAFIFO_L1A_CNT(3 downto 0);
-  control_fsm_la_data <= "0" & x"000" 
+  control_fsm_la_trig <= expect_pckt & q_datain_last & bad_l1a_lone  & cafifo_lone & CAFIFO_L1A_CNT(3 downto 0);
+  control_fsm_la_data <= x"000" & bad_l1a_change --[115]
                          & bad_l1a_lone & lone_cnt_svl & cafifo_lone & RST          -- [114:107]
                          & std_logic_vector(to_unsigned(wait_cnt, 5))  -- [106:102]
                          & CAFIFO_L1A_CNT(4 downto 0)          -- [101:97]
@@ -178,7 +182,8 @@ begin
                          & hdr_tail_cnt_svl & dev_cnt_svl      -- [14:5]
                          & current_state_svl & dav_inner;      -- [4:0]
 
-  control_debug <= '0' & dev_cnt_svl & '0' & hdr_tail_cnt_svl & current_state_svl;
+  control_debug <= control_fsm_la_data & '0' & dev_cnt_svl & bad_l1a_change40 & hdr_tail_cnt_svl
+                   & current_state_svl;
 
 -- Needed because DATAIN_LAST does not arrive during the last word
   FDLAST : FD port map(q_datain_last, clk, DATAIN_LAST);

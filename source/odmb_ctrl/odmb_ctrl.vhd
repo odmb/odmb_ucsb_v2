@@ -359,7 +359,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       EOF : out std_logic;
 
 -- DEBUG
-    control_debug : out std_logic_vector(15 downto 0);
+    control_debug : out std_logic_vector(143 downto 0);
     
 -- FROM CAFIFO
       cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
@@ -423,6 +423,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
       cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
       cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
+      control_debug               : in std_logic_vector(143 downto 0);
       cafifo_debug               : out std_logic_vector(15 downto 0);
       cafifo_wr_addr             : out std_logic_vector(7 downto 0);
       cafifo_rd_addr             : out std_logic_vector(7 downto 0)
@@ -542,6 +543,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   signal cafifo_lone                : std_logic;
 
 -- CONTROL outputs
+  signal control_debug_full           : std_logic_vector(143 downto 0);
   signal cafifo_pop           : std_logic := '0';
   signal eof                  : std_logic := '0';
   signal ddu_data             : std_logic_vector(15 downto 0);
@@ -711,6 +713,7 @@ begin
 
       cafifo_prev_next_l1a_match => cafifo_prev_next_l1a_match,
       cafifo_prev_next_l1a       => cafifo_prev_next_l1a,
+      control_debug => control_debug_full,
       cafifo_debug               => cafifo_debug,
       cafifo_wr_addr             => cafifo_wr_addr,
       cafifo_rd_addr             => cafifo_rd_addr
@@ -759,7 +762,7 @@ begin
       EOF => eof,
 
 -- DEBUG
-    control_debug => control_debug,
+    control_debug => control_debug_full,
       
 -- FROM CAFIFO
       cafifo_l1a_dav   => cafifo_l1a_dav_out,
@@ -769,6 +772,8 @@ begin
       cafifo_lost_pckt => cafifo_lost_pckt_out,
       cafifo_lone      => cafifo_lone
       );
+
+  control_debug <= control_debug_full(15 downto 0);
 
   PCFIFO_PM : pcfifo
     generic map (NFIFO => NFIFO)

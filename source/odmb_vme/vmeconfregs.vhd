@@ -14,7 +14,7 @@ use work.ucsb_types.all;
 entity VMECONFREGS is
   generic (
     NREGS  : integer := 16;             -- Number of Configuration registers
-    NCONST : integer := 16;              -- Number of Protected registers
+    NCONST : integer := 16;             -- Number of Protected registers
     NFEB   : integer := 7               -- Number of DCFEBs
     );    
   port (
@@ -69,8 +69,8 @@ end VMECONFREGS;
 architecture VMECONFREGS_Arch of VMECONFREGS is
 
   constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0306";
-  constant FW_ID            : std_logic_vector(15 downto 0) := x"0007";
-  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0529";
+  constant FW_ID            : std_logic_vector(15 downto 0) := x"0008";
+  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0530";
   constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2014";
   constant able_write_const : std_logic                     := '0';
 
@@ -80,7 +80,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
                                              x"FFF4", x"FFF5", x"FFF6", x"FFF7",
                                              x"FFF8", FW_VERSION, x"FFFA", x"FFFB",
                                              x"FFFC", x"FFFD", x"FFFE", x"FFFF");
-  constant const_reg_init : cfg_regs_array := (x"FFF0", FW_VERSION, FW_ID, FW_MONTH_DAY, 
+  constant const_reg_init : cfg_regs_array := (x"FFF0", FW_VERSION, FW_ID, FW_MONTH_DAY,
                                                FW_YEAR, x"FFF5", x"FFF6", x"FFF7",
                                                x"FFF8", x"FFF9", x"FFFA", x"FFFB",
                                                x"FFFC", x"FFFD", x"FFFE", x"FFFF");
@@ -90,8 +90,8 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal cfg_reg_clk, const_reg_clk, do_cfg, do_const : std_logic := '0';
   signal bit_const                                    : std_logic := '0';
 
-  type   rh_reg is array (2 downto 0) of std_logic_vector(15 downto 0);
-  type   rh_reg_array is array (0 to NREGS) of rh_reg;
+  type rh_reg is array (2 downto 0) of std_logic_vector(15 downto 0);
+  type rh_reg_array is array (0 to NREGS) of rh_reg;
   signal cfg_reg_triple : rh_reg_array;
   signal cfg_regs       : cfg_regs_array;
 
@@ -108,10 +108,10 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal cmddev                     : std_logic_vector (15 downto 0);
   signal dd_dtack, d_dtack, q_dtack : std_logic := '0';
 
-  signal   w_mask_vme, r_mask_vme     : std_logic;
-  constant mask_vme_def               : std_logic_vector(NCONST-1 downto 0) := (others => '0');
-  signal   mask_vme                   : std_logic_vector(15 downto 0)       := (others => '0');
-  signal   mask_vme_rst, mask_vme_pre : std_logic_vector(NCONST-1 downto 0);
+  signal w_mask_vme, r_mask_vme     : std_logic;
+  constant mask_vme_def             : std_logic_vector(NCONST-1 downto 0) := (others => '0');
+  signal mask_vme                   : std_logic_vector(15 downto 0)       := (others => '0');
+  signal mask_vme_rst, mask_vme_pre : std_logic_vector(NCONST-1 downto 0);
 
 begin
 
@@ -180,26 +180,23 @@ begin
     end loop;
   end process;
 
+  --GEN_CFG_TRIPLEVOTING : for ind in 0 to NREGS-1 generate
+  --begin
+  --  cfg_regs(ind) <= cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(1)) else
+  --                   cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(2)) else
+  --                   cfg_reg_triple(ind)(1) when (cfg_reg_triple(ind)(1) = cfg_reg_triple(ind)(2)) else
+  --                   cfg_reg_triple(ind)(0);
+  --end generate GEN_CFG_TRIPLEVOTING;
+
   GEN_CFG_TRIPLEVOTING : for ind in 0 to NREGS-1 generate
   begin
-    cfg_regs(ind) <= cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(1)) else
-                     cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(2)) else
-                     cfg_reg_triple(ind)(1) when (cfg_reg_triple(ind)(1) = cfg_reg_triple(ind)(2)) else
-                     cfg_reg_triple(ind)(0);
+    GEN_TRIPLEBITS : for ibit in 0 to 15 generate
+    begin
+      cfg_regs(ind)(ibit) <= (cfg_reg_triple(ind)(0)(ibit) and cfg_reg_triple(ind)(1)(ibit)) or
+                             (cfg_reg_triple(ind)(1)(ibit) and cfg_reg_triple(ind)(2)(ibit)) or
+                             (cfg_reg_triple(ind)(2)(ibit) and cfg_reg_triple(ind)(0)(ibit));
+    end generate GEN_TRIPLEBITS;
   end generate GEN_CFG_TRIPLEVOTING;
-  
-  -- ml_proc : process (cfg_reg_triple)    -- Triple voting
-  -- begin
-  --   for i in 0 to NREGS-1 loop
-  --     if (cfg_reg_triple(i)(0) = cfg_reg_triple(i)(1)) then
-  --       cfg_regs(i) <= cfg_reg_triple(i)(0);
-  --     elsif (cfg_reg_triple(i)(0) = cfg_reg_triple(i)(2)) then
-  --       cfg_regs(i) <= cfg_reg_triple(i)(0);
-  --     elsif (cfg_reg_triple(i)(1) = cfg_reg_triple(i)(2)) then
-  --       cfg_regs(i) <= cfg_reg_triple(i)(1);
-  --     end if;
-  --   end loop;
-  -- end process;
 
   -- Writing protected registers
   const_reg_clk <= STROBE when (BPI_CONST_UL_PULSE = '0') else CLK;
@@ -224,14 +221,24 @@ begin
     end loop;
   end process;
 
-  GEN_CONST_TRIPLEVOTING : for ind in 0 to NCONST-1 generate
+  --GEN_CONST_TRIPLEVOTING : for ind in 0 to NCONST-1 generate
+  --begin
+  --  const_regs(ind) <= const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(1)) else
+  --                     const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(2)) else
+  --                     const_reg_triple(ind)(1) when (const_reg_triple(ind)(1) = const_reg_triple(ind)(2)) else
+  --                     const_reg_triple(ind)(0);
+  --end generate GEN_CONST_TRIPLEVOTING;
+
+  GEN_CONST_TRIPLEVOTING : for ind in 0 to NREGS-1 generate
   begin
-    const_regs(ind) <= const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(1)) else
-                     const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(2)) else
-                     const_reg_triple(ind)(1) when (const_reg_triple(ind)(1) = const_reg_triple(ind)(2)) else
-                     const_reg_triple(ind)(0);
+    GEN_TRIPLEBITS : for ibit in 0 to 15 generate
+    begin
+      const_regs(ind)(ibit) <= (const_reg_triple(ind)(0)(ibit) and const_reg_triple(ind)(1)(ibit)) or
+                               (const_reg_triple(ind)(1)(ibit) and const_reg_triple(ind)(2)(ibit)) or
+                               (const_reg_triple(ind)(2)(ibit) and const_reg_triple(ind)(0)(ibit));
+    end generate GEN_TRIPLEBITS;
   end generate GEN_CONST_TRIPLEVOTING;
-  
+
   --const_ml_proc : process (const_reg_triple)  -- Triple voting
   --begin
   --  for i in 0 to NCONST-1 loop
