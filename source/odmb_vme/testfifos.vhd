@@ -1,4 +1,4 @@
--- TESTFIFOS: Reads test FIFOs written with DCFEB data
+-- TESTFIFOS: Test fifos read via VME for DCFEBs, ALCT, OTMB, DDU, PC
 
 library ieee;
 library work;
@@ -37,41 +37,27 @@ entity TESTFIFOS is
     otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
     otmb_fifo_data_valid : in std_logic;
 
-    -- PC_TX FIFO signals
-    PC_TX_FIFO_DOUT    : in  std_logic_vector(15 downto 0);
-    PC_TX_FIFO_WRD_CNT : in  std_logic_vector(15 downto 0);
-    PC_TX_FIFO_RST     : out std_logic;
-    PC_TX_FIFO_RDEN    : out std_logic;
+    -- PC FIFO signals
+    pcclk               : in std_logic;
+    pc_data_frame       : in std_logic_vector(15 downto 0);
+    pc_data_frame_valid : in std_logic;
+    pc_rx_data          : in std_logic_vector(15 downto 0);
+    pc_rx_data_valid    : in std_logic;
 
-    -- PC_RX FIFO signals
-    PC_RX_FIFO_DOUT    : in  std_logic_vector(15 downto 0);
-    PC_RX_FIFO_WRD_CNT : in  std_logic_vector(15 downto 0);
-    PC_RX_FIFO_RST     : out std_logic;
-    PC_RX_FIFO_RDEN    : out std_logic;
-
-    -- DDU_TX FIFO signals
-    DDU_TX_FIFO_DOUT    : in  std_logic_vector(15 downto 0);
-    DDU_TX_FIFO_WRD_CNT : in  std_logic_vector(15 downto 0);
-    DDU_TX_FIFO_RST     : out std_logic;
-    DDU_TX_FIFO_RDEN    : out std_logic;
-
-    -- DDU_RX FIFO signals
-    DDU_RX_FIFO_DOUT    : in  std_logic_vector(15 downto 0);
-    DDU_RX_FIFO_WRD_CNT : in  std_logic_vector(15 downto 0);
-    DDU_RX_FIFO_RST     : out std_logic;
-    DDU_RX_FIFO_RDEN    : out std_logic;
-
-    -- HEADER FIFO signals
-    DDU_DATA       : in std_logic_vector(15 downto 0);
-    DDU_DATA_VALID : in std_logic;
-    DDUCLK         : in std_logic;
+    -- DDU_TX/RX Fifo signals
+    dduclk            : in std_logic;
+    ddu_data          : in std_logic_vector(15 downto 0);
+    ddu_data_valid    : in std_logic;
+    ddu_rx_data       : in std_logic_vector(15 downto 0);
+    ddu_rx_data_valid : in std_logic;
 
     -- TFF (DCFEB test FIFOs)
     TFF_DOUT    : in  std_logic_vector(15 downto 0);
     TFF_WRD_CNT : in  std_logic_vector(11 downto 0);
     TFF_RST     : out std_logic_vector(NFEB downto 1);
     TFF_SEL     : out std_logic_vector(NFEB downto 1);
-    TFF_RDEN    : out std_logic_vector(NFEB downto 1)
+    TFF_RDEN    : out std_logic_vector(NFEB downto 1);
+    TFF_MASK    : out std_logic_vector(NFEB downto 1)
     );
 end TESTFIFOS;
 
@@ -88,13 +74,12 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal dd_dtack, d_dtack, q_dtack : std_logic;
   signal CMDDEV                     : std_logic_vector(15 downto 0);
-  signal fifo_rst                   : std_logic := '0';
 
   type FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
-  signal FIFO_RD      : FIFO_RD_TYPE;
-  signal C_FIFO_RD    : std_logic_vector(NFEB downto 1) := (others => '0');
-  signal OUT_TFF_READ : std_logic_vector(15 downto 0)   := (others => '0');
-  signal R_TFF_READ   : std_logic                       := '0';
+  signal FIFO_RD                   : FIFO_RD_TYPE;
+  signal C_FIFO_RD, tff_mask_inner : std_logic_vector(NFEB downto 1) := (others => '0');
+  signal OUT_TFF_READ              : std_logic_vector(15 downto 0)   := (others => '0');
+  signal R_TFF_READ                : std_logic                       := '0';
 
   signal OUT_TFF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
   signal R_TFF_WRD_CNT   : std_logic                     := '0';
@@ -108,6 +93,38 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal W_TFF_RST                 : std_logic                       := '0';
   signal PULSE_TFF_RST, IN_TFF_RST : std_logic_vector(NFEB downto 1) := (others => '0');
 
+  -------------------------------- PC FIFOs ----------------------------------------
+  signal PC_TX_FIFO_DOUT     : std_logic_vector(15 downto 0);
+  signal PC_TX_FIFO_WRD_CNT  : std_logic_vector(15 downto 0);
+  signal PC_TX_FIFO_RST      : std_logic;
+  signal PC_TX_FIFO_RDEN     : std_logic;
+  signal PC_RX_FIFO_DOUT     : std_logic_vector(15 downto 0);
+  signal PC_RX_FIFO_WRD_CNT  : std_logic_vector(15 downto 0);
+  signal PC_RX_FIFO_RST      : std_logic;
+  signal PC_RX_FIFO_RDEN     : std_logic;
+  signal DDU_TX_FIFO_DOUT    : std_logic_vector(15 downto 0);
+  signal DDU_TX_FIFO_WRD_CNT : std_logic_vector(15 downto 0);
+  signal DDU_TX_FIFO_RST     : std_logic;
+  signal DDU_TX_FIFO_RDEN    : std_logic;
+  signal DDU_RX_FIFO_DOUT    : std_logic_vector(15 downto 0);
+  signal DDU_RX_FIFO_WRD_CNT : std_logic_vector(15 downto 0);
+  signal DDU_RX_FIFO_RST     : std_logic;
+  signal DDU_RX_FIFO_RDEN    : std_logic;
+
+  signal pc_tx_fifo_empty, pc_tx_fifo_full   : std_logic;
+  signal pc_rx_fifo_empty, pc_rx_fifo_full   : std_logic;
+  signal ddu_tx_fifo_empty, ddu_tx_fifo_full : std_logic;
+  signal ddu_rx_fifo_empty, ddu_rx_fifo_full : std_logic;
+
+  signal pc_rx_fifo_rderr, pc_rx_fifo_wrerr   : std_logic := '0';
+  signal ddu_rx_fifo_rderr, ddu_rx_fifo_wrerr   : std_logic := '0';
+
+  signal pc_data_frame_wren, pc_rx_data_wren : std_logic;
+  signal ddu_data_wren, ddu_rx_data_wren     : std_logic;
+
+  signal pc_rx_fifo_rdcout, pc_rx_fifo_wrcout   : std_logic_vector(10 downto 0);
+  signal ddu_rx_fifo_rdcout, ddu_rx_fifo_wrcout : std_logic_vector(10 downto 0);
+
   signal PC_TX_FF_RD                    : std_logic_vector(3 downto 0);
   signal OUT_PC_TX_FF_READ              : std_logic_vector(15 downto 0) := (others => '0');
   signal R_PC_TX_FF_READ, C_PC_TX_FF_RD : std_logic                     := '0';
@@ -115,7 +132,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_PC_TX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
   signal R_PC_TX_FF_WRD_CNT   : std_logic                     := '0';
 
-  signal W_PC_TX_FF_RST, do_pc_tx_fifo_rst : std_logic := '0';
+  signal W_PC_TX_FF_RST, do_pc_tx_fifo_rst, pc_tx_mask : std_logic := '0';
 
   signal PC_RX_FF_RD                    : std_logic_vector(3 downto 0);
   signal OUT_PC_RX_FF_READ              : std_logic_vector(15 downto 0) := (others => '0');
@@ -124,7 +141,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_PC_RX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
   signal R_PC_RX_FF_WRD_CNT   : std_logic                     := '0';
 
-  signal W_PC_RX_FF_RST, do_pc_rx_fifo_rst : std_logic := '0';
+  signal W_PC_RX_FF_RST, do_pc_rx_fifo_rst, pc_rx_mask : std_logic := '0';
 
   signal DDU_TX_FF_RD                     : std_logic_vector(3 downto 0);
   signal OUT_DDU_TX_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
@@ -133,7 +150,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_DDU_TX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
   signal R_DDU_TX_FF_WRD_CNT   : std_logic                     := '0';
 
-  signal W_DDU_TX_FF_RST, do_ddu_tx_fifo_rst : std_logic := '0';
+  signal W_DDU_TX_FF_RST, do_ddu_tx_fifo_rst, ddu_tx_mask : std_logic := '0';
 
   signal DDU_RX_FF_RD                     : std_logic_vector(3 downto 0);
   signal OUT_DDU_RX_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
@@ -142,14 +159,14 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_DDU_RX_FF_WRD_CNT                      : std_logic_vector(15 downto 0) := (others => '0');
   signal R_DDU_RX_FF_WRD_CNT, D_R_DDU_RX_FF_WRD_CNT : std_logic                     := '0';
 
-  signal W_DDU_RX_FF_RST, do_ddu_rx_fifo_rst : std_logic := '0';
+  signal W_DDU_RX_FF_RST, do_ddu_rx_fifo_rst, ddu_rx_mask : std_logic := '0';
 
   -- OTMB FIFO
-  signal OTMB_FF_RD                   : std_logic_vector(3 downto 0);
-  signal OTMB_FIFO_DOUT               : std_logic_vector(17 downto 0) := (others => '0');
-  signal OUT_OTMB_FF_READ             : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_OTMB_FF_READ, C_OTMB_FF_RD : std_logic                     := '0';
-  signal OTMB_FIFO_RDEN               : std_logic                     := '0';
+  signal OTMB_FF_RD                     : std_logic_vector(3 downto 0);
+  signal OTMB_FIFO_DOUT                 : std_logic_vector(17 downto 0) := (others => '0');
+  signal OUT_OTMB_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_OTMB_FF_READ, C_OTMB_FF_RD   : std_logic                     := '0';
+  signal OTMB_FIFO_RDEN, otmb_fifo_wren : std_logic                     := '0';
 
   signal OTMB_FIFO_WRD_CNT                      : std_logic_vector(11 downto 0) := (others => '0');
   signal OUT_OTMB_FF_WRD_CNT                    : std_logic_vector(15 downto 0) := (others => '0');
@@ -157,16 +174,16 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal W_OTMB_FF_RST : std_logic := '0';
 
-  signal otmb_fifo_rd_cnt, otmb_fifo_wr_cnt : std_logic_vector(10 downto 0);
-  signal otmb_fifo_empty, otmb_fifo_full    : std_logic;
-  signal otmb_fifo_rst, otmb_fifo_reset     : std_logic;
+  signal otmb_fifo_rd_cnt, otmb_fifo_wr_cnt             : std_logic_vector(10 downto 0);
+  signal otmb_fifo_empty, otmb_fifo_full                : std_logic;
+  signal otmb_fifo_rst, otmb_fifo_reset, otmb_fifo_mask : std_logic;
 
   -- ALCT FIFO
-  signal ALCT_FF_RD                   : std_logic_vector(3 downto 0);
-  signal ALCT_FIFO_DOUT               : std_logic_vector(17 downto 0) := (others => '0');
-  signal OUT_ALCT_FF_READ             : std_logic_vector(15 downto 0) := (others => '0');
-  signal R_ALCT_FF_READ, C_ALCT_FF_RD : std_logic                     := '0';
-  signal ALCT_FIFO_RDEN               : std_logic                     := '0';
+  signal ALCT_FF_RD                     : std_logic_vector(3 downto 0);
+  signal ALCT_FIFO_DOUT                 : std_logic_vector(17 downto 0) := (others => '0');
+  signal OUT_ALCT_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
+  signal R_ALCT_FF_READ, C_ALCT_FF_RD   : std_logic                     := '0';
+  signal ALCT_FIFO_RDEN, alct_fifo_wren : std_logic                     := '0';
 
   signal ALCT_FIFO_WRD_CNT   : std_logic_vector(11 downto 0) := (others => '0');
   signal OUT_ALCT_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
@@ -174,9 +191,9 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal W_ALCT_FF_RST : std_logic := '0';
 
-  signal alct_fifo_rd_cnt, alct_fifo_wr_cnt : std_logic_vector(10 downto 0);
-  signal alct_fifo_empty, alct_fifo_full    : std_logic;
-  signal alct_fifo_rst, alct_fifo_reset     : std_logic;
+  signal alct_fifo_rd_cnt, alct_fifo_wr_cnt             : std_logic_vector(10 downto 0);
+  signal alct_fifo_empty, alct_fifo_full                : std_logic;
+  signal alct_fifo_rst, alct_fifo_reset, alct_fifo_mask : std_logic;
 
   -- HDR FIFO
   signal HDR_FF_RD                  : std_logic_vector(3 downto 0);
@@ -191,8 +208,8 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal W_HDR_FF_RST, hdr_fifo_data_valid : std_logic := '0';
 
-  signal hdr_fifo_empty, hdr_fifo_full : std_logic;
-  signal hdr_fifo_rst, hdr_fifo_reset  : std_logic;
+  signal hdr_fifo_empty, hdr_fifo_full               : std_logic;
+  signal hdr_fifo_rst, hdr_fifo_reset, hdr_fifo_mask : std_logic;
 
   signal csp_lvmb_la_trig : std_logic_vector (7 downto 0);
   signal csp_lvmb_la_data : std_logic_vector (99 downto 0);
@@ -227,7 +244,7 @@ begin  --Architecture
 
   -- ddu_rx: 400 series
   r_ddu_rx_ff_read    <= '1' when (cmddev = x"1400")                                   else '0';
-  r_ddu_rx_ff_wrd_cnt <= '1' when (cmddev = x"140c")                                   else '0';
+  r_ddu_rx_ff_wrd_cnt <= '1' when (cmddev = x"140c") else '0';
   w_ddu_rx_ff_rst     <= '1' when (cmddev = x"1420" and WRITER = '0' and STROBE = '1') else '0';
 
   -- otmb: 500 series
@@ -253,7 +270,7 @@ begin  --Architecture
     FDC_RD_EN2 : FDC port map(FIFO_RD(2)(I), SLOWCLK, C_FIFO_RD(I), FIFO_RD(1)(I));
     FDC_RD_EN3 : FDC port map(FIFO_RD(3)(I), SLOWCLK, C_FIFO_RD(I), FIFO_RD(2)(I));
     C_FIFO_RD(I)  <= RST or FIFO_RD(3)(I);
-    TFF_RDEN(I)   <= FIFO_RD(2)(I);
+    TFF_RDEN(I)   <= FIFO_RD(2)(I) and tff_mask_inner(I);
   end generate GEN_TFF_READ;
 
   OUT_TFF_READ <= TFF_DOUT when (STROBE = '1' and R_TFF_READ = '1') else (others => 'Z');
@@ -289,8 +306,10 @@ begin  --Architecture
   GEN_TFF_RST : for cfeb in NFEB downto 1 generate
   begin
     in_tff_rst(cfeb) <= (STROBE and w_tff_rst and INDATA(cfeb-1)) or RST;
-    PULSE_RESET : NPULSE2FAST port map(TFF_RST(cfeb), CLK40, '0', 50, in_tff_rst(cfeb));
+    PULSE_RESET : RESET_FIFO port map(TFF_RST(cfeb), tff_mask_inner(cfeb), CLK40, in_tff_rst(cfeb));
   end generate GEN_TFF_RST;
+
+  TFF_MASK <= tff_mask_inner;
 
 -- Read PC_TX_FF_READ
   PC_TX_FF_RD(0)  <= R_PC_TX_FF_READ;
@@ -298,7 +317,7 @@ begin  --Architecture
   FDC_PC_TX_RD_EN2 : FDC port map(PC_TX_FF_RD(2), SLOWCLK, C_PC_TX_FF_RD, PC_TX_FF_RD(1));
   FDC_PC_TX_RD_EN3 : FDC port map(PC_TX_FF_RD(3), SLOWCLK, C_PC_TX_FF_RD, PC_TX_FF_RD(2));
   C_PC_TX_FF_RD   <= RST or PC_TX_FF_RD(3);
-  PC_TX_FIFO_RDEN <= PC_TX_FF_RD(2);
+  PC_TX_FIFO_RDEN <= PC_TX_FF_RD(2) and pc_tx_mask;
 
   OUT_PC_TX_FF_READ <= PC_TX_FIFO_DOUT when (STROBE = '1' and R_PC_TX_FF_READ = '1') else (others => 'Z');
 
@@ -308,7 +327,7 @@ begin  --Architecture
 
 -- Write PC_TX_FF_RST (Reset PC_TX FIFO)
   do_pc_tx_fifo_rst <= w_pc_tx_ff_rst or RST;
-  PULSE_RESET_PC_TX : NPULSE2FAST port map(PC_TX_FIFO_RST, CLK40, '0', 50, do_pc_tx_fifo_rst);
+  PULSE_RESET_PC_TX : RESET_FIFO port map(PC_TX_FIFO_RST, pc_tx_mask, CLK40, do_pc_tx_fifo_rst);
 
 -- Read PC_RX_FF_READ
   PC_RX_FF_RD(0)  <= R_PC_RX_FF_READ;
@@ -316,7 +335,7 @@ begin  --Architecture
   FDC_PC_RX_RD_EN2 : FDC port map(PC_RX_FF_RD(2), SLOWCLK, C_PC_RX_FF_RD, PC_RX_FF_RD(1));
   FDC_PC_RX_RD_EN3 : FDC port map(PC_RX_FF_RD(3), SLOWCLK, C_PC_RX_FF_RD, PC_RX_FF_RD(2));
   C_PC_RX_FF_RD   <= RST or PC_RX_FF_RD(3);
-  PC_RX_FIFO_RDEN <= PC_RX_FF_RD(2);
+  PC_RX_FIFO_RDEN <= PC_RX_FF_RD(2) and pc_rx_mask;
 
   OUT_PC_RX_FF_READ <= PC_RX_FIFO_DOUT when (STROBE = '1' and R_PC_RX_FF_READ = '1') else (others => 'Z');
 
@@ -326,7 +345,143 @@ begin  --Architecture
 
 -- Write PC_RX_FF_RST (Reset PC_RX FIFO)
   do_pc_rx_fifo_rst <= w_pc_rx_ff_rst or RST;
-  PULSE_RESET_PC_RX : NPULSE2FAST port map(pc_rx_fifo_rst, CLK40, '0', 50, do_pc_rx_fifo_rst);
+  PULSE_RESET_PC_RX : RESET_FIFO port map(pc_rx_fifo_rst, pc_rx_mask, CLK40, do_pc_rx_fifo_rst);
+
+  ----------------------------------------------------------------------------------
+  -------------------------------- PC FIFOs ----------------------------------------
+  ----------------------------------------------------------------------------------
+
+  pc_data_frame_wren <= pc_tx_mask and pc_data_frame_valid;
+
+  PC_TX_FIFO_CASCADE : FIFO_CASCADE
+    generic map (
+      NFIFO        => 4,                -- number of FIFOs in cascade
+      DATA_WIDTH   => 16,               -- With of data packets
+      FWFT         => true,             -- First word fall through
+      WR_FASTER_RD => true)  -- Set int_clk to WRCLK if faster than RDCLK
+
+    port map(
+      DO        => pc_tx_fifo_dout,     -- Output data
+      EMPTY     => pc_tx_fifo_empty,    -- Output empty
+      FULL      => pc_tx_fifo_full,     -- Output full
+      HALF_FULL => open,
+
+      DI    => pc_data_frame,           -- Input data
+      RDCLK => SLOWCLK,                 -- Input read clock
+      RDEN  => pc_tx_fifo_rden,         -- Input read enable
+      RST   => pc_tx_fifo_rst,          -- Input reset
+      WRCLK => pcclk,                   -- Input write clock
+      WREN  => pc_data_frame_wren       -- Input write enable
+      );
+
+  PC_TX_WRD_COUNT : FIFOWORDS
+    port map(RST   => pc_tx_fifo_rst, WRCLK => pcclk, WREN => pc_data_frame_wren,
+             FULL  => pc_tx_fifo_full, RDCLK => SLOWCLK, RDEN => pc_tx_fifo_rden,
+             COUNT => pc_tx_fifo_wrd_cnt);
+
+
+  pc_rx_data_wren <= pc_rx_mask and pc_rx_data_valid;
+
+  PC_RX_FIFO : FIFO_DUALCLOCK_MACRO
+    generic map (
+      DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
+      ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
+      ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
+      DATA_WIDTH              => 16,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
+
+    port map (
+      RST         => pc_rx_fifo_rst,     -- Input reset
+      ALMOSTEMPTY => open,               -- Output almost empty 
+      ALMOSTFULL  => open,               -- Output almost full
+      EMPTY       => pc_rx_fifo_empty,   -- Output empty
+      FULL        => pc_rx_fifo_full,    -- Output full
+      RDCOUNT     => pc_rx_fifo_rdcout,  -- Output read count
+      RDERR       => pc_rx_fifo_rderr,   -- Output read error
+      WRCOUNT     => pc_rx_fifo_wrcout,  -- Output write count
+      WRERR       => pc_rx_fifo_wrerr,   -- Output write error
+      DO          => pc_rx_fifo_dout,    -- Output data
+      RDCLK       => SLOWCLK,            -- Input read clock
+      RDEN        => pc_rx_fifo_rden,    -- Input read enable
+      DI          => pc_rx_data,         -- Input data
+      WRCLK       => pcclk,              -- Input write clock
+      WREN        => pc_rx_data_wren     -- Input write enable
+      );
+
+  PC_RX_WRD_COUNT : FIFOWORDS
+    port map(RST   => pc_rx_fifo_rst, WRCLK => pcclk, WREN => pc_rx_data_wren,
+             FULL  => pc_rx_fifo_full, RDCLK => SLOWCLK, RDEN => pc_rx_fifo_rden,
+             COUNT => pc_rx_fifo_wrd_cnt);
+
+
+  ----------------------------------------------------------------------------------
+  ------------------------------- DDU FIFOs ----------------------------------------
+  ----------------------------------------------------------------------------------
+
+  ddu_data_wren <= ddu_tx_mask and ddu_data_valid;
+
+  DDU_TX_FIFO_CASCADE : FIFO_CASCADE
+    generic map (
+      NFIFO        => 4,                -- number of FIFOs in cascade
+      DATA_WIDTH   => 16,               -- With of data packets
+      FWFT         => true,             -- First word fall through
+      WR_FASTER_RD => true)  -- Set int_clk to WRCLK if faster than RDCLK
+
+    port map(
+      DO        => ddu_tx_fifo_dout,    -- Output data
+      EMPTY     => ddu_tx_fifo_empty,   -- Output empty
+      FULL      => ddu_tx_fifo_full,    -- Output full
+      HALF_FULL => open,
+
+      DI    => ddu_data,                -- Input data
+      RDCLK => SLOWCLK,                 -- Input read clock
+      RDEN  => ddu_tx_fifo_rden,        -- Input read enable
+      RST   => ddu_tx_fifo_rst,         -- Input reset
+      WRCLK => dduclk,                  -- Input write clock
+      WREN  => ddu_data_wren            -- Input write enable
+      );
+
+  DDU_TX_WRD_COUNT : FIFOWORDS
+    port map(RST   => ddu_tx_fifo_rst, WRCLK => dduclk, WREN => ddu_data_wren,
+             FULL  => ddu_tx_fifo_full, RDCLK => SLOWCLK, RDEN => ddu_tx_fifo_rden,
+             COUNT => ddu_tx_fifo_wrd_cnt);
+
+
+  ddu_rx_data_wren <= ddu_rx_mask and ddu_rx_data_valid;
+
+  DDU_RX_FIFO : FIFO_DUALCLOCK_MACRO
+    generic map (
+      DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
+      ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
+      ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
+      DATA_WIDTH              => 16,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
+
+    port map (
+      RST         => ddu_rx_fifo_rst,     -- Input reset
+      ALMOSTEMPTY => open,                -- Output almost empty 
+      ALMOSTFULL  => open,                -- Output almost full
+      EMPTY       => ddu_rx_fifo_empty,   -- Output empty
+      FULL        => ddu_rx_fifo_full,    -- Output full
+      RDCOUNT     => ddu_rx_fifo_rdcout,  -- Output read count
+      RDERR       => ddu_rx_fifo_rderr,   -- Output read error
+      WRCOUNT     => ddu_rx_fifo_wrcout,  -- Output write count
+      WRERR       => ddu_rx_fifo_wrerr,   -- Output write error
+      DO          => ddu_rx_fifo_dout,    -- Output data
+      RDCLK       => SLOWCLK,             -- Input read clock
+      RDEN        => ddu_rx_fifo_rden,    -- Input read enable
+      DI          => ddu_rx_data,         -- Input data
+      WRCLK       => dduclk,              -- Input write clock
+      WREN        => ddu_rx_data_wren     -- Input write enable
+      );
+
+  DDU_RX_WRD_COUNT : FIFOWORDS
+    port map(RST   => ddu_rx_fifo_rst, WRCLK => dduclk, WREN => ddu_rx_data_wren,
+             FULL  => ddu_rx_fifo_full, RDCLK => SLOWCLK, RDEN => ddu_rx_fifo_rden,
+             COUNT => ddu_rx_fifo_wrd_cnt);
+
 
 -- Read DDU_TX_FF_READ
   DDU_TX_FF_RD(0)  <= R_DDU_TX_FF_READ;
@@ -334,7 +489,7 @@ begin  --Architecture
   FDC_DDU_TX_RD_EN2 : FDC port map(DDU_TX_FF_RD(2), SLOWCLK, C_DDU_TX_FF_RD, DDU_TX_FF_RD(1));
   FDC_DDU_TX_RD_EN3 : FDC port map(DDU_TX_FF_RD(3), SLOWCLK, C_DDU_TX_FF_RD, DDU_TX_FF_RD(2));
   C_DDU_TX_FF_RD   <= RST or DDU_TX_FF_RD(3);
-  DDU_TX_FIFO_RDEN <= DDU_TX_FF_RD(2);
+  DDU_TX_FIFO_RDEN <= DDU_TX_FF_RD(2) and ddu_tx_mask;
 
   OUT_DDU_TX_FF_READ <= DDU_TX_FIFO_DOUT when (STROBE = '1' and R_DDU_TX_FF_READ = '1') else (others => 'Z');
 
@@ -346,7 +501,7 @@ begin  --Architecture
 
 -- Write DDU_TX_FF_RST (Reset DDU_TX FIFO)
   do_ddu_tx_fifo_rst <= w_ddu_tx_ff_rst or RST;
-  PULSE_RESET_DDU_TX : NPULSE2FAST port map(DDU_TX_FIFO_RST, CLK40, '0', 50, do_ddu_tx_fifo_rst);
+  PULSE_RESET_DDU_TX : RESET_FIFO port map(DDU_TX_FIFO_RST, ddu_tx_mask, CLK40, do_ddu_tx_fifo_rst);
 
 -- Read DDU_RX_FF_READ
   DDU_RX_FF_RD(0)  <= R_DDU_RX_FF_READ;
@@ -354,7 +509,7 @@ begin  --Architecture
   FDC_DDU_RX_RD_EN2 : FDC port map(DDU_RX_FF_RD(2), SLOWCLK, C_DDU_RX_FF_RD, DDU_RX_FF_RD(1));
   FDC_DDU_RX_RD_EN3 : FDC port map(DDU_RX_FF_RD(3), SLOWCLK, C_DDU_RX_FF_RD, DDU_RX_FF_RD(2));
   C_DDU_RX_FF_RD   <= RST or DDU_RX_FF_RD(3);
-  DDU_RX_FIFO_RDEN <= DDU_RX_FF_RD(2);
+  DDU_RX_FIFO_RDEN <= DDU_RX_FF_RD(2) and ddu_rx_mask;
 
   OUT_DDU_RX_FF_READ <= DDU_RX_FIFO_DOUT when (STROBE = '1' and R_DDU_RX_FF_READ = '1') else (others => 'Z');
 
@@ -366,7 +521,7 @@ begin  --Architecture
 
 -- Write DDU_RX_FF_RST (Reset DDU_RX FIFO)
   do_ddu_rx_fifo_rst <= w_ddu_rx_ff_rst or RST;
-  PULSE_RESET_DDU_RX : NPULSE2FAST port map(ddu_rx_fifo_rst, clk40, '0', 50, do_ddu_rx_fifo_rst);
+  PULSE_RESET_DDU_RX : RESET_FIFO port map(ddu_rx_fifo_rst, ddu_rx_mask, clk40, do_ddu_rx_fifo_rst);
 
 -- Read OTMB_FF_READ
   OTMB_FF_RD(0)  <= R_OTMB_FF_READ;
@@ -374,7 +529,7 @@ begin  --Architecture
   FDC_OTMB_RD_EN2 : FDC port map(OTMB_FF_RD(2), SLOWCLK, C_OTMB_FF_RD, OTMB_FF_RD(1));
   FDC_OTMB_RD_EN3 : FDC port map(OTMB_FF_RD(3), SLOWCLK, C_OTMB_FF_RD, OTMB_FF_RD(2));
   C_OTMB_FF_RD   <= RST or OTMB_FF_RD(3);
-  OTMB_FIFO_RDEN <= OTMB_FF_RD(2);
+  OTMB_FIFO_RDEN <= OTMB_FF_RD(2) and otmb_fifo_mask;
 
   OUT_OTMB_FF_READ <= OTMB_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_OTMB_FF_READ = '1') else (others => 'Z');
 
@@ -386,8 +541,10 @@ begin  --Architecture
 
 
 -- Write OTMB_FF_RST (Reset OTMB FIFO)
-  PULSE_RESET_OTMB : NPULSE2FAST port map(otmb_fifo_rst, clk40, '0', 50, w_otmb_ff_rst);
-  otmb_fifo_reset <= otmb_fifo_rst or fifo_rst;
+  otmb_fifo_rst <= w_otmb_ff_rst or RST;
+  PULSE_RESET_OTMB : RESET_FIFO port map(otmb_fifo_reset, otmb_fifo_mask, clk40, otmb_fifo_rst);
+
+  otmb_fifo_wren <= otmb_fifo_data_valid and otmb_fifo_mask;
 
   OTMB_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -399,21 +556,21 @@ begin  --Architecture
       FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      EMPTY       => otmb_fifo_empty,       -- Output empty
-      ALMOSTEMPTY => open,                  -- Output almost empty 
-      ALMOSTFULL  => open,                  -- Output almost full
-      FULL        => otmb_fifo_full,        -- Output full
-      WRCOUNT     => otmb_fifo_wr_cnt,      -- Output write count
-      RDCOUNT     => otmb_fifo_rd_cnt,      -- Output read count
-      WRERR       => open,                  -- Output write error
-      RDERR       => open,                  -- Output read error
-      RST         => otmb_fifo_reset,       -- Input reset
-      WRCLK       => clk40,                 -- Input write clock
-      WREN        => otmb_fifo_data_valid,  -- Input write enable
-      DI          => otmb_fifo_data_in,     -- Input data
-      RDCLK       => slowclk,               -- Input read clock
-      RDEN        => otmb_fifo_rden,        -- Input read enable
-      DO          => otmb_fifo_dout         -- Output data
+      EMPTY       => otmb_fifo_empty,    -- Output empty
+      ALMOSTEMPTY => open,               -- Output almost empty 
+      ALMOSTFULL  => open,               -- Output almost full
+      FULL        => otmb_fifo_full,     -- Output full
+      WRCOUNT     => otmb_fifo_wr_cnt,   -- Output write count
+      RDCOUNT     => otmb_fifo_rd_cnt,   -- Output read count
+      WRERR       => open,               -- Output write error
+      RDERR       => open,               -- Output read error
+      RST         => otmb_fifo_reset,    -- Input reset
+      WRCLK       => clk40,              -- Input write clock
+      WREN        => otmb_fifo_wren,     -- Input write enable
+      DI          => otmb_fifo_data_in,  -- Input data
+      RDCLK       => slowclk,            -- Input read clock
+      RDEN        => otmb_fifo_rden,     -- Input read enable
+      DO          => otmb_fifo_dout      -- Output data
       );
 
   OTMB_WRD_COUNT : FIFOWORDS
@@ -427,7 +584,7 @@ begin  --Architecture
   FDC_ALCT_RD_EN2 : FDC port map(ALCT_FF_RD(2), SLOWCLK, C_ALCT_FF_RD, ALCT_FF_RD(1));
   FDC_ALCT_RD_EN3 : FDC port map(ALCT_FF_RD(3), SLOWCLK, C_ALCT_FF_RD, ALCT_FF_RD(2));
   C_ALCT_FF_RD   <= RST or ALCT_FF_RD(3);
-  ALCT_FIFO_RDEN <= ALCT_FF_RD(2);
+  ALCT_FIFO_RDEN <= ALCT_FF_RD(2) and alct_fifo_mask;
 
   OUT_ALCT_FF_READ <= ALCT_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_ALCT_FF_READ = '1') else (others => 'Z');
 
@@ -437,8 +594,10 @@ begin  --Architecture
                                        (others => 'Z');
 
 -- Write ALCT_FF_RST (Reset ALCT FIFO)
-  PULSE_RESET_ALCT : NPULSE2FAST port map(alct_fifo_rst, clk40, '0', 50, w_alct_ff_rst);
-  alct_fifo_reset <= alct_fifo_rst or fifo_rst;
+  alct_fifo_rst <= w_alct_ff_rst or RST;
+  PULSE_RESET_ALCT : RESET_FIFO port map(alct_fifo_reset, alct_fifo_mask, clk40, alct_fifo_rst);
+
+  alct_fifo_wren <= alct_fifo_data_valid and alct_fifo_mask;
 
   ALCT_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -450,21 +609,21 @@ begin  --Architecture
       FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
 
     port map (
-      EMPTY       => alct_fifo_empty,       -- Output empty
-      ALMOSTEMPTY => open,                  -- Output almost empty 
-      ALMOSTFULL  => open,                  -- Output almost full
-      FULL        => alct_fifo_full,        -- Output full
-      WRCOUNT     => alct_fifo_wr_cnt,      -- Output write count
-      RDCOUNT     => alct_fifo_rd_cnt,      -- Output read count
-      WRERR       => open,                  -- Output write error
-      RDERR       => open,                  -- Output read error
-      RST         => alct_fifo_reset,       -- Input reset
-      WRCLK       => clk40,                 -- Input write clock
-      WREN        => alct_fifo_data_valid,  -- Input write enable
-      DI          => alct_fifo_data_in,     -- Input data
-      RDCLK       => slowclk,               -- Input read clock
-      RDEN        => alct_fifo_rden,        -- Input read enable
-      DO          => alct_fifo_dout         -- Output data
+      EMPTY       => alct_fifo_empty,    -- Output empty
+      ALMOSTEMPTY => open,               -- Output almost empty 
+      ALMOSTFULL  => open,               -- Output almost full
+      FULL        => alct_fifo_full,     -- Output full
+      WRCOUNT     => alct_fifo_wr_cnt,   -- Output write count
+      RDCOUNT     => alct_fifo_rd_cnt,   -- Output read count
+      WRERR       => open,               -- Output write error
+      RDERR       => open,               -- Output read error
+      RST         => alct_fifo_reset,    -- Input reset
+      WRCLK       => clk40,              -- Input write clock
+      WREN        => alct_fifo_wren,     -- Input write enable
+      DI          => alct_fifo_data_in,  -- Input data
+      RDCLK       => slowclk,            -- Input read clock
+      RDEN        => alct_fifo_rden,     -- Input read enable
+      DO          => alct_fifo_dout      -- Output data
       );
 
   ALCT_WRD_COUNT : FIFOWORDS
@@ -478,10 +637,10 @@ begin  --Architecture
                                       (others => 'Z');
 
 -- Write HDR_FF_RST (Reset HDR FIFO)
-  PULSE_RESET_HDR : NPULSE2FAST port map(hdr_fifo_rst, clk40, '0', 50, w_hdr_ff_rst);
-  hdr_fifo_reset <= hdr_fifo_rst or fifo_rst;
+  hdr_fifo_rst <= w_hdr_ff_rst or RST;
+  PULSE_RESET_HDR : RESET_FIFO port map(hdr_fifo_reset, hdr_fifo_mask, clk40, hdr_fifo_rst);
 
-  hdr_fifo_data_valid <= '1' when (DDU_DATA_VALID = '1' and
+  hdr_fifo_data_valid <= '1' when (DDU_DATA_VALID = '1' and hdr_fifo_mask = '1' and
                                    (DDU_DATA(15 downto 12) = x"9" or DDU_DATA(15 downto 12) = x"A" or
                                     DDU_DATA(15 downto 12) = x"F" or DDU_DATA(15 downto 12) = x"E" or
                                     DDU_DATA(15 downto 12) = x"8")) else '0';
@@ -502,7 +661,7 @@ begin  --Architecture
       DI    => DDU_DATA,                -- Input data
       RDCLK => slowclk,                 -- Input read clock
       RDEN  => hdr_fifo_rden,           -- Input read enable
-      RST   => hdr_fifo_reset,            -- Input reset
+      RST   => hdr_fifo_reset,          -- Input reset
       WRCLK => DDUCLK,                  -- Input write clock
       WREN  => hdr_fifo_data_valid      -- Input write enable
       );
@@ -518,9 +677,9 @@ begin  --Architecture
   FDC_HDR_RD_EN2 : FDC port map(HDR_FF_RD(2), SLOWCLK, C_HDR_FF_RD, HDR_FF_RD(1));
   FDC_HDR_RD_EN3 : FDC port map(HDR_FF_RD(3), SLOWCLK, C_HDR_FF_RD, HDR_FF_RD(2));
   C_HDR_FF_RD   <= RST or HDR_FF_RD(3);
-  HDR_FIFO_RDEN <= HDR_FF_RD(2);
+  HDR_FIFO_RDEN <= HDR_FF_RD(2) and hdr_fifo_mask;
 
-  OUT_HDR_FF_READ <= HDR_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_HDR_FF_READ = '1') else (others => '1');  -- EOF to avoid warning...
+  OUT_HDR_FF_READ <= HDR_FIFO_DOUT(15 downto 0) when (STROBE = '1' and R_HDR_FF_READ = '1') else (others => '1');
 
 -- General assignments
   OUTDATA <= OUT_TFF_READ when R_TFF_READ = '1' else
@@ -542,7 +701,6 @@ begin  --Architecture
              OUT_HDR_FF_WRD_CNT    when R_HDR_FF_WRD_CNT = '1' else
              (others => 'L');
 
-  RSTPULSE : NPULSE2SAME port map(fifo_rst, CLK40, '0', 50, RST);
 
   -- DTACK 
   dd_dtack <= STROBE and DEVICE;

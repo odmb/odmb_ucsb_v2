@@ -125,19 +125,16 @@ entity ODMB_VME is
     LOOPBACK      : out std_logic_vector(2 downto 0);  -- For internal loopback tests
 
     -- TESTCTRL
-    tc_l1a         : out std_logic;
-    tc_alct_dav    : out std_logic;
-    tc_otmb_dav    : out std_logic;
-    tc_lct         : out std_logic_vector(NFEB downto 0);
-    ddu_data       : in  std_logic_vector(15 downto 0);
-    ddu_data_valid : in  std_logic;
-    tc_run         : out std_logic;
-    ts_out         : out std_logic_vector(31 downto 0);
-    dduclk         : in  std_logic;
+    tc_l1a      : out std_logic;
+    tc_alct_dav : out std_logic;
+    tc_otmb_dav : out std_logic;
+    tc_lct      : out std_logic_vector(NFEB downto 0);
+    tc_run      : out std_logic;
+    ts_out      : out std_logic_vector(31 downto 0);
 
     -- VMECONFREGS outputs
     LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
-    CABLE_DLY   : out integer range 0 to 1;
+    CABLE_DLY     : out integer range 0 to 1;
     OTMB_PUSH_DLY : out integer range 0 to 63;
     ALCT_PUSH_DLY : out integer range 0 to 63;
     INJ_DLY       : out std_logic_vector(4 downto 0);
@@ -148,38 +145,30 @@ entity ODMB_VME is
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(7 downto 0);
 
-    -- ALCT/OTMB FIFO signals
-    alct_fifo_data_in    : in std_logic_vector(17 downto 0);
-    alct_fifo_data_valid : in std_logic;
-    otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
-    otmb_fifo_data_valid : in std_logic;
-
-    -- PC FIFO signals
-    pc_tx_fifo_rst     : out std_logic;
-    pc_tx_fifo_rden    : out std_logic;
-    pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    pc_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-    pc_rx_fifo_rst     : out std_logic;
-    pc_rx_fifo_rden    : out std_logic;
-    pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    pc_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-
-    -- DDU FIFO signals
-    ddu_tx_fifo_rst     : out std_logic;
-    ddu_tx_fifo_rden    : out std_logic;
-    ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    ddu_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-    ddu_rx_fifo_rst     : out std_logic;
-    ddu_rx_fifo_rden    : out std_logic;
-    ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-    ddu_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-
     -- TESTFIFOS
     TFF_DOUT    : in  std_logic_vector(15 downto 0);
     TFF_WRD_CNT : in  std_logic_vector(11 downto 0);
     TFF_RST     : out std_logic_vector(NFEB downto 1);
     TFF_SEL     : out std_logic_vector(NFEB downto 1);
     TFF_RDEN    : out std_logic_vector(NFEB downto 1);
+    TFF_MASK    : out std_logic_vector(NFEB downto 1);
+
+    dduclk            : in std_logic;
+    ddu_data          : in std_logic_vector(15 downto 0);
+    ddu_data_valid    : in std_logic;
+    ddu_rx_data       : in std_logic_vector(15 downto 0);
+    ddu_rx_data_valid : in std_logic;
+
+    pcclk               : in std_logic;
+    pc_data_frame       : in std_logic_vector(15 downto 0);
+    pc_data_frame_valid : in std_logic;
+    pc_rx_data          : in std_logic_vector(15 downto 0);
+    pc_rx_data_valid    : in std_logic;
+
+    alct_fifo_data_in    : in std_logic_vector(17 downto 0);
+    alct_fifo_data_valid : in std_logic;
+    otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
+    otmb_fifo_data_valid : in std_logic;
 
     -- SYSMON
     VP    : in std_logic;
@@ -393,7 +382,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
 -- Configuration registers    
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
-    CABLE_DLY   : out integer range 0 to 1;
+      CABLE_DLY     : out integer range 0 to 1;
       OTMB_PUSH_DLY : out integer range 0 to 63;
       ALCT_PUSH_DLY : out integer range 0 to 63;
 
@@ -454,29 +443,18 @@ architecture ODMB_VME_architecture of ODMB_VME is
       otmb_fifo_data_valid : in std_logic;
 
       -- PC FIFO signals
-      pc_tx_fifo_rst     : out std_logic;
-      pc_tx_fifo_rden    : out std_logic;
-      pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-      pc_rx_fifo_rst     : out std_logic;
-      pc_rx_fifo_rden    : out std_logic;
-      pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
+      pcclk               : in std_logic;
+      pc_data_frame       : in std_logic_vector(15 downto 0);
+      pc_data_frame_valid : in std_logic;
+      pc_rx_data          : in std_logic_vector(15 downto 0);
+      pc_rx_data_valid    : in std_logic;
 
       -- DDU_TX/RX Fifo signals
-      ddu_tx_fifo_rst     : out std_logic;
-      ddu_tx_fifo_rden    : out std_logic;
-      ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_rst     : out std_logic;
-      ddu_rx_fifo_rden    : out std_logic;
-      ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-
-      -- HEADER FIFO signals
-      DDU_DATA       : in std_logic_vector(15 downto 0);
-      DDU_DATA_VALID : in std_logic;
-      DDUCLK         : in std_logic;
+      dduclk            : in std_logic;
+      ddu_data          : in std_logic_vector(15 downto 0);
+      ddu_data_valid    : in std_logic;
+      ddu_rx_data       : in std_logic_vector(15 downto 0);
+      ddu_rx_data_valid : in std_logic;
 
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT    : in std_logic_vector(15 downto 0);
@@ -484,7 +462,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
       TFF_RST  : out std_logic_vector(NFEB downto 1);
       TFF_SEL  : out std_logic_vector(NFEB downto 1);
-      TFF_RDEN : out std_logic_vector(NFEB downto 1)
+      TFF_RDEN : out std_logic_vector(NFEB downto 1);
+      TFF_MASK : out std_logic_vector(NFEB downto 1)
       );
   end component;
 
@@ -892,7 +871,7 @@ begin
         DTACK => DTACK_DEV(4),
 
         LCT_L1A_DLY   => LCT_L1A_DLY,
-        CABLE_DLY => CABLE_DLY,
+        CABLE_DLY     => CABLE_DLY,
         OTMB_PUSH_DLY => OTMB_PUSH_DLY,
         ALCT_PUSH_DLY => ALCT_PUSH_DLY,
 
@@ -948,37 +927,27 @@ begin
       otmb_fifo_data_in    => otmb_fifo_data_in,
       otmb_fifo_data_valid => otmb_fifo_data_valid,
 
-      -- PC FIFO signals
-      pc_tx_fifo_rst     => pc_tx_fifo_rst,
-      pc_tx_fifo_rden    => pc_tx_fifo_rden,
-      pc_tx_fifo_dout    => pc_tx_fifo_dout,
-      pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
-      pc_rx_fifo_rst     => pc_rx_fifo_rst,
-      pc_rx_fifo_rden    => pc_rx_fifo_rden,
-      pc_rx_fifo_dout    => pc_rx_fifo_dout,
-      pc_rx_fifo_wrd_cnt => pc_rx_fifo_wrd_cnt,
-
       -- DDU_TX/RX Fifo signals
-      ddu_tx_fifo_rst     => ddu_tx_fifo_rst,
-      ddu_tx_fifo_rden    => ddu_tx_fifo_rden,
-      ddu_tx_fifo_dout    => ddu_tx_fifo_dout,
-      ddu_tx_fifo_wrd_cnt => ddu_tx_fifo_wrd_cnt,
-      ddu_rx_fifo_rst     => ddu_rx_fifo_rst,
-      ddu_rx_fifo_rden    => ddu_rx_fifo_rden,
-      ddu_rx_fifo_dout    => ddu_rx_fifo_dout,
-      ddu_rx_fifo_wrd_cnt => ddu_rx_fifo_wrd_cnt,
-
-      -- Header Fifo signals
+      dduclk         => dduclk,
       ddu_data       => ddu_data,
       ddu_data_valid => ddu_data_valid,
-      dduclk         => dduclk,
+      ddu_rx_data       => ddu_rx_data,
+      ddu_rx_data_valid => ddu_rx_data_valid,
+      
+     -- PC FIFO signals
+      pcclk        => pcclk,
+      pc_data_frame       => pc_data_frame,
+      pc_data_frame_valid => pc_data_frame_valid,
+      pc_rx_data       => pc_rx_data,
+      pc_rx_data_valid => pc_rx_data_valid,
 
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT    => TFF_DOUT,
       TFF_WRD_CNT => TFF_WRD_CNT,
       TFF_RST     => TFF_RST,
       TFF_SEL     => TFF_SEL,
-      TFF_RDEN    => TFF_RDEN
+      TFF_RDEN    => TFF_RDEN,
+      TFF_MASK    => TFF_MASK
       );
 
   DEV6_BPI_PORT : BPI_PORT

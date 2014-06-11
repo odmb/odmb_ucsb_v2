@@ -7,6 +7,14 @@
 =                                                                    =
 ======================================================================
 
+V03-06, build 9: 4 June 2014, Manuel
+------------------------------------------
+Fixed bug that made DCFEBs out of sync due to packets arriving
+close by and not generating an EOF.
+Fixed bug where packet would have wrong L1A if muon arrived when
+packet was sent.
+Fixed bug where packet handling would hang.
+
 V03-05, build 2: 25 May 2014, Manuel
 ------------------------------------------
 Added CROSSCLOCK to sync signals from CAFIFO to CONTROL_FSM.

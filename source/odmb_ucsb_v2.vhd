@@ -337,11 +337,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       tc_alct_dav    : out std_logic;
       tc_otmb_dav    : out std_logic;
       tc_lct         : out std_logic_vector(NFEB downto 0);
-      ddu_data       : in  std_logic_vector(15 downto 0);
-      ddu_data_valid : in  std_logic;
       tc_run         : out std_logic;
       ts_out         : out std_logic_vector(31 downto 0);
-      dduclk         : in  std_logic;
 
       -- VMECONFREGS outputs
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
@@ -356,38 +353,30 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       KILL          : out std_logic_vector(NFEB+2 downto 1);
       CRATEID       : out std_logic_vector(7 downto 0);
 
-      -- ALCT/OTMB FIFO signals
-      alct_fifo_data_in    : in std_logic_vector(17 downto 0);
-      alct_fifo_data_valid : in std_logic;
-      otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
-      otmb_fifo_data_valid : in std_logic;
-
-      -- PC_TX FIFO signals
-      pc_tx_fifo_rst     : out std_logic;
-      pc_tx_fifo_rden    : out std_logic;
-      pc_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-      pc_rx_fifo_rst     : out std_logic;
-      pc_rx_fifo_rden    : out std_logic;
-      pc_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      pc_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-
-      -- DDU FIFO signals
-      ddu_tx_fifo_rst     : out std_logic;
-      ddu_tx_fifo_rden    : out std_logic;
-      ddu_tx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_tx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_rst     : out std_logic;
-      ddu_rx_fifo_rden    : out std_logic;
-      ddu_rx_fifo_dout    : in  std_logic_vector(15 downto 0);
-      ddu_rx_fifo_wrd_cnt : in  std_logic_vector(15 downto 0);
-
       -- TESTFIFOS
       TFF_DOUT    : in  std_logic_vector(15 downto 0);
       TFF_WRD_CNT : in  std_logic_vector(11 downto 0);
       TFF_RST     : out std_logic_vector(NFEB downto 1);
       TFF_SEL     : out std_logic_vector(NFEB downto 1);
       TFF_RDEN    : out std_logic_vector(NFEB downto 1);
+      TFF_MASK    : out std_logic_vector(NFEB downto 1);
+
+      dduclk              : in std_logic;
+      ddu_data            : in std_logic_vector(15 downto 0);
+      ddu_data_valid      : in std_logic;
+      ddu_rx_data         : in std_logic_vector(15 downto 0);
+      ddu_rx_data_valid   : in std_logic;
+
+      pcclk               : in std_logic;
+      pc_data_frame       : in std_logic_vector(15 downto 0);
+      pc_data_frame_valid : in std_logic;
+      pc_rx_data          : in std_logic_vector(15 downto 0);
+      pc_rx_data_valid    : in std_logic;
+
+      alct_fifo_data_in    : in std_logic_vector(17 downto 0);
+      alct_fifo_data_valid : in std_logic;
+      otmb_fifo_data_in    : in std_logic_vector(17 downto 0);
+      otmb_fifo_data_valid : in std_logic;
 
 -- To/From BPI_PORT 
 
@@ -490,10 +479,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From GigaLinks
 
-      gtx0_data       : out std_logic_vector(15 downto 0);
-      gtx0_data_valid : out std_logic;
-      gtx1_data       : out std_logic_vector(15 downto 0);
-      gtx1_data_valid : out std_logic;
+      ddu_data       : out std_logic_vector(15 downto 0);
+      ddu_data_valid : out std_logic;
+      pc_data       : out std_logic_vector(15 downto 0);
+      pc_data_valid : out std_logic;
       ddu_eof         : out std_logic;
 
 -- From/To FIFOs
@@ -630,16 +619,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       TX_FIFO_WREN_OUT : out std_logic;  -- Flag for valid data;
       TXD_FRAME_OUT    : out std_logic_vector(15 downto 0);
       ROM_CNT_OUT      : out std_logic_vector(2 downto 0);
-      -- FIFO signals
-      VME_CLK          : in  std_logic;
-      TX_FIFO_RST      : in  std_logic;
-      TX_FIFO_RDEN     : in  std_logic;
-      TX_FIFO_DOUT     : out std_logic_vector(15 downto 0);
-      TX_FIFO_WRD_CNT  : out std_logic_vector(15 downto 0);
-      RX_FIFO_RST      : in  std_logic;
-      RX_FIFO_RDEN     : in  std_logic;
-      RX_FIFO_DOUT     : out std_logic_vector(15 downto 0);
-      RX_FIFO_WRD_CNT  : out std_logic_vector(15 downto 0);
 
       -- PRBS signals
       PRBS_TYPE       : in  std_logic_vector(2 downto 0);
@@ -674,17 +653,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       RX_DDU_P : in  std_logic;         -- GTX receive data in + signal
       RXD      : out std_logic_vector(15 downto 0);  -- Data received
       RXD_VLD  : out std_logic;         -- Flag for valid data;
-
-      -- FIFO signals
-      VME_CLK         : in  std_logic;
-      TX_FIFO_RST     : in  std_logic;
-      TX_FIFO_RDEN    : in  std_logic;
-      TX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-      TX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
-      RX_FIFO_RST     : in  std_logic;
-      RX_FIFO_RDEN    : in  std_logic;
-      RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-      RX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
 
       -- PRBS signals
       PRBS_TYPE       : in  std_logic_vector(2 downto 0);
@@ -744,6 +712,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       FIFO_RST               : in  std_logic_vector(NFEB downto 1);
       FIFO_SEL               : in  std_logic_vector(NFEB downto 1);
       RD_EN_FF               : in  std_logic_vector(NFEB downto 1);
+      TFF_MASK               : in  std_logic_vector(NFEB downto 1);
       WR_EN_FF               : in  std_logic_vector(NFEB downto 1);
       FF_DATA_IN             : in  std_logic_vector(15 downto 0);
       FF_DATA_OUT            : out std_logic_vector(15 downto 0);
@@ -958,7 +927,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal l1acnt_rst, l1acnt_fifo_rst, bxcnt_rst                     : std_logic := '0';
   signal test_otmb_dav, test_alct_dav              : std_logic := '0';
   signal otmb_push_dly_p1, alct_push_dly_p1        : integer range 0 to 64;
-
+  signal datafifo_mask : std_logic;
+  signal data_fifo_we : std_logic_vector (NFEB+2 downto 1);
+  
 -- VME Signals
 
   signal cmd_adrs     : std_logic_vector (15 downto 0);
@@ -1044,7 +1015,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal l1a_otmbdav_gap, l1a_alctdav_gap : std_logic_vector(15 downto 0);
 
   signal alct_dav_cnt, otmb_dav_cnt       : std_logic_vector(15 downto 0);
-  signal gtx1_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
+  signal pc_data_valid_cnt, ddu_eof_cnt : std_logic_vector(15 downto 0);
   signal int_l1a_cnt                      : std_logic_vector(15 downto 0);
   signal otmb_tx_inner                    : std_logic_vector(48 downto 0);
   signal qpll_locked_cnt                  : std_logic_vector(15 downto 0);
@@ -1061,17 +1032,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pc_rx_data                 : std_logic_vector(15 downto 0);
   signal pc_rx_data_valid           : std_logic;
 
-  signal pc_tx_fifo_rst     : std_logic;
-  signal pc_tx_fifo_rden    : std_logic;
-  signal pc_tx_fifo_dout    : std_logic_vector(15 downto 0);
-  signal pc_tx_fifo_wrd_cnt : std_logic_vector(15 downto 0);
-  signal pc_rx_fifo_rst     : std_logic;
-  signal pc_rx_fifo_rden    : std_logic;
-  signal pc_rx_fifo_dout    : std_logic_vector(15 downto 0);
-  signal pc_rx_fifo_wrd_cnt : std_logic_vector(15 downto 0);
-  signal pc_txd_frame       : std_logic_vector(15 downto 0);
+  signal pc_data_frame       : std_logic_vector(15 downto 0);
   signal rom_cnt_out        : std_logic_vector(2 downto 0);
-  signal pc_tx_fifo_wren    : std_logic;
+  signal pc_data_frame_valid    : std_logic;
 
   -- GIGALINK_DDU
   signal gl0_rx_buf_p, gl0_rx_buf_n : std_logic;
@@ -1079,15 +1042,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal ddu_rx_data_valid          : std_logic;
   signal txdiffctrl                 : std_logic_vector(3 downto 0);  -- Controls the TX voltage swing
   signal loopback                   : std_logic_vector(2 downto 0);  -- For internal loopback tests
-
-  signal ddu_tx_fifo_rst     : std_logic;
-  signal ddu_tx_fifo_rden    : std_logic;
-  signal ddu_tx_fifo_dout    : std_logic_vector (15 downto 0);
-  signal ddu_tx_fifo_wrd_cnt : std_logic_vector (15 downto 0);
-  signal ddu_rx_fifo_rst     : std_logic;
-  signal ddu_rx_fifo_rden    : std_logic;
-  signal ddu_rx_fifo_dout    : std_logic_vector (15 downto 0);
-  signal ddu_rx_fifo_wrd_cnt : std_logic_vector (15 downto 0);
 
   -- dmb_receiver
   signal CRC_VALID : std_logic_vector(NFEB downto 1) := (others => '0');
@@ -1129,10 +1083,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal grx1_data       : std_logic_vector(15 downto 0) := "0000000000000000";
   signal grx1_data_valid : std_logic                     := '0';
 
-  signal gtx0_data                : std_logic_vector(15 downto 0);
-  signal gtx0_data_valid, ddu_eof : std_logic;
-  signal gtx1_data                : std_logic_vector(15 downto 0);
-  signal gtx1_data_valid          : std_logic;
+  signal ddu_data                : std_logic_vector(15 downto 0);
+  signal ddu_data_valid, ddu_eof : std_logic;
+  signal pc_data                : std_logic_vector(15 downto 0);
+  signal pc_data_valid          : std_logic;
 
   signal gl1_clk            : std_logic;
   signal gl0_clk, gl0_clk_2 : std_logic;
@@ -1274,15 +1228,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal TFF_RST     : std_logic_vector(NFEB downto 1);
   signal TFF_SEL     : std_logic_vector(NFEB downto 1);
   signal TFF_RDEN    : std_logic_vector(NFEB downto 1);
-
-  signal ddu_data_valid : std_logic;
+  signal TFF_MASK    : std_logic_vector(NFEB downto 1);
 
   signal testctrl_sel : std_logic := '0';
 
   signal eof : std_logic;
-
-  signal ddu_tx_fifo_rst2, ddu_rx_fifo_rst2 : std_logic := '0';
-  signal pc_tx_fifo_rst2, pc_rx_fifo_rst2   : std_logic := '0';
 
 -- BPI Prom signals
 
@@ -1482,11 +1432,8 @@ begin
       tc_alct_dav    => tc_alct_dav,
       tc_otmb_dav    => tc_otmb_dav,
       tc_lct         => tc_lct,
-      ddu_data       => gtx0_data,
-      ddu_data_valid => gtx0_data_valid,
       tc_run         => tc_run,
       ts_out         => ts_out,
-      dduclk         => dduclk,
 
       -- VMECONFREGS outputs
       LCT_L1A_DLY   => LCT_L1A_DLY,
@@ -1501,38 +1448,30 @@ begin
       KILL          => KILL,
       CRATEID       => CRATEID,
 
-      -- ALCT/OTMB FIFO signals
-      alct_fifo_data_in    => alct_fifo_data_in,
-      alct_fifo_data_valid => alct_fifo_data_valid,
-      otmb_fifo_data_in    => otmb_fifo_data_in,
-      otmb_fifo_data_valid => otmb_fifo_data_valid,
-
-      -- PC_TX FIFO signals
-      pc_tx_fifo_rst     => pc_tx_fifo_rst,
-      pc_tx_fifo_rden    => pc_tx_fifo_rden,
-      pc_tx_fifo_dout    => pc_tx_fifo_dout,
-      pc_tx_fifo_wrd_cnt => pc_tx_fifo_wrd_cnt,
-      pc_rx_fifo_rst     => pc_rx_fifo_rst,
-      pc_rx_fifo_rden    => pc_rx_fifo_rden,
-      pc_rx_fifo_dout    => pc_rx_fifo_dout,
-      pc_rx_fifo_wrd_cnt => pc_rx_fifo_wrd_cnt,
-
-      -- DDU TX/RX FIFO signals
-      ddu_tx_fifo_rst     => ddu_tx_fifo_rst,
-      ddu_tx_fifo_rden    => ddu_tx_fifo_rden,
-      ddu_tx_fifo_dout    => ddu_tx_fifo_dout,
-      ddu_tx_fifo_wrd_cnt => ddu_tx_fifo_wrd_cnt,
-      ddu_rx_fifo_rst     => ddu_rx_fifo_rst,
-      ddu_rx_fifo_rden    => ddu_rx_fifo_rden,
-      ddu_rx_fifo_dout    => ddu_rx_fifo_dout,
-      ddu_rx_fifo_wrd_cnt => ddu_rx_fifo_wrd_cnt,
-
       -- TESTFIFOS
       TFF_DOUT    => TFF_DOUT,
       TFF_WRD_CNT => TFF_WRD_CNT,
       TFF_RST     => TFF_RST,
       TFF_SEL     => TFF_SEL,
       TFF_RDEN    => TFF_RDEN,
+      TFF_MASK    => TFF_MASK,
+      
+      dduclk         => dduclk,
+      ddu_data       => ddu_data,
+      ddu_data_valid => ddu_data_valid,
+      ddu_rx_data       => ddu_rx_data,
+      ddu_rx_data_valid => ddu_rx_data_valid,
+      
+      pcclk        => pcclk,
+      pc_data_frame       => pc_data_frame,
+      pc_data_frame_valid => pc_data_frame_valid,
+      pc_rx_data       => pc_rx_data,
+      pc_rx_data_valid => pc_rx_data_valid,
+
+      alct_fifo_data_in    => alct_fifo_data_in,
+      alct_fifo_data_valid => alct_fifo_data_valid,
+      otmb_fifo_data_in    => otmb_fifo_data_in,
+      otmb_fifo_data_valid => otmb_fifo_data_valid,
 
       -- BPI controls
       BPI_RST           => vme_bpi_rst,  -- Resets BPI interface state machines
@@ -1627,10 +1566,10 @@ begin
 
 -- To GigaLinks
 
-      gtx0_data       => gtx0_data,
-      gtx0_data_valid => gtx0_data_valid,
-      gtx1_data       => gtx1_data,
-      gtx1_data_valid => gtx1_data_valid,
+      ddu_data       => ddu_data,
+      ddu_data_valid => ddu_data_valid,
+      pc_data       => pc_data,
+      pc_data_valid => pc_data_valid,
       ddu_eof         => ddu_eof,
 
 -- From/To FIFOs
@@ -1722,9 +1661,6 @@ begin
 
 ---------------------------  Optical tranceivers  ---------------------------
 -----------------------------------------------------------------------------
-  ddu_tx_fifo_rst2 <= ddu_tx_fifo_rst or reset;
-  ddu_rx_fifo_rst2 <= ddu_rx_fifo_rst or reset;
-
   GIGALINK_DDU_PM : gigalink_ddu
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
@@ -1732,8 +1668,8 @@ begin
       RST        => opt_reset,
       USRCLK     => dduclk,
       -- Transmitter signals
-      TXD        => gtx0_data,          -- Data to be transmitted
-      TXD_VLD    => gtx0_data_valid,    -- Flag for valid data;
+      TXD        => ddu_data,          -- Data to be transmitted
+      TXD_VLD    => ddu_data_valid,    -- Flag for valid data;
       TX_DDU_N   => gl0_tx_n,           -- GTX transmit data out - signal
       TX_DDU_P   => gl0_tx_p,           -- GTX transmit data out + signal
       TXDIFFCTRL => txdiffctrl,         -- Controls the TX voltage swing
@@ -1745,17 +1681,6 @@ begin
       RXD      => ddu_rx_data,
       RXD_VLD  => ddu_rx_data_valid,
 
-      -- FIFO signals
-      VME_CLK         => clk2p5,
-      TX_FIFO_RST     => ddu_tx_fifo_rst2,
-      TX_FIFO_RDEN    => ddu_tx_fifo_rden,
-      TX_FIFO_DOUT    => ddu_tx_fifo_dout,
-      TX_FIFO_WRD_CNT => ddu_tx_fifo_wrd_cnt,
-      RX_FIFO_RST     => ddu_rx_fifo_rst2,
-      RX_FIFO_RDEN    => ddu_rx_fifo_rden,
-      RX_FIFO_DOUT    => ddu_rx_fifo_dout,
-      RX_FIFO_WRD_CNT => ddu_rx_fifo_wrd_cnt,
-
       -- DDU PRBS signals
       PRBS_TYPE       => prbs_type,
       PRBS_TX_EN      => ddu_prbs_tx_en,
@@ -1764,17 +1689,14 @@ begin
       PRBS_ERR_CNT    => ddu_prbs_err_cnt
       );
 
-  pc_tx_fifo_rst2 <= pc_tx_fifo_rst or reset;
-  pc_rx_fifo_rst2 <= pc_rx_fifo_rst or reset;
-
   GIGALINK_PC_PM : gigalink_pc
     generic map (SIM_SPEEDUP => IS_SIMULATION)
     port map (
       RST     => opt_reset,
       REFCLK  => gl1_clk,
       -- Transmitter signals
-      TXD     => gtx1_data,             -- Data to be transmitted
-      TXD_VLD => gtx1_data_valid,       -- Flag for valid data;
+      TXD     => pc_data,             -- Data to be transmitted
+      TXD_VLD => pc_data_valid,       -- Flag for valid data;
       TX_ACK  => gl_pc_tx_ack,  -- TX acknowledgement (ethernet header has finished)
       TXD_N   => gl1_tx_n,              -- GTX transmit data out - signal
       TXD_P   => gl1_tx_p,              -- GTX transmit data out + signal
@@ -1790,18 +1712,8 @@ begin
       RXD     => pc_rx_data,
       RXD_VLD => pc_rx_data_valid,
 
-      TX_FIFO_WREN_OUT => pc_tx_fifo_wren,
-      TXD_FRAME_OUT    => pc_txd_frame,
-      -- FIFO signals
-      VME_CLK          => clk2p5,
-      TX_FIFO_RST      => pc_tx_fifo_rst2,
-      TX_FIFO_RDEN     => pc_tx_fifo_rden,
-      TX_FIFO_DOUT     => pc_tx_fifo_dout,
-      TX_FIFO_WRD_CNT  => pc_tx_fifo_wrd_cnt,
-      RX_FIFO_RST      => pc_rx_fifo_rst2,
-      RX_FIFO_RDEN     => pc_rx_fifo_rden,
-      RX_FIFO_DOUT     => pc_rx_fifo_dout,
-      RX_FIFO_WRD_CNT  => pc_rx_fifo_wrd_cnt,
+      TX_FIFO_WREN_OUT => pc_data_frame_valid,
+      TXD_FRAME_OUT    => pc_data_frame,
 
       -- PC PRBS signals
       PRBS_TYPE       => prbs_type,
@@ -1876,6 +1788,7 @@ begin
       FIFO_RST      => TFF_RST,
       FIFO_SEL      => TFF_SEL,
       RD_EN_FF      => TFF_RDEN,
+      TFF_MASK      => TFF_MASK,
       WR_EN_FF      => wr_en_ff,
       FF_DATA_IN    => ff_data_in,
       FF_DATA_OUT   => TFF_DOUT,
@@ -1951,14 +1864,14 @@ begin
         data_out => eofgen_dcfeb_fifo_in(I)
         );
 
-    
+    data_fifo_we(I) <= eofgen_dcfeb_data_valid(I) and datafifo_mask;
     datafifo_dcfeb_pm : datafifo_dcfeb
       port map(
         rst       => l1acnt_fifo_rst,
         wr_clk    => clk160,
         rd_clk    => dduclk,
         din       => eofgen_dcfeb_fifo_in(I),
-        wr_en     => eofgen_dcfeb_data_valid(I),
+        wr_en     => data_fifo_we(I),
         rd_en     => data_fifo_re(I),
         dout      => dcfeb_fifo_out(I),
         full      => dcfeb_fifo_full(I),
@@ -2001,13 +1914,14 @@ begin
                   otmb(16 downto 15) & alct(14 downto 0) &
                   otmb(14 downto 0) when IS_SIMULATION = 0 else otmb_tx_tb;
 
+  data_fifo_we(NFEB+2) <= alct_fifo_data_valid and datafifo_mask;
   datafifo_alct_pm : datafifo_40mhz
     port map(
       rst       => l1acnt_fifo_rst,
       wr_clk    => clk40,
       rd_clk    => dduclk,
       din       => alct_fifo_data_in,
-      wr_en     => alct_fifo_data_valid,
+      wr_en     => data_fifo_we(NFEB+2),
       rd_en     => data_fifo_re(NFEB+2),
       dout      => alct_fifo_data_out,
       full      => alct_fifo_full,
@@ -2015,13 +1929,14 @@ begin
       prog_full => data_fifo_half_full(NFEB+2)
       );
 
+  data_fifo_we(NFEB+1) <= otmb_fifo_data_valid and datafifo_mask;
   datafifo_otmb_pm : datafifo_40mhz
     port map(
       rst       => l1acnt_rst,
       wr_clk    => clk40,
       rd_clk    => dduclk,
       din       => otmb_fifo_data_in,
-      wr_en     => otmb_fifo_data_valid,
+      wr_en     => data_fifo_we(NFEB+1),
       rd_en     => data_fifo_re(NFEB+1),
       dout      => otmb_fifo_data_out,
       full      => otmb_fifo_full,
@@ -2081,7 +1996,11 @@ begin
   otmb_data <= otmb_qq(15 downto 0) when (gen_dcfeb_sel = '0') else
                gen_otmb_data;
 
-  data_fifo_re      <= not data_fifo_re_b;
+  GENFIFORE : for index in 1 to NFEB+2 generate
+  begin
+    data_fifo_re(index)      <= datafifo_mask and not data_fifo_re_b(index);
+  end generate GENFIFORE;
+  
   data_fifo_empty_b <= alct_fifo_empty & otmb_fifo_empty & dcfeb_fifo_empty;
 
   ------------------------ TRIGGERS  -------------------------
@@ -2241,7 +2160,8 @@ begin
   l1acnt_rst <= ccb_l1acnt_rst_q or (clk20 and (l1a_reset_pulse or l1a_reset_pulse_q or
                                                 reset_pulse or reset_pulse_q));
   -- FIFOs require more 3+ clock cycles of both clocks to properly reset
-  L1ARESETPULSE : NPULSE2SAME port map(l1acnt_fifo_rst, clk40, '0', 20, l1acnt_rst);
+  L1ARESETPULSE : RESET_FIFO generic map(10)
+    port map(l1acnt_fifo_rst, datafifo_mask, clk40, l1acnt_rst);
   bxcnt_rst <= not ccb_bxrst_b_q;
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
@@ -2562,7 +2482,7 @@ begin
   ALCTDAV_CNT : COUNT_EDGES port map(alct_dav_cnt, clk40, reset, int_alct_dav);
   OTMBDAV_CNT : COUNT_EDGES port map(otmb_dav_cnt, clk40, reset, int_otmb_dav);
   DDUEOF_CNT  : COUNT_EDGES port map(ddu_eof_cnt, clk40, reset, ddu_eof);
-  PCOF_CNT    : COUNT_EDGES port map(gtx1_data_valid_cnt, pcclk, reset, gtx1_data_valid);
+  PCOF_CNT    : COUNT_EDGES port map(pc_data_valid_cnt, pcclk, reset, pc_data_valid);
   LOCKED_CNT  : COUNT_EDGES port map(qpll_locked_cnt, dduclk, reset, qpll_locked);
 
   NFEB_CNT : for dev in 1 to NFEB generate
@@ -2684,7 +2604,7 @@ begin
 
   odmb_status_pro : process (odmb_status, odmb_ctrl_reg, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
                              l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
-                             data_fifo_re_cnt, gtx1_data_valid_cnt, ddu_eof_cnt, goodcrc_cnt,
+                             data_fifo_re_cnt, pc_data_valid_cnt, ddu_eof_cnt, goodcrc_cnt,
                              alct_dav_cnt, otmb_dav_cnt, cafifo_rd_addr, cafifo_wr_addr,
                              cafifo_prev_next_l1a_match, cafifo_prev_next_l1a, cafifo_debug, control_debug)
   begin
@@ -2781,7 +2701,7 @@ begin
       when x"49" => odmb_data <= into_cafifo_dav_cnt(9);
 
       when x"4A" => odmb_data <= ddu_eof_cnt;  -- Number of packets sent to DDU
-      when x"4B" => odmb_data <= gtx1_data_valid_cnt;  -- Number of packets sent to PC
+      when x"4B" => odmb_data <= pc_data_valid_cnt;  -- Number of packets sent to PC
       --when x"4C" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
       when x"4D" => odmb_data <= "0000000" & cafifo_l1a_match_out;
       when x"4E" => odmb_data <= "0000000" & cafifo_l1a_dav;
@@ -2859,14 +2779,14 @@ begin
   test_point(24) <= int_l1a_match(6);
   test_point(26) <= int_l1a_match(7);
   test_point(27) <= int_l1a;
-  test_point(28) <= gtx0_data_valid;
+  test_point(28) <= ddu_data_valid;
   test_point(29) <= int_otmb_dav;
   test_point(30) <= int_alct_dav;
 
   --test_point(29) <= cafifo_l1a_dav(1);
   --test_point(30) <= cafifo_l1a_dav(2);
-  --test_point(31) <= gtx0_data_valid;
-  --test_point(32) <= gtx1_data_valid;
+  --test_point(31) <= ddu_data_valid;
+  --test_point(32) <= pc_data_valid;
   --test_point(33) <= rawlct(1);
   --test_point(34) <= rawlct(2);
   --test_point(35) <= rawlct(3);
@@ -2883,7 +2803,7 @@ begin
   test_point(49) <= dcfeb_tms_out;
   test_point(50) <= '1';
 
-  tp_selector : process (tp_sel_reg, gtx0_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
+  tp_selector : process (tp_sel_reg, ddu_data_valid, cafifo_l1a_dav, int_l1a_match, dcfeb_data_valid,
                          int_otmb_dav, dcfeb_data, otmb_fifo_data_in, otmb_fifo_data_valid, int_alct_dav,
                          alct_fifo_data_in,
                          alct_fifo_data_valid, ext_dcfeb_l1a_cnt7, dcfeb_l1a_dav7, odmb_tdo,
@@ -2993,15 +2913,15 @@ begin
 
       when x"0011" =>
         test_point(46 downto 31) <= (
-          tp_1   => gtx1_data_valid,
-          tp_2   => pc_tx_fifo_wren,
-          tp_3   => pc_txd_frame(0),
-          tp_4   => pc_txd_frame(1),
+          tp_1   => pc_data_valid,
+          tp_2   => pc_data_frame_valid,
+          tp_3   => pc_data_frame(0),
+          tp_4   => pc_data_frame(1),
           others => '0');
 
       when x"0012" =>
         test_point(46 downto 31) <= (
-          tp_1   => gtx1_data_valid,
+          tp_1   => pc_data_valid,
           tp_2   => gl_pc_tx_ack,
           tp_3   => rom_cnt_out(0),
           tp_4   => rom_cnt_out(1),

@@ -709,7 +709,7 @@ begin
   orx_p(7) <= gl1_tx_p;                 -- Test of the DCFEB RX
   orx_n(7) <= gl1_tx_n;                 -- Test of the DCFEB RX
 
-  rst <= '0', '1' after 200 ns, '0' after 13000 ns;
+  rst <= '0', '1' after 200 ns, '0' after 3000 ns;
 
   rstn <= not rst;
 

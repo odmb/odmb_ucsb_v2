@@ -62,6 +62,7 @@ module dmb_receiver #(
     output [15:0]     PRBS_ERR_CNT_OUT,
     // to here.
     input [7:1]       RD_EN_FF,
+    input [7:1]       TFF_MASK,
     input [7:1]       WR_EN_FF,
     input [15:0]      FF_DATA_IN,
     output reg [15:0] FF_DATA_OUT,
@@ -1540,13 +1541,13 @@ module dmb_receiver #(
 	     din_ff[5] <= wdata_ff[5];
 	     din_ff[6] <= wdata_ff[6];
 	     din_ff[7] <= wdata_ff[7];
-	     wrt_en_ff[1] <= wd_vld_ff[1];
-	     wrt_en_ff[2] <= wd_vld_ff[2];
-	     wrt_en_ff[3] <= wd_vld_ff[3];
-	     wrt_en_ff[4] <= wd_vld_ff[4];
-	     wrt_en_ff[5] <= wd_vld_ff[5];
-	     wrt_en_ff[6] <= wd_vld_ff[6];
-	     wrt_en_ff[7] <= wd_vld_ff[7];
+	     wrt_en_ff[1] <= wd_vld_ff[1] & TFF_MASK[1];
+	     wrt_en_ff[2] <= wd_vld_ff[2] & TFF_MASK[2];
+	     wrt_en_ff[3] <= wd_vld_ff[3] & TFF_MASK[3];
+	     wrt_en_ff[4] <= wd_vld_ff[4] & TFF_MASK[4];
+	     wrt_en_ff[5] <= wd_vld_ff[5] & TFF_MASK[5];
+	     wrt_en_ff[6] <= wd_vld_ff[6] & TFF_MASK[6];
+	     wrt_en_ff[7] <= wd_vld_ff[7] & TFF_MASK[7];
 	  end
      end
    

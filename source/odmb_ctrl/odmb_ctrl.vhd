@@ -54,10 +54,10 @@ entity ODMB_CTRL is
 
 -- From GigaLinks
 
-    gtx0_data       : out std_logic_vector(15 downto 0);
-    gtx0_data_valid : out std_logic;
-    gtx1_data       : out std_logic_vector(15 downto 0);
-    gtx1_data_valid : out std_logic;
+    ddu_data       : out std_logic_vector(15 downto 0);
+    ddu_data_valid : out std_logic;
+    pc_data       : out std_logic_vector(15 downto 0);
+    pc_data_valid : out std_logic;
     ddu_eof         : out std_logic;
 
 -- From/To Data FIFOs
@@ -544,12 +544,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   signal control_debug_full           : std_logic_vector(143 downto 0);
   signal cafifo_pop           : std_logic := '0';
   signal eof                  : std_logic := '0';
-  signal ddu_data             : std_logic_vector(15 downto 0);
+  signal ddu_data_inner             : std_logic_vector(15 downto 0);
   signal ddu_data_valid_inner : std_logic := 'L';
-
--- PCFIFO outputs
-  signal pc_data       : std_logic_vector(15 downto 0);
-  signal pc_data_valid : std_logic;
 
 -- RANDOMTRG outputs
   signal rndmgtrg, rndmpls, selran : std_logic;
@@ -729,7 +725,7 @@ begin
       RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
 
 -- to GigaBit Link
-      DOUT => ddu_data,
+      DOUT => ddu_data_inner,
       DAV  => ddu_data_valid_inner,
 
 -- to Data FIFOs
@@ -783,12 +779,12 @@ begin
       tx_ack => gl_pc_tx_ack,
       --tx_ack => logich,
 
+      data_in => ddu_data_inner,
       dv_in   => ddu_data_valid_inner,
       ld_in   => eof,
-      data_in => ddu_data,
 
-      dv_out   => pc_data_valid,
-      data_out => pc_data
+      dv_out   => PC_DATA_VALID,
+      data_out => PC_DATA
       );
 
   DDUEOF_PULSE : PULSE2SLOW port map(ddu_eof, clk40, dduclk, RESET, eof);
@@ -800,7 +796,7 @@ begin
       CLK    => dduclk,
       CLKCMS => clk40,
 
-      DOUT => ddu_data,
+      DOUT => ddu_data_inner,
       DAV  => ddu_data_valid_inner,
 
       CRC_ERROR => open
@@ -825,54 +821,8 @@ begin
       );
 
 
-  --CALTRIGCON_PM : CALTRIGCON
-  --  generic map (NFEB => NFEB)
-  --  port map (
-  --    CLKIN  => clk40,
-  --    CLKSYN => plsinjen,
-  --    RST    => reset,
-
-  --    DIN   => tdi,
-  --    DRCK  => drck2,
-  --    SEL2  => sel2,
-  --    SHIFT => shift2,
-  --    FLOAD => instr(6),
-  --    FCYC  => instr(7),
-  --    FCYCM => instr(8),
-
-  --    CCBPED => ccbped,
-
-  --    LCTOUT  => prelct,
-  --    GTRGOUT => pregtrg
-  --    );
-
   prelct  <= '0';
   pregtrg <= '0';
-
-  --RANDOMTRG_PM : RANDOMTRG
-  --  generic map (NFEB => NFEB)
-  --  port map(
-  --    CLK => clk40,
-  --    RST => reset,
-
-  --    DIN    => tdi,
-  --    DRCK   => drck2,
-  --    SEL2   => sel2,
-  --    SHIFT  => shift2,
-  --    UPDATE => update2,
-
-  --    FLOAD   => instr(19),
-  --    FTSTART => instr(20),
-  --    FBURST  => instr(22),
-
-  --    ENL1RLS => sw4_enl1rls,
-
-  --    PREL1RLS => ccb_l1rls,
-  --    SELRAN   => selran,
-  --    GTRGOUT  => rndmgtrg,
-  --    LCTOUT   => rndmlct,
-  --    PULSE    => rndmpls
-  --    );
 
   -- Assigned here until RANDOMTRG actually does something
   ccb_l1rls <= '0';
@@ -882,32 +832,14 @@ begin
   rndmpls   <= '0';
 
 
-  --TRGSEL_PM : TRGSEL
-  --  port map(
-  --    RST => reset,
-
-  --    BTDI   => tdi,
-  --    DRCK   => drck2,
-  --    SEL2   => sel2,
-  --    SHIFT  => shift2,
-  --    UPDATE => update2,
-
-  --    FLOAD => instr(37),
-
-  --    TDO    => open,
-  --    JTRGEN => jtag_trgen
-  --    );
-
   jtag_trgen <= (others => '0');
 
   daqmbid(11 downto 4) <= crateid;
   daqmbid(3 downto 0)  <= not ga(4 downto 1);  -- GA0 not included so that this is ODMB counter
 
 
-  gtx0_data       <= ddu_data;
-  gtx0_data_valid <= ddu_data_valid_inner;
-  gtx1_data       <= pc_data;
-  gtx1_data_valid <= pc_data_valid;
+  DDU_DATA       <= ddu_data_inner;
+  DDU_DATA_VALID <= ddu_data_valid_inner;
 
   cafifo_l1a_match_in  <= cafifo_l1a_match_in_inner(NFEB+2 downto 1);
   cafifo_l1a_match_out <= cafifo_l1a_match_out_inner;

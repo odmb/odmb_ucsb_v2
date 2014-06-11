@@ -40,18 +40,6 @@ entity GIGALINK_PC is
     TXD_FRAME_OUT    : out std_logic_vector(15 downto 0);
     ROM_CNT_OUT      : out std_logic_vector(2 downto 0);
 
-
-    -- FIFO signals
-    VME_CLK         : in  std_logic;
-    TX_FIFO_RST     : in  std_logic;
-    TX_FIFO_RDEN    : in  std_logic;
-    TX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-    TX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
-    RX_FIFO_RST     : in  std_logic;
-    RX_FIFO_RDEN    : in  std_logic;
-    RX_FIFO_DOUT    : out std_logic_vector(15 downto 0);
-    RX_FIFO_WRD_CNT : out std_logic_vector(15 downto 0);
-
     -- PRBS signals
     PRBS_TYPE       : in  std_logic_vector(2 downto 0);
     PRBS_TX_EN      : in  std_logic;
@@ -220,17 +208,6 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
       );
   end component;
 
-  component PULSE_EDGE is
-    port (
-      DOUT   : out std_logic;
-      PULSE1 : out std_logic;
-      CLK    : in  std_logic;
-      RST    : in  std_logic;
-      NPULSE : in  integer;
-      DIN    : in  std_logic
-      );
-  end component;
-
   component MGT_USRCLK_SOURCE_MMCM
     generic
       (
@@ -267,19 +244,6 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
       TXD_ACK   : out std_logic;                     -- TX acknowledgement
       TXD_ISK   : out std_logic_vector(1 downto 0);  -- Data is K character
       TXD_FRAME : out std_logic_vector(15 downto 0)  -- Data to be transmitted
-      );
-  end component;
-
-  component FIFOWORDS is
-    generic (WIDTH : integer := 16);
-    port (
-      RST   : in  std_logic;
-      WRCLK : in  std_logic;
-      WREN  : in  std_logic;
-      FULL  : in  std_logic;
-      RDCLK : in  std_logic;
-      RDEN  : in  std_logic;
-      COUNT : out std_logic_vector(WIDTH-1 downto 0)
       );
   end component;
 
@@ -341,14 +305,6 @@ architecture GIGALINK_PC_ARCH of GIGALINK_PC is
   -- Data signals
   signal txd_frame_isk : std_logic_vector(1 downto 0);
   signal txd_frame     : std_logic_vector(15 downto 0);
-
-  -- FIFO signals
-  signal tx_fifo_wren                   : std_logic := '0';
-  signal tx_fifo_empty, tx_fifo_full    : std_logic := '0';
-  signal tx_fifo_rderr, tx_fifo_wrerr   : std_logic := '0';
-  signal rx_fifo_empty, rx_fifo_full    : std_logic := '0';
-  signal rx_fifo_rderr, rx_fifo_wrerr   : std_logic := '0';
-  signal rx_fifo_rdcout, rx_fifo_wrcout : std_logic_vector(10 downto 0);
 
   signal rxbyterealign_pulse : std_logic := '0';
   signal rxdisperr_pulse     : std_logic := '0';
@@ -590,70 +546,9 @@ begin
       MMCM_RESET_IN   => txoutclk_mmcm0_reset_i
       );
 
-  ----------------------------- TX and RX FIFOs ----------------------------
-
-
-  tx_fifo_wren     <= '1' when txd_frame /= IDLE else '0';
-  TX_FIFO_WREN_OUT <= tx_fifo_wren;
+  -- For the PC TX FIFO
+  TX_FIFO_WREN_OUT <= '1' when txd_frame /= IDLE else '0';
   TXD_FRAME_OUT    <= txd_frame;
-
-  TX_FIFO_CASCADE : FIFO_CASCADE
-    generic map (
-      NFIFO        => 4,                -- number of FIFOs in cascade
-      DATA_WIDTH   => 16,               -- With of data packets
-      FWFT         => true,             -- First word fall through
-      WR_FASTER_RD => true)  -- Set int_clk to WRCLK if faster than RDCLK
-
-    port map(
-      DO        => TX_FIFO_DOUT,        -- Output data
-      EMPTY     => tx_fifo_empty,       -- Output empty
-      FULL      => tx_fifo_full,        -- Output full
-      HALF_FULL => open,
-
-      DI    => txd_frame,               -- Input data
-      RDCLK => VME_CLK,                 -- Input read clock
-      RDEN  => TX_FIFO_RDEN,            -- Input read enable
-      RST   => tx_fifo_rst,             -- Input reset
-      WRCLK => usr_clk,                 -- Input write clock
-      WREN  => tx_fifo_wren             -- Input write enable
-      );
-
-  TX_WRD_COUNT : FIFOWORDS
-    port map(RST   => tx_fifo_rst, WRCLK => usr_clk, WREN => tx_fifo_wren, FULL => tx_fifo_full,
-             RDCLK => VME_CLK, RDEN => TX_FIFO_RDEN, COUNT => TX_FIFO_WRD_CNT);
-
-
-  RX_FIFO : FIFO_DUALCLOCK_MACRO
-    generic map (
-      DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
-      ALMOST_FULL_OFFSET      => X"0080",    -- Sets almost full threshold
-      ALMOST_EMPTY_OFFSET     => X"0080",    -- Sets the almost empty threshold
-      DATA_WIDTH              => 16,  -- Valid values are 1-72 (37-72 only valid when FIFO_SIZE="36Kb")
-      FIFO_SIZE               => "36Kb",     -- Target BRAM, "18Kb" or "36Kb" 
-      FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
-
-    port map (
-      RST         => rx_fifo_rst,       -- Input reset
-      ALMOSTEMPTY => open,              -- Output almost empty 
-      ALMOSTFULL  => open,              -- Output almost full
-      EMPTY       => rx_fifo_empty,     -- Output empty
-      FULL        => rx_fifo_full,      -- Output full
-      RDCOUNT     => rx_fifo_rdcout,    -- Output read count
-      RDERR       => rx_fifo_rderr,     -- Output read error
-      WRCOUNT     => rx_fifo_wrcout,    -- Output write count
-      WRERR       => rx_fifo_wrerr,     -- Output write error
-      DO          => RX_FIFO_DOUT,      -- Output data
-      RDCLK       => VME_CLK,           -- Input read clock
-      RDEN        => RX_FIFO_RDEN,      -- Input read enable
-      DI          => rxd_inner,         -- Input data
-      WRCLK       => usr_clk,           -- Input write clock
-      WREN        => rxd_vld_inner      -- Input write enable
-      );
-
-  RX_WRD_COUNT : FIFOWORDS
-    port map(RST   => rx_fifo_rst, WRCLK => usr_clk, WREN => rxd_vld_inner,
-             FULL  => rx_fifo_full, RDCLK => VME_CLK, RDEN => RX_FIFO_RDEN,
-             COUNT => RX_FIFO_WRD_CNT);
 
   prbs_rst_cnt   <= prbs_length+prbs_rst_cycles;
   prbs_en_cnt    <= prbs_length*to_integer(unsigned(prbs_en_tst_cnt))+prbs_rst_cnt;

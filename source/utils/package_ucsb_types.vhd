@@ -8,6 +8,19 @@ package ucsb_types is
   
   type cfg_regs_array is array (0 to 15) of std_logic_vector(15 downto 0);
 
+  component RESET_FIFO is
+    generic (
+      NCLOCKS : integer range 1 to 100 := 50
+      );
+    port (
+      FIFO_RST  : out std_logic;
+      FIFO_MASK : out std_logic;
+
+      CLK    : in std_logic;
+      IN_RST : in std_logic
+      );
+  end component;
+
   component FDVEC is
     generic (
       VEC_MIN : integer := 0;
@@ -157,7 +170,7 @@ package ucsb_types is
       );
   end component;
 
-   component COUNT_EDGES is
+  component COUNT_EDGES is
     generic (
       WIDTH : integer := 16
       );
@@ -166,11 +179,11 @@ package ucsb_types is
 
       CLK : in std_logic;
       RST : in std_logic;
-      DIN  : in std_logic
+      DIN : in std_logic
       );
   end component;
 
- 
+  
 
 end ucsb_types;
 

@@ -48,7 +48,7 @@ architecture fifo_cascade_arch of FIFO_CASCADE is
   type fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
   signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
   signal int_clk                  : std_logic := '0';
-  signal rst_dly                  : std_logic := '0';
+  signal rst_dly, fifo_mask                  : std_logic := '0';
 
 begin
 
@@ -59,14 +59,13 @@ begin
 
   -- this is actually the input FIFO
   fifo_wrck(NFIFO) <= WRCLK;
-  fifo_wren(NFIFO) <= WREN;
+  fifo_wren(NFIFO) <= fifo_mask and WREN;
   fifo_in(NFIFO)   <= DI;
   fifo_rdck(NFIFO) <= int_clk;
   
   -- RDEN has to stay low 4 cc before and during RST being high
-  DS_RST : DELAY_SIGNAL generic map(5) port map(rst_dly, RDCLK, 5, RST);
-  fifo_rden(NFIFO) <= '0' when (RST = '1' or rst_dly = '1') else
-                      not (fifo_empty(NFIFO) or fifo_full(NFIFO-1));
+  DS_RST : RESET_FIFO generic map(100) port map(rst_dly, fifo_mask, int_clk, RST);
+  fifo_rden(NFIFO) <= fifo_mask and (not (fifo_empty(NFIFO) or fifo_full(NFIFO-1)));
 
 
   FIFO_M_NFIFO : FIFO_DUALCLOCK_MACRO
@@ -99,11 +98,10 @@ begin
   GEN_FIFO_M : for I in NFIFO-1 downto 2 generate
   begin
 
-    fifo_wren(I) <= not (fifo_empty(I+1) or fifo_full(I));
+    fifo_wren(I) <= fifo_mask and (not (fifo_empty(I+1) or fifo_full(I)));
     fifo_wrck(I) <= int_clk;
     fifo_in(I)   <= fifo_out(I+1);
-    fifo_rden(I) <= '0' when (RST = '1' or rst_dly = '1') else
-                    not (fifo_empty(I) or fifo_full(I-1));
+    fifo_rden(I) <= fifo_mask and (not (fifo_empty(I) or fifo_full(I-1)));
     fifo_rdck(I) <= int_clk;
 
     FIFO_MOD : FIFO_DUALCLOCK_MACRO
@@ -135,10 +133,10 @@ begin
   end generate GEN_FIFO_M;
 
   -- this is actually the output FIFO
-  fifo_wren(1) <= not (fifo_empty(2) or fifo_full(1));
+  fifo_wren(1) <= fifo_mask and (not (fifo_empty(2) or fifo_full(1)));
   fifo_wrck(1) <= int_clk;
   fifo_in(1)   <= fifo_out(2);
-  fifo_rden(1) <= RDEN;
+  fifo_rden(1) <= fifo_mask and RDEN;
   fifo_rdck(1) <= RDCLK;
 
   FIFO_M_1 : FIFO_DUALCLOCK_MACRO
