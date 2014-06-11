@@ -215,7 +215,7 @@ begin  --Architecture
   PULSE_BPI_RE    : PULSE_EDGE port map(BPI_RE, open, CLK, RST, 1, q_r_rbk_fifo_b);
 
   start_rst        <= SEND_BPI_RST or rst_cfg_ul_init or rst_const_ul_init;
-  PULSE_BPI_RST : PULSE_EDGE port map(BPI_RST_INNER, open, CLK, RST, 10, start_rst);
+  PULSE_BPI_RST : NPULSE2FAST port map(BPI_RST_INNER, CLK, '0', 5, start_rst);
   start_w_cmd_fifo <= '1' when (w_cmd_fifo = '1' and STROBE = '1') else '0';
   PULSE_BPI_WE  : PULSE_EDGE port map(BPI_WE, open, CLK, RST, 1, start_w_cmd_fifo);
 

@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.7
-# Date: Fri May 30 10:14:58 2014
+# Date: Tue Jun 10 08:46:17 2014
 #
 ##############################################################
 #
@@ -24,13 +24,13 @@ SET createndf = false
 SET designentry = VHDL
 SET device = xc6vlx130t
 SET devicefamily = virtex6
-SET flowvendor = Other
+SET flowvendor = Foundation_ISE
 SET formalverification = false
 SET foundationsym = false
 SET implementationfiletype = Ngc
 SET package = ff1156
 SET removerpms = false
-SET simulationfiles = Behavioral
+SET simulationfiles = Structural
 SET speedgrade = -1
 SET verilogsim = false
 SET vhdlsim = true
@@ -210,4 +210,4 @@ CSET wuser_width=1
 MISC pkg_timestamp=2012-11-19T12:39:56Z
 # END Extra information
 GENERATE
-# CRC: 71132b46
+# CRC: c2986441

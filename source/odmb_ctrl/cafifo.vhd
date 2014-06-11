@@ -27,7 +27,6 @@ entity cafifo is
     CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
     clk                         : in    std_logic;
     dduclk                      : in    std_logic;
-    rst                         : in    std_logic;
     l1acnt_rst                  : in    std_logic;
     bxcnt_rst                   : in    std_logic;
 
@@ -134,7 +133,8 @@ architecture cafifo_architecture of cafifo is
 
   type fifo_data_array_type is array (NFEB+2 downto 1) of std_logic_vector(23 downto 0);
   signal l1acnt_dav_fifo_in, l1acnt_dav_fifo_out : fifo_data_array_type;
-
+  signal l1acnt_fifo_rst : std_logic := '0';
+  
   constant logich                                                         : std_logic := '1';
   signal bx_cnt_clr, bx_cnt_a_tc, bx_cnt_b_tc, bx_cnt_a_ceo, bx_cnt_b_ceo : std_logic;
   signal bx_cnt_out, bx_cnt_inner                                         : std_logic_vector(15 downto 0);
@@ -204,19 +204,19 @@ begin
   GEN_L1AM_REG : for dev in 1 to NFEB+2 generate
     FDL1AMD       : FD port map(l1a_match_in_reg_d(dev), CLK, l1a_match_in(dev));
     FDL1AM        : FD port map(l1a_match_in_reg(dev), CLK, l1a_match_in_reg_d(dev));
-    CF_L1AM_FD    : FDC port map(current_l1a_match_d(dev), clk, RST, current_l1a_match(dev));
-    CF_L1AM_FDD    : FDC port map(current_l1a_match_dd(dev), clk, RST, current_l1a_match_d(dev));
-    CF_L1AM_CROSS : CROSSCLOCK port map(CAFIFO_L1A_MATCH(dev), dduclk, clk, RST, current_l1a_match_dd(dev));
-    CF_DAV_CROSS  : CROSSCLOCK port map(CAFIFO_L1A_DAV(dev), dduclk, clk, RST, current_l1a_dav(dev));
-    CF_LOST_CROSS : CROSSCLOCK port map(CAFIFO_LOST_PCKT(dev), dduclk, clk, RST, current_lost_pckt(dev));
+    CF_L1AM_FD    : FDC port map(current_l1a_match_d(dev), clk, L1ACNT_RST, current_l1a_match(dev));
+    CF_L1AM_FDD    : FDC port map(current_l1a_match_dd(dev), clk, L1ACNT_RST, current_l1a_match_d(dev));
+    CF_L1AM_CROSS : CROSSCLOCK port map(CAFIFO_L1A_MATCH(dev), dduclk, clk, L1ACNT_RST, current_l1a_match_dd(dev));
+    CF_DAV_CROSS  : CROSSCLOCK port map(CAFIFO_L1A_DAV(dev), dduclk, clk, L1ACNT_RST, current_l1a_dav(dev));
+    CF_LOST_CROSS : CROSSCLOCK port map(CAFIFO_LOST_PCKT(dev), dduclk, clk, L1ACNT_RST, current_lost_pckt(dev));
   end generate GEN_L1AM_REG;
   GEN_BX_REG : for dev in 0 to 11 generate
     FDL1AMD     : FD port map(bx_cnt_out_reg_d(dev), CLK, bx_cnt_out(dev));
     FDL1AM      : FD port map(bx_cnt_out_reg(dev), CLK, bx_cnt_out_reg_d(dev));
-    CF_BX_CROSS : CROSSCLOCK port map(CAFIFO_BX_CNT(dev), dduclk, clk, RST, current_bx_cnt(dev));
+    CF_BX_CROSS : CROSSCLOCK port map(CAFIFO_BX_CNT(dev), dduclk, clk, L1ACNT_RST, current_bx_cnt(dev));
   end generate GEN_BX_REG;
   GEN_L1A_REG : for dev in 0 to 23 generate
-    CF_L1A_CROSS : CROSSCLOCK port map(CAFIFO_L1A_CNT(dev), dduclk, clk, RST, current_l1a_cnt(dev));
+    CF_L1A_CROSS : CROSSCLOCK port map(CAFIFO_L1A_CNT(dev), dduclk, clk, L1ACNT_RST, current_l1a_cnt(dev));
   end generate GEN_L1A_REG;
 
   current_l1a_match <= l1a_match(rd_addr_out);
@@ -226,9 +226,9 @@ begin
   current_l1a_dav   <= l1a_dav(rd_addr_out);
   current_lost_pckt <= lost_pckt(rd_addr_out);
 
-  CF_LONE_FD    : FDC port map(current_lone_d, clk, RST, current_lone);
-  CF_LONE_FDD    : FDC port map(current_lone_dd, clk, RST, current_lone_d);
-  CF_LONE_CROSS : CROSSCLOCK port map(CAFIFO_LONE, dduclk, clk, RST, current_lone_dd);
+  CF_LONE_FD    : FDC port map(current_lone_d, clk, L1ACNT_RST, current_lone);
+  CF_LONE_FDD    : FDC port map(current_lone_dd, clk, L1ACNT_RST, current_lone_d);
+  CF_LONE_CROSS : CROSSCLOCK port map(CAFIFO_LONE, dduclk, clk, L1ACNT_RST, current_lone_dd);
 
 -------------------- L1A Counter        --------------------
 
@@ -245,9 +245,9 @@ begin
 
 ---------------------- Memory           ----------------------
 
-  l1a_cnt_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_cnt_out)
+  l1a_cnt_fifo : process (cafifo_wren, wr_addr_out, l1acnt_rst, clk, l1a_cnt_out)
   begin
-    if (rst = '1') then
+    if (l1acnt_rst = '1') then
       for index in 0 to CAFIFO_SIZE-1 loop
         l1a_cnt(index) <= (others => '1');
       end loop;
@@ -276,9 +276,9 @@ begin
   end process;
 
 
-  l1a_match_fifo : process (cafifo_wren, wr_addr_out, rst, clk, l1a_match_in_reg)
+  l1a_match_fifo : process (cafifo_wren, wr_addr_out, l1acnt_rst, clk, l1a_match_in_reg)
   begin
-    if rst = '1' then
+    if l1acnt_rst = '1' then
       for index in 0 to CAFIFO_SIZE-1 loop
         l1a_match(index) <= (others => '0');
       end loop;
@@ -293,9 +293,9 @@ begin
   end process;
 
 
-  lone_fifo : process (cafifo_wren, wr_addr_out, rst, clk, lone_in_reg)
+  lone_fifo : process (cafifo_wren, wr_addr_out, l1acnt_rst, clk, lone_in_reg)
   begin
-    if rst = '1' then
+    if l1acnt_rst = '1' then
       for index in 0 to CAFIFO_SIZE-1 loop
         lone(index) <= '0';
       end loop;
@@ -312,6 +312,7 @@ begin
 
 --------------------------- GENERATE DAVS and LOSTS  -------------------------------
 
+  L1ARESETPULSE : NPULSE2SAME port map(l1acnt_fifo_rst, clk, '0', 5, l1acnt_rst);
   GEN_L1ACNT_DAV : for dev in 1 to NFEB+2 generate
     l1acnt_dav_fifo_wr_en(dev) <= l1a_match_in_reg(dev);
     l1acnt_dav_fifo_in(dev)    <= l1a_cnt_out;
@@ -337,7 +338,7 @@ begin
         WRERR       => open,                         -- Output write error
         WRCLK       => clk,                          -- Input clock
         RDCLK       => clk,                          -- Input clock
-        RST         => rst,                          -- Input reset
+        RST         => l1acnt_fifo_rst,              -- Input reset
         WREN        => l1acnt_dav_fifo_wr_en(dev),   -- Input write enable
         DI          => l1acnt_dav_fifo_in(dev),      -- Input data
         RDEN        => l1acnt_dav_fifo_rd_en(dev),   -- Input read enable
@@ -345,11 +346,11 @@ begin
         );
   end generate GEN_L1ACNT_DAV;
 
-  DAV_LOST_PRO : process(RST, CLK, cafifo_rden, rd_addr_out, l1a_dav_en, lost_pckt_en)
+  DAV_LOST_PRO : process(L1ACNT_RST, CLK, cafifo_rden, rd_addr_out, l1a_dav_en, lost_pckt_en)
   begin
     for dev in 1 to NFEB+2 loop
       for index in 0 to CAFIFO_SIZE-1 loop
-        if (rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) then
+        if (l1acnt_rst = '1' or (cafifo_rden = '1' and index = rd_addr_out)) then
           l1a_dav(index)(dev)   <= '0';
           lost_pckt(index)(dev) <= '0';
         elsif rising_edge(CLK) then
@@ -366,11 +367,11 @@ begin
 
 
   -- Timeouts handled by this FSM
-  timeout_fsm_regs : process (timeout_next_state, RST, CLK, timeout_cnt_en,
+  timeout_fsm_regs : process (timeout_next_state, L1ACNT_RST, CLK, timeout_cnt_en,
                               timeout_cnt_rst, wait_cnt_en, wait_cnt_rst)
   begin
     for dev in 1 to NFEB+2 loop
-      if (RST = '1') then
+      if (L1ACNT_RST = '1') then
         timeout_cnt(dev)           <= 0;
         timeout_current_state(dev) <= IDLE;
         wait_cnt(dev)              <= 0;
@@ -451,12 +452,12 @@ begin
 
 -- Address Counters
 
-  FD_WREN : FDC port map(cafifo_wren_q, CLK, RST, cafifo_wren);
-  FD_RDEN : FDC port map(cafifo_rden_q, CLK, RST,cafifo_rden );
+  FD_WREN : FDC port map(cafifo_wren_q, CLK, L1ACNT_RST, cafifo_wren);
+  FD_RDEN : FDC port map(cafifo_rden_q, CLK, L1ACNT_RST,cafifo_rden );
 
-  addr_counter : process (clk, wr_addr_en, rd_addr_en, rst)
+  addr_counter : process (clk, wr_addr_en, rd_addr_en, l1acnt_rst)
   begin
-    if (rst = '1') then
+    if (l1acnt_rst = '1') then
       rd_addr_out <= 0;
       wr_addr_out <= 0;
     elsif (rising_edge(clk)) then
@@ -478,9 +479,9 @@ begin
   end process;
 
 -- FSM
-  fsm_regs : process (next_state, rst, clk)
+  fsm_regs : process (next_state, l1acnt_rst, clk)
   begin
-    if (rst = '1') then
+    if (l1acnt_rst = '1') then
       current_state <= FIFO_EMPTY;
     elsif rising_edge(clk) then
       current_state <= next_state;
@@ -623,7 +624,7 @@ begin
   -- Generate BX_CNT (page 5 TRGFIFO)
   BX_CNT_CLR              <= BC0 or BXRST or BX_CNT_RST;
   BX_CNT_A : CB16CE port map(BX_CNT_A_CEO, BX_CNT_INNER, BX_CNT_A_TC, CLK, LOGICH, BX_CNT_CLR);
-  BX_CNT_B : CB4CE port map(BX_CNT_B_CEO, BX_CNT_OUT(12), BX_CNT_OUT(13), BX_CNT_OUT(14), BX_CNT_OUT(15), BX_CNT_B_TC, CLK, LOGICH, RST);
+  BX_CNT_B : CB4CE port map(BX_CNT_B_CEO, BX_CNT_OUT(12), BX_CNT_OUT(13), BX_CNT_OUT(14), BX_CNT_OUT(15), BX_CNT_B_TC, CLK, LOGICH, L1ACNT_RST);
   BX_CNT_OUT(11 downto 0) <= BX_CNT_INNER(11 downto 0);
 
 -- Generate BX_ORBIT (3563 bunch crossings) / Generate BX_CNT_RST (page 5)

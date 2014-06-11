@@ -39,13 +39,13 @@ architecture prom_architecture of PROM is
 
 -- signal elec_sig : std_logic_vector(15 downto 0) := "1100111011001010"; -- 0xceca
 
-  signal mem_out : std_logic_vector(15 downto 0);
+  signal mem_out : std_logic_vector(15 downto 0) := (others => '0');
 
-  signal read_status_reg : std_logic_vector(NBK-1 downto 0);
-  signal read_elec_sig   : std_logic_vector(NBK-1 downto 0);
-  signal read_array      : std_logic_vector(NBK-1 downto 0);
-  signal program         : std_logic_vector(NBK-1 downto 0);
-  signal buffer_program  : std_logic_vector(NBK-1 downto 0);
+  signal read_status_reg : std_logic_vector(NBK-1 downto 0) := (others => '0');
+  signal read_elec_sig   : std_logic_vector(NBK-1 downto 0) := (others => '0');
+  signal read_array      : std_logic_vector(NBK-1 downto 0) := (others => '0');
+  signal program         : std_logic_vector(NBK-1 downto 0) := (others => '0');
+  signal buffer_program  : std_logic_vector(NBK-1 downto 0) := (others => '0');
 
   constant lock_unlock_code    : std_logic_vector(15 downto 0) := x"0060";
   constant unlock_confirm_code : std_logic_vector(15 downto 0) := x"00D0";
@@ -76,24 +76,24 @@ architecture prom_architecture of PROM is
   signal bank_out          : bank_regs;
   signal status_reg        : bank_regs;  -- Status Register
 
-  signal program_done : std_logic_vector(NBK-1 downto 0);
+  signal program_done : std_logic_vector(NBK-1 downto 0) := (others => '0');
 
   type   block_regs is array (NBL-1 downto 0) of std_logic_vector(15 downto 0);
   signal block_status : block_regs;     -- ES - Block Address + 2
 
   signal data_in, data_out : std_logic_vector(15 downto 0);
 
-  signal latched_data : std_logic_vector(15 downto 0);
-  signal latched_addr : std_logic_vector(22 downto 0);
+  signal latched_data : std_logic_vector(15 downto 0) := (others => '0');
+  signal latched_addr : std_logic_vector(22 downto 0) := (others => '0');
 
-  signal addr_cnt_out : std_logic_vector(22 downto 0);
+  signal addr_cnt_out : std_logic_vector(22 downto 0) := (others => '0');
 
   type   state_type is (AG_IDLE, AG_RUN);
   type   state_array_type is array (NBK-1 downto 0) of state_type;
   signal next_state, current_state : state_array_type;
-  signal ag_ld                     : std_logic_vector(NBK-1 downto 0);
-  signal ag_en                     : std_logic_vector(NBK-1 downto 0);
-  signal ag_lw                     : std_logic_vector(NBK-1 downto 0);
+  signal ag_ld                     : std_logic_vector(NBK-1 downto 0) := (others => '0');
+  signal ag_en                     : std_logic_vector(NBK-1 downto 0) := (others => '0');
+  signal ag_lw                     : std_logic_vector(NBK-1 downto 0) := (others => '0');
   type   integer_array is array (NBK-1 downto 0) of integer;
   signal ag_ad_cnt_out             : integer_array;
   signal ag_nw_cnt_out             : integer_array;

@@ -34,6 +34,7 @@ entity VMECONFREGS is
 
 -- Configuration registers    
     LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
+    CABLE_DLY   : out integer range 0 to 1;
     OTMB_PUSH_DLY : out integer range 0 to 63;
     ALCT_PUSH_DLY : out integer range 0 to 63;
 
@@ -68,9 +69,9 @@ end VMECONFREGS;
 
 architecture VMECONFREGS_Arch of VMECONFREGS is
 
-  constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0306";
-  constant FW_ID            : std_logic_vector(15 downto 0) := x"0009";
-  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0530";
+  constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0307";
+  constant FW_ID            : std_logic_vector(15 downto 0) := x"0000";
+  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0609";
   constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2014";
   constant able_write_const : std_logic                     := '0';
 
@@ -84,7 +85,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
                                                FW_YEAR, x"FFF5", x"FFF6", x"FFF7",
                                                x"FFF8", x"FFF9", x"FFFA", x"FFFB",
                                                x"FFFC", x"FFFD", x"FFFE", x"FFFF");
-  constant cfg_reg_mask : cfg_regs_array := (x"003f", x"003f", x"003f", x"003f", x"001f",
+  constant cfg_reg_mask : cfg_regs_array := (x"003f", x"003f", x"0001", x"003f", x"001f",
                                              x"001f", x"000f", x"01ff", x"00ff", x"ffff",
                                              x"ffff", x"ffff", x"ffff", x"ffff", x"ffff", x"ffff");
   signal cfg_reg_clk, const_reg_clk, do_cfg, do_const : std_logic := '0';
@@ -147,6 +148,7 @@ begin
 
   LCT_L1A_DLY   <= cfg_regs(0)(5 downto 0);                        -- 0x4000
   OTMB_PUSH_DLY <= to_integer(unsigned(cfg_regs(1)(5 downto 0)));  -- 0x4004
+  CABLE_DLY     <= to_integer(unsigned'("" & cfg_regs(2)(0)));     -- 0x4008
   ALCT_PUSH_DLY <= to_integer(unsigned(cfg_regs(3)(5 downto 0)));  -- 0x400C
   INJ_DLY       <= cfg_regs(4)(4 downto 0);                        -- 0x4010
   EXT_DLY       <= cfg_regs(5)(4 downto 0);                        -- 0x4014

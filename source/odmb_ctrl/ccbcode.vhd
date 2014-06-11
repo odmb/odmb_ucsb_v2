@@ -15,9 +15,9 @@ entity  CCBCODE is
     CCB_DATA : in std_logic_vector(7 downto 0);
     CCB_DATA_S : in std_logic;
     CMSCLK : in std_logic;
-    CCB_BXRST : in std_logic;
-    CCB_BX0 : in std_logic;
-    CCB_L1ARST : in std_logic;
+    CCB_BXRST_B : in std_logic;
+    CCB_BX0_B : in std_logic;
+    CCB_L1ARST_B : in std_logic;
     CCB_CLKEN : in std_logic;
     BX0 : out std_logic;
     BXRST : out std_logic;
@@ -111,10 +111,10 @@ begin
   TTCCAL <= TTCCAL_INNER;
   
   -- generate BX0, BXRST, CLKENA, L1ARST
-  IFD(CCB_BX0   , CMSCLK, BX0_1   );
-  IFD(CCB_BXRST , CMSCLK, BXRST_1 );
+  IFD(CCB_BX0_B   , CMSCLK, BX0_1   );
+  IFD(CCB_BXRST_B , CMSCLK, BXRST_1 );
   IFD(CCB_CLKEN , CMSCLK, CLKEN_1);
-  IFD(CCB_L1ARST, CMSCLK, L1ARST_1);
+  IFD(CCB_L1ARST_B, CMSCLK, L1ARST_1);
 
   BX0    <= not BX0_1;
   BXRST  <= not BXRST_1;

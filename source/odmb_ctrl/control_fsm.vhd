@@ -28,7 +28,6 @@ entity CONTROL_FSM is
     CLKCMS : in std_logic;
     CLK    : in std_logic;
     STATUS : in std_logic_vector(47 downto 0);
-    L1ARST : in std_logic;
 
 -- From DMB_VME
     RDFFNXT : in std_logic;

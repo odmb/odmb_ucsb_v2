@@ -34,10 +34,10 @@ entity ODMB_CTRL is
     ccb_drsv   : in  std_logic_vector (1 downto 0);  -- ccbrsv(5 downto 4) - from J3
     ccb_rsvo   : in  std_logic_vector (4 downto 0);  -- NEW [ccbrsv(11)], ccbrsv(10 downto 7) - from J3
     ccb_rsvi   : out std_logic_vector (2 downto 0);  -- ccbrsv(14 downto 12) - to J3
-    ccb_bx0    : in  std_logic;         -- bx0 - from J3
-    ccb_bxrst  : in  std_logic;         -- bxrst - from J3
-    ccb_l1acc  : in  std_logic;         -- l1acc - from J3
-    ccb_l1arst : in  std_logic;         -- l1rst - from J3
+    ccb_bx0_b    : in  std_logic;         -- bx0 - from J3
+    ccb_bxrst_b  : in  std_logic;         -- bxrst - from J3
+    raw_l1a  : in  std_logic;         -- l1acc - from J3
+    ccb_l1arst_b : in  std_logic;         -- l1rst - from J3
     ccb_l1rls  : out std_logic;         -- l1rls - to J3
     ccb_clken  : in  std_logic;         -- clken - from J3
 
@@ -324,7 +324,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CLKCMS                       : in    std_logic;
       CLK                          : in    std_logic;
       STATUS                       : in    std_logic_vector(47 downto 0);
-      L1ARST                       : in    std_logic;
 
 -- From DMB_VME
       RDFFNXT : in std_logic;
@@ -381,7 +380,6 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       clk                         : in    std_logic;
       dduclk                    : in    std_logic;
-      rst                         : in    std_logic;
       l1acnt_rst                  : in    std_logic;
       bxcnt_rst                   : in    std_logic;
 
@@ -456,9 +454,9 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CCB_DATA   : in  std_logic_vector(7 downto 0);
       CCB_DATA_S : in  std_logic;
       CMSCLK     : in  std_logic;
-      CCB_BXRST  : in  std_logic;
-      CCB_BX0    : in  std_logic;
-      CCB_L1ARST : in  std_logic;
+      CCB_BXRST_B  : in  std_logic;
+      CCB_BX0_B    : in  std_logic;
+      CCB_L1ARST_B : in  std_logic;
       CCB_CLKEN  : in  std_logic;
       BX0        : out std_logic;
       BXRST      : out std_logic;
@@ -567,7 +565,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- CCBCODE outputs
 
   signal bx0                : std_logic;
-  signal bxrst, ccb_bxrst_b : std_logic;
+  signal bxrst, ccb_bxrst : std_logic;
   signal l1arst             : std_logic;
   signal clken              : std_logic;
   signal bc0                : std_logic;
@@ -636,7 +634,7 @@ begin
     generic map (NFEB => NFEB)
     port map (
       CLK           => clk40,
-      RAW_L1A       => ccb_l1acc,
+      RAW_L1A       => raw_l1a,
       RAW_LCT       => rawlct,
       CAL_LCT       => cal_lct,
       CAL_L1A       => cal_gtrg,
@@ -670,7 +668,6 @@ begin
       CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
       clk                         => clk40,
       dduclk                    => dduclk,
-      rst                         => l1acnt_rst,
       l1acnt_rst                  => l1acnt_rst,
       bxcnt_rst                   => bxcnt_rst,
 
@@ -727,7 +724,6 @@ begin
       CLKCMS                       => clk40,
       RST                          => l1acnt_rst,
       STATUS                       => status,
-      L1ARST                       => l1arst,  -- from CCBCODE
 
 -- From DMB_VME
       RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
@@ -927,9 +923,9 @@ begin
       CCB_DATA   => ccb_data,
       CCB_DATA_S => ccb_data_s,
       CMSCLK     => clk40,
-      CCB_BXRST  => ccb_bxrst_b,
-      CCB_BX0    => ccb_bx0,
-      CCB_L1ARST => ccb_l1arst,
+      CCB_BXRST_B  => ccb_bxrst_b,
+      CCB_BX0_B    => ccb_bx0_b,
+      CCB_L1ARST_B => ccb_l1arst_b,
       CCB_CLKEN  => ccb_clken,
       BX0        => bx0,
       BXRST      => bxrst,
@@ -973,6 +969,6 @@ begin
 -- from ODMB_CTRL_EMPTY
 
   ccb_rsvi    <= "000";
-  ccb_bxrst_b <= not ccb_bxrst;
+  ccb_bxrst <= not ccb_bxrst_b;
 
 end ODMB_CTRL_arch;

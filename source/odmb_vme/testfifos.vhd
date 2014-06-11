@@ -88,6 +88,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal dd_dtack, d_dtack, q_dtack : std_logic;
   signal CMDDEV                     : std_logic_vector(15 downto 0);
+  signal fifo_rst                   : std_logic := '0';
 
   type FIFO_RD_TYPE is array (3 downto 0) of std_logic_vector(NFEB downto 1);
   signal FIFO_RD      : FIFO_RD_TYPE;
@@ -106,7 +107,6 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal W_TFF_RST                 : std_logic                       := '0';
   signal PULSE_TFF_RST, IN_TFF_RST : std_logic_vector(NFEB downto 1) := (others => '0');
-  signal TFF_RST_INNER             : std_logic_vector(NFEB downto 1) := (others => '0');
 
   signal PC_TX_FF_RD                    : std_logic_vector(3 downto 0);
   signal OUT_PC_TX_FF_READ              : std_logic_vector(15 downto 0) := (others => '0');
@@ -115,7 +115,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_PC_TX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
   signal R_PC_TX_FF_WRD_CNT   : std_logic                     := '0';
 
-  signal W_PC_TX_FF_RST : std_logic := '0';
+  signal W_PC_TX_FF_RST, do_pc_tx_fifo_rst : std_logic := '0';
 
   signal PC_RX_FF_RD                    : std_logic_vector(3 downto 0);
   signal OUT_PC_RX_FF_READ              : std_logic_vector(15 downto 0) := (others => '0');
@@ -124,7 +124,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_PC_RX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
   signal R_PC_RX_FF_WRD_CNT   : std_logic                     := '0';
 
-  signal W_PC_RX_FF_RST : std_logic := '0';
+  signal W_PC_RX_FF_RST, do_pc_rx_fifo_rst : std_logic := '0';
 
   signal DDU_TX_FF_RD                     : std_logic_vector(3 downto 0);
   signal OUT_DDU_TX_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
@@ -133,7 +133,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_DDU_TX_FF_WRD_CNT : std_logic_vector(15 downto 0) := (others => '0');
   signal R_DDU_TX_FF_WRD_CNT   : std_logic                     := '0';
 
-  signal W_DDU_TX_FF_RST : std_logic := '0';
+  signal W_DDU_TX_FF_RST, do_ddu_tx_fifo_rst : std_logic := '0';
 
   signal DDU_RX_FF_RD                     : std_logic_vector(3 downto 0);
   signal OUT_DDU_RX_FF_READ               : std_logic_vector(15 downto 0) := (others => '0');
@@ -142,7 +142,7 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
   signal OUT_DDU_RX_FF_WRD_CNT                      : std_logic_vector(15 downto 0) := (others => '0');
   signal R_DDU_RX_FF_WRD_CNT, D_R_DDU_RX_FF_WRD_CNT : std_logic                     := '0';
 
-  signal W_DDU_RX_FF_RST : std_logic := '0';
+  signal W_DDU_RX_FF_RST, do_ddu_rx_fifo_rst : std_logic := '0';
 
   -- OTMB FIFO
   signal OTMB_FF_RD                   : std_logic_vector(3 downto 0);
@@ -191,12 +191,12 @@ architecture TESTFIFOS_Arch of TESTFIFOS is
 
   signal W_HDR_FF_RST, hdr_fifo_data_valid : std_logic := '0';
 
-  signal hdr_fifo_empty, hdr_fifo_full         : std_logic;
-  signal hdr_fifo_rst, hdr_fifo_reset : std_logic;
+  signal hdr_fifo_empty, hdr_fifo_full : std_logic;
+  signal hdr_fifo_rst, hdr_fifo_reset  : std_logic;
 
-   signal csp_lvmb_la_trig : std_logic_vector (7 downto 0);
+  signal csp_lvmb_la_trig : std_logic_vector (7 downto 0);
   signal csp_lvmb_la_data : std_logic_vector (99 downto 0);
- 
+  
   
 begin  --Architecture
 
@@ -286,11 +286,10 @@ begin  --Architecture
 
 
 -- Write TFF_RST (Reset test FIFOs)
-  GEN_TFF_RST : for I in NFEB downto 1 generate
+  GEN_TFF_RST : for cfeb in NFEB downto 1 generate
   begin
-    IN_TFF_RST(I) <= PULSE_TFF_RST(I) or RST;
-    FD_W_TFF_RST : FDCE port map(TFF_RST_INNER(I), STROBE, W_TFF_RST, IN_TFF_RST(I), INDATA(I-1));
-    PULSE_RESET  : PULSE_EDGE port map(tff_rst(I), pulse_tff_rst(I), slowclk, rst, 1, tff_rst_inner(I));
+    in_tff_rst(cfeb) <= (STROBE and w_tff_rst and INDATA(cfeb-1)) or RST;
+    PULSE_RESET : NPULSE2FAST port map(TFF_RST(cfeb), CLK40, '0', 50, in_tff_rst(cfeb));
   end generate GEN_TFF_RST;
 
 -- Read PC_TX_FF_READ
@@ -308,7 +307,8 @@ begin  --Architecture
                           (others => 'Z');
 
 -- Write PC_TX_FF_RST (Reset PC_TX FIFO)
-  PULSE_RESET_PC_TX : PULSE_EDGE port map(PC_TX_FIFO_RST, open, slowclk, rst, 1, w_pc_tx_ff_rst);
+  do_pc_tx_fifo_rst <= w_pc_tx_ff_rst or RST;
+  PULSE_RESET_PC_TX : NPULSE2FAST port map(PC_TX_FIFO_RST, CLK40, '0', 50, do_pc_tx_fifo_rst);
 
 -- Read PC_RX_FF_READ
   PC_RX_FF_RD(0)  <= R_PC_RX_FF_READ;
@@ -325,7 +325,8 @@ begin  --Architecture
                           (others => 'Z');
 
 -- Write PC_RX_FF_RST (Reset PC_RX FIFO)
-  PULSE_RESET_PC_RX : PULSE_EDGE port map(pc_rx_fifo_rst, open, slowclk, rst, 1, w_pc_rx_ff_rst);
+  do_pc_rx_fifo_rst <= w_pc_rx_ff_rst or RST;
+  PULSE_RESET_PC_RX : NPULSE2FAST port map(pc_rx_fifo_rst, CLK40, '0', 50, do_pc_rx_fifo_rst);
 
 -- Read DDU_TX_FF_READ
   DDU_TX_FF_RD(0)  <= R_DDU_TX_FF_READ;
@@ -344,7 +345,8 @@ begin  --Architecture
 
 
 -- Write DDU_TX_FF_RST (Reset DDU_TX FIFO)
-  PULSE_RESET_DDU_TX : PULSE_EDGE port map(DDU_TX_FIFO_RST, open, SLOWCLK, RST, 1, w_ddu_tx_ff_rst);
+  do_ddu_tx_fifo_rst <= w_ddu_tx_ff_rst or RST;
+  PULSE_RESET_DDU_TX : NPULSE2FAST port map(DDU_TX_FIFO_RST, CLK40, '0', 50, do_ddu_tx_fifo_rst);
 
 -- Read DDU_RX_FF_READ
   DDU_RX_FF_RD(0)  <= R_DDU_RX_FF_READ;
@@ -363,7 +365,8 @@ begin  --Architecture
 
 
 -- Write DDU_RX_FF_RST (Reset DDU_RX FIFO)
-  PULSE_RESET_DDU_RX : PULSE_EDGE port map(ddu_rx_fifo_rst, open, slowclk, rst, 1, w_ddu_rx_ff_rst);
+  do_ddu_rx_fifo_rst <= w_ddu_rx_ff_rst or RST;
+  PULSE_RESET_DDU_RX : NPULSE2FAST port map(ddu_rx_fifo_rst, clk40, '0', 50, do_ddu_rx_fifo_rst);
 
 -- Read OTMB_FF_READ
   OTMB_FF_RD(0)  <= R_OTMB_FF_READ;
@@ -383,9 +386,8 @@ begin  --Architecture
 
 
 -- Write OTMB_FF_RST (Reset OTMB FIFO)
-  PULSE_RESET_OTMB : PULSE_EDGE port map(otmb_fifo_rst, open, clk40, rst, 1, w_otmb_ff_rst);
-
-  otmb_fifo_reset <= otmb_fifo_rst or RST;
+  PULSE_RESET_OTMB : NPULSE2FAST port map(otmb_fifo_rst, clk40, '0', 50, w_otmb_ff_rst);
+  otmb_fifo_reset <= otmb_fifo_rst or fifo_rst;
 
   OTMB_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -435,8 +437,8 @@ begin  --Architecture
                                        (others => 'Z');
 
 -- Write ALCT_FF_RST (Reset ALCT FIFO)
-  PULSE_RESET_ALCT : PULSE_EDGE port map(alct_fifo_rst, open, clk40, rst, 1, w_alct_ff_rst);
-  alct_fifo_reset <= alct_fifo_rst or RST;
+  PULSE_RESET_ALCT : NPULSE2FAST port map(alct_fifo_rst, clk40, '0', 50, w_alct_ff_rst);
+  alct_fifo_reset <= alct_fifo_rst or fifo_rst;
 
   ALCT_FIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -476,8 +478,8 @@ begin  --Architecture
                                       (others => 'Z');
 
 -- Write HDR_FF_RST (Reset HDR FIFO)
-  PULSE_RESET_HDR : PULSE_EDGE port map(hdr_fifo_rst, open, clk40, rst, 1, w_hdr_ff_rst);
-  hdr_fifo_reset <= hdr_fifo_rst or RST;
+  PULSE_RESET_HDR : NPULSE2FAST port map(hdr_fifo_rst, clk40, '0', 50, w_hdr_ff_rst);
+  hdr_fifo_reset <= hdr_fifo_rst or fifo_rst;
 
   hdr_fifo_data_valid <= '1' when (DDU_DATA_VALID = '1' and
                                    (DDU_DATA(15 downto 12) = x"9" or DDU_DATA(15 downto 12) = x"A" or
@@ -500,7 +502,7 @@ begin  --Architecture
       DI    => DDU_DATA,                -- Input data
       RDCLK => slowclk,                 -- Input read clock
       RDEN  => hdr_fifo_rden,           -- Input read enable
-      RST   => hdr_fifo_rst,            -- Input reset
+      RST   => hdr_fifo_reset,            -- Input reset
       WRCLK => DDUCLK,                  -- Input write clock
       WREN  => hdr_fifo_data_valid      -- Input write enable
       );
@@ -540,12 +542,14 @@ begin  --Architecture
              OUT_HDR_FF_WRD_CNT    when R_HDR_FF_WRD_CNT = '1' else
              (others => 'L');
 
+  RSTPULSE : NPULSE2SAME port map(fifo_rst, CLK40, '0', 50, RST);
+
   -- DTACK 
   dd_dtack <= STROBE and DEVICE;
   FD_D_DTACK : FDC port map(d_dtack, dd_dtack, q_dtack, '1');
   FD_Q_DTACK : FD port map(q_dtack, SLOWCLK, d_dtack);
   DTACK    <= q_dtack;
-  
+
   csp_lvmb_la_pm : csp_lvmb_la
     port map (
       CONTROL => CSP_LVMB_LA_CTRL,
@@ -556,12 +560,12 @@ begin  --Architecture
 
   csp_lvmb_la_trig <= R_HDR_FF_READ & hdr_fifo_data_valid & DDU_DATA_VALID
                       & hdr_fifo_rden & DDU_DATA(15 downto 12);
-  csp_lvmb_la_data <= x"0000000" & "0" 
-                      & R_HDR_FF_WRD_CNT & R_HDR_FF_READ                 -- (71:69)
-                      & STROBE & q_dtack & WRITER                        -- (68:66)
-                      & cmddev                                           -- (65:50)
-                      & HDR_FIFO_WRD_CNT                                 -- (49:38)
-                      & hdr_fifo_rst & hdr_fifo_dout                     -- (37:21)
-                      & hdr_fifo_empty & hdr_fifo_full & hdr_fifo_rden   -- (20:18)
-                      & DDU_DATA & DDU_DATA_VALID & hdr_fifo_data_valid; -- (17:0)
+  csp_lvmb_la_data <= x"0000000" & "0"
+                      & R_HDR_FF_WRD_CNT & R_HDR_FF_READ  -- (71:69)
+                      & STROBE & q_dtack & WRITER         -- (68:66)
+                      & cmddev          -- (65:50)
+                      & HDR_FIFO_WRD_CNT                  -- (49:38)
+                      & hdr_fifo_rst & hdr_fifo_dout      -- (37:21)
+                      & hdr_fifo_empty & hdr_fifo_full & hdr_fifo_rden  -- (20:18)
+                      & DDU_DATA & DDU_DATA_VALID & hdr_fifo_data_valid;  -- (17:0)
 end TESTFIFOS_Arch;

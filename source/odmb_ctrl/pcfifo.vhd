@@ -55,7 +55,7 @@ architecture pcfifo_architecture of pcfifo is
   signal fifo_in, fifo_out : std_logic_vector(17 downto 0);
   signal fifo_empty        : std_logic;
   signal fifo_full         : std_logic;
-  signal fifo_wren         : std_logic;
+  signal fifo_wren, fifo_rst         : std_logic;
 
   signal pkt_cnt_out : std_logic_vector(7 downto 0) := (others => '0');
 
@@ -87,6 +87,7 @@ begin
   fifo_wren <= dv_in;
   fifo_in   <= first_in & ld_in & data_in;
 
+  L1ARESETPULSE : NPULSE2FAST port map(fifo_rst, CLK_OUT, '0', 5, RST);
   PC_FIFO_CASCADE : FIFO_CASCADE
     generic map (
       NFIFO        => NFIFO,            -- number of FIFOs in cascade
@@ -102,7 +103,7 @@ begin
       DI    => fifo_in,                 -- Input data
       RDCLK => clk_out,                 -- Input read clock
       RDEN  => pcfifo_rden,             -- Input read enable
-      RST   => RST,                     -- Input reset
+      RST   => fifo_rst,                     -- Input reset
       WRCLK => clk_in,                  -- Input write clock
       WREN  => fifo_wren                -- Input write enable
       );

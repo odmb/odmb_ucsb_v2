@@ -37,7 +37,7 @@ entity FIFO_CASCADE is
 end entity FIFO_CASCADE;
 
 architecture fifo_cascade_arch of FIFO_CASCADE is
-  type   fifo_data_type is array (NFIFO downto 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
+  type fifo_data_type is array (NFIFO downto 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
   signal fifo_in, fifo_out        : fifo_data_type;
   signal fifo_aempty              : std_logic_vector(NFIFO downto 1);
   signal fifo_afull               : std_logic_vector(NFIFO downto 1);
@@ -45,23 +45,29 @@ architecture fifo_cascade_arch of FIFO_CASCADE is
   signal fifo_full                : std_logic_vector(NFIFO downto 1);
   signal fifo_wren, fifo_wrck     : std_logic_vector(NFIFO downto 1);
   signal fifo_rden, fifo_rdck     : std_logic_vector(NFIFO downto 1);
-  type   fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
+  type fifo_cnt_type is array (NFIFO downto 1) of std_logic_vector(10 downto 0);
   signal fifo_wr_cnt, fifo_rd_cnt : fifo_cnt_type;
   signal int_clk                  : std_logic := '0';
+  signal rst_dly                  : std_logic := '0';
 
 begin
 
   --wr_faster_rd_sv <= '1' when (WR_FASTER_RD) else '0';
   --MUX_INTCLK : BUFGMUX port map(O => int_clk, I0 => RDCLK, I1 => WRCLK, S => wr_faster_rd_sv);
 
-   int_clk <= WRCLK when (WR_FASTER_RD) else RDCLK;
-  
+  int_clk <= WRCLK when (WR_FASTER_RD) else RDCLK;
+
   -- this is actually the input FIFO
   fifo_wrck(NFIFO) <= WRCLK;
   fifo_wren(NFIFO) <= WREN;
   fifo_in(NFIFO)   <= DI;
   fifo_rdck(NFIFO) <= int_clk;
-  fifo_rden(NFIFO) <= not (fifo_empty(NFIFO) or fifo_full(NFIFO-1));
+  
+  -- RDEN has to stay low 4 cc before and during RST being high
+  DS_RST : DELAY_SIGNAL generic map(5) port map(rst_dly, RDCLK, 5, RST);
+  fifo_rden(NFIFO) <= '0' when (RST = '1' or rst_dly = '1') else
+                      not (fifo_empty(NFIFO) or fifo_full(NFIFO-1));
+
 
   FIFO_M_NFIFO : FIFO_DUALCLOCK_MACRO
     generic map (
@@ -85,7 +91,7 @@ begin
       DI          => fifo_in(NFIFO),      -- Input data
       RDCLK       => fifo_rdck(NFIFO),    -- Input read clock
       RDEN        => fifo_rden(NFIFO),    -- Input read enable
-      RST         => RST,                 -- Input reset
+      RST         => rst_dly,                 -- Input reset
       WRCLK       => fifo_wrck(NFIFO),    -- Input write clock
       WREN        => fifo_wren(NFIFO)     -- Input write enable
       );
@@ -96,7 +102,8 @@ begin
     fifo_wren(I) <= not (fifo_empty(I+1) or fifo_full(I));
     fifo_wrck(I) <= int_clk;
     fifo_in(I)   <= fifo_out(I+1);
-    fifo_rden(I) <= not (fifo_empty(I) or fifo_full(I-1));
+    fifo_rden(I) <= '0' when (RST = '1' or rst_dly = '1') else
+                    not (fifo_empty(I) or fifo_full(I-1));
     fifo_rdck(I) <= int_clk;
 
     FIFO_MOD : FIFO_DUALCLOCK_MACRO
@@ -121,7 +128,7 @@ begin
         DI          => fifo_in(I),      -- Input data
         RDCLK       => fifo_rdck(I),    -- Input read clock
         RDEN        => fifo_rden(I),    -- Input read enable
-        RST         => RST,             -- Input reset
+        RST         => rst_dly,             -- Input reset
         WRCLK       => fifo_wrck(I),    -- Input write clock
         WREN        => fifo_wren(I)     -- Input write enable
         );
@@ -156,7 +163,7 @@ begin
       DI          => fifo_in(1),        -- Input data
       RDCLK       => fifo_rdck(1),      -- Input read clock
       RDEN        => fifo_rden(1),      -- Input read enable
-      RST         => RST,               -- Input reset
+      RST         => rst_dly,               -- Input reset
       WRCLK       => fifo_wrck(1),      -- Input write clock
       WREN        => fifo_wren(1)       -- Input write enable
       );
@@ -166,6 +173,6 @@ begin
   EMPTY     <= fifo_empty(1);           --out
   FULL      <= fifo_full(NFIFO);        --out
   HALF_FULL <= fifo_full(NFIFO/2) when NFIFO mod 2 = 0 else
-                    fifo_full((NFIFO+1)/2);
+               fifo_full((NFIFO+1)/2);
 
 end fifo_cascade_arch;

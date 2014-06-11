@@ -137,6 +137,7 @@ entity ODMB_VME is
 
     -- VMECONFREGS outputs
     LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
+    CABLE_DLY   : out integer range 0 to 1;
     OTMB_PUSH_DLY : out integer range 0 to 63;
     ALCT_PUSH_DLY : out integer range 0 to 63;
     INJ_DLY       : out std_logic_vector(4 downto 0);
@@ -392,6 +393,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
 -- Configuration registers    
       LCT_L1A_DLY   : out std_logic_vector(5 downto 0);
+    CABLE_DLY   : out integer range 0 to 1;
       OTMB_PUSH_DLY : out integer range 0 to 63;
       ALCT_PUSH_DLY : out integer range 0 to 63;
 
@@ -890,6 +892,7 @@ begin
         DTACK => DTACK_DEV(4),
 
         LCT_L1A_DLY   => LCT_L1A_DLY,
+        CABLE_DLY => CABLE_DLY,
         OTMB_PUSH_DLY => OTMB_PUSH_DLY,
         ALCT_PUSH_DLY => ALCT_PUSH_DLY,
 

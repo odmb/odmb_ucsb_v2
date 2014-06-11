@@ -1,11 +1,13 @@
 -- DCFEB_DATA_GEN: Generates packets of dummy DCFEB data
 
 library ieee;
+library work;
 library unisim;
 library unimacro;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 
@@ -56,6 +58,8 @@ architecture dcfeb_data_gen_architecture of dcfeb_data_gen is
   signal l1a_cnt_fifo_rd_en : std_logic;
 
   signal l1a_cnt_int : integer;
+
+  signal fifo_rst : std_logic := '0';
 begin
 
   -- L1A counter
@@ -108,6 +112,7 @@ begin
     dw_cnt_out <= dw_cnt_data + 1;
   end process;
 
+  PULSE_RESET    : NPULSE2FAST port map(fifo_rst, clk, '0', 5, RST);
   l1a_cnt_l_fifo : FIFO_DUALCLOCK_MACRO
     generic map (
       DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
@@ -130,7 +135,7 @@ begin
       DI          => l1a_cnt_l_fifo_in,     -- Input data
       RDCLK       => dcfebclk,              -- Input read clock
       RDEN        => l1a_cnt_fifo_rd_en,    -- Input read enable
-      RST         => rst,                   -- Input reset
+      RST         => fifo_rst,              -- Input reset
       WRCLK       => clk,                   -- Input write clock
       WREN        => l1a_cnt_fifo_wr_en     -- Input write enable
       );
@@ -157,7 +162,7 @@ begin
       DI          => l1a_cnt_h_fifo_in,     -- Input data
       RDCLK       => dcfebclk,              -- Input read clock
       RDEN        => l1a_cnt_fifo_rd_en,    -- Input read enable
-      RST         => rst,                   -- Input reset
+      RST         => fifo_rst,              -- Input reset
       WRCLK       => clk,                   -- Input write clock
       WREN        => l1a_cnt_fifo_wr_en     -- Input write enable
       );

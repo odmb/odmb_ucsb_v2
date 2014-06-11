@@ -168,7 +168,7 @@ begin
   odmb_data_sel(7 downto 0) <= COMMAND(9 downto 2);
 
 -- Resets
-  PLS_FWRESET  : NPULSE2SAME port map(FW_RESET, slowclk, RST, 2, w_odmb_rst);
+  PLS_FWRESET  : PULSE2FAST port map(FW_RESET, clk40, RST, w_odmb_rst);
   PLS_OPTRESET : PULSE2FAST port map(OPT_RESET_PULSE, clk40, RST, w_opt_rst);
   PLS_L1ARESET : PULSE2FAST port map(L1A_RESET_PULSE, clk40, RST, w_dcfeb_resync);
   PLS_REPROG   : NPULSE2SAME port map(reprog, slowclk, RST, 2, w_dcfeb_reprog);

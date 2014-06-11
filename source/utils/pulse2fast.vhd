@@ -9,7 +9,7 @@ use unisim.vcomponents.all;
 
 entity PULSE2FAST is
   port (
-    DOUT     : out std_logic;
+    DOUT     : out std_logic := '0';
     CLK_DOUT : in  std_logic;
     RST      : in  std_logic;
     DIN      : in  std_logic

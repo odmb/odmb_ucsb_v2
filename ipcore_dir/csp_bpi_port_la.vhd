@@ -8,7 +8,7 @@
 -- \   \   \/     Version    : 14.7
 --  \   \         Application: XILINX CORE Generator
 --  /   /         Filename   : csp_bpi_port_la.vhd
--- /___/   /\     Timestamp  : Wed May 28 17:18:17 Romance Daylight Time 2014
+-- /___/   /\     Timestamp  : Mon Jun 09 15:43:28 Romance Daylight Time 2014
 -- \   \  /  \
 --  \___\/\___\
 --

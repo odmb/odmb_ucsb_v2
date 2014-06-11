@@ -2,10 +2,12 @@
 -- crossing in FIFOs
 
 library ieee;
+library work;
 library unisim;
 library unimacro;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 
@@ -104,7 +106,7 @@ architecture TESTCTRL_Arch of TESTCTRL is
   signal   tc_fifo_full, tc_fifo_afull   : std_logic_vector(3 downto 0);
   signal   tc_fifo_aempty, tc_fifo_empty : std_logic_vector(3 downto 0);
   signal   event_fifo_out                : std_logic_vector(15 downto 0);
-  signal   tc_fifo_rst                   : std_logic;
+  signal   tc_fifo_rst, do_tc_fifo_rst                   : std_logic;
   signal   ts_cnt_rst                    : std_logic;
   type     boolean_array is array (3 downto 0) of boolean;
   constant tc_fifo_fwft                  : boolean_array := (false, true, true, true);
@@ -165,7 +167,9 @@ begin  --Architecture
   end generate CREATE_FSR_vector;
 
   FIFO_SEL    <= FSR_vector(3 downto 0);
-  tc_fifo_rst <= rst or FSR_vector(4);
+  do_tc_fifo_rst <= rst or FSR_vector(4);
+  PULSE_RESET_TC : NPULSE2FAST port map(tc_fifo_rst, clk, '0', 50, do_tc_fifo_rst);
+  
   trg_cnt_rst <= rst or FSR_vector(5);
   trg_cnt_sel <= FSR_vector(9 downto 6);
 

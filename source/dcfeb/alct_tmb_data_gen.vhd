@@ -1,10 +1,12 @@
 -- ALCT_OTMB_DATA_GEN: Generates packets of dummy ALCT and OTMB data
 
 library ieee;
+library work;
 library unisim;
 library unimacro;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_1164.all;
+use work.ucsb_types.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
 
@@ -67,6 +69,8 @@ architecture alct_otmb_data_gen_architecture of alct_otmb_data_gen is
   signal otmb_l1a_cnt_h_fifo_full  : std_logic;
   signal otmb_l1a_cnt_fifo_wr_en   : std_logic;
   signal otmb_l1a_cnt_fifo_rd_en   : std_logic;
+
+  signal fifo_rst : std_logic := '0';
 
 begin
 
@@ -141,6 +145,7 @@ begin
     otmb_dw_cnt_out <= otmb_dw_cnt_data + 1;
   end process;
 
+  PULSE_RESET    : NPULSE2FAST port map(fifo_rst, clk, '0', 5, RST);
   alct_l1a_cnt_l_fifo : FIFO_DUALCLOCK_MACRO
     generic map (
       DEVICE                  => "VIRTEX6",  -- Target Device: "VIRTEX5", "VIRTEX6" 
@@ -163,7 +168,7 @@ begin
       DI          => l1a_cnt_l_fifo_in,          -- Input data
       RDCLK       => clk,                        -- Input read clock
       RDEN        => alct_l1a_cnt_fifo_rd_en,    -- Input read enable
-      RST         => rst,                        -- Input reset
+      RST         => fifo_rst,                        -- Input reset
       WRCLK       => clk,                        -- Input write clock
       WREN        => alct_l1a_cnt_fifo_wr_en     -- Input write enable
       );
@@ -190,7 +195,7 @@ begin
       DI          => l1a_cnt_h_fifo_in,          -- Input data
       RDCLK       => clk,                        -- Input read clock
       RDEN        => alct_l1a_cnt_fifo_rd_en,    -- Input read enable
-      RST         => rst,                        -- Input reset
+      RST         => fifo_rst,                        -- Input reset
       WRCLK       => clk,                        -- Input write clock
       WREN        => alct_l1a_cnt_fifo_wr_en     -- Input write enable
       );
@@ -217,7 +222,7 @@ begin
       DI          => l1a_cnt_l_fifo_in,          -- Input data
       RDCLK       => clk,                        -- Input read clock
       RDEN        => otmb_l1a_cnt_fifo_rd_en,    -- Input read enable
-      RST         => rst,                        -- Input reset
+      RST         => fifo_rst,                        -- Input reset
       WRCLK       => clk,                        -- Input write clock
       WREN        => otmb_l1a_cnt_fifo_wr_en     -- Input write enable
       );
@@ -244,7 +249,7 @@ begin
       DI          => l1a_cnt_h_fifo_in,          -- Input data
       RDCLK       => clk,                        -- Input read clock
       RDEN        => otmb_l1a_cnt_fifo_rd_en,    -- Input read enable
-      RST         => rst,                        -- Input reset
+      RST         => fifo_rst,                        -- Input reset
       WRCLK       => clk,                        -- Input write clock
       WREN        => otmb_l1a_cnt_fifo_wr_en     -- Input write enable
       );

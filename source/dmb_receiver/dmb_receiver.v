@@ -142,7 +142,7 @@ module dmb_receiver #(
    // GTX PMA reset circuitry
    //--------------------------------------------------------------------
 
-   always@(posedge clk_ds_i or posedge RST)
+   always@(posedge clk_ds_i)
      if (RST == 1'b1)
        pma_reset_r <= 4'b1111;
      else
@@ -155,7 +155,7 @@ module dmb_receiver #(
    //-------------------------------------------------------------------------
 
    // Synchronize and extend the external reset signal
-   always @(posedge usr_clk_wordwise or posedge RST)
+   always @(posedge usr_clk_wordwise)
      begin
         if (RST == 1)
           reset_r <= 4'b1111;
@@ -175,7 +175,7 @@ module dmb_receiver #(
    // purposes.
    //-------------------------------------------------------------------------
 
-   always @(posedge usr_clk_wordwise, posedge reset_i)
+   always @(posedge usr_clk_wordwise)
      begin
 	if (reset_i)
 	  begin
@@ -1504,13 +1504,13 @@ module dmb_receiver #(
 		 .WREN(wrt_en_ff[7])                // 1-bit input write enable
 		 );
 
-   assign fifo_reset[1] = FIFO_RST[1] | RST;
-   assign fifo_reset[2] = FIFO_RST[2] | RST;
-   assign fifo_reset[3] = FIFO_RST[3] | RST;
-   assign fifo_reset[4] = FIFO_RST[4] | RST;
-   assign fifo_reset[5] = FIFO_RST[5] | RST;
-   assign fifo_reset[6] = FIFO_RST[6] | RST;
-   assign fifo_reset[7] = FIFO_RST[7] | RST;
+   assign fifo_reset[1] = FIFO_RST[1];
+   assign fifo_reset[2] = FIFO_RST[2];
+   assign fifo_reset[3] = FIFO_RST[3];
+   assign fifo_reset[4] = FIFO_RST[4];
+   assign fifo_reset[5] = FIFO_RST[5];
+   assign fifo_reset[6] = FIFO_RST[6];
+   assign fifo_reset[7] = FIFO_RST[7];
    
    always @*
      begin

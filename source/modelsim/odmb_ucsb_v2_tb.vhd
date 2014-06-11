@@ -266,16 +266,16 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
         ccb_drsv     : in  std_logic_vector(1 downto 0);
         ccb_rsvo     : in  std_logic_vector(4 downto 0);
         ccb_rsvi     : out std_logic_vector(2 downto 0);
-        ccb_bx0      : in  std_logic;
-        ccb_bxrst    : in  std_logic;
-        ccb_l1arst   : in  std_logic;
-        ccb_l1acc    : in  std_logic;
+        ccb_bx0_b      : in  std_logic;
+        ccb_bxrst_b    : in  std_logic;
+        ccb_l1arst_b   : in  std_logic;
+        ccb_l1acc_b    : in  std_logic;
         ccb_l1rls    : out std_logic;
         ccb_clken    : in  std_logic;
-        ccb_evcntres : in  std_logic;
+        ccb_evcntres_b : in  std_logic;
 
-        ccb_hardrst : in std_logic;
-        ccb_softrst : in std_logic;
+        --ccb_hardrst : in std_logic;
+        ccb_softrst_b : in std_logic;
 
 -- From J6/J7 (J3/J4) to FIFOs
 
@@ -538,15 +538,15 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal ccb_drsv     : std_logic_vector(1 downto 0) := "00";             -- in
   signal ccb_rsvo     : std_logic_vector(4 downto 0) := "00000";          -- in
   signal ccb_rsvi     : std_logic_vector(2 downto 0);  -- out
-  signal ccb_bx0      : std_logic                    := '1';  -- in
-  signal ccb_l1acc    : std_logic                    := '1';              -- in
+  signal ccb_bx0_b      : std_logic                    := '1';  -- in
+  signal ccb_l1acc_b    : std_logic                    := '1';              -- in
   signal ccb_l1rls    : std_logic;      -- out
   signal ccb_clken    : std_logic                    := '1';              -- in
-  signal ccb_hardrst  : std_logic                    := '1';              -- in
-  signal ccb_softrst  : std_logic                    := '1';              -- in
-  signal ccb_evcntres : std_logic                    := '1';
-  signal ccb_bxrst    : std_logic                    := '1';              -- in
-  signal ccb_l1arst   : std_logic                    := '1';              -- in
+  --signal ccb_hardrst  : std_logic                    := '1';              -- in
+  signal ccb_softrst_b  : std_logic                    := '1';              -- in
+  signal ccb_evcntres_b : std_logic                    := '1';
+  signal ccb_bxrst_b    : std_logic                    := '1';              -- in
+  signal ccb_l1arst_b   : std_logic                    := '1';              -- in
 
 
 -- From J6/J7 (J3/J4) to FIFOs
@@ -804,15 +804,15 @@ begin
       ccb_drsv    => ccb_drsv,          -- in
       ccb_rsvo    => ccb_rsvo,          -- in
       ccb_rsvi    => ccb_rsvi,          -- in
-      ccb_bx0     => ccb_bx0,           -- in
-      ccb_bxrst   => ccb_bxrst,         -- in
-      ccb_l1arst  => ccb_l1arst,        -- in
+      ccb_bx0_b     => ccb_bx0_b,           -- in
+      ccb_bxrst_b   => ccb_bxrst_b,         -- in
+      ccb_l1arst_b  => ccb_l1arst_b,        -- in
 --              ccb_l1acc => ccb_l1acc, -- in
-      ccb_l1acc   => l1a_b,             -- from file_handler_event
+      ccb_l1acc_b   => l1a_b,             -- from file_handler_event
       ccb_l1rls   => ccb_l1rls,         -- out
       ccb_clken   => ccb_clken,         -- in
-      ccb_hardrst => ccb_hardrst,       -- in           
-      ccb_softrst => ccb_softrst,       -- in
+      --ccb_hardrst => ccb_hardrst,       -- in           
+      ccb_softrst_b => ccb_softrst_b,       -- in
 
 -- From J6/J7 (J3/J4) to FIFOs
 
@@ -905,7 +905,7 @@ begin
 
 
       done_in      => done_in,
-      ccb_evcntres => ccb_evcntres,
+      ccb_evcntres_b => ccb_evcntres_b,
 
       -- Adam Aug 15 To SYSMON
       p1v0_sm_p     => p1v0_sm_p,
