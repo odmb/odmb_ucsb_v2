@@ -12,7 +12,7 @@ use work.ucsb_types.all;
 
 entity bpi_cfg_controller is
   generic (
-    NREGS : integer := 4               -- Number of Configuration/Protected registers
+    NREGS : integer := 4  -- Number of Configuration/Protected registers
     );  
   port(
     CLK : in std_logic;
@@ -50,13 +50,13 @@ architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
   constant NW_DL : integer := NREGS+4;
   constant NW_UL : integer := 4;
 
-  type   fifo_data_dl is array (0 to NW_DL-1) of std_logic_vector(15 downto 0);
+  type fifo_data_dl is array (0 to NW_DL-1) of std_logic_vector(15 downto 0);
   signal bpi_cmd_fifo_data_dl : fifo_data_dl;
 
-  type   fifo_data_ul is array (NW_UL-1 downto 0) of std_logic_vector(15 downto 0);
+  type fifo_data_ul is array (NW_UL-1 downto 0) of std_logic_vector(15 downto 0);
   signal bpi_cmd_fifo_data_ul : fifo_data_ul;
 
-  type   fifo_data_er is array (0 to NW_ER) of std_logic_vector(15 downto 0);
+  type fifo_data_er is array (0 to NW_ER) of std_logic_vector(15 downto 0);
   signal bpi_cmd_fifo_data_er : fifo_data_er;
 
   signal cnt_en, cnt_res : std_logic;
@@ -68,33 +68,34 @@ architecture bpi_cfg_ctrl_architecture of bpi_cfg_controller is
   signal bpi_cfg_ul_reset : std_logic := '0';
   signal bpi_cfg_dl_reset : std_logic := '0';
 
-  signal bpi_cfg_reg_sel     : integer   := 0;
-  signal bpi_cfg_reg_sel_rst : std_logic := '0';
-  signal rst_cfg_ul, rst_cfg_dl : std_logic := '0';
-  
+  signal bpi_cfg_reg_sel        : integer range 0 to NREGS := NREGS;
+  signal bpi_cfg_reg_sel_rst    : std_logic                := '0';
+  signal rst_cfg_ul, rst_cfg_dl : std_logic                := '0';
+
+  signal bpi_cfg_reg_we_i_q : std_logic := '0';
 
 begin
 
 -- Unlock-erase assignments (setting up for DL to PROM)
-  bpi_cmd_fifo_data_er(0) <= BPI_BANK_BLOCK;   -- bank/block address
-  bpi_cmd_fifo_data_er(1) <= x"0000";   -- block offset
-  bpi_cmd_fifo_data_er(2) <= x"0014";   -- unlock (?)
-  bpi_cmd_fifo_data_er(3) <= x"000a";   -- erase (?)
+  bpi_cmd_fifo_data_er(0) <= BPI_BANK_BLOCK;  -- bank/block address
+  bpi_cmd_fifo_data_er(1) <= x"0000";         -- block offset
+  bpi_cmd_fifo_data_er(2) <= x"0014";         -- unlock (?)
+  bpi_cmd_fifo_data_er(3) <= x"000a";         -- erase (?)
 
 -- Download Assignments (Configuration Registers to PROM)
-  bpi_cmd_fifo_data_dl(0) <= BPI_BANK_BLOCK;   -- Load Address in Bank 0 / Block 127
+  bpi_cmd_fifo_data_dl(0) <= BPI_BANK_BLOCK;  -- Load Address in Bank 0 / Block 127
   bpi_cmd_fifo_data_dl(1) <= x"0000";   -- Set Offset = 0 
   bpi_cmd_fifo_data_dl(2) <= std_logic_vector(to_unsigned(NREGS-1, 11)) & "01100";  -- Buffer_Program N = NREGS-1
   --bpi_cmd_fifo_data_dl(2) <= x"01ec";   -- Buffer_Program - N = 16
   GEN_DATA : for index in 0 to NREGS-1 generate
     bpi_cmd_fifo_data_dl(index+3) <= BPI_CFG_REGS(index);  -- Set data
   end generate GEN_DATA;
-  bpi_cmd_fifo_data_dl(NREGS+3) <= x"0005";  -- Set Read Array Mode
+  bpi_cmd_fifo_data_dl(NREGS+3) <= x"0005";   -- Set Read Array Mode
 
 -- Upload Assignments (PROM to Configuration Registers)
-  bpi_cmd_fifo_data_ul(0) <= BPI_BANK_BLOCK;   -- Load Address in Block 0
+  bpi_cmd_fifo_data_ul(0) <= BPI_BANK_BLOCK;  -- Load Address in Block 0
   bpi_cmd_fifo_data_ul(1) <= x"0000";   -- Set Offset = 0 
-  bpi_cmd_fifo_data_ul(2) <= std_logic_vector(to_unsigned(NREGS-1, 11)) & "00100";   -- Read_N - N = NREGS-1
+  bpi_cmd_fifo_data_ul(2) <= std_logic_vector(to_unsigned(NREGS-1, 11)) & "00100";  -- Read_N - N = NREGS-1
   bpi_cmd_fifo_data_ul(3) <= x"0005";   -- Set Read Array Mode
 
 -- UL and DL Registers
@@ -104,17 +105,18 @@ begin
   FD_DLSTART : FDC port map(bpi_cfg_dl, bpi_cfg_dl_start, rst_cfg_dl, '1');
 
 -- CFG_REG_WE generation (setting WE to NREGS implies no writing)
-  we_proc : process (clk, bpi_cfg_ul, bpi_cfg_reg_we_i, bpi_cfg_reg_sel, bpi_cfg_reg_sel_rst, rst)
+  we_proc : process (clk, bpi_cfg_reg_sel_rst, rst)
   begin
-    if (rst = '1') or (bpi_cfg_reg_sel_rst = '1') then
-      bpi_cfg_reg_sel <= 0;
-    elsif (rising_edge(clk)) then
-      if (bpi_cfg_reg_we_i = '1') then
-        bpi_cfg_reg_sel <= bpi_cfg_reg_sel + 1;
+    if (RST = '1') or (bpi_cfg_reg_sel_rst = '1') then
+      bpi_cfg_reg_sel  <= NREGS;
+    elsif (rising_edge(CLK)) then
+      if (bpi_cfg_reg_we_i = '1' and bpi_cfg_reg_sel > 0) then
+        bpi_cfg_reg_sel <= bpi_cfg_reg_sel - 1;
       end if;
     end if;
   end process;
-  bpi_cfg_reg_we_o <= bpi_cfg_reg_sel when (bpi_cfg_reg_we_i = '1' and bpi_cfg_reg_sel < NREGS) else NREGS;
+  FDWE : FD port map(bpi_cfg_reg_we_i_q, CLK, bpi_cfg_reg_we_i);
+  BPI_CFG_REG_WE_O <= bpi_cfg_reg_sel when bpi_cfg_reg_we_i_q = '1' else NREGS;
 
 -- Address Counter
   cnt_proc : process (clk, cnt_en, cnt_res, rst)

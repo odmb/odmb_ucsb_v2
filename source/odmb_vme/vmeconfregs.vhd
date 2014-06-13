@@ -70,8 +70,8 @@ end VMECONFREGS;
 architecture VMECONFREGS_Arch of VMECONFREGS is
 
   constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0307";
-  constant FW_ID            : std_logic_vector(15 downto 0) := x"0001";
-  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0611";
+  constant FW_ID            : std_logic_vector(15 downto 0) := x"0002";
+  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0612";
   constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2014";
   constant able_write_const : std_logic                     := '0';
 
@@ -88,7 +88,8 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   constant cfg_reg_mask : cfg_regs_array := (x"003f", x"003f", x"0001", x"003f", x"001f",
                                              x"001f", x"000f", x"01ff", x"00ff", x"ffff",
                                              x"ffff", x"ffff", x"ffff", x"ffff", x"ffff", x"ffff");
-  signal cfg_reg_clk, const_reg_clk, do_cfg, do_const : std_logic := '0';
+  signal do_cfg, do_const : std_logic := '0';
+  signal do_cfg_we, do_const_we, do_cfg_we_q, do_const_we_q : std_logic := '0';
   signal bit_const                                    : std_logic := '0';
 
   type rh_reg is array (2 downto 0) of std_logic_vector(15 downto 0);
@@ -111,7 +112,7 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
 
   signal w_mask_vme, r_mask_vme     : std_logic;
   constant mask_vme_def             : std_logic_vector(NCONST-1 downto 0) := (others => '0');
-  signal mask_vme                   : std_logic_vector(15 downto 0)       := (others => '0');
+  signal mask_vme                   : std_logic_vector(NCONST downto 0)       := (others => '0');
   signal mask_vme_rst, mask_vme_pre : std_logic_vector(NCONST-1 downto 0);
 
 begin
@@ -140,7 +141,7 @@ begin
   const_reg_index_p1 <= to_integer(unsigned(cmddev(11 downto 8)));
   const_reg_index    <= const_reg_index_p1 - 1 when const_reg_index_p1 > 0 else NCONST;
 
-  OUTDATA <= mask_vme when r_mask_vme = '1' else
+  OUTDATA <= mask_vme(15 downto 0) when r_mask_vme = '1' else
              const_regs(const_reg_index) when do_const = '1' else
              cfg_regs(cfg_reg_index) and cfg_reg_mask(cfg_reg_index);
   BPI_CFG_REGS   <= cfg_regs;
@@ -160,20 +161,20 @@ begin
   ODMB_ID <= const_regs(0)(15 downto 0);  -- 0x4100
 
   -- Writing configuration registers
-  cfg_reg_clk <= STROBE when (BPI_CFG_UL_PULSE = '0' and BPI_CONST_UL_PULSE = '0') else CLK;
-  vme_cfg_reg_we <= cfg_reg_index when (do_cfg = '1' and WRITER = '0' and VME_AS_B = '0'
-                                        and BPI_CFG_BUSY = '0') else NREGS;
+  do_cfg_we <= do_cfg and not WRITER and not VME_AS_B and not BPI_CFG_BUSY;
+  PULSE_CFGWE : PULSE2FAST port map(do_cfg_we_q, CLK, RST, do_cfg_we);
+  vme_cfg_reg_we <= cfg_reg_index when do_cfg_we_q = '1' else NREGS;
 
   cfg_reg_we <= vme_cfg_reg_we when (BPI_CFG_UL_PULSE = '0') else cc_cfg_reg_we;
   cfg_reg_in <= INDATA         when (BPI_CFG_UL_PULSE = '0') else cc_cfg_reg_in;
 
-  cfg_reg_proc : process (RST, cfg_reg_clk, cfg_reg_we, cfg_reg_in, cfg_regs)
+  cfg_reg_proc : process (RST, CLK, cfg_reg_we, cfg_reg_in, cfg_regs)
   begin
     for i in 0 to NREGS-1 loop
       for j in 0 to 2 loop
         if (RST = '1') then
           cfg_reg_triple(i)(j) <= cfg_reg_init(i);
-        elsif (rising_edge(cfg_reg_clk) and cfg_reg_we = i and cfg_reg_mask_we(i) = '1') then
+        elsif (rising_edge(CLK) and cfg_reg_we = i and cfg_reg_mask_we(i) = '1') then
           cfg_reg_triple(i)(j) <= cfg_reg_in;
         else
           cfg_reg_triple(i)(j) <= cfg_regs(i);
@@ -181,14 +182,6 @@ begin
       end loop;
     end loop;
   end process;
-
-  --GEN_CFG_TRIPLEVOTING : for ind in 0 to NREGS-1 generate
-  --begin
-  --  cfg_regs(ind) <= cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(1)) else
-  --                   cfg_reg_triple(ind)(0) when (cfg_reg_triple(ind)(0) = cfg_reg_triple(ind)(2)) else
-  --                   cfg_reg_triple(ind)(1) when (cfg_reg_triple(ind)(1) = cfg_reg_triple(ind)(2)) else
-  --                   cfg_reg_triple(ind)(0);
-  --end generate GEN_CFG_TRIPLEVOTING;
 
   GEN_CFG_TRIPLEVOTING : for ind in 0 to NREGS-1 generate
   begin
@@ -201,20 +194,20 @@ begin
   end generate GEN_CFG_TRIPLEVOTING;
 
   -- Writing protected registers
-  const_reg_clk <= STROBE when (BPI_CONST_UL_PULSE = '0') else CLK;
-  vme_const_reg_we <= const_reg_index when (do_const = '1' and WRITER = '0' and BPI_CONST_BUSY = '0'
-                                            and VME_AS_B = '0' and mask_vme(const_reg_index) = '1') else NCONST;
+  do_const_we <= do_const and not WRITER and not VME_AS_B and not BPI_CONST_BUSY and mask_vme(const_reg_index);
+  PULSE_CONSTWE : PULSE2FAST port map(do_const_we_q, CLK, RST, do_const_we);
+  vme_const_reg_we <= const_reg_index when do_const_we_q = '1' else NCONST;
 
   const_reg_we <= vme_const_reg_we when (BPI_CONST_UL_PULSE = '0') else cc_const_reg_we;
   const_reg_in <= INDATA           when (BPI_CONST_UL_PULSE = '0') else cc_cfg_reg_in;
 
-  const_reg_proc : process (RST, const_reg_clk, const_reg_we, const_reg_in, const_regs)
+  const_reg_proc : process (RST, CLK, const_reg_we, const_reg_in, const_regs)
   begin
     for i in 0 to NCONST-1 loop
       for j in 0 to 2 loop
         if (RST = '1') then
           const_reg_triple(i)(j) <= const_reg_init(i);
-        elsif (rising_edge(const_reg_clk) and const_reg_we = i and const_reg_mask_we(i) = '1') then
+        elsif (rising_edge(CLK) and const_reg_we = i and const_reg_mask_we(i) = '1') then
           const_reg_triple(i)(j) <= const_reg_in;
         else
           const_reg_triple(i)(j) <= const_regs(i);
@@ -222,14 +215,6 @@ begin
       end loop;
     end loop;
   end process;
-
-  --GEN_CONST_TRIPLEVOTING : for ind in 0 to NCONST-1 generate
-  --begin
-  --  const_regs(ind) <= const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(1)) else
-  --                     const_reg_triple(ind)(0) when (const_reg_triple(ind)(0) = const_reg_triple(ind)(2)) else
-  --                     const_reg_triple(ind)(1) when (const_reg_triple(ind)(1) = const_reg_triple(ind)(2)) else
-  --                     const_reg_triple(ind)(0);
-  --end generate GEN_CONST_TRIPLEVOTING;
 
   GEN_CONST_TRIPLEVOTING : for ind in 0 to NREGS-1 generate
   begin
@@ -240,19 +225,6 @@ begin
                                (const_reg_triple(ind)(2)(ibit) and const_reg_triple(ind)(0)(ibit));
     end generate GEN_TRIPLEBITS;
   end generate GEN_CONST_TRIPLEVOTING;
-
-  --const_ml_proc : process (const_reg_triple)  -- Triple voting
-  --begin
-  --  for i in 0 to NCONST-1 loop
-  --    if (const_reg_triple(i)(0) = const_reg_triple(i)(1)) then
-  --      const_regs(i) <= const_reg_triple(i)(0);
-  --    elsif (const_reg_triple(i)(0) = const_reg_triple(i)(2)) then
-  --      const_regs(i) <= const_reg_triple(i)(0);
-  --    elsif (const_reg_triple(i)(1) = const_reg_triple(i)(2)) then
-  --      const_regs(i) <= const_reg_triple(i)(1);
-  --    end if;
-  --  end loop;
-  --end process;
 
 -- DTACK
   dd_dtack <= STROBE and DEVICE;
