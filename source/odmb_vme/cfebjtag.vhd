@@ -69,19 +69,21 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal DONEDATA                                                          : std_logic_vector(1 downto 0) := (others => '0');
 
 
-  signal CE_TAILEN, CLR_TAILEN, TAILEN                                                : std_logic;
-  signal SHTAIL                                                                       : std_logic;
-  signal CE_DONETAIL, CLR_DONETAIL, Q_DONETAIL, CEO_DONETAIL, TC_DONETAIL, C_DONETAIL : std_logic;
-  signal QV_DONETAIL                                                                  : std_logic_vector(3 downto 0);
-  signal DONETAIL                                                                     : std_logic;
-  signal CE_SHTAIL_TMS, Q1_SHTAIL_TMS, Q2_SHTAIL_TMS                                  : std_logic;
+  signal CE_TAILEN, CLR_TAILEN, TAILEN               : std_logic;
+  signal SHTAIL                                      : std_logic;
+  signal CE_DONETAIL, CLR_DONETAIL, Q_DONETAIL       : std_logic;
+  signal CEO_DONETAIL, TC_DONETAIL, C_DONETAIL       : std_logic;
+  signal QV_DONETAIL                                 : std_logic_vector(3 downto 0);
+  signal DONETAIL                                    : std_logic;
+  signal CE_SHTAIL_TMS, Q1_SHTAIL_TMS, Q2_SHTAIL_TMS : std_logic;
 
 
   signal CE_ENABLE, D_ENABLE, ENABLE : std_logic;
 
 
-  signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG, Q3_RESETJTAG, CLR_RESETJTAG, RESETJTAG : std_logic;
-  signal OKRST                                                                            : std_logic;
+  signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG        : std_logic;
+  signal Q3_RESETJTAG, CLR_RESETJTAG, RESETJTAG          : std_logic;
+  signal OKRST, INITJTAGS_Q, INITJTAGS_QQ, INITJTAGS_QQQ : std_logic;
 
 
   signal CLR_RESETDONE, CEO_RESETDONE, TC_RESETDONE : std_logic;
@@ -89,17 +91,18 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal RESETDONE                                  : std_logic;
 
 
-  signal CE_RESETJTAG_TMS, Q1_RESETJTAG_TMS, Q2_RESETJTAG_TMS, Q3_RESETJTAG_TMS, Q4_RESETJTAG_TMS, Q5_RESETJTAG_TMS, Q6_RESETJTAG_TMS : std_logic;
+  signal CE_RESETJTAG_TMS, Q1_RESETJTAG_TMS, Q2_RESETJTAG_TMS                   : std_logic;
+  signal Q3_RESETJTAG_TMS, Q4_RESETJTAG_TMS, Q5_RESETJTAG_TMS, Q6_RESETJTAG_TMS : std_logic;
 
 
   signal CE_TDI : std_logic;
   signal QV_TDI : std_logic_vector(15 downto 0);
 
-  signal RDTDODK : std_logic;
-  signal TDO : std_logic;
-  signal Q_OUTDATA : std_logic_vector(15 downto 0);
+  signal RDTDODK                                                              : std_logic;
+  signal TDO                                                                  : std_logic;
+  signal Q_OUTDATA                                                            : std_logic_vector(15 downto 0);
   signal D_DTACK, CE_DTACK, CLR_DTACK, Q1_DTACK, Q2_DTACK, Q3_DTACK, Q4_DTACK : std_logic;
-  signal DTACK_INNER : std_logic;
+  signal DTACK_INNER                                                          : std_logic;
 
 
 begin
@@ -116,14 +119,14 @@ begin
   RSTJTAG  <= '1' when (CMDDEV = "10110")                                       else '0';
 
 
--- Write SELFEB when SELCFEB=1
-  FDPE(INDATA(0), STROBE, SELCFEB, RST, SELFEB(1));
-  FDPE(INDATA(1), STROBE, SELCFEB, RST, SELFEB(2));
-  FDPE(INDATA(2), STROBE, SELCFEB, RST, SELFEB(3));
-  FDPE(INDATA(3), STROBE, SELCFEB, RST, SELFEB(4));
-  FDPE(INDATA(4), STROBE, SELCFEB, RST, SELFEB(5));
-  FDPE(INDATA(5), STROBE, SELCFEB, RST, SELFEB(6));
-  FDPE(INDATA(6), STROBE, SELCFEB, RST, SELFEB(7));
+-- Write SELFEB when SELCFEB=1 (The JTAG initialization should be broadcast)
+  FDPE(INDATA(0), STROBE, SELCFEB, INITJTAGS, SELFEB(1));
+  FDPE(INDATA(1), STROBE, SELCFEB, INITJTAGS, SELFEB(2));
+  FDPE(INDATA(2), STROBE, SELCFEB, INITJTAGS, SELFEB(3));
+  FDPE(INDATA(3), STROBE, SELCFEB, INITJTAGS, SELFEB(4));
+  FDPE(INDATA(4), STROBE, SELCFEB, INITJTAGS, SELFEB(5));
+  FDPE(INDATA(5), STROBE, SELCFEB, INITJTAGS, SELFEB(6));
+  FDPE(INDATA(6), STROBE, SELCFEB, INITJTAGS, SELFEB(7));
 
 
 -- Generate DTACK when SELCFEB=1
@@ -228,7 +231,7 @@ begin
 --    CLR_DONEDATA <= '1' when (RST='1' and DONEDATA(1)='1' and DONEDATA(0)='1') else '0'; -- BGB should be an or
   CLR_DONEDATA <= '1' when (RST = '1' or DONEDATA(1) = '1' or DONEDATA(0) = '1') else '0';  -- BGB should be an or
   UP_DONEDATA  <= '0';                  -- connected to GND
-  CB4CLED(SLOWCLK, CE_DONEDATA, CLR_DONEDATA , LOAD, UP_DONEDATA, DV_DONEDATA, QV_DONEDATA, QV_DONEDATA, CEO_DONEDATA, TC_DONEDATA);  -- Bug in FG Version (DV_DONEDATA vs D_DONEDATA)
+  CB4CLED(SLOWCLK, CE_DONEDATA, CLR_DONEDATA, LOAD, UP_DONEDATA, DV_DONEDATA, QV_DONEDATA, QV_DONEDATA, CEO_DONEDATA, TC_DONEDATA);  -- Bug in FG Version (DV_DONEDATA vs D_DONEDATA)
   D_DONEDATA   <= '1' when (QV_DONEDATA = "0000" and LOAD = '0')                 else '0';  -- Bug in FG Version (D_DONEDATA vs (DONEDATA(1))
   FDCE(D_DONEDATA, SLOWCLK, SHDATA, LOAD, DONEDATA(0));  -- Bug in FG Version (D_DONEDATA vs (DONEDATA(1))
   FDC(DONEDATA(0), SLOWCLK, LOAD, DONEDATA(1));
@@ -280,6 +283,9 @@ begin
 -- Generate RESETJTAG and OKRST 
 
 
+  FDC(INITJTAGS, FASTCLK, RST, INITJTAGS_Q);
+  FDC(INITJTAGS_Q, FASTCLK, RST, INITJTAGS_QQ);
+  FDC(INITJTAGS_QQ, FASTCLK, RST, INITJTAGS_QQQ);
   D1_RESETJTAG  <= '1' when ((STROBE = '1' and RSTJTAG = '1') or INITJTAGS = '1') else '0';
   FDC(D1_RESETJTAG, FASTCLK, RST, Q1_RESETJTAG);
   FDC(Q1_RESETJTAG, FASTCLK, RST, Q2_RESETJTAG);
@@ -373,7 +379,7 @@ begin
 -- BGB
   DTACK_INNER <= '1' when (Q_DTACK_SELCFEB = '1') or
                  (Q_DTACK_READCFEB = '1') or
-                 (RESETDONE = '1' and INITJTAGS = '0') or
+                 (RESETDONE = '1' and INITJTAGS_QQQ = '0') or
                  (RDTDODK = '1') or
                  (Q1_DTACK = '1' and Q2_DTACK = '1' and Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
                                         -- BGB

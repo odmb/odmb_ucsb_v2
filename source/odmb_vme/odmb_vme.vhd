@@ -76,6 +76,8 @@ entity ODMB_VME is
     dl_jtag_tms : out std_logic;
     dl_jtag_tdi : out std_logic;
     dl_jtag_tdo : in  std_logic_vector (6 downto 0);
+      dcfeb_initjtag : in std_logic;
+      odmb_initjtag : in std_logic;
 
 -- JTAG Signals To/From ODMB JTAG
 
@@ -768,7 +770,7 @@ begin
 
       DTACK => dtack_dev(1),
 
-      INITJTAGS => '0',                 -- to be defined
+      INITJTAGS => dcfeb_initjtag,                 -- to be defined
       TCK       => dl_jtag_tck,
       TDI       => dl_jtag_tdi,
       TMS       => dl_jtag_tms,
@@ -794,7 +796,7 @@ begin
 
       DTACK => dtack_dev(2),
 
-      INITJTAGS => '0',                 -- to be defined
+      INITJTAGS => odmb_initjtag,                 -- to be defined
       TCK       => odmb_jtag_tck,
       TDI       => odmb_jtag_tdi,
       TMS       => odmb_jtag_tms,

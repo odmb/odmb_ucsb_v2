@@ -49,7 +49,7 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   signal CMDDEV                               : std_logic_vector(15 downto 0);
   signal DATASHFT, INSTSHFT, READTDO, RSTJTAG : std_logic;
 
-  signal JTAGSEL_INNER : std_logic;
+  signal JTAGSEL_INNER, jtagsel_in : std_logic;
 
   signal D1_LOAD, D2_LOAD, CLR_LOAD, Q_LOAD, LOAD : std_logic;
 
@@ -84,8 +84,9 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
 
   signal CE_ENABLE, D_ENABLE, ENABLE : std_logic;
 
-  signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG, Q3_RESETJTAG, CLR_RESETJTAG, RESETJTAG : std_logic;
-  signal OKRST                                                                            : std_logic;
+  signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG        : std_logic;
+  signal Q3_RESETJTAG, CLR_RESETJTAG, RESETJTAG          : std_logic;
+  signal OKRST, INITJTAGS_Q, INITJTAGS_QQ, INITJTAGS_QQQ : std_logic;
 
   signal CLR_RESETDONE, CEO_RESETDONE, TC_RESETDONE : std_logic;
   signal QV_RESETDONE                               : std_logic_vector(3 downto 0);
@@ -138,8 +139,9 @@ begin
   FD_D_DTACK_POL : FDC port map(d_dtack_pol, dd_dtack_pol, q_dtack_pol, '1');
   FD_Q_DTACK_POL : FD port map(q_dtack_pol, SLOWCLK, d_dtack_pol);
 
-  JTAGSEL_INNER <= DEVICE and STROBE when default_low = '1' else
-                   not (DEVICE and STROBE);
+  jtagsel_in <= (DEVICE and STROBE) or INITJTAGS;
+  JTAGSEL_INNER <= jtagsel_in when default_low = '1' else
+                   not jtagsel_in;
 
 -- Generate LOAD
   D1_LOAD  <= DATASHFT or INSTSHFT;
@@ -260,6 +262,9 @@ begin
   FD_ENABLE : FDCE port map (ENABLE, SLOWCLK, CE_ENABLE, RST, D_ENABLE);
 
 -- Generate RESETJTAG
+  FD1_INIJTAGS : FDC port map(INITJTAGS_Q, FASTCLK, RST, INITJTAGS);
+  FD2_INIJTAGS : FDC port map(INITJTAGS_QQ, FASTCLK, RST, INITJTAGS_Q);
+  FD3_INIJTAGS : FDC port map(INITJTAGS_QQQ, FASTCLK, RST, INITJTAGS_QQ);
   D1_RESETJTAG  <= '1' when ((STROBE = '1' and RSTJTAG = '1') or INITJTAGS = '1') else '0';
   FD_Q1_RESETJTAG : FDC port map (Q1_RESETJTAG, FASTCLK, RST, D1_RESETJTAG);
   FD_Q2_RESETJTAG : FDC port map (Q2_RESETJTAG, FASTCLK, RST, Q1_RESETJTAG);
@@ -283,10 +288,10 @@ begin
   FD_Q3Q4_RESETJTAG_TMS : FDPE port map (Q4_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, Q3_RESETJTAG_TMS, RST);
   FD_Q4Q5_RESETJTAG_TMS : FDPE port map (Q5_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, Q4_RESETJTAG_TMS, RST);
   FD_Q6Q5_RESETJTAG_TMS : FDPE port map (Q6_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, Q5_RESETJTAG_TMS, RST);
-  TMS              <= '1' when (RESETJTAG = '1') else 'Z';
+  TMS              <= Q6_RESETJTAG_TMS when (RESETJTAG = '1') else 'Z';
 
 -- Generate TCK
-  TCK <= JTAGSEL_INNER and ENABLE;
+  TCK <= JTAGSEL_IN and ENABLE;
 
 -- Generate TCK
   JTAGSEL <= JTAGSEL_INNER;
@@ -326,7 +331,7 @@ begin
   FD_Q3Q4_DTACK : FDCE port map (Q4_DTACK, SLOWCLK, CE_DTACK, CLR_DTACK, Q3_DTACK);
 
 -- DTACK                     
-  DTACK <= '1' when (RESETDONE = '1' and INITJTAGS = '0') or
+  DTACK <= '1' when (RESETDONE = '1' and INITJTAGS_QQQ = '0') or
            (RDTDODK = '1') or q_dtack_pol = '1' or
            (Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
 

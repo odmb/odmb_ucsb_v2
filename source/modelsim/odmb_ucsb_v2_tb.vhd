@@ -514,7 +514,7 @@ architecture ODMB_UCSB_V2_TB_arch of ODMB_UCSB_V2_TB is
   signal dcfeb_extpls    : std_logic                       := '0';
   signal dcfeb_l1a       : std_logic                       := '0';
   signal dcfeb_l1a_match : std_logic_vector(NFEB downto 1);
-  signal dcfeb_done      : std_logic_vector(NFEB downto 1) := "1010101";  -- in
+  signal dcfeb_done      : std_logic_vector(NFEB downto 1) := "0000000";  -- in
 
 -- From/To ODMB_UCSB_V2 JTAG port (through IC34)
 
@@ -710,7 +710,8 @@ begin
   orx_n(7) <= gl1_tx_n;                 -- Test of the DCFEB RX
 
   rst <= '0', '1' after 200 ns, '0' after 3000 ns;
-
+  dcfeb_done(1) <= '0', '1' after 13500 ns;
+  
   rstn <= not rst;
 
   stop <= '0';

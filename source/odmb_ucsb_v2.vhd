@@ -285,6 +285,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       dl_jtag_tms : out std_logic;
       dl_jtag_tdi : out std_logic;
       dl_jtag_tdo : in  std_logic_vector (6 downto 0);
+      dcfeb_initjtag : in std_logic;
+      odmb_initjtag : in std_logic;
 
 -- JTAG Signals To/From ODMB JTAG
 
@@ -914,7 +916,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Global signals
   signal fw_reset, reset_pulse, reset_pulse_q            : std_logic := '0';
-  signal pb_pulse, pb0_q, ccb_softrst_b_q                : std_logic := '0';
+  signal pb_pulse, pb0_q               : std_logic := '0';
+  signal ccb_softrst_b_q                : std_logic := '1';
   signal ccb_l1acnt_rst, ccb_l1acnt_rst_q, ccb_bxrst_b_q : std_logic := '0';
   signal ccb_bx0, ccb_bx0_q, pre_bc0                              : std_logic := '0';
   signal l1a_reset_pulse_q                               : std_logic := '0';
@@ -982,6 +985,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- JTAG signals To/From MBV
 
+  signal dcfeb_done_pulse             : std_logic_vector(7 downto 1);
   signal int_tck, int_tdo             : std_logic_vector(7 downto 1);
   signal odmb_tms, odmb_tdi           : std_logic;
   signal dcfeb_tms_out, dcfeb_tdi_out : std_logic;
@@ -1110,7 +1114,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 -- Other signals
 
   signal int_dl_jtag_tdo : std_logic_vector(7 downto 1) := "0000000";
-
+  signal dcfeb_initjtag_dd, dcfeb_initjtag_d, dcfeb_initjtag : std_logic := '0';
+  signal odmb_initjtag_dd, odmb_initjtag_d, odmb_initjtag : std_logic := '0';
+  
   signal int_lvmb_pon                                 : std_logic_vector(7 downto 0);
   signal int_lvmb_csb                                 : std_logic_vector(6 downto 0);
   signal int_lvmb_sclk, int_lvmb_sdin, int_lvmb_sdout : std_logic;
@@ -1379,6 +1385,8 @@ begin
       dl_jtag_tms => dcfeb_tms_out,
       dl_jtag_tdi => dcfeb_tdi_out,
       dl_jtag_tdo => int_tdo,
+      dcfeb_initjtag => dcfeb_initjtag,
+      odmb_initjtag => odmb_initjtag,
 
 -- JTAG Signals To/From ODMB JTAG
 
@@ -2133,7 +2141,7 @@ begin
   FD_CCBBX0    : FD port map(ccb_bx0_q, clk40, ccb_bx0);
   ccb_l1acnt_rst <= not ccb_evcntres_b or not ccb_l1arst_b;
   FD_CCBL1A    : FD port map(ccb_l1acnt_rst_q, clk40, ccb_l1acnt_rst);
-  FD_CCBSOFT   : FD port map(ccb_softrst_b_q, clk40, ccb_softrst_b);
+  FD_CCBSOFT   : FD generic map(INIT => '1') port map(ccb_softrst_b_q, clk40, ccb_softrst_b);
   FD_CCBBX     : FD port map(ccb_bxrst_b_q, clk40, ccb_bxrst_b);
   FD_PB0       : FD port map(pb0_q, clk40, pb(0));
   -- FDs for edge detection
@@ -2163,6 +2171,18 @@ begin
   L1ARESETPULSE : RESET_FIFO generic map(10)
     port map(l1acnt_fifo_rst, datafifo_mask, clk40, l1acnt_rst);
   bxcnt_rst <= not ccb_bxrst_b_q;
+
+  -- After each reset and every time the DCFEBs are reprogrammed, JTAG is reset
+  GENDONEPULSE : for index in 1 to NFEB generate
+  begin
+    PULSE_DONE : NPULSE2FAST port map(dcfeb_done_pulse(index), clk40, '0', 17, DCFEB_DONE(index));
+  end generate GENDONEPULSE;  
+  dcfeb_initjtag_dd <= or_reduce(dcfeb_done_pulse);
+  DS_DCFEB_INITJTAG : DELAY_SIGNAL generic map(25) port map(dcfeb_initjtag_d, clk40, 25, dcfeb_initjtag_dd);
+  PULSE_DCFEB_INITJTAG : NPULSE2SAME port map(dcfeb_initjtag, clk40, '0', 300, dcfeb_initjtag_d);
+  odmb_initjtag_dd <= pon_rst_reg(31);
+  DS_ODMB_INITJTAG : DELAY_SIGNAL generic map(25) port map(odmb_initjtag_d, clk40, 25, odmb_initjtag_dd);
+  PULSE_ODMB_INITJTAG : NPULSE2SAME port map(odmb_initjtag, clk40, '0', 300, odmb_initjtag_d);
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
   PULLDOWN_DCFEB_TMS : PULLDOWN port map (dcfeb_tms_out);

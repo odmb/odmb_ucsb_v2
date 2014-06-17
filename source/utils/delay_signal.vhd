@@ -18,7 +18,7 @@ end DELAY_SIGNAL;
 
 architecture DELAY_SIGNAL_Arch of DELAY_SIGNAL is
 
-  signal din_vector : std_logic_vector(NCYCLES_MAX downto 0);
+  signal din_vector : std_logic_vector(NCYCLES_MAX downto 0) := (others => '0');
 
 begin  --Architecture
 
