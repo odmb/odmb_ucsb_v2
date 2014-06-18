@@ -121,18 +121,18 @@ begin  --Architecture
   LED(2) <= '0' when (STROBE_TEMP1 = '1' and STROBE_TEMP2 = '1') else '1';
 
   -- Generate DIAGOUT -Guido-
-  DIAGOUT(0)  <= ADRS_INNER(23);
-  DIAGOUT(1)  <= CGA(4);
-  DIAGOUT(2)  <= ADRS_INNER(21);
-  DIAGOUT(3)  <= CGA(2);
+  DIAGOUT(0)  <= ADRS_INNER(18);
+  DIAGOUT(1)  <= ADRS_INNER(19);
+  DIAGOUT(2)  <= ADRS_INNER(20);
+  DIAGOUT(3)  <= ADRS_INNER(21);
   DIAGOUT(4)  <= ADRS_INNER(22);
-  DIAGOUT(5)  <= CGA(3);
-  DIAGOUT(6)  <= ADRS_INNER(20);
-  DIAGOUT(7)  <= CGA(1);
-  DIAGOUT(8)  <= ADRS_INNER(19);
-  DIAGOUT(9)  <= CGA(0);
-  DIAGOUT(10) <= CGA(5);
-  DIAGOUT(11) <= VALIDGA;
+  DIAGOUT(5)  <= ADRS_INNER(23);
+  DIAGOUT(6)  <= AMS(0);
+  DIAGOUT(7)  <= AMS(1);
+  DIAGOUT(8)  <= AMS(2);
+  DIAGOUT(9)  <= AMS(3);
+  DIAGOUT(10) <= AMS(4);
+  DIAGOUT(11) <= AMS(5);
   DIAGOUT(12) <= SYSOK;
   DIAGOUT(13) <= VALIDAM;
   DIAGOUT(14) <= BOARD_SEL_NEW;
@@ -140,7 +140,7 @@ begin  --Architecture
   DIAGOUT(16) <= ASYNSTRB;
   DIAGOUT(17) <= STROBE_TEMP1;
   DIAGOUT(18) <= STROBE_TEMP2;
-  DIAGOUT(19) <= FASTCLK_NOT;
+  DIAGOUT(19) <= VALIDGA;
 
   -- Generate COMMAND
   COMMAND(9 downto 0) <= ADRS_INNER(11 downto 2);

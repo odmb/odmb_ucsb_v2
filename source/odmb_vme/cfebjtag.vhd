@@ -389,7 +389,7 @@ begin
 
 
 -- Generate LED.
-  LED <= '0' when (Q1_DTACK = '1' and Q2_DTACK = '1' and Q3_DTACK = '1' and Q4_DTACK = '1') else '0';  -- BGB
+  LED <= INITJTAGS_QQQ;  
 
 
 -- generate DIAGOUT
@@ -397,13 +397,13 @@ begin
   DIAGOUT(1)  <= ENABLE;
   DIAGOUT(2)  <= BUSY;
   DIAGOUT(3)  <= RDTDODK;
-  DIAGOUT(4)  <= DTACK_INNER;
-  DIAGOUT(5)  <= RST;
-  DIAGOUT(6)  <= TDO;
+  DIAGOUT(4)  <= RESETDONE;
+  DIAGOUT(5)  <= OKRST;
+  DIAGOUT(6)  <= RESETJTAG;
   DIAGOUT(7)  <= SHDATAX;
   DIAGOUT(8)  <= SLOWCLK;
   DIAGOUT(9)  <= READTDO;
-  DIAGOUT(10) <= STROBE;
+  DIAGOUT(10) <= RSTJTAG;
   DIAGOUT(11) <= DHEADEN;
   DIAGOUT(12) <= IHEADEN;
   DIAGOUT(13) <= DONEDATA(1);

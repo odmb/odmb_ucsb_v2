@@ -6,7 +6,6 @@ library hdlmacro;
 library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
 use unisim.vcomponents.all;
 use unimacro.vcomponents.all;
@@ -334,7 +333,7 @@ begin
     if (rst = '1') then
       for i in 0 to NBL-1 loop
         for j in 0 to NWD-1 loop
-          prom_data(i)(j) <= (others => '1');
+          prom_data(i)(j) <= std_logic_vector(to_unsigned(i, 8)) & std_logic_vector(to_unsigned(j, 8));
         end loop;
       end loop;
 

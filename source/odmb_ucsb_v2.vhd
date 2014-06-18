@@ -237,6 +237,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
     port (
       CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       CSP_BPI_PORT_LA_CTRL        : inout std_logic_vector(35 downto 0);
+      CSP_BPI_LA_CTRL             : inout std_logic_vector(35 downto 0);
       CSP_LVMB_LA_CTRL            : inout std_logic_vector(35 downto 0);
 -- VME signals
 
@@ -311,7 +312,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       lvmb_sdin  : out std_logic;
       lvmb_sdout : in  std_logic;
 
-      diagout_cfebjtag : out std_logic_vector(17 downto 0);
       diagout_lvdbmon  : out std_logic_vector(17 downto 0);
 
       -- From VMEMON
@@ -1140,7 +1140,6 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   type dcfeb_jtag_ir_type is array (NFEB downto 1) of std_logic_vector(9 downto 0);
   signal dcfeb_jtag_ir : dcfeb_jtag_ir_type;
 
-  signal diagout_cfebjtag : std_logic_vector(17 downto 0);
   signal diagout_lvdbmon  : std_logic_vector(17 downto 0);
 
   signal pon_rst_reg, fw_rst_reg, opt_rst_reg : std_logic_vector (31 downto 0) := (others => '0');
@@ -1338,6 +1337,7 @@ begin
 
       CSP_FREE_AGENT_PORT_LA_CTRL => csp_free_agent_port_la_ctrl,
       CSP_BPI_PORT_LA_CTRL        => csp_bpi_port_la_ctrl,
+      CSP_BPI_LA_CTRL        => csp_bpi_la_ctrl,
       CSP_LVMB_LA_CTRL            => csp_lvmb_la_ctrl,
 
       cmd_adrs        => cmd_adrs,            -- output
@@ -1411,7 +1411,6 @@ begin
       lvmb_sdin  => int_lvmb_sdin,
       lvmb_sdout => int_lvmb_sdout,
 
-      diagout_cfebjtag => diagout_cfebjtag,
       diagout_lvdbmon  => diagout_lvdbmon,
 
 -- From VMEMON    
@@ -2143,7 +2142,7 @@ begin
   FD_CCBL1A    : FD port map(ccb_l1acnt_rst_q, clk40, ccb_l1acnt_rst);
   FD_CCBSOFT   : FD generic map(INIT => '1') port map(ccb_softrst_b_q, clk40, ccb_softrst_b);
   FD_CCBBX     : FD port map(ccb_bxrst_b_q, clk40, ccb_bxrst_b);
-  FD_PB0       : FD port map(pb0_q, clk40, pb(0));
+  FD_PB0       : FD generic map(INIT => '1')port map(pb0_q, clk40, pb(0));
   -- FDs for edge detection
   FD_FW_RESET  : FD port map(fw_reset_q, clk40, fw_reset);
   FD_OPT_RESET : FD port map(opt_reset_pulse_q, clk40, opt_reset_pulse);
@@ -2172,17 +2171,21 @@ begin
     port map(l1acnt_fifo_rst, datafifo_mask, clk40, l1acnt_rst);
   bxcnt_rst <= not ccb_bxrst_b_q;
 
-  -- After each reset and every time the DCFEBs are reprogrammed, JTAG is reset
+  -- Every time the DCFEBs are reprogrammed, all DCFEB JTAG are reset
   GENDONEPULSE : for index in 1 to NFEB generate
   begin
     PULSE_DONE : NPULSE2FAST port map(dcfeb_done_pulse(index), clk40, '0', 17, DCFEB_DONE(index));
   end generate GENDONEPULSE;  
   dcfeb_initjtag_dd <= or_reduce(dcfeb_done_pulse);
+  --dcfeb_initjtag_dd <= reset or or_reduce(dcfeb_done_pulse);
   DS_DCFEB_INITJTAG : DELAY_SIGNAL generic map(25) port map(dcfeb_initjtag_d, clk40, 25, dcfeb_initjtag_dd);
   PULSE_DCFEB_INITJTAG : NPULSE2SAME port map(dcfeb_initjtag, clk40, '0', 300, dcfeb_initjtag_d);
-  odmb_initjtag_dd <= pon_rst_reg(31);
-  DS_ODMB_INITJTAG : DELAY_SIGNAL generic map(25) port map(odmb_initjtag_d, clk40, 25, odmb_initjtag_dd);
-  PULSE_ODMB_INITJTAG : NPULSE2SAME port map(odmb_initjtag, clk40, '0', 300, odmb_initjtag_d);
+  
+  -- After each power on, ODMB JTAG is reset
+  CROSS_PON : CROSSCLOCK port map(odmb_initjtag_dd, clk2p5, clk40, '0', pon_rst_reg(31));
+  --CROSS_PON : CROSSCLOCK port map(odmb_initjtag_dd, clk2p5, clk40, '0', reset);
+  DS_ODMB_INITJTAG : DELAY_SIGNAL generic map(25) port map(odmb_initjtag_d, clk2p5, 25, odmb_initjtag_dd);
+  PULSE_ODMB_INITJTAG : NPULSE2FAST port map(odmb_initjtag, clk40, '0', 300, odmb_initjtag_d);
 
   PULLUP_dtack_b     : PULLUP port map (vme_dtack_v6_b);
   PULLDOWN_DCFEB_TMS : PULLDOWN port map (dcfeb_tms_out);
@@ -2460,13 +2463,13 @@ begin
       FLATCH_B     => prom_le_b
       );
 
-  csp_bpi_la_pm : csp_bpi_la
-    port map (
-      CONTROL => csp_bpi_la_ctrl,
-      CLK     => clk80,
-      DATA    => csp_bpi_la_data,
-      TRIG0   => csp_bpi_la_trig
-      );
+  --csp_bpi_la_pm : csp_bpi_la
+  --  port map (
+  --    CONTROL => csp_bpi_la_ctrl,
+  --    CLK     => clk80,
+  --    DATA    => csp_bpi_la_data,
+  --    TRIG0   => csp_bpi_la_trig
+  --    );
 
   --csp_bpi_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
 

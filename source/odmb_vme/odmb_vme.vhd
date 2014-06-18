@@ -28,6 +28,7 @@ entity ODMB_VME is
   port (
     CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
     CSP_BPI_PORT_LA_CTRL        : inout std_logic_vector(35 downto 0);
+    CSP_BPI_LA_CTRL             : inout std_logic_vector(35 downto 0);
     CSP_LVMB_LA_CTRL            : inout std_logic_vector(35 downto 0);
 -- VME signals
 
@@ -72,12 +73,12 @@ entity ODMB_VME is
 
 -- JTAG Signals To/From DCFEBs
 
-    dl_jtag_tck : out std_logic_vector (6 downto 0);
-    dl_jtag_tms : out std_logic;
-    dl_jtag_tdi : out std_logic;
-    dl_jtag_tdo : in  std_logic_vector (6 downto 0);
-      dcfeb_initjtag : in std_logic;
-      odmb_initjtag : in std_logic;
+    dl_jtag_tck    : out std_logic_vector (6 downto 0);
+    dl_jtag_tms    : out std_logic;
+    dl_jtag_tdi    : out std_logic;
+    dl_jtag_tdo    : in  std_logic_vector (6 downto 0);
+    dcfeb_initjtag : in  std_logic;
+    odmb_initjtag  : in  std_logic;
 
 -- JTAG Signals To/From ODMB JTAG
 
@@ -102,7 +103,6 @@ entity ODMB_VME is
     lvmb_sdin  : out std_logic;
     lvmb_sdout : in  std_logic;
 
-    diagout_cfebjtag : out std_logic_vector(17 downto 0);
     diagout_lvdbmon  : out std_logic_vector(17 downto 0);
 
 -- From VMEMON
@@ -642,6 +642,15 @@ architecture ODMB_VME_architecture of ODMB_VME is
       );
   end component;
 
+  component csp_bpi_la is
+    port(
+      CLK     : in    std_logic := 'X';
+      DATA    : in    std_logic_vector (299 downto 0);
+      TRIG0   : in    std_logic_vector (15 downto 0);
+      CONTROL : inout std_logic_vector (35 downto 0)
+      );
+  end component;
+
   component COMMAND_MODULE is
     port (
       FASTCLK : in std_logic;
@@ -683,17 +692,23 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal strobe         : std_logic;
   signal tovme_b, doe_b : std_logic;
 
+  signal diagout_cfebjtag : std_logic_vector(17 downto 0);
   signal diagout_command : std_logic_vector(19 downto 0);
   signal led_command     : std_logic_vector(2 downto 0);
 
-  signal led_cfebjtag : std_logic;
+  signal dl_jtag_tck_inner : std_logic_vector(6 downto 0);
+  signal dl_jtag_tdi_inner, dl_jtag_tms_inner  : std_logic;
+  signal led_cfebjtag      : std_logic;
 
-  signal led_odmbjtag : std_logic;
+  signal odmb_jtag_tdi_inner, odmb_jtag_tms_inner  : std_logic;
+  signal led_odmbjtag, odmb_jtag_tck_inner : std_logic;
+  signal odmb_jtag_sel_inner               : std_logic;
 
   -- VMECONFREGS
-  signal bpi_cfg_regs      : cfg_regs_array;
-  signal cc_bpi_cfg_reg_we : integer range 0 to NREGS;
-  signal cc_bpi_cfg_reg_in : std_logic_vector(15 downto 0);
+  signal bpi_cfg_regs                   : cfg_regs_array;
+  signal cc_bpi_cfg_reg_we              : integer range 0 to NREGS;
+  signal cc_bpi_cfg_reg_in              : std_logic_vector(15 downto 0);
+  signal do_cfg_reg_we, do_const_reg_we : std_logic := '0';
 
   signal vme_bpi_cmd_fifo_data                                : std_logic_vector(15 downto 0);
   signal cc_cfg_bpi_cmd_fifo_data, cc_const_bpi_cmd_fifo_data : std_logic_vector(15 downto 0);
@@ -718,12 +733,16 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_cfg_pulse, bpi_const_pulse : std_logic;
 
 
-  signal dtack_dev      : std_logic_vector(9 downto 0);
+  signal dtack_dev         : std_logic_vector(9 downto 0);
   type dev_array is array(0 to 15) of std_logic_vector(15 downto 0);
-  signal dev_outdata    : dev_array;
-  signal device_index   : integer range 0 to 15;
-  signal cmd_adrs_inner : std_logic_vector(17 downto 2);
-  signal odmb_id_inner  : std_logic_vector(15 downto 0);
+  signal dev_outdata       : dev_array;
+  signal device_index      : integer range 0 to 15;
+  signal cmd_adrs_inner    : std_logic_vector(17 downto 2);
+  signal odmb_id_inner     : std_logic_vector(15 downto 0);
+  signal lct_l1a_dly_inner : std_logic_vector(5 downto 0);
+
+  signal csp_bpi_la_data : std_logic_vector(299 downto 0);
+  signal csp_bpi_la_trig : std_logic_vector(15 downto 0);
 
 begin
 
@@ -770,15 +789,18 @@ begin
 
       DTACK => dtack_dev(1),
 
-      INITJTAGS => dcfeb_initjtag,                 -- to be defined
-      TCK       => dl_jtag_tck,
-      TDI       => dl_jtag_tdi,
-      TMS       => dl_jtag_tms,
+      INITJTAGS => dcfeb_initjtag,     
+      TCK       => dl_jtag_tck_inner,
+      TDI       => dl_jtag_tdi_inner,
+      TMS       => dl_jtag_tms_inner,
       FEBTDO    => dl_jtag_tdo,
 
       DIAGOUT => diagout_cfebjtag,
       LED     => led_cfebjtag
       );
+  DL_JTAG_TCK <= dl_jtag_tck_inner;
+  DL_JTAG_TDI <= dl_jtag_tdi_inner;
+  DL_JTAG_TMS <= dl_jtag_tms_inner;
 
   DEV2_ODMBJTAG : ODMBJTAG
     port map (
@@ -796,18 +818,22 @@ begin
 
       DTACK => dtack_dev(2),
 
-      INITJTAGS => odmb_initjtag,                 -- to be defined
-      TCK       => odmb_jtag_tck,
-      TDI       => odmb_jtag_tdi,
-      TMS       => odmb_jtag_tms,
+      INITJTAGS => odmb_initjtag,
+      TCK       => odmb_jtag_tck_inner,
+      TDI       => odmb_jtag_tdi_inner,
+      TMS       => odmb_jtag_tms_inner,
       ODMBTDO   => odmb_jtag_tdo,
       ODMB_ID   => odmb_id_inner,
 
-      JTAGSEL => odmb_jtag_sel,
+      JTAGSEL => odmb_jtag_sel_inner,
 
       LED => led_odmbjtag
       );
 
+  ODMB_JTAG_TCK <= odmb_jtag_tck_inner;
+  ODMB_JTAG_TDI <= odmb_jtag_tdi_inner;
+  ODMB_JTAG_TMS <= odmb_jtag_tms_inner;
+  ODMB_JTAG_SEL <= odmb_jtag_sel_inner;
 
   DEV3_VMEMON : VMEMON
     generic map (NFEB => NFEB)
@@ -872,7 +898,7 @@ begin
 
         DTACK => DTACK_DEV(4),
 
-        LCT_L1A_DLY   => LCT_L1A_DLY,
+        LCT_L1A_DLY   => lct_l1a_dly_inner,
         CABLE_DLY     => CABLE_DLY,
         OTMB_PUSH_DLY => OTMB_PUSH_DLY,
         ALCT_PUSH_DLY => ALCT_PUSH_DLY,
@@ -897,13 +923,17 @@ begin
 
         -- From/to BPI_CFG_CONTROLLER
         BPI_CONST_BUSY  => bpi_const_busy,
-        CC_CONST_REG_WE => CC_BPI_CONST_REG_WE,
+        CC_CONST_REG_WE => cc_bpi_const_reg_we,
         BPI_CONST_REGS  => bpi_const_regs,
         BPI_CFG_BUSY    => bpi_cfg_busy,
         CC_CFG_REG_WE   => CC_BPI_CFG_REG_WE,
         BPI_CFG_REGS    => bpi_cfg_regs
         );
-  ODMB_ID <= odmb_id_inner;
+  
+  LCT_L1A_DLY     <= lct_l1a_dly_inner;
+  ODMB_ID         <= odmb_id_inner;
+  do_cfg_reg_we   <= '1' when cc_bpi_cfg_reg_we /= NREGS    else '0';
+  do_const_reg_we <= '1' when cc_bpi_const_reg_we /= NCONST else '0';
 
   DEV5_TESTFIFOS : TESTFIFOS
     port map (
@@ -930,18 +960,18 @@ begin
       otmb_fifo_data_valid => otmb_fifo_data_valid,
 
       -- DDU_TX/RX Fifo signals
-      dduclk         => dduclk,
-      ddu_data       => ddu_data,
-      ddu_data_valid => ddu_data_valid,
+      dduclk            => dduclk,
+      ddu_data          => ddu_data,
+      ddu_data_valid    => ddu_data_valid,
       ddu_rx_data       => ddu_rx_data,
       ddu_rx_data_valid => ddu_rx_data_valid,
-      
-     -- PC FIFO signals
-      pcclk        => pcclk,
+
+      -- PC FIFO signals
+      pcclk               => pcclk,
       pc_data_frame       => pc_data_frame,
       pc_data_frame_valid => pc_data_frame_valid,
-      pc_rx_data       => pc_rx_data,
-      pc_rx_data_valid => pc_rx_data_valid,
+      pc_rx_data          => pc_rx_data,
+      pc_rx_data_valid    => pc_rx_data_valid,
 
       -- TFF (DCFEB test FIFOs)
       TFF_DOUT    => TFF_DOUT,
@@ -1205,13 +1235,52 @@ begin
   vme_tovme       <= not tovme_b;
   vme_sysfail_out <= '0';
   vme_berr_out    <= '0';
-  vme_sysfail_out <= '0';
   ext_vme_ga      <= vme_gap & vme_ga;
 
 -- To LVMB: V2 default low, V3 default high
   PON_OE_B    <= '0' when (odmb_id_inner(15 downto 12) /= x"3" and odmb_id_inner(15 downto 12) /= x"4") else '1';
   VME_DTACK_B <= not or_reduce(dtack_dev);
 
+
+  -- This a Chip Scope Pro for VMECONFREGS, CFEBJTAG, ODMBJTAG, and VME
+  -- protocol, so I clock it at 40 MHz (not optimal for VME and JTAG)
+  csp_bpi_la_pm : csp_bpi_la
+    port map (
+      CONTROL => csp_bpi_la_ctrl,
+      CLK     => clk,  -- clk40, which is a bit fast for VME and JTAG...
+      DATA    => csp_bpi_la_data,
+      TRIG0   => csp_bpi_la_trig
+      );
+
+  csp_bpi_la_trig <= odmb_initjtag & odmb_jtag_tck_inner & led_odmbjtag &
+                     dcfeb_initjtag & dl_jtag_tck_inner(1) & or_reduce(dtack_dev) &
+                     or_reduce(device) & bpi_const_busy & bpi_cfg_busy & bpi_const_ul_pulse &
+                     bpi_const_dl_pulse & bpi_cfg_ul_pulse_inner & bpi_cfg_dl_pulse_inner & strobe &
+                     do_cfg_reg_we & do_const_reg_we;
+
+  csp_bpi_la_data <= x"0000000000" & x"0000000000" & x"00000" & "0"
+                     & BPI_CFG_REG_IN --[198:183]
+                     & diagout_command(19 downto 11) --[182:174]
+                     & bpi_cfg_regs(0) --[173:158]
+                     & bpi_const_regs(0) --[157:142]
+                     & odmb_jtag_tdo & led_odmbjtag & odmb_initjtag --[141:139]
+                     & odmb_jtag_tck_inner & odmb_jtag_tdi_inner & odmb_jtag_tms_inner --[138:136]
+                     & doe_b & tovme_b & vme_berr_b & vme_sysfail_b & vme_write_b --[135:131]
+                     & diagout_command(11 downto 6) & ext_vme_ga   --[130:119]
+                     & diagout_command(5 downto 0) & cmd_adrs_inner & "00"        --[118:95]
+                     & dtack_dev             --[94:85]
+                     & strobe & device       --[84:74]
+                     & led_cfebjtag & diagout_cfebjtag --[73:55]
+                     & dl_jtag_tck_inner      --[54:48]
+                     & dl_jtag_tdo --[47:41]
+                     & dl_jtag_tms_inner & dl_jtag_tdi_inner --[40:39]
+                     & lct_l1a_dly_inner                        --[38:33]
+                     & odmb_id_inner                            --[32:17]
+                     & bpi_const_busy & bpi_cfg_busy & RST      --[16:14]
+                     & bpi_cfg_ul_pulse_inner & bpi_cfg_dl_pulse_inner  --[13:12]
+                     & bpi_const_ul_pulse & bpi_const_dl_pulse  --[11:10]
+                     & std_logic_vector(to_unsigned(cc_bpi_const_reg_we, 5))  -- [9:5]
+                     & std_logic_vector(to_unsigned(cc_bpi_cfg_reg_we, 5));  -- [4:0]
 
 
 end ODMB_VME_architecture;

@@ -142,6 +142,16 @@ begin
   jtagsel_in <= (DEVICE and STROBE) or INITJTAGS;
   JTAGSEL_INNER <= jtagsel_in when default_low = '1' else
                    not jtagsel_in;
+  --JTAGSEL_INNER <= not jtagsel_in;
+  --jtagsel_in <= (DEVICE and STROBE); -- For debug
+  JTAGSEL <= JTAGSEL_INNER;
+
+-- Generate TCK
+  TCK <= JTAGSEL_IN and ENABLE;
+  --TCK <= ((DEVICE and STROBE) or INITJTAGS) and ENABLE; -- For debug
+
+-- Generate LED.
+  LED <= (DEVICE and STROBE) or INITJTAGS;
 
 -- Generate LOAD
   D1_LOAD  <= DATASHFT or INSTSHFT;
@@ -290,12 +300,6 @@ begin
   FD_Q6Q5_RESETJTAG_TMS : FDPE port map (Q6_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, Q5_RESETJTAG_TMS, RST);
   TMS              <= Q6_RESETJTAG_TMS when (RESETJTAG = '1') else 'Z';
 
--- Generate TCK
-  TCK <= JTAGSEL_IN and ENABLE;
-
--- Generate TCK
-  JTAGSEL <= JTAGSEL_INNER;
-
 -- Generate TDI
   CE_TDI <= (SHDATA and ENABLE);
 -- old: SR16CLRE(SLOWCLK, CE_TDI, RST, LOAD, QV_TDI(0), INDATA, QV_TDI, QV_TDI);
@@ -334,9 +338,6 @@ begin
   DTACK <= '1' when (RESETDONE = '1' and INITJTAGS_QQQ = '0') or
            (RDTDODK = '1') or q_dtack_pol = '1' or
            (Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
-
--- Generate LED.
-  LED <= '0' when (Q3_DTACK = '1' and Q4_DTACK = '1') else '0';
 
 end ODMBJTAG_Arch;
 

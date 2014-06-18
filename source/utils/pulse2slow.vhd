@@ -22,12 +22,12 @@ architecture PULSE2SLOW_Arch of PULSE2SLOW is
 begin
   -- Fast clock domain (CLK_DIN)
   pulse(0) <= pulse(1) when DIN = '0' else not pulse(1);
-  FD1 : FDC port map(pulse(1), CLK_DIN, RST, pulse(0));
+  FD1 : FDC generic map(INIT => '1') port map(pulse(1), CLK_DIN, RST, pulse(0));
 
   -- Slow clock domain (CLK_DOUT)
-  FD2 : FDC port map(pulse(2), CLK_DOUT, RST, pulse(1));
-  FD3 : FDC port map(pulse(3), CLK_DOUT, RST, pulse(2));
-  FD4 : FDC port map(pulse(4), CLK_DOUT, RST, pulse(3));
+  FD2 : FDC generic map(INIT => '1') port map(pulse(2), CLK_DOUT, RST, pulse(1));
+  FD3 : FDC generic map(INIT => '1') port map(pulse(3), CLK_DOUT, RST, pulse(2));
+  FD4 : FDC generic map(INIT => '1') port map(pulse(4), CLK_DOUT, RST, pulse(3));
 
   DOUT <= pulse(3) xor pulse(4);
   

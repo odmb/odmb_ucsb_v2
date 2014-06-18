@@ -152,7 +152,7 @@ begin  --Architecture
 -- CFG REGISTERS
   -- Start Upload and Download CFG registers
   start_cfg_ul <= SEND_BPI_CFG_UL or rst_cfg_ul_pulse;
-  PULSE_CFG_UL : PULSE_EDGE port map(BPI_CFG_UL_INNER, open, CLK, RST, 1, start_cfg_ul);
+  PULSE_CFG_UL : PULSE2FAST port map(BPI_CFG_UL_INNER, CLK, RST, start_cfg_ul);
   PULSE_CFG_DL : PULSE2FAST port map(BPI_CFG_DL_INNER, CLK, RST, SEND_BPI_CFG_DL);
   BPI_CFG_UL   <= BPI_CFG_UL_INNER;
   BPI_CFG_DL   <= BPI_CFG_DL_INNER;
@@ -167,9 +167,9 @@ begin  --Architecture
 
   -- Upload config from PROM on RST
   rst_const_ul_init_b  <= not rst_const_ul_init;
-  RST_CFGDONE_PE : PULSE_EDGE port map (rst_cfg_done_pulse, open, clk, RST, 20, rst_const_ul_init_b);
+  RST_CFGDONE_PE : NPULSE2FAST port map (rst_cfg_done_pulse, clk, '0', 20, rst_const_ul_init_b);
   rst_cfg_done_pulse_b <= not rst_cfg_done_pulse;
-  RST_UL_CFG_PE  : PULSE_EDGE port map (rst_cfg_ul_pulse, open, clk, RST, 5, rst_cfg_done_pulse_b);
+  RST_UL_CFG_PE  : NPULSE2FAST port map (rst_cfg_ul_pulse, clk, '0', 5, rst_cfg_done_pulse_b);
 
   -- Reset BPI (mainly rbk_fifo) after initial Upload
   FD_DD_CFG_UL_INIT : FD port map(DD_CFG_UL_INIT, CLK, rst_cfg_ul_pulse);
@@ -181,7 +181,7 @@ begin  --Architecture
 -- CONST REGISTERS
   -- Start Upload and Download CONST registers
   start_const_ul <= SEND_BPI_CONST_UL or rst_const_ul_pulse;
-  PULSE_CONST_UL : PULSE_EDGE port map(BPI_CONST_UL_INNER, open, CLK, RST, 1, start_const_ul);
+  PULSE_CONST_UL : PULSE2FAST port map(BPI_CONST_UL_INNER, CLK, '0', start_const_ul);
   PULSE_CONST_DL : PULSE2FAST port map(BPI_CONST_DL_INNER, CLK, RST, SEND_BPI_CONST_DL);
   BPI_CONST_UL   <= BPI_CONST_UL_INNER;
   BPI_CONST_DL   <= BPI_CONST_DL_INNER;
@@ -196,9 +196,9 @@ begin  --Architecture
 
   -- Upload config from PROM on RST
   rst_b            <= not RST;
-  RST_DONE_PE     : PULSE_EDGE port map (rst_const_done_pulse, open, clk, RST, 20, rst_b);
+  RST_DONE_PE     : NPULSE2SAME port map (rst_const_done_pulse, clk, '0', 20, rst_b);
   rst_const_done_pulse_b <= not rst_const_done_pulse;
-  RST_UL_CONST_PE : PULSE_EDGE port map (rst_const_ul_pulse, open, clk, RST, 5, rst_const_done_pulse_b);
+  RST_UL_CONST_PE : NPULSE2SAME port map (rst_const_ul_pulse, clk, '0', 5, rst_const_done_pulse_b);
 
   -- Reset BPI (mainly rbk_fifo) after initial Upload
   FD_DD_CONST_UL_INIT : FD port map(DD_CONST_UL_INIT, CLK, rst_const_ul_pulse);
@@ -212,12 +212,12 @@ begin  --Architecture
   FD_D_R_RBK_FIFO : FDC port map(d_r_rbk_fifo, dd_r_rbk_fifo, q_r_rbk_fifo, '1');
   FD_Q_R_RBK_FIFO : FD port map(q_r_rbk_fifo, SLOWCLK, d_r_rbk_fifo);
   q_r_rbk_fifo_b <= not q_r_rbk_fifo;
-  PULSE_BPI_RE    : PULSE_EDGE port map(BPI_RE, open, CLK, RST, 1, q_r_rbk_fifo_b);
+  PULSE_BPI_RE    : PULSE2SAME port map(BPI_RE, CLK, RST, q_r_rbk_fifo_b);
 
   start_rst        <= SEND_BPI_RST or rst_cfg_ul_init or rst_const_ul_init;
   PULSE_BPI_RST : NPULSE2FAST port map(BPI_RST_INNER, CLK, '0', 5, start_rst);
   start_w_cmd_fifo <= '1' when (w_cmd_fifo = '1' and STROBE = '1') else '0';
-  PULSE_BPI_WE  : PULSE_EDGE port map(BPI_WE, open, CLK, RST, 1, start_w_cmd_fifo);
+  PULSE_BPI_WE  : PULSE2FAST port map(BPI_WE, CLK, RST, start_w_cmd_fifo);
 
   PULSE_BPI_ENBL : PULSE2FAST port map(BPI_ENBL_INNER, CLK, RST, SEND_BPI_ENBL);
   PULSE_BPI_DSBL : PULSE2FAST port map(BPI_DSBL_INNER, CLK, RST, SEND_BPI_DSBL);
