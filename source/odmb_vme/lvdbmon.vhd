@@ -198,7 +198,7 @@ begin  --Architecture
 
 -- Generate LOADON / Generate DTACK / Generate LVTURNON / Generate ADCLK
   -- V2 default low, V3 default high
-  LOADON <= LOADON_INNER when (odmb_id(15 downto 12) /= x"3" and odmb_id(15 downto 12) /= x"4") else
+  LOADON <= LOADON_INNER when (odmb_id(15 downto 12) = x"2") else
             not LOADON_INNER;
   LVTURNON <= LVTURNON_INNER;
   ADCCLK   <= ADCCLK_INNER;

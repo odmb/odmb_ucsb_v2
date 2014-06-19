@@ -109,7 +109,7 @@ architecture ODMBJTAG_Arch of ODMBJTAG is
   signal default_low, default_high                : std_logic := '1';
   signal polarity_rst, polarity_pre, w_polarity   : std_logic;
   signal rst_b, rst_pulse, rst_pulse_b, pol_pulse : std_logic;
-  signal isnot_ODMB_V3V4                          : boolean;
+  signal is_odmb_v2                          : boolean;
 begin
 
 -- Decode instruction
@@ -128,9 +128,9 @@ begin
   rst_pulse_b     <= not rst_pulse;
   PULSEPOL    : PULSE_EDGE port map(pol_pulse, open, SLOWCLK, '0', 1, rst_pulse_b);
   
-  isnot_ODMB_V3V4 <= (odmb_id(15 downto 12) /= x"3" and odmb_id(15 downto 12) /= x"4");
-  polarity_rst    <= '0'       when isnot_ODMB_V3V4 else pol_pulse;
-  polarity_pre    <= pol_pulse when isnot_ODMB_V3V4 else '0';
+  is_odmb_v2 <= (odmb_id(15 downto 12) = x"2");
+  polarity_rst    <= '0'       when is_odmb_v2 else pol_pulse;
+  polarity_pre    <= pol_pulse when is_odmb_v2 else '0';
   FD_POLARITY : FDCP port map(default_low, w_polarity, polarity_rst, default_high, polarity_pre);
   default_high    <= not default_low;
 

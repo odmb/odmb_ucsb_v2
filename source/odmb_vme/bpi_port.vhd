@@ -175,7 +175,8 @@ begin  --Architecture
   FD_DD_CFG_UL_INIT : FD port map(DD_CFG_UL_INIT, CLK, rst_cfg_ul_pulse);
   FD_D_CFG_UL_INIT  : FDC port map(D_CFG_UL_INIT, DD_CFG_UL_INIT, RST_CFG_UL_INIT, '1');
   FD_CFG_UL_INIT    : FD port map(Q_CFG_UL_INIT, SLOWCLK, D_CFG_UL_INIT);
-  rst_cfg_ul_init <= bpi_cfg_busy_b and Q_CFG_UL_INIT;
+  --rst_cfg_ul_init <= bpi_cfg_busy_b and Q_CFG_UL_INIT;
+  PULSE_RSTCFGULINIT : PULSE2FAST port map(rst_cfg_ul_init, CLK, '0', bpi_cfg_busy_b);
 
 
 -- CONST REGISTERS
@@ -204,8 +205,8 @@ begin  --Architecture
   FD_DD_CONST_UL_INIT : FD port map(DD_CONST_UL_INIT, CLK, rst_const_ul_pulse);
   FD_D_CONST_UL_INIT  : FDC port map(D_CONST_UL_INIT, DD_CONST_UL_INIT, RST_CONST_UL_INIT, '1');
   FD_CONST_UL_INIT    : FD port map(Q_CONST_UL_INIT, SLOWCLK, D_CONST_UL_INIT);
-  rst_const_ul_init <= bpi_const_busy_b and Q_CONST_UL_INIT;
-
+  --rst_const_ul_init <= bpi_const_busy_b and Q_CONST_UL_INIT;
+  PULSE_RSTCONSTULINIT : PULSE2FAST port map(rst_const_ul_init, CLK, '0', bpi_const_busy_b);
 
   -- Read enables for Readback FIFO
   dd_r_rbk_fifo  <= '1' when (r_rbk_fifo = '1' and STROBE = '1') else '0';

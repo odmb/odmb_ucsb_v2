@@ -7,6 +7,13 @@
 =                                                                    =
 ======================================================================
 
+V03-07, build 9: 19 June 2014, Manuel
+------------------------------------------
+Sends JTAG reset to DCFEBs and ODMB after each hard reset.
+Added CABLE_DLY to DCFEB signals.
+Set the polarity of V3/V4s for any ODMB_ID but 0x2XXX. 
+This avoids an LVMB PON_LOAD after each reset.
+
 V03-06, build 9: 4 June 2014, Manuel
 ------------------------------------------
 Fixed bug that made DCFEBs out of sync due to packets arriving

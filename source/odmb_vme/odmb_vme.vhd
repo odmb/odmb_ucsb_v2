@@ -731,6 +731,11 @@ architecture ODMB_VME_architecture of ODMB_VME is
   signal bpi_const_busy      : std_logic;
 
   signal bpi_cfg_pulse, bpi_const_pulse : std_logic;
+  signal bpi_rst_inner  : std_logic;
+  signal bpi_re_inner   : std_logic;
+  signal bpi_we_inner   : std_logic;
+  signal bpi_dsbl_inner : std_logic;
+  signal bpi_enbl_inner : std_logic;
 
 
   signal dtack_dev         : std_logic_vector(9 downto 0);
@@ -998,10 +1003,10 @@ begin
       OUTDATA            => dev_outdata(6),  -- data from BPI interface to VME buss for reads
       DTACK              => dtack_dev(6),  -- DTACK bar
       -- BPI controls
-      BPI_RST            => BPI_RST,    -- Resets BPI interface state machines
+      BPI_RST            => BPI_RST_inner,    -- Resets BPI interface state machines
       BPI_CMD_FIFO_DATA  => VME_BPI_CMD_FIFO_DATA,  -- Data for command FIFO
       BPI_WE             => VME_BPI_WE,  -- Command FIFO write enable  (pulse one clock cycle for one write)
-      BPI_RE             => BPI_RE,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
+      BPI_RE             => BPI_RE_inner,  -- Read back FIFO read enable  (pulse one clock cycle for one read)
       BPI_DSBL           => VME_BPI_DSBL,  -- Disable parsing of BPI commands in the command FIFO (while being filled)
       BPI_ENBL           => VME_BPI_ENBL,  -- Enable  parsing of BPI commands in the command FIFO
       BPI_CFG_DL         => BPI_CFG_DL,  -- Download Configuration Regs in Flash PROM
@@ -1020,6 +1025,9 @@ begin
       BPI_CONST_BUSY     => BPI_CONST_BUSY,
       BPI_DONE           => BPI_DONE
       );
+
+  BPI_RST <= bpi_rst_inner;
+  BPI_RE <= bpi_re_inner;
 
   DEV7_SYSMON : SYSTEM_MON
     port map(
@@ -1207,15 +1215,20 @@ begin
   BPI_CMD_FIFO_DATA <= CC_CFG_BPI_CMD_FIFO_DATA when bpi_cfg_pulse = '1' else
                        CC_CONST_BPI_CMD_FIFO_DATA when bpi_const_pulse = '1' else
                        VME_BPI_CMD_FIFO_DATA;
-  BPI_WE <= CC_CFG_BPI_WE when bpi_cfg_pulse = '1' else
+  BPI_WE_inner <= CC_CFG_BPI_WE when bpi_cfg_pulse = '1' else
             CC_CONST_BPI_WE when bpi_const_pulse = '1' else
             VME_BPI_WE;
-  BPI_DSBL <= CC_CFG_BPI_DSBL when bpi_cfg_pulse = '1' else
+  BPI_DSBL_inner <= CC_CFG_BPI_DSBL when bpi_cfg_pulse = '1' else
               CC_CONST_BPI_DSBL when bpi_const_pulse = '1' else
               VME_BPI_DSBL;
-  BPI_ENBL <= CC_CFG_BPI_ENBL when bpi_cfg_pulse = '1' else
+  BPI_ENBL_inner <= CC_CFG_BPI_ENBL when bpi_cfg_pulse = '1' else
               CC_CONST_BPI_ENBL when bpi_const_pulse = '1' else
               VME_BPI_ENBL;
+
+  BPI_WE <= bpi_we_inner;
+  BPI_DSBL <= bpi_dsbl_inner;
+  BPI_ENBL <= bpi_enbl_inner;
+
 
   BPI_CFG_UL_PULSE <= bpi_cfg_ul_pulse_inner;
   BPI_CFG_DL_PULSE <= bpi_cfg_dl_pulse_inner;
@@ -1237,8 +1250,8 @@ begin
   vme_berr_out    <= '0';
   ext_vme_ga      <= vme_gap & vme_ga;
 
--- To LVMB: V2 default low, V3 default high
-  PON_OE_B    <= '0' when (odmb_id_inner(15 downto 12) /= x"3" and odmb_id_inner(15 downto 12) /= x"4") else '1';
+-- To LVMB: V2 default low, V3/V4 default high
+  PON_OE_B    <= '0' when (odmb_id_inner(15 downto 12) = x"2") else '1';
   VME_DTACK_B <= not or_reduce(dtack_dev);
 
 
@@ -1258,7 +1271,14 @@ begin
                      bpi_const_dl_pulse & bpi_cfg_ul_pulse_inner & bpi_cfg_dl_pulse_inner & strobe &
                      do_cfg_reg_we & do_const_reg_we;
 
-  csp_bpi_la_data <= x"0000000000" & x"0000000000" & x"00000" & "0"
+  csp_bpi_la_data <= x"0000000000" & x"000" & "0"
+                     & bpi_we_inner & bpi_dsbl_inner & bpi_enbl_inner --[246:244]
+                     & bpi_re_inner & BPI_DONE & bpi_rst_inner --[243:241]
+                     & CC_CONST_BPI_CMD_FIFO_DATA --[240:225]
+                     & CC_CFG_BPI_CMD_FIFO_DATA --[224:209]
+                     & BPI_CONST_DL & BPI_CONST_UL & CC_CONST_BPI_DSBL & CC_CONST_BPI_ENBL --[208:205]
+                     & BPI_CFG_DL & BPI_CFG_UL & CC_CFG_BPI_DSBL & CC_CFG_BPI_ENBL --[204:201]
+                     & bpi_const_pulse & bpi_cfg_pulse --[200:199]
                      & BPI_CFG_REG_IN --[198:183]
                      & diagout_command(19 downto 11) --[182:174]
                      & bpi_cfg_regs(0) --[173:158]

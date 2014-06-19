@@ -989,7 +989,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_tck, int_tdo             : std_logic_vector(7 downto 1);
   signal odmb_tms, odmb_tdi           : std_logic;
   signal dcfeb_tms_out, dcfeb_tdi_out : std_logic;
-  signal isnot_ODMB_V3V4              : std_logic := '1';
+  signal is_odmb_v2              : std_logic := '0';
 
 -- JTAG outputs from internal DCFEBs
 
@@ -2191,9 +2191,9 @@ begin
   PULLDOWN_DCFEB_TMS : PULLDOWN port map (dcfeb_tms_out);
   PULLDOWN_ODMB_TMS  : PULLDOWN port map (v6_tms);
 
-  isnot_ODMB_V3V4 <= '1' when (odmb_id(15 downto 12) /= x"3" and odmb_id(15 downto 12) /= x"4") else '0';
-  BUF_DCFEBTMS : IOBUF port map(O => odmb_tms, IO => DCFEB_TMS, I => dcfeb_tms_out, T => isnot_ODMB_V3V4);
-  BUF_DCFEBTDI : IOBUF port map(O => odmb_tdi, IO => DCFEB_TDI, I => dcfeb_tdi_out, T => isnot_ODMB_V3V4);
+  is_odmb_v2 <= '1' when (odmb_id(15 downto 12) = x"2") else '0';
+  BUF_DCFEBTMS : IOBUF port map(O => odmb_tms, IO => DCFEB_TMS, I => dcfeb_tms_out, T => is_odmb_v2);
+  BUF_DCFEBTDI : IOBUF port map(O => odmb_tdi, IO => DCFEB_TDI, I => dcfeb_tdi_out, T => is_odmb_v2);
 
   GEN_15 : for I in 0 to 15 generate
   begin
