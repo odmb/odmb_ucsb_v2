@@ -21,19 +21,20 @@ entity COUNT_EDGES is
 end COUNT_EDGES;
 
 architecture COUNT_EDGES_ARCH of COUNT_EDGES is
-  signal din_q : std_logic := '0';
+  signal din_q, din_qq : std_logic := '0';
+  signal count_inner : std_logic_vector(WIDTH-1 downto 0);  
 begin
 
   FDDIN : FDC port map(din_q, CLK, RST, DIN);
+  FDDIN2 : FDC port map(din_qq, CLK, RST, din_q);
   
   edge_cnt_proc : process (CLK, RST)
-    variable count_inner : std_logic_vector(WIDTH-1 downto 0);
   begin
     if (RST = '1') then
-      count_inner := (others => '0');
+      count_inner <= (others => '0');
     elsif rising_edge(CLK) then
-      if DIN = '1' and din_q = '0' then
-        count_inner := count_inner + 1;
+      if din_q = '1' and din_qq = '0' then
+        count_inner <= count_inner + 1;
       end if;
     end if;
     COUNT <= count_inner;

@@ -18,14 +18,15 @@ entity PULSE2SLOW is
 end PULSE2SLOW;
 
 architecture PULSE2SLOW_Arch of PULSE2SLOW is
-  signal pulse : std_logic_vector(0 to 4);
+  signal pulsein : std_logic_vector(0 to 1);
+  signal pulse : std_logic_vector(2 to 4);
 begin
   -- Fast clock domain (CLK_DIN)
-  pulse(0) <= pulse(1) when DIN = '0' else not pulse(1);
-  FD1 : FDC generic map(INIT => '1') port map(pulse(1), CLK_DIN, RST, pulse(0));
+  pulsein(0) <= pulsein(1) when DIN = '0' else not pulsein(1);
+  FD1 : FDC generic map(INIT => '1') port map(pulsein(1), CLK_DIN, RST, pulsein(0));
 
   -- Slow clock domain (CLK_DOUT)
-  FD2 : FDC generic map(INIT => '1') port map(pulse(2), CLK_DOUT, RST, pulse(1));
+  FD2 : FDC generic map(INIT => '1') port map(pulse(2), CLK_DOUT, RST, pulsein(1));
   FD3 : FDC generic map(INIT => '1') port map(pulse(3), CLK_DOUT, RST, pulse(2));
   FD4 : FDC generic map(INIT => '1') port map(pulse(4), CLK_DOUT, RST, pulse(3));
 

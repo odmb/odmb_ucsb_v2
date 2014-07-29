@@ -48,10 +48,10 @@ NET  "ccb_data[0]"		LOC = "AC33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STA
 NET  "ccb_data_s"		LOC = "R33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_drsv[0]"		LOC = "U31"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_drsv[1]"		LOC = "AP32"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
-NET  "ccb_l1rls"		LOC = "AG28"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok	 #STAT0 (out) 
-NET  "ccb_rsvi[0]"		LOC = "AD25"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0 (out) 
-NET  "ccb_rsvi[1]"		LOC = "AF28"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0 (out) 
-NET  "ccb_rsvi[2]"		LOC = "AF26"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0 (out) 
+NET  "ccb_l1rls"		LOC = "AG28"  	| IOSTANDARD = LVCMOS25; # ok	 #STAT0 (out) 
+NET  "ccb_rsvi[0]"		LOC = "AD25"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0 (out) 
+NET  "ccb_rsvi[1]"		LOC = "AF28"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0 (out) 
+NET  "ccb_rsvi[2]"		LOC = "AF26"  	| IOSTANDARD = LVCMOS25; # ok   #STAT0 (out) 
 NET  "ccb_rsvo[0]"		LOC = "AN32"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_rsvo[1]"		LOC = "AP33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0
 NET  "ccb_rsvo[2]"		LOC = "AN33"  	| IOSTANDARD = LVCMOS25 | PULLUP; # ok   #STAT0

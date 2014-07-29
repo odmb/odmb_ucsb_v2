@@ -1116,6 +1116,12 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal int_dl_jtag_tdo : std_logic_vector(7 downto 1) := "0000000";
   signal dcfeb_initjtag_dd, dcfeb_initjtag_d, dcfeb_initjtag : std_logic := '0';
   signal odmb_initjtag_dd, odmb_initjtag_d, odmb_initjtag : std_logic := '0';
+  signal done_cnt_en, done_cnt_rst : std_logic_vector(NFEB downto 1);
+  type done_cnt_type is array (NFEB downto 1) of integer range 0 to 3;
+  signal done_cnt : done_cnt_type;
+  type done_state_type is (DONE_IDLE, DONE_LOW, DONE_COUNTING);
+  type done_state_array_type is array (NFEB downto 1) of done_state_type;
+  signal done_next_state, done_current_state : done_state_array_type;
   
   signal int_lvmb_pon                                 : std_logic_vector(7 downto 0);
   signal int_lvmb_csb                                 : std_logic_vector(6 downto 0);
@@ -1243,8 +1249,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   signal bpi_rst           : std_logic;
   signal vme_bpi_rst       : std_logic;
-  signal clk1mhz           : std_logic;
-  signal counter_clk1mhz   : integer                       := 0;
+  signal clk1mhz, clk10khz           : std_logic := '0';
+  signal counter_clk1mhz,  counter_clk10khz   : integer                       := 0;
   signal bpi_we            : std_logic;
   signal bpi_re            : std_logic;
   signal bpi_dsbl          : std_logic;
@@ -2172,14 +2178,65 @@ begin
   bxcnt_rst <= not ccb_bxrst_b_q;
 
   -- Every time the DCFEBs are reprogrammed, all DCFEB JTAG are reset
-  GENDONEPULSE : for index in 1 to NFEB generate
+  done_fsm_regs : process (done_next_state, pon_reset, clk10khz)
   begin
-    PULSE_DONE : NPULSE2FAST port map(dcfeb_done_pulse(index), clk40, '0', 17, DCFEB_DONE(index));
-  end generate GENDONEPULSE;  
+    for dev in 1 to NFEB loop
+      if (pon_reset = '1') then
+        done_current_state(dev) <= DONE_IDLE;
+      elsif rising_edge(clk10khz) then
+        done_current_state(dev) <= done_next_state(dev);
+        if done_cnt_rst(dev) = '1' then
+          done_cnt(dev) <= 0;
+        elsif done_cnt_en(dev) = '1' then
+          done_cnt(dev) <= done_cnt(dev) + 1;
+        end if;
+      end if;
+    end loop;
+  end process;
+
+  done_fsm_logic : process (done_current_state, DCFEB_DONE, done_cnt)
+  begin
+    for dev in 1 to NFEB loop
+      case done_current_state(dev) is
+        when DONE_IDLE =>
+          done_cnt_en(dev)      <= '0';
+          done_cnt_rst(dev)     <= '0';
+          dcfeb_done_pulse(dev) <= '0';
+          if (DCFEB_DONE(dev) = '0') then
+            done_next_state(dev) <= DONE_LOW;
+          else
+            done_next_state(dev) <= DONE_IDLE;
+          end if;
+          
+        when DONE_LOW =>
+          done_cnt_en(dev)      <= '0';
+          dcfeb_done_pulse(dev) <= '0';
+          done_cnt_rst(dev)     <= '0';
+          if (DCFEB_DONE(dev) = '1') then
+            done_next_state(dev) <= DONE_COUNTING;
+          else
+            done_next_state(dev) <= DONE_LOW;
+          end if;
+          
+        when DONE_COUNTING =>
+          done_cnt_rst(dev) <= '0';
+          if (done_cnt(dev) = 3) then  -- DONE has to be high at least 1.2us to avoid spurious edges
+            done_next_state(dev)  <= DONE_IDLE;
+            done_cnt_en(dev)      <= '0';
+            dcfeb_done_pulse(dev) <= '1';
+          else
+            done_next_state(dev)  <= DONE_COUNTING;
+            done_cnt_en(dev)      <= '1';
+            dcfeb_done_pulse(dev) <= '0';
+          end if;
+      end case;
+    end loop;
+  end process;
+
   dcfeb_initjtag_dd <= or_reduce(dcfeb_done_pulse);
   --dcfeb_initjtag_dd <= reset or or_reduce(dcfeb_done_pulse);
-  DS_DCFEB_INITJTAG : DELAY_SIGNAL generic map(25) port map(dcfeb_initjtag_d, clk40, 25, dcfeb_initjtag_dd);
-  PULSE_DCFEB_INITJTAG : NPULSE2SAME port map(dcfeb_initjtag, clk40, '0', 300, dcfeb_initjtag_d);
+  DS_DCFEB_INITJTAG : DELAY_SIGNAL generic map(40) port map(dcfeb_initjtag_d, clk10khz, 40, dcfeb_initjtag_dd);
+  PULSE_DCFEB_INITJTAG : NPULSE2FAST port map(dcfeb_initjtag, clk40, '0', 300, dcfeb_initjtag_d);
   
   -- After each power on, ODMB JTAG is reset
   CROSS_PON : CROSSCLOCK port map(odmb_initjtag_dd, clk2p5, clk40, '0', pon_rst_reg(31));
@@ -2273,6 +2330,16 @@ begin
         end if;
       else
         counter_clk1mhz <= counter_clk1mhz + 1;
+      end if;
+      if counter_clk10khz = 2000 then
+        counter_clk10khz <= 1;
+        if clk10khz = '1' then
+          clk10khz <= '0';
+        else
+          clk10khz <= '1';
+        end if;
+      else
+        counter_clk10khz <= counter_clk10khz + 1;
       end if;
     end if;
   end process Divide_Frequency;
@@ -3136,9 +3203,9 @@ begin
 
       when x"002A" =>
         test_point(46 downto 31) <= (
-          tp_1   => otmb_tx(8),
-          tp_2   => otmb_tx(7),
-          tp_3   => otmb_tx(6),
+          tp_1   => odmb_tms,
+          tp_2   => odmb_tdi,
+          tp_3   => is_odmb_v2,
           tp_4   => otmb_tx(5),
           others => '0');
 
