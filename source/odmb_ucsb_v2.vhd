@@ -2235,7 +2235,7 @@ begin
 
   dcfeb_initjtag_dd <= or_reduce(dcfeb_done_pulse);
   --dcfeb_initjtag_dd <= reset or or_reduce(dcfeb_done_pulse);
-  DS_DCFEB_INITJTAG : DELAY_SIGNAL generic map(40) port map(dcfeb_initjtag_d, clk10khz, 40, dcfeb_initjtag_dd);
+  DS_DCFEB_INITJTAG : DELAY_SIGNAL generic map(240) port map(dcfeb_initjtag_d, clk10khz, 240, dcfeb_initjtag_dd);
   PULSE_DCFEB_INITJTAG : NPULSE2FAST port map(dcfeb_initjtag, clk40, '0', 300, dcfeb_initjtag_d);
   
   -- After each power on, ODMB JTAG is reset

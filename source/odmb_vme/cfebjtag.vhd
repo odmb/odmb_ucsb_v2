@@ -84,7 +84,7 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG        : std_logic;
   signal Q3_RESETJTAG, CLR_RESETJTAG, RESETJTAG          : std_logic;
   signal OKRST, INITJTAGS_Q, INITJTAGS_QQ, INITJTAGS_QQQ : std_logic;
-
+  signal rst_init : std_logic := '0';
 
   signal CLR_RESETDONE, CEO_RESETDONE, TC_RESETDONE : std_logic;
   signal QV_RESETDONE                               : std_logic_vector(3 downto 0);
@@ -120,13 +120,14 @@ begin
 
 
 -- Write SELFEB when SELCFEB=1 (The JTAG initialization should be broadcast)
-  FDPE(INDATA(0), STROBE, SELCFEB, INITJTAGS, SELFEB(1));
-  FDPE(INDATA(1), STROBE, SELCFEB, INITJTAGS, SELFEB(2));
-  FDPE(INDATA(2), STROBE, SELCFEB, INITJTAGS, SELFEB(3));
-  FDPE(INDATA(3), STROBE, SELCFEB, INITJTAGS, SELFEB(4));
-  FDPE(INDATA(4), STROBE, SELCFEB, INITJTAGS, SELFEB(5));
-  FDPE(INDATA(5), STROBE, SELCFEB, INITJTAGS, SELFEB(6));
-  FDPE(INDATA(6), STROBE, SELCFEB, INITJTAGS, SELFEB(7));
+  rst_init <= RST or initjtags;
+  FDPE(INDATA(0), STROBE, SELCFEB, rst_init, SELFEB(1));
+  FDPE(INDATA(1), STROBE, SELCFEB, rst_init, SELFEB(2));
+  FDPE(INDATA(2), STROBE, SELCFEB, rst_init, SELFEB(3));
+  FDPE(INDATA(3), STROBE, SELCFEB, rst_init, SELFEB(4));
+  FDPE(INDATA(4), STROBE, SELCFEB, rst_init, SELFEB(5));
+  FDPE(INDATA(5), STROBE, SELCFEB, rst_init, SELFEB(6));
+  FDPE(INDATA(6), STROBE, SELCFEB, rst_init, SELFEB(7));
 
 
 -- Generate DTACK when SELCFEB=1
