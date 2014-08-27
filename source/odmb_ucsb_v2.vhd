@@ -1945,7 +1945,7 @@ begin
   data_fifo_we(NFEB+1) <= otmb_fifo_data_valid and datafifo_mask;
   datafifo_otmb_pm : datafifo_40mhz
     port map(
-      rst       => l1acnt_rst,
+      rst       => l1acnt_fifo_rst,
       wr_clk    => clk40,
       rd_clk    => dduclk,
       din       => otmb_fifo_data_in,

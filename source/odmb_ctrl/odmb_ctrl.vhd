@@ -668,7 +668,7 @@ begin
       bxcnt_rst                   => bxcnt_rst,
 
       BC0   => bc0,
-      BXRST => ccb_bxrst_b,
+      BXRST => ccb_bxrst,
 
       pop          => cafifo_pop,
       l1a          => cafifo_push,

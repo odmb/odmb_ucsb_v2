@@ -25,7 +25,7 @@ begin  --Architecture
   din_vector(0) <= DIN;
   GEN_DIN : for index in 1 to NCYCLES_MAX generate
   begin
-    FD_DIN : FD port map(din_vector(index), CLK, din_vector(index-1));
+    FD_DIN : FD generic map(INIT => '0') port map(din_vector(index), CLK, din_vector(index-1));
   end generate GEN_DIN;
 
   DOUT <= din_vector(NCYCLES);
