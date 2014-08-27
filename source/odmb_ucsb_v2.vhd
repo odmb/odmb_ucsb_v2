@@ -1221,6 +1221,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
   constant push_dly    : integer := 63;  -- It needs to be > alct/otmb_push_dly
+  constant push_dlyp4    : integer := push_dly+4; -- push_dly+4
   signal alct_push_dly : integer range 0 to 63;
   signal otmb_push_dly : integer range 0 to 63;
   signal cable_dly     : integer range 0 to 1;
@@ -1893,7 +1894,7 @@ begin
         );
 
     PULSEEOFDCFEB : PULSE2SLOW port map(pulse_eof40(i), clk40, clk160, reset, eofgen_dcfeb_fifo_in(I)(17));
-    DS_EOF_PUSH   : DELAY_SIGNAL port map(eof_data(I), clk40, push_dly, pulse_eof40(I));
+    DS_EOF_PUSH   : DELAY_SIGNAL generic map(push_dlyp4) port map(eof_data(I), clk40, push_dlyp4, pulse_eof40(I));
 
   end generate GEN_DCFEB;
 

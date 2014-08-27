@@ -623,14 +623,13 @@ begin
 
   -- Generate BX_CNT (page 5 TRGFIFO)
   BX_CNT_CLR              <= BC0 or BXRST or BX_CNT_RST;
-  BX_CNT_A : CB16CE port map(BX_CNT_A_CEO, BX_CNT_INNER, BX_CNT_A_TC, CLK, LOGICH, BX_CNT_CLR);
+  BX_CNT_A : CB16RE port map(BX_CNT_A_CEO, BX_CNT_INNER, BX_CNT_A_TC, CLK, LOGICH, BX_CNT_CLR);
   BX_CNT_B : CB4CE port map(BX_CNT_B_CEO, BX_CNT_OUT(12), BX_CNT_OUT(13), BX_CNT_OUT(14), BX_CNT_OUT(15), BX_CNT_B_TC, CLK, LOGICH, L1ACNT_RST);
   BX_CNT_OUT(11 downto 0) <= BX_CNT_INNER(11 downto 0);
 
 -- Generate BX_ORBIT (3563 bunch crossings) / Generate BX_CNT_RST (page 5)
--- BX_ORBIT <= '1' when (conv_integer(BX_CNT) = 3563) else '0';
--- 2048 + 1024 = 3072 + 256 = 3328 + 128 = 3456 + 64 = 3520 + 32 = 3552 + 11 = 3563
-  BX_ORBIT <= '1' when (BX_CNT_OUT = "0000110111101011") else '0';
+-- LHC has 3564 slots for bunches
+  BX_ORBIT <= '1' when (BX_CNT_INNER = x"DEA") else '0'; 
   FDCORBIT : FDC port map(BX_CNT_RST, CLK, BX_CNT_RST_RST, BX_ORBIT);
   FDBXRST  : FD port map(BX_CNT_RST_RST, CLK, BX_CNT_RST);
 

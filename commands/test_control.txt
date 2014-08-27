@@ -2,12 +2,10 @@
 R  4100  0
 R  4200  0
 R  4300  0
-R  4100  0
-R  4200  0
-R  4300  0
 
 W  3300  1      Dummy data
 W  3304  1      Internal triggers
+
 
 W  4000  C	Set LCT_L1A_DLY   
 W  4004  1	Set OTMB_PUSH_DLY
@@ -15,13 +13,12 @@ W  400C  2	Set ALCT_PUSH_DLY
 W  401C  0	Do not Kill anything
 W  4028  4	Number of dummy words
 
-## W  3010  10     Request packet
+W  3200  4      Request packet
 
 W  20  	 1  	Select FIFO [Time stamp LSB]
 W  8	 10	Write Time stamp LSB
 W  8	 20	Write Time stamp LSB
 W  8	 30	Write Time stamp LSB
-W  8	 40	Write Time stamp LSB
 
 W  8	 80	Write Time stamp LSB
 W  8	 82	Write Time stamp LSB
@@ -32,14 +29,10 @@ W  8	 93	Write Time stamp LSB
 W  8	 A0	Write Time stamp LSB
 W  8	 A2	Write Time stamp LSB
 W  8	 A3	Write Time stamp LSB
-W  8	 B0	Write Time stamp LSB
-W  8	 B2	Write Time stamp LSB
-W  8	 B3	Write Time stamp LSB
 
 W  20  	 4  	Select FIFO [Triggers]
 W  8	 FF	LCTs on all DCFEBs
 W  8	 0	LCTs on DCFEB 2
-W  8	 0F	LCTs on all DCFEBs
 W  8	 25	LCTs on DCFEB 2
 
 W  8	 400	L1A
@@ -51,18 +44,55 @@ W  8	 000	ALCTDAV
 W  8	 400	L1A
 W  8	 100	OTMBDAV
 W  8	 000	ALCTDAV
-W  8	 400	L1A
-W  8	 000	OTMBDAV
-W  8	 200	ALCTDAV
 
-W  30    20	Start 32 Test Runs
+W  30    2	Start 32 Test Runs
+R  4100  0
+R  4200  0
+R  4300  0
 
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
-R  5100  0      Read PC TX FIFO
+
+R  550C  0      Read OTMB FIFO words
+R  5500  0      Read OTMB FIFO
+R  5500  0      Read OTMB FIFO
+R  550C  0      Read OTMB FIFO words
+W  5520  0      Reset OTMB FIFO
+R  550C  0      Read OTMB FIFO words
+R  5500  0      Read OTMB FIFO
+
+R  530C  0      Read DDU TX words
+R  5300  0      Read DDU TX FIFO
+R  5300  0      Read DDU TX FIFO
+R  5300  0      Read DDU TX FIFO
+R  5300  0      Read DDU TX FIFO
+R  530C  0      Read DDU TX words
+W  5320  0      Reset DDU TX FIFO
+R  530C  0      Read DDU TX words
+R  5300  0      Read DDU TX FIFO
+
+R  570C  0      Read HDR words
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  5700  0      Read HDR FIFO
+R  570C  0      Read HDR words
+W  5720  0      Reset HDR FIFO
+R  570C  0      Read HDR words
+R  5700  0      Read HDR FIFO
+
+W  3004  0      FW reset
