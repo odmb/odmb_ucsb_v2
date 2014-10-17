@@ -708,22 +708,22 @@ begin  --Architecture
   FD_Q_DTACK : FD port map(q_dtack, SLOWCLK, d_dtack);
   DTACK    <= q_dtack;
 
-  csp_lvmb_la_pm : csp_lvmb_la
-    port map (
-      CONTROL => CSP_LVMB_LA_CTRL,
-      CLK     => DDUCLK,
-      DATA    => csp_lvmb_la_data,
-      TRIG0   => csp_lvmb_la_trig
-      );
+  --csp_lvmb_la_pm : csp_lvmb_la
+  --  port map (
+  --    CONTROL => CSP_LVMB_LA_CTRL,
+  --    CLK     => DDUCLK,
+  --    DATA    => csp_lvmb_la_data,
+  --    TRIG0   => csp_lvmb_la_trig
+  --    );
 
-  csp_lvmb_la_trig <= R_HDR_FF_READ & hdr_fifo_data_valid & DDU_DATA_VALID
-                      & hdr_fifo_rden & DDU_DATA(15 downto 12);
-  csp_lvmb_la_data <= x"0000000" & "0"
-                      & R_HDR_FF_WRD_CNT & R_HDR_FF_READ  -- (71:69)
-                      & STROBE & q_dtack & WRITER         -- (68:66)
-                      & cmddev          -- (65:50)
-                      & HDR_FIFO_WRD_CNT                  -- (49:38)
-                      & hdr_fifo_rst & hdr_fifo_dout      -- (37:21)
-                      & hdr_fifo_empty & hdr_fifo_full & hdr_fifo_rden  -- (20:18)
-                      & DDU_DATA & DDU_DATA_VALID & hdr_fifo_data_valid;  -- (17:0)
+  --csp_lvmb_la_trig <= R_HDR_FF_READ & hdr_fifo_data_valid & DDU_DATA_VALID
+  --                    & hdr_fifo_rden & DDU_DATA(15 downto 12);
+  --csp_lvmb_la_data <= x"0000000" & "0"
+  --                    & R_HDR_FF_WRD_CNT & R_HDR_FF_READ  -- (71:69)
+  --                    & STROBE & q_dtack & WRITER         -- (68:66)
+  --                    & cmddev          -- (65:50)
+  --                    & HDR_FIFO_WRD_CNT                  -- (49:38)
+  --                    & hdr_fifo_rst & hdr_fifo_dout      -- (37:21)
+  --                    & hdr_fifo_empty & hdr_fifo_full & hdr_fifo_rden  -- (20:18)
+  --                    & DDU_DATA & DDU_DATA_VALID & hdr_fifo_data_valid;  -- (17:0)
 end TESTFIFOS_Arch;

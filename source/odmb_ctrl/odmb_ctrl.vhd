@@ -139,6 +139,7 @@ entity ODMB_CTRL is
     LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
     OTMB_PUSH_DLY : in integer range 0 to 63;
     ALCT_PUSH_DLY : in integer range 0 to 63;
+    BX_DLY        : in integer range 0 to 4095;
     PUSH_DLY      : in integer range 0 to 63;
     INJ_DLY       : in std_logic_vector(4 downto 0);
     EXT_DLY       : in std_logic_vector(4 downto 0);
@@ -385,6 +386,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
       BC0   : in std_logic;
       BXRST : in std_logic;
+      BX_DLY: in integer range 0 to 4095;
 
       l1a          : in std_logic;
       l1a_match_in : in std_logic_vector(NFEB+2 downto 1);
@@ -669,6 +671,7 @@ begin
 
       BC0   => bc0,
       BXRST => ccb_bxrst,
+      BX_DLY => BX_DLY,
 
       pop          => cafifo_pop,
       l1a          => cafifo_push,

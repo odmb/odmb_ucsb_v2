@@ -7,7 +7,24 @@
 =                                                                    =
 ======================================================================
 
-V03-07, build 9: 19 June 2014, Manuel
+v3.0A, build 2: 17 October 2014, Manuel
+------------------------------------------
+Shifted the BX by 2772 to match the DMB and added BX_DLY to
+offset the BX any ammount necessary.
+LVMB works again.
+
+v3.09, build 1: 27 August 2014, Manuel
+------------------------------------------
+Changed the polarity of the BXRST coming from the CCB to recover
+the BX in the ODMB headers.
+Synthesis must have been bad because LVMB reading does not work.
+
+v3.08, build 9: 31 July 2014, Manuel
+------------------------------------------
+Increased the delay to send JTAG reset to 24 ms to avoid
+interfering with DCFEB programming.
+
+v3.07, build 9: 19 June 2014, Manuel
 ------------------------------------------
 Sends JTAG reset to DCFEBs and ODMB after each hard reset.
 Added CABLE_DLY to DCFEB signals.

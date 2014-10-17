@@ -139,6 +139,7 @@ entity ODMB_VME is
     CABLE_DLY     : out integer range 0 to 1;
     OTMB_PUSH_DLY : out integer range 0 to 63;
     ALCT_PUSH_DLY : out integer range 0 to 63;
+    BX_DLY        : out integer range 0 to 4095;
     INJ_DLY       : out std_logic_vector(4 downto 0);
     EXT_DLY       : out std_logic_vector(4 downto 0);
     CALLCT_DLY    : out std_logic_vector(3 downto 0);
@@ -387,6 +388,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       CABLE_DLY     : out integer range 0 to 1;
       OTMB_PUSH_DLY : out integer range 0 to 63;
       ALCT_PUSH_DLY : out integer range 0 to 63;
+      BX_DLY        : out integer range 0 to 4095;
 
       INJ_DLY    : out std_logic_vector(4 downto 0);
       EXT_DLY    : out std_logic_vector(4 downto 0);
@@ -907,7 +909,8 @@ begin
         CABLE_DLY     => CABLE_DLY,
         OTMB_PUSH_DLY => OTMB_PUSH_DLY,
         ALCT_PUSH_DLY => ALCT_PUSH_DLY,
-
+        BX_DLY        => BX_DLY,
+        
         INJ_DLY    => INJ_DLY,
         EXT_DLY    => EXT_DLY,
         CALLCT_DLY => CALLCT_DLY,

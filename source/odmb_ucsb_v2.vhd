@@ -347,6 +347,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       CABLE_DLY     : out integer range 0 to 1;
       OTMB_PUSH_DLY : out integer range 0 to 63;
       ALCT_PUSH_DLY : out integer range 0 to 63;
+      BX_DLY        : out integer range 0 to 4095;
       INJ_DLY       : out std_logic_vector(4 downto 0);
       EXT_DLY       : out std_logic_vector(4 downto 0);
       CALLCT_DLY    : out std_logic_vector(3 downto 0);
@@ -567,6 +568,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       LCT_L1A_DLY   : in std_logic_vector(5 downto 0);
       OTMB_PUSH_DLY : in integer range 0 to 63;
       ALCT_PUSH_DLY : in integer range 0 to 63;
+      BX_DLY        : in integer range 0 to 4095;
       PUSH_DLY      : in integer range 0 to 63;
       INJ_DLY       : in std_logic_vector(4 downto 0);
       EXT_DLY       : in std_logic_vector(4 downto 0);
@@ -1224,6 +1226,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   constant push_dlyp4    : integer := push_dly+4; -- push_dly+4
   signal alct_push_dly : integer range 0 to 63;
   signal otmb_push_dly : integer range 0 to 63;
+  signal bx_dly        : integer range 0 to 4095;
   signal cable_dly     : integer range 0 to 1;
   signal lct_l1a_dly   : std_logic_vector(5 downto 0);
   signal inj_dly       : std_logic_vector(4 downto 0);
@@ -1454,6 +1457,7 @@ begin
       CABLE_DLY     => CABLE_DLY,
       OTMB_PUSH_DLY => OTMB_PUSH_DLY,
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
+      BX_DLY        => BX_DLY,
       INJ_DLY       => INJ_DLY,
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
@@ -1664,6 +1668,7 @@ begin
       LCT_L1A_DLY   => LCT_L1A_DLY,
       OTMB_PUSH_DLY => OTMB_PUSH_DLY,
       ALCT_PUSH_DLY => ALCT_PUSH_DLY,
+      BX_DLY        => BX_DLY,
       PUSH_DLY      => PUSH_DLY,
       INJ_DLY       => INJ_DLY,
       EXT_DLY       => EXT_DLY,
