@@ -1,8 +1,57 @@
-== ========== Resync and Send calibration pulses ========== ==
-W  3000  3F	Set Calibration Mode   
-W  401C  0
-W  3010  c	 Send EXTPLS and INJPL   
-W  3010  20c	 Set Pedestal Mode   
-W  3010  c	 Send EXTPLS and INJPL   
+## Requires these repetitions to give time for the PROM upload
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
 
-0  0  0	 	End of file
+W  3200  1      Send INJPLS
+W  3200  2      Send EXTPLS
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+W  3000  1      Set calibration mode
+W  3200  1      Send INJPLS
+W  3200  2      Send EXTPLS
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+W  340C  1      Mask pulses
+W  3200  1      Send INJPLS
+W  3200  2      Send EXTPLS
+
+
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE
+R  4100  0  	IDLE
+R  4200  0  	IDLE
+R  4300  0  	IDLE

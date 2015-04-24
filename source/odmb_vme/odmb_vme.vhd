@@ -119,6 +119,7 @@ entity ODMB_VME is
     OTMB_EXT_TRIG   : out std_logic;
 
     MASK_L1A      : out std_logic_vector(NFEB downto 0);
+    MASK_PLS      : out std_logic;
     tp_sel        : out std_logic_vector(15 downto 0);
     odmb_ctrl     : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -352,6 +353,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       OTMB_EXT_TRIG   : out std_logic;
 
       MASK_L1A      : out std_logic_vector(NFEB downto 0);
+      MASK_PLS      : out std_logic;
       TP_SEL        : out std_logic_vector(15 downto 0);
       ODMB_CTRL     : out std_logic_vector(15 downto 0);
       ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -874,6 +876,7 @@ begin
       OTMB_LCT_RQST   => otmb_lct_rqst,
       OTMB_EXT_TRIG   => otmb_ext_trig,
 
+      MASK_PLS      => mask_pls,
       MASK_L1A      => mask_l1a,
       TP_SEL        => tp_sel,
       ODMB_CTRL     => odmb_ctrl,

@@ -328,6 +328,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       OTMB_EXT_TRIG   : out std_logic;
 
       MASK_L1A      : out std_logic_vector(NFEB downto 0);
+      MASK_PLS      : out std_logic;
       tp_sel        : out std_logic_vector(15 downto 0);
       odmb_ctrl     : out std_logic_vector(15 downto 0);
       odmb_data_sel : out std_logic_vector(7 downto 0);
@@ -999,6 +1000,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- Signals To DCFEBs from MBC
 
+  signal int_injpls, int_extpls : std_logic;
   signal int_l1a, masked_l1a       : std_logic;     -- To be sent out to pins in V2
   signal int_l1a_match, masked_l1a_match : std_logic_vector (NFEB downto 1); 
 
@@ -1026,6 +1028,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal otmb_tx_inner                    : std_logic_vector(48 downto 0);
   signal qpll_locked_cnt                  : std_logic_vector(15 downto 0);
 
+  signal mask_pls      : std_logic;
   signal mask_l1a      : std_logic_vector(NFEB downto 0);
   signal tp_sel_reg    : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg : std_logic_vector(15 downto 0) := (others => '0');
@@ -1436,6 +1439,7 @@ begin
       OTMB_LCT_RQST   => otmb_lct_rqst,
       OTMB_EXT_TRIG   => otmb_ext_trig,
 
+      MASK_PLS      => mask_pls,
       MASK_L1A      => mask_l1a,
       tp_sel        => tp_sel_reg,
       odmb_ctrl     => odmb_ctrl_reg,
@@ -1652,8 +1656,8 @@ begin
 
       dcfeb_l1a_match => int_l1a_match,  -- lctf(5 DOWNTO 1) - to DCFEBs
       dcfeb_l1a       => int_l1a,        -- febrst - to DCFEBs
-      dcfeb_injpulse  => dcfeb_injpls,   -- inject - to DCFEBs
-      dcfeb_extpulse  => dcfeb_extpls,   -- extpls - to DCFEBs
+      dcfeb_injpulse  => int_injpls,   -- inject - to DCFEBs
+      dcfeb_extpulse  => int_extpls,   -- extpls - to DCFEBs
       pedestal        => pedestal,
       pedestal_otmb   => odmb_ctrl_reg(14),
 
@@ -1827,6 +1831,10 @@ begin
 
 --------------------------------  DCFEB data  -------------------------------
 -----------------------------------------------------------------------------
+
+  -- Pulse signals
+  dcfeb_injpls <= '0' when mask_pls = '1' else int_injpls;
+  dcfeb_extpls <= '0' when mask_pls = '1' else int_extpls;
 
   GEN_DCFEB : for I in NFEB downto 1 generate
   begin

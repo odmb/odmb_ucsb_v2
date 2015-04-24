@@ -44,6 +44,7 @@ entity VMEMON is
     OTMB_EXT_TRIG   : out std_logic;
 
     MASK_L1A      : out std_logic_vector(NFEB downto 0);
+    MASK_PLS      : out std_logic;
     TP_SEL        : out std_logic_vector(15 downto 0);
     ODMB_CTRL     : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -111,6 +112,10 @@ architecture VMEMON_Arch of VMEMON is
   signal mask_l1a_inner         : std_logic_vector(NFEB downto 0) := (others => '0');
   signal w_mask_l1a, r_mask_l1a : std_logic                       := '0';
 
+  signal out_mask_pls           : std_logic_vector(15 downto 0)   := (others => '0');
+  signal mask_pls_inner         : std_logic := '0';
+  signal w_mask_pls, r_mask_pls : std_logic                       := '0';
+
   signal out_odmb_ped           : std_logic_vector(15 downto 0) := (others => '0');
   signal w_odmb_ped, r_odmb_ped : std_logic                     := '0';
 
@@ -163,6 +168,8 @@ begin
   r_cal_ped  <= '1' when (CMDDEV = x"1404" and WRITER = '1') else '0';
   w_mask_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '0') else '0';
   r_mask_l1a <= '1' when (CMDDEV = x"1408" and WRITER = '1') else '0';
+  w_mask_pls <= '1' when (CMDDEV = x"140C" and WRITER = '0') else '0';
+  r_mask_pls <= '1' when (CMDDEV = x"140C" and WRITER = '1') else '0';
 
   r_odmb_data               <= '1' when (CMDDEV(12) = '1' and CMDDEV(3 downto 0) = x"C") else '0';
   odmb_data_sel(7 downto 0) <= COMMAND(9 downto 2);
@@ -216,6 +223,14 @@ begin
   PULSE_LCT : PULSE2FAST port map(otmb_lct_rqst, clk40, rst, dcfeb_pulse(3));
   PULSE_EXT : PULSE2FAST port map(otmb_ext_trig, clk40, rst, dcfeb_pulse(4));
   PULSE_BC0 : PULSE2FAST port map(test_bc0, clk40, rst, dcfeb_pulse(5));
+
+-- Write MASK_PLS
+  FD_W_MASK_PLS : FDCE port map(MASK_PLS_INNER, STROBE, W_MASK_PLS, RST, INDATA(0));
+  MASK_PLS <= MASK_PLS_INNER;
+
+-- Read MASK_PLS
+  OUT_MASK_PLS(15 downto 0) <= x"000" & "000" & MASK_PLS_INNER when R_MASK_PLS = '1'
+                               else (others => 'Z');
 
 -- Write MASK_L1A
   GEN_MASK_L1A : for I in NFEB downto 0 generate
@@ -274,6 +289,7 @@ begin
              out_mux_data_path when (r_mux_data_path = '1') else
              out_mux_trigger   when (r_mux_trigger = '1') else
              out_mux_lvmb      when (r_mux_lvmb = '1') else
+             out_mask_pls      when (r_mask_pls = '1') else
              out_mask_l1a      when (r_mask_l1a = '1') else
              out_odmb_ped      when (r_odmb_ped = '1') else
              out_cal_ped       when (r_cal_ped = '1') else
