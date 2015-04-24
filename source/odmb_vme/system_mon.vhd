@@ -60,8 +60,8 @@ begin
       INIT_50          => X"b5ed",      -- Temp alarm trigger
       INIT_51          => X"5999",      -- Vccint upper alarm limit
       INIT_52          => X"e000",      -- Vccaux upper alarm limit
-      INIT_53          => X"ca33",      -- Temp alarm OT upper
-      INIT_54          => X"b5c3",      -- Temp alarm reset (Default 125C -> a93a, 85C -> b5c3)
+      INIT_53          => X"b5f3",      -- Temp alarm OT upper (Default 125C -> ca33, 85C -> b5f3)
+      INIT_54          => X"a93a",      -- Temp alarm reset
       INIT_55          => X"5111",      -- Vccint lower alarm limit
       INIT_56          => X"caaa",      -- Vccaux lower alarm limit
       INIT_57          => X"ae4e",      -- Temp alarm OT reset
