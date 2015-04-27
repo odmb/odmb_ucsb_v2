@@ -60,11 +60,11 @@ begin
       INIT_50          => X"b5ed",      -- Temp alarm trigger
       INIT_51          => X"5999",      -- Vccint upper alarm limit
       INIT_52          => X"e000",      -- Vccaux upper alarm limit
-      INIT_53          => X"b5f3",      -- Temp alarm OT upper (Default 125C -> ca33, 85C -> b5f3)
+      INIT_53          => X"b5c3",      -- Temp alarm OT upper (Default 125C -> ca33, 85C -> b5c3)
       INIT_54          => X"a93a",      -- Temp alarm reset
       INIT_55          => X"5111",      -- Vccint lower alarm limit
       INIT_56          => X"caaa",      -- Vccaux lower alarm limit
-      INIT_57          => X"ae4e",      -- Temp alarm OT reset
+      INIT_57          => X"b0ce",      -- Temp alarm OT reset (Default 70C -> ae4e, 75C -> b0ce)
       SIM_DEVICE       => "VIRTEX6",
       SIM_MONITOR_FILE => "/home/adam/odmb_ucsb_v2_testing/source/odmb_vme/auxfile.txt"
       )
