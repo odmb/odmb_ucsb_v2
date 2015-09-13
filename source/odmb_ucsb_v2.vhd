@@ -664,7 +664,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       PRBS_TX_EN      : in  std_logic;
       PRBS_RX_EN      : in  std_logic;
       PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
-      PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
+      PRBS_ERR_CNT    : out std_logic_vector(15 downto 0);
+  
+      -- DDU monitoring
+      TXPLLLKDET    : out std_logic
       );
   end component;
 
@@ -710,6 +713,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       DCFEB7_DATA      : out std_logic_vector(15 downto 0);
       DCFEB_DATA_VALID : out std_logic_vector(NFEB downto 1);
       CRC_VALID        : out std_logic_vector(NFEB downto 1);
+      BAD_RX           : out std_logic_vector(NFEB downto 1);
       DCFEBCLK         : out std_logic;
 
       --Internal signals
@@ -1008,7 +1012,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   type l1a_match_cnt_type is array (NFEB downto 1) of std_logic_vector(15 downto 0);
   signal raw_lct_cnt, goodcrc_cnt : l1a_match_cnt_type;
-
+  signal badcrc_cnt, dcfeb_bad_rx_cnt : l1a_match_cnt_type;
+  signal ddu_txplllkdet_b_cnt           : std_logic_vector(15 downto 0);
+  signal ddu_txplllkdet, ddu_txplllkdet_b : std_logic;
+  
   type dav_cnt_type is array (NFEB+2 downto 1) of std_logic_vector(15 downto 0);
   signal l1a_match_cnt, into_cafifo_dav_cnt : dav_cnt_type;
   signal data_fifo_re_cnt                   : dav_cnt_type;
@@ -1054,6 +1061,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   -- dmb_receiver
   signal CRC_VALID : std_logic_vector(NFEB downto 1) := (others => '0');
+  signal dcfeb_bad_rx : std_logic_vector(NFEB downto 1) := (others => '0');
   signal RD_EN_FF  : std_logic_vector(NFEB downto 1) := (others => '0');
   signal FF_STATUS : std_logic_vector(15 downto 0);
 
@@ -1709,7 +1717,10 @@ begin
       PRBS_TX_EN      => ddu_prbs_tx_en,
       PRBS_RX_EN      => ddu_prbs_rx_en,
       PRBS_EN_TST_CNT => ddu_prbs_en_tst_cnt,
-      PRBS_ERR_CNT    => ddu_prbs_err_cnt
+      PRBS_ERR_CNT    => ddu_prbs_err_cnt,
+
+      -- DDU monitoring
+      TXPLLLKDET    => ddu_txplllkdet
       );
 
   GIGALINK_PC_PM : gigalink_pc
@@ -1804,6 +1815,7 @@ begin
       DCFEB7_DATA      => rx_dcfeb_data(7),
       DCFEB_DATA_VALID => rx_dcfeb_data_valid,
       CRC_VALID        => crc_valid,
+      BAD_RX           => dcfeb_bad_rx,
       DCFEBCLK         => clk160,
 
       --Internal signals
@@ -2138,7 +2150,7 @@ begin
   DS_RESYNC : DELAY_SIGNAL generic map(1) port map(DCFEB_RESYNC, clk40, cable_dly, l1acnt_rst);
   dcfeb_reprgen_b <= '0';
   pre_bc0 <= test_bc0 or ccb_bx0_q;  -- New signal to DCFEB for syncing
-  DS_BC0 : DELAY_SIGNAL generic map(1) port map(DCFEB_BC0, clk40, cable_dly, masked_l1a);
+  DS_BC0 : DELAY_SIGNAL generic map(1) port map(DCFEB_BC0, clk40, cable_dly, pre_bc0);
 
   -- To QPLL
   qpll_autorestart <= '1';
@@ -2589,11 +2601,17 @@ begin
   PCOF_CNT    : COUNT_EDGES port map(pc_data_valid_cnt, pcclk, reset, pc_data_valid);
   LOCKED_CNT  : COUNT_EDGES port map(qpll_locked_cnt, dduclk, reset, qpll_locked);
 
+  ddu_txplllkdet_b <= not ddu_txplllkdet;
+  DDUTXPLLLKDET_CNT : COUNT_EDGES port map(ddu_txplllkdet_b_cnt, dduclk, reset, ddu_txplllkdet_b);
+
   NFEB_CNT : for dev in 1 to NFEB generate
   begin
     RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
     CRC_CNT    : COUNT_EDGES port map(goodcrc_cnt(dev), clk160, reset, crc_valid(dev));
+    BAD_RX_CNT : COUNT_EDGES port map(dcfeb_bad_rx_cnt(dev), clk160, reset, dcfeb_bad_rx(dev));
     LCTL1AGAP  : GAP_COUNTER generic map (200) port map(lct_l1a_gap(dev), clk40, reset, raw_lct(dev), int_l1a);
+    badcrc_cnt(dev) <= std_logic_vector(unsigned(eof_data_cnt(dev))-unsigned(goodcrc_cnt(dev)));
+    --badcrc_cnt(dev) <= std_logic_vector(unsigned(eof_data_cnt(dev))-unsigned(l1a_match_cnt(dev)));
   end generate NFEB_CNT;
 
   NFEB2_CNT : for dev in 1 to NFEB+2 generate
@@ -2701,169 +2719,6 @@ begin
         led_cnt_rst    <= '1';
         led_cnt_en     <= '0';
         
-    end case;
-  end process;
-
-  odmb_status <= x"00" & "000" & orx_sd & vme_berr_b & qpll_error & QPLL_LOCKED & DONE_IN;
-
-  odmb_status_pro : process (odmb_status, odmb_ctrl_reg, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
-                             l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
-                             data_fifo_re_cnt, pc_data_valid_cnt, ddu_eof_cnt, goodcrc_cnt,
-                             alct_dav_cnt, otmb_dav_cnt, cafifo_rd_addr, cafifo_wr_addr,
-                             cafifo_prev_next_l1a_match, cafifo_prev_next_l1a, cafifo_debug, control_debug)
-  begin
-    
-    case odmb_data_sel is
-
-      when x"00" => odmb_data <= odmb_status;
-      when x"01" => odmb_data <= odmb_ctrl_reg;
-
-      when x"02" => odmb_data <= cafifo_debug;  --cafifo_empty & cafifo_full & cafifo_state_slv & timeout_state_1
-                                                --& timeout_state_9 & lone(rd_addr_out) & lost_pckt(rd_addr_out)(8 downto 2);
-      when x"03" => odmb_data <= cafifo_prev_next_l1a;
-      when x"04" => odmb_data <= cafifo_prev_next_l1a_match;
-
-      when x"05" => odmb_data <= control_debug;  --'0' & dev_cnt_svl & '0' & hdr_tail_cnt_svl & current_state_svl;
-      when x"06" => odmb_data <= x"0000";
-      when x"07" => odmb_data <= x"0000";
-
-      when x"08" => odmb_data <= "0000" & dcfeb_adc_mask(3);
-      when x"09" => odmb_data <= dcfeb_fsel(3)(15 downto 0);
-      when x"0A" => odmb_data <= dcfeb_fsel(3)(31 downto 16);
-      when x"0B" => odmb_data <= "00" & dcfeb_jtag_ir(3) & "000" & dcfeb_fsel(3)(31);
-
-      when x"0C" => odmb_data <= "0000" & dcfeb_adc_mask(4);
-      when x"0D" => odmb_data <= dcfeb_fsel(4)(15 downto 0);
-      when x"0E" => odmb_data <= dcfeb_fsel(4)(31 downto 16);
-      when x"0F" => odmb_data <= "00" & dcfeb_jtag_ir(4) & "000" & dcfeb_fsel(4)(31);
-
-      when x"10" => odmb_data <= "0000" & dcfeb_adc_mask(5);
-      when x"11" => odmb_data <= dcfeb_fsel(5)(15 downto 0);
-      when x"12" => odmb_data <= dcfeb_fsel(5)(31 downto 16);
-      when x"13" => odmb_data <= "00" & dcfeb_jtag_ir(5) & "000" & dcfeb_fsel(5)(31);
-
-      when x"14" => odmb_data <= "0000" & dcfeb_adc_mask(6);
-      when x"15" => odmb_data <= dcfeb_fsel(6)(15 downto 0);
-      when x"16" => odmb_data <= dcfeb_fsel(6)(31 downto 16);
-      when x"17" => odmb_data <= "00" & dcfeb_jtag_ir(6) & "000" & dcfeb_fsel(6)(31);
-
-      when x"18" => odmb_data <= "0000" & dcfeb_adc_mask(7);
-      when x"19" => odmb_data <= dcfeb_fsel(7)(15 downto 0);
-      when x"1A" => odmb_data <= dcfeb_fsel(7)(31 downto 16);
-      when x"1B" => odmb_data <= "00" & dcfeb_jtag_ir(7) & "000" & dcfeb_fsel(7)(31);
-
-      when x"1C" => odmb_data <= x"0000";
-      when x"1D" => odmb_data <= x"0000";
-      when x"1E" => odmb_data <= x"0000";
-      when x"1F" => odmb_data <= x"0000";
-
-      when x"20" => odmb_data <= "0000000000" & vme_gap & vme_ga;
-
-      when x"21" => odmb_data <= l1a_match_cnt(1);
-      when x"22" => odmb_data <= l1a_match_cnt(2);
-      when x"23" => odmb_data <= l1a_match_cnt(3);
-      when x"24" => odmb_data <= l1a_match_cnt(4);
-      when x"25" => odmb_data <= l1a_match_cnt(5);
-      when x"26" => odmb_data <= l1a_match_cnt(6);
-      when x"27" => odmb_data <= l1a_match_cnt(7);
-      when x"28" => odmb_data <= l1a_match_cnt(8);
-      when x"29" => odmb_data <= l1a_match_cnt(9);
-
-
-      when x"2A" => odmb_data <= std_logic_vector(to_unsigned(alct_push_dly, 16));
-      when x"2B" => odmb_data <= std_logic_vector(to_unsigned(otmb_push_dly, 16));
-      when x"2C" => odmb_data <= std_logic_vector(to_unsigned(push_dly, 16));
-      when x"2D" => odmb_data <= "0000000000" & lct_l1a_dly;
-      when x"2E" => odmb_data <= ts_out(15 downto 0);
-      when x"2F" => odmb_data <= ts_out(31 downto 16);
-
-      when x"31" => odmb_data <= lct_l1a_gap(1);
-      when x"32" => odmb_data <= lct_l1a_gap(2);
-      when x"33" => odmb_data <= lct_l1a_gap(3);
-      when x"34" => odmb_data <= lct_l1a_gap(4);
-      when x"35" => odmb_data <= lct_l1a_gap(5);
-      when x"36" => odmb_data <= lct_l1a_gap(6);
-      when x"37" => odmb_data <= lct_l1a_gap(7);
-      when x"38" => odmb_data <= l1a_otmbdav_gap;
-      when x"39" => odmb_data <= l1a_alctdav_gap;
-
-      when x"3A" => odmb_data <= "00000000" & cafifo_l1a_cnt(23 downto 16);
-      when x"3B" => odmb_data <= cafifo_l1a_cnt(15 downto 0);
-      when x"3C" => odmb_data <= "0000" & cafifo_bx_cnt;
-      when x"3D" => odmb_data <= cafifo_rd_addr & cafifo_wr_addr;
-      when x"3E" => odmb_data <= "0000000" & cafifo_l1a_match_in;
-      when x"3F" => odmb_data <= int_l1a_cnt;
-
-      when x"41" => odmb_data <= into_cafifo_dav_cnt(1);
-      when x"42" => odmb_data <= into_cafifo_dav_cnt(2);
-      when x"43" => odmb_data <= into_cafifo_dav_cnt(3);
-      when x"44" => odmb_data <= into_cafifo_dav_cnt(4);
-      when x"45" => odmb_data <= into_cafifo_dav_cnt(5);
-      when x"46" => odmb_data <= into_cafifo_dav_cnt(6);
-      when x"47" => odmb_data <= into_cafifo_dav_cnt(7);
-      when x"48" => odmb_data <= into_cafifo_dav_cnt(8);
-      when x"49" => odmb_data <= into_cafifo_dav_cnt(9);
-
-      when x"4A" => odmb_data <= ddu_eof_cnt;  -- Number of packets sent to DDU
-      when x"4B" => odmb_data <= pc_data_valid_cnt;  -- Number of packets sent to PC
-      --when x"4C" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
-      when x"4D" => odmb_data <= "0000000" & cafifo_l1a_match_out;
-      when x"4E" => odmb_data <= "0000000" & cafifo_l1a_dav;
-      when x"4F" => odmb_data <= qpll_locked_cnt;
-
-      when x"51" => odmb_data <= data_fifo_re_cnt(1);  -- from control to FIFOs in top
-      when x"52" => odmb_data <= data_fifo_re_cnt(2);  -- from control to FIFOs in top
-      when x"53" => odmb_data <= data_fifo_re_cnt(3);  -- from control to FIFOs in top
-      when x"54" => odmb_data <= data_fifo_re_cnt(4);  -- from control to FIFOs in top
-      when x"55" => odmb_data <= data_fifo_re_cnt(5);  -- from control to FIFOs in top
-      when x"56" => odmb_data <= data_fifo_re_cnt(6);  -- from control to FIFOs in top
-      when x"57" => odmb_data <= data_fifo_re_cnt(7);  -- from control to FIFOs in top
-      when x"58" => odmb_data <= data_fifo_re_cnt(8);  -- from control to FIFOs in top
-      when x"59" => odmb_data <= data_fifo_re_cnt(9);  -- from control to FIFOs in top
-      when x"5A" => odmb_data <= ccb_cmd_reg;
-      when x"5B" => odmb_data <= ccb_data_reg;
-      when x"5C" => odmb_data <= ccb_other_reg;
-      when x"5D" => odmb_data <= ccb_rsv_reg;
-
-      when x"61" => odmb_data <= goodcrc_cnt(1);
-      when x"62" => odmb_data <= goodcrc_cnt(2);
-      when x"63" => odmb_data <= goodcrc_cnt(3);
-      when x"64" => odmb_data <= goodcrc_cnt(4);
-      when x"65" => odmb_data <= goodcrc_cnt(5);
-      when x"66" => odmb_data <= goodcrc_cnt(6);
-      when x"67" => odmb_data <= goodcrc_cnt(7);
-
-      when x"71" => odmb_data <= raw_lct_cnt(1);
-      when x"72" => odmb_data <= raw_lct_cnt(2);
-      when x"73" => odmb_data <= raw_lct_cnt(3);
-      when x"74" => odmb_data <= raw_lct_cnt(4);
-      when x"75" => odmb_data <= raw_lct_cnt(5);
-      when x"76" => odmb_data <= raw_lct_cnt(6);
-      when x"77" => odmb_data <= raw_lct_cnt(7);
-      when x"78" => odmb_data <= otmb_dav_cnt;
-      when x"79" => odmb_data <= alct_dav_cnt;
-
-      when x"81" => odmb_data <= eof_data_cnt(1);  -- Number of packets arrived in full
-      when x"82" => odmb_data <= eof_data_cnt(2);  -- Number of packets arrived in full
-      when x"83" => odmb_data <= eof_data_cnt(3);  -- Number of packets arrived in full
-      when x"84" => odmb_data <= eof_data_cnt(4);  -- Number of packets arrived in full
-      when x"85" => odmb_data <= eof_data_cnt(5);  -- Number of packets arrived in full
-      when x"86" => odmb_data <= eof_data_cnt(6);  -- Number of packets arrived in full
-      when x"87" => odmb_data <= eof_data_cnt(7);  -- Number of packets arrived in full
-      when x"88" => odmb_data <= eof_data_cnt(8);  -- Number of packets arrived in full
-      when x"89" => odmb_data <= eof_data_cnt(9);  -- Number of packets arrived in full
-
-      when x"91" => odmb_data <= cafifo_l1a_dav_cnt(1);  -- Times data has been available
-      when x"92" => odmb_data <= cafifo_l1a_dav_cnt(2);  -- Times data has been available
-      when x"93" => odmb_data <= cafifo_l1a_dav_cnt(3);  -- Times data has been available
-      when x"94" => odmb_data <= cafifo_l1a_dav_cnt(4);  -- Times data has been available
-      when x"95" => odmb_data <= cafifo_l1a_dav_cnt(5);  -- Times data has been available
-      when x"96" => odmb_data <= cafifo_l1a_dav_cnt(6);  -- Times data has been available
-      when x"97" => odmb_data <= cafifo_l1a_dav_cnt(7);  -- Times data has been available
-      when x"98" => odmb_data <= cafifo_l1a_dav_cnt(8);  -- Times data has been available
-      when x"99" => odmb_data <= cafifo_l1a_dav_cnt(9);  -- Times data has been available
-
-      when others => odmb_data <= (others => '1');
     end case;
   end process;
 
@@ -3270,6 +3125,188 @@ begin
           tp_3   => rawlct(1),
           tp_4   => int_l1a_match(1),
           others => '0');
+    end case;
+  end process;
+
+  odmb_status <= x"00" & "000" & orx_sd & vme_berr_b & qpll_error & QPLL_LOCKED & DONE_IN;
+
+  odmb_status_pro : process (odmb_status, odmb_ctrl_reg, dcfeb_adc_mask, dcfeb_fsel, dcfeb_jtag_ir, odmb_data_sel,
+                             l1a_match_cnt, lct_l1a_gap, into_cafifo_dav_cnt, cafifo_l1a_match_out, cafifo_l1a_dav,
+                             data_fifo_re_cnt, pc_data_valid_cnt, ddu_eof_cnt, goodcrc_cnt,
+                             alct_dav_cnt, otmb_dav_cnt, cafifo_rd_addr, cafifo_wr_addr,
+                             cafifo_prev_next_l1a_match, cafifo_prev_next_l1a, cafifo_debug, control_debug,
+                             badcrc_cnt, ddu_txplllkdet_b_cnt,dcfeb_bad_rx_cnt )
+  begin
+    
+    case odmb_data_sel is
+
+      when x"00" => odmb_data <= odmb_status;
+      when x"01" => odmb_data <= odmb_ctrl_reg;
+
+      when x"02" => odmb_data <= cafifo_debug;  --cafifo_empty & cafifo_full & cafifo_state_slv & timeout_state_1
+                                                --& timeout_state_9 & lone(rd_addr_out) & lost_pckt(rd_addr_out)(8 downto 2);
+      when x"03" => odmb_data <= cafifo_prev_next_l1a;
+      when x"04" => odmb_data <= cafifo_prev_next_l1a_match;
+
+      when x"05" => odmb_data <= control_debug;  --'0' & dev_cnt_svl & '0' & hdr_tail_cnt_svl & current_state_svl;
+      when x"06" => odmb_data <= x"0000";
+      when x"07" => odmb_data <= x"0000";
+
+      when x"08" => odmb_data <= "0000" & dcfeb_adc_mask(3);
+      when x"09" => odmb_data <= dcfeb_fsel(3)(15 downto 0);
+      when x"0A" => odmb_data <= dcfeb_fsel(3)(31 downto 16);
+      when x"0B" => odmb_data <= "00" & dcfeb_jtag_ir(3) & "000" & dcfeb_fsel(3)(31);
+
+      when x"0C" => odmb_data <= "0000" & dcfeb_adc_mask(4);
+      when x"0D" => odmb_data <= dcfeb_fsel(4)(15 downto 0);
+      when x"0E" => odmb_data <= dcfeb_fsel(4)(31 downto 16);
+      when x"0F" => odmb_data <= "00" & dcfeb_jtag_ir(4) & "000" & dcfeb_fsel(4)(31);
+
+      when x"10" => odmb_data <= "0000" & dcfeb_adc_mask(5);
+      when x"11" => odmb_data <= dcfeb_fsel(5)(15 downto 0);
+      when x"12" => odmb_data <= dcfeb_fsel(5)(31 downto 16);
+      when x"13" => odmb_data <= "00" & dcfeb_jtag_ir(5) & "000" & dcfeb_fsel(5)(31);
+
+      when x"14" => odmb_data <= "0000" & dcfeb_adc_mask(6);
+      when x"15" => odmb_data <= dcfeb_fsel(6)(15 downto 0);
+      when x"16" => odmb_data <= dcfeb_fsel(6)(31 downto 16);
+      when x"17" => odmb_data <= "00" & dcfeb_jtag_ir(6) & "000" & dcfeb_fsel(6)(31);
+
+      when x"18" => odmb_data <= "0000" & dcfeb_adc_mask(7);
+      when x"19" => odmb_data <= dcfeb_fsel(7)(15 downto 0);
+      when x"1A" => odmb_data <= dcfeb_fsel(7)(31 downto 16);
+      when x"1B" => odmb_data <= "00" & dcfeb_jtag_ir(7) & "000" & dcfeb_fsel(7)(31);
+
+      when x"1C" => odmb_data <= x"0000";
+      when x"1D" => odmb_data <= x"0000";
+      when x"1E" => odmb_data <= x"0000";
+      when x"1F" => odmb_data <= x"0000";
+
+      when x"20" => odmb_data <= "0000000000" & vme_gap & vme_ga;
+
+      when x"21" => odmb_data <= l1a_match_cnt(1);
+      when x"22" => odmb_data <= l1a_match_cnt(2);
+      when x"23" => odmb_data <= l1a_match_cnt(3);
+      when x"24" => odmb_data <= l1a_match_cnt(4);
+      when x"25" => odmb_data <= l1a_match_cnt(5);
+      when x"26" => odmb_data <= l1a_match_cnt(6);
+      when x"27" => odmb_data <= l1a_match_cnt(7);
+      when x"28" => odmb_data <= l1a_match_cnt(8);
+      when x"29" => odmb_data <= l1a_match_cnt(9);
+
+
+      when x"2A" => odmb_data <= std_logic_vector(to_unsigned(alct_push_dly, 16));
+      when x"2B" => odmb_data <= std_logic_vector(to_unsigned(otmb_push_dly, 16));
+      when x"2C" => odmb_data <= std_logic_vector(to_unsigned(push_dly, 16));
+      when x"2D" => odmb_data <= "0000000000" & lct_l1a_dly;
+      when x"2E" => odmb_data <= ts_out(15 downto 0);
+      when x"2F" => odmb_data <= ts_out(31 downto 16);
+
+      when x"31" => odmb_data <= lct_l1a_gap(1);
+      when x"32" => odmb_data <= lct_l1a_gap(2);
+      when x"33" => odmb_data <= lct_l1a_gap(3);
+      when x"34" => odmb_data <= lct_l1a_gap(4);
+      when x"35" => odmb_data <= lct_l1a_gap(5);
+      when x"36" => odmb_data <= lct_l1a_gap(6);
+      when x"37" => odmb_data <= lct_l1a_gap(7);
+      when x"38" => odmb_data <= l1a_otmbdav_gap;
+      when x"39" => odmb_data <= l1a_alctdav_gap;
+
+      when x"3A" => odmb_data <= "00000000" & cafifo_l1a_cnt(23 downto 16);
+      when x"3B" => odmb_data <= cafifo_l1a_cnt(15 downto 0);
+      when x"3C" => odmb_data <= "0000" & cafifo_bx_cnt;
+      when x"3D" => odmb_data <= cafifo_rd_addr & cafifo_wr_addr;
+      when x"3E" => odmb_data <= "0000000" & cafifo_l1a_match_in;
+      when x"3F" => odmb_data <= int_l1a_cnt;
+
+      when x"41" => odmb_data <= into_cafifo_dav_cnt(1);
+      when x"42" => odmb_data <= into_cafifo_dav_cnt(2);
+      when x"43" => odmb_data <= into_cafifo_dav_cnt(3);
+      when x"44" => odmb_data <= into_cafifo_dav_cnt(4);
+      when x"45" => odmb_data <= into_cafifo_dav_cnt(5);
+      when x"46" => odmb_data <= into_cafifo_dav_cnt(6);
+      when x"47" => odmb_data <= into_cafifo_dav_cnt(7);
+      when x"48" => odmb_data <= into_cafifo_dav_cnt(8);
+      when x"49" => odmb_data <= into_cafifo_dav_cnt(9);
+
+      when x"4A" => odmb_data <= ddu_eof_cnt;  -- Number of packets sent to DDU
+      when x"4B" => odmb_data <= pc_data_valid_cnt;  -- Number of packets sent to PC
+      --when x"4C" => odmb_data <= data_fifo_oe_cnt(1);  -- from control to FIFOs in top
+      when x"4D" => odmb_data <= "0000000" & cafifo_l1a_match_out;
+      when x"4E" => odmb_data <= "0000000" & cafifo_l1a_dav;
+      when x"4F" => odmb_data <= qpll_locked_cnt;
+
+      when x"51" => odmb_data <= data_fifo_re_cnt(1);  -- from control to FIFOs in top
+      when x"52" => odmb_data <= data_fifo_re_cnt(2);  -- from control to FIFOs in top
+      when x"53" => odmb_data <= data_fifo_re_cnt(3);  -- from control to FIFOs in top
+      when x"54" => odmb_data <= data_fifo_re_cnt(4);  -- from control to FIFOs in top
+      when x"55" => odmb_data <= data_fifo_re_cnt(5);  -- from control to FIFOs in top
+      when x"56" => odmb_data <= data_fifo_re_cnt(6);  -- from control to FIFOs in top
+      when x"57" => odmb_data <= data_fifo_re_cnt(7);  -- from control to FIFOs in top
+      when x"58" => odmb_data <= data_fifo_re_cnt(8);  -- from control to FIFOs in top
+      when x"59" => odmb_data <= data_fifo_re_cnt(9);  -- from control to FIFOs in top
+      when x"5A" => odmb_data <= ccb_cmd_reg;
+      when x"5B" => odmb_data <= ccb_data_reg;
+      when x"5C" => odmb_data <= ccb_other_reg;
+      when x"5D" => odmb_data <= ccb_rsv_reg;
+
+      when x"61" => odmb_data <= goodcrc_cnt(1);
+      when x"62" => odmb_data <= goodcrc_cnt(2);
+      when x"63" => odmb_data <= goodcrc_cnt(3);
+      when x"64" => odmb_data <= goodcrc_cnt(4);
+      when x"65" => odmb_data <= goodcrc_cnt(5);
+      when x"66" => odmb_data <= goodcrc_cnt(6);
+      when x"67" => odmb_data <= goodcrc_cnt(7);
+
+      when x"71" => odmb_data <= raw_lct_cnt(1);
+      when x"72" => odmb_data <= raw_lct_cnt(2);
+      when x"73" => odmb_data <= raw_lct_cnt(3);
+      when x"74" => odmb_data <= raw_lct_cnt(4);
+      when x"75" => odmb_data <= raw_lct_cnt(5);
+      when x"76" => odmb_data <= raw_lct_cnt(6);
+      when x"77" => odmb_data <= raw_lct_cnt(7);
+      when x"78" => odmb_data <= otmb_dav_cnt;
+      when x"79" => odmb_data <= alct_dav_cnt;
+
+      when x"81" => odmb_data <= eof_data_cnt(1);  -- Number of packets arrived in full
+      when x"82" => odmb_data <= eof_data_cnt(2);  -- Number of packets arrived in full
+      when x"83" => odmb_data <= eof_data_cnt(3);  -- Number of packets arrived in full
+      when x"84" => odmb_data <= eof_data_cnt(4);  -- Number of packets arrived in full
+      when x"85" => odmb_data <= eof_data_cnt(5);  -- Number of packets arrived in full
+      when x"86" => odmb_data <= eof_data_cnt(6);  -- Number of packets arrived in full
+      when x"87" => odmb_data <= eof_data_cnt(7);  -- Number of packets arrived in full
+      when x"88" => odmb_data <= eof_data_cnt(8);  -- Number of packets arrived in full
+      when x"89" => odmb_data <= eof_data_cnt(9);  -- Number of packets arrived in full
+
+      when x"91" => odmb_data <= cafifo_l1a_dav_cnt(1);  -- Times data has been available
+      when x"92" => odmb_data <= cafifo_l1a_dav_cnt(2);  -- Times data has been available
+      when x"93" => odmb_data <= cafifo_l1a_dav_cnt(3);  -- Times data has been available
+      when x"94" => odmb_data <= cafifo_l1a_dav_cnt(4);  -- Times data has been available
+      when x"95" => odmb_data <= cafifo_l1a_dav_cnt(5);  -- Times data has been available
+      when x"96" => odmb_data <= cafifo_l1a_dav_cnt(6);  -- Times data has been available
+      when x"97" => odmb_data <= cafifo_l1a_dav_cnt(7);  -- Times data has been available
+      when x"98" => odmb_data <= cafifo_l1a_dav_cnt(8);  -- Times data has been available
+      when x"99" => odmb_data <= cafifo_l1a_dav_cnt(9);  -- Times data has been available
+
+      when x"A1" => odmb_data <= badcrc_cnt(1);
+      when x"A2" => odmb_data <= badcrc_cnt(2);
+      when x"A3" => odmb_data <= badcrc_cnt(3);
+      when x"A4" => odmb_data <= badcrc_cnt(4);
+      when x"A5" => odmb_data <= badcrc_cnt(5);
+      when x"A6" => odmb_data <= badcrc_cnt(6);
+      when x"A7" => odmb_data <= badcrc_cnt(7);
+                    
+      when x"A8" => odmb_data <= ddu_txplllkdet_b_cnt;  -- Times the DDU TX PLL "loses lock"
+
+      when x"B1" => odmb_data <= dcfeb_bad_rx_cnt(1);
+      when x"B2" => odmb_data <= dcfeb_bad_rx_cnt(2);
+      when x"B3" => odmb_data <= dcfeb_bad_rx_cnt(3);
+      when x"B4" => odmb_data <= dcfeb_bad_rx_cnt(4);
+      when x"B5" => odmb_data <= dcfeb_bad_rx_cnt(5);
+      when x"B6" => odmb_data <= dcfeb_bad_rx_cnt(6);
+      when x"B7" => odmb_data <= dcfeb_bad_rx_cnt(7);
+                    
+      when others => odmb_data <= (others => '1');
     end case;
   end process;
 

@@ -93,6 +93,7 @@
     output [1:0]      GTX0_RXCHARISK_OUT,
     output [1:0]      GTX0_RXDISPERR_OUT,
     output [1:0]      GTX0_RXNOTINTABLE_OUT,
+    output [1:0]      GTX0_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX0_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -125,6 +126,7 @@
     output [1:0]      GTX1_RXCHARISK_OUT,
     output [1:0]      GTX1_RXDISPERR_OUT,
     output [1:0]      GTX1_RXNOTINTABLE_OUT,
+    output [1:0]      GTX1_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX1_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -157,6 +159,7 @@
     output [1:0]      GTX2_RXCHARISK_OUT,
     output [1:0]      GTX2_RXDISPERR_OUT,
     output [1:0]      GTX2_RXNOTINTABLE_OUT,
+    output [1:0]      GTX2_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX2_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -189,6 +192,7 @@
     output [1:0]      GTX3_RXCHARISK_OUT,
     output [1:0]      GTX3_RXDISPERR_OUT,
     output [1:0]      GTX3_RXNOTINTABLE_OUT,
+    output [1:0]      GTX3_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX3_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -222,6 +226,7 @@
     output [1:0]      GTX4_RXCHARISK_OUT,
     output [1:0]      GTX4_RXDISPERR_OUT,
     output [1:0]      GTX4_RXNOTINTABLE_OUT,
+    output [1:0]      GTX4_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX4_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -254,6 +259,7 @@
     output [1:0]      GTX5_RXCHARISK_OUT,
     output [1:0]      GTX5_RXDISPERR_OUT,
     output [1:0]      GTX5_RXNOTINTABLE_OUT,
+    output [1:0]      GTX5_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX5_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -286,6 +292,7 @@
     output [1:0]      GTX6_RXCHARISK_OUT,
     output [1:0]      GTX6_RXDISPERR_OUT,
     output [1:0]      GTX6_RXNOTINTABLE_OUT,
+    output [1:0]      GTX6_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX6_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -319,6 +326,7 @@
     output [1:0]      GTX7_RXCHARISK_OUT,
     output [1:0]      GTX7_RXDISPERR_OUT,
     output [1:0]      GTX7_RXNOTINTABLE_OUT,
+    output [1:0]      GTX7_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX7_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -353,6 +361,7 @@
     output [1:0]      GTX8_RXCHARISK_OUT,
     output [1:0]      GTX8_RXDISPERR_OUT,
     output [1:0]      GTX8_RXNOTINTABLE_OUT,
+    output [1:0]      GTX8_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX8_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -387,6 +396,7 @@
     output [1:0]      GTX9_RXCHARISK_OUT,
     output [1:0]      GTX9_RXDISPERR_OUT,
     output [1:0]      GTX9_RXNOTINTABLE_OUT,
+    output [1:0]      GTX9_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX9_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -421,6 +431,7 @@
     output [1:0]      GTX10_RXCHARISK_OUT,
     output [1:0]      GTX10_RXDISPERR_OUT,
     output [1:0]      GTX10_RXNOTINTABLE_OUT,
+    output [1:0]      GTX10_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX10_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -453,6 +464,7 @@
     output [1:0]      GTX11_RXCHARISK_OUT,
     output [1:0]      GTX11_RXDISPERR_OUT,
     output [1:0]      GTX11_RXNOTINTABLE_OUT,
+    output [1:0]      GTX11_RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]      GTX11_RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -534,6 +546,7 @@
       .RXCHARISK_OUT                  (GTX0_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX0_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX0_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX0_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX0_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -592,6 +605,7 @@
       .RXCHARISK_OUT                  (GTX1_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX1_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX1_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX1_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX1_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -648,6 +662,7 @@
       .RXCHARISK_OUT                  (GTX2_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX2_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX2_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX2_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX2_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -704,6 +719,7 @@
       .RXCHARISK_OUT                  (GTX3_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX3_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX3_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX3_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX3_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -760,6 +776,7 @@
       .RXCHARISK_OUT                  (GTX4_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX4_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX4_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX4_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX4_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -816,6 +833,7 @@
       .RXCHARISK_OUT                  (GTX5_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX5_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX5_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX5_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX5_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -872,6 +890,7 @@
       .RXCHARISK_OUT                  (GTX6_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX6_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX6_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX6_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX6_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -928,6 +947,7 @@
       .RXCHARISK_OUT                  (GTX7_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX7_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX7_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX7_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX7_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -984,6 +1004,7 @@
       .RXCHARISK_OUT                  (GTX8_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX8_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX8_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX8_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX8_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -1040,6 +1061,7 @@
       .RXCHARISK_OUT                  (GTX9_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX9_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX9_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX9_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX9_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -1096,6 +1118,7 @@
       .RXCHARISK_OUT                  (GTX10_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX10_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX10_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX10_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX10_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -1152,6 +1175,7 @@
       .RXCHARISK_OUT                  (GTX11_RXCHARISK_OUT),
       .RXDISPERR_OUT                  (GTX11_RXDISPERR_OUT),
       .RXNOTINTABLE_OUT               (GTX11_RXNOTINTABLE_OUT),
+      .RXLOSSOFSYNC_OUT               (GTX11_RXLOSSOFSYNC_OUT),
       //----------------- Receive Ports - Clock Correction Ports -----------------
       .RXCLKCORCNT_OUT                (GTX11_RXCLKCORCNT_OUT),
       //------------- Receive Ports - Comma Detection and Alignment --------------

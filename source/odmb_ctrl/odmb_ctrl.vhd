@@ -8,8 +8,8 @@ use ieee.std_logic_1164.all;
 
 entity ODMB_CTRL is
   generic (
-    NFIFO       : integer range 1 to 16 := 16;  -- Number of FIFOs in PCFIFO
-    NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
+    NFIFO       : integer range 1 to 16  := 16;  -- Number of FIFOs in PCFIFO
+    NFEB        : integer range 1 to 7   := 7;  -- Number of DCFEBS, 7 in the final design
     CAFIFO_SIZE : integer range 1 to 128 := 128  -- Number FIFO words in CAFIFO
     );  
   port (
@@ -25,21 +25,21 @@ entity ODMB_CTRL is
 
     ga : in std_logic_vector(4 downto 0);
 
-    ccb_cmd    : in  std_logic_vector (5 downto 0);  -- ccbcmnd(5 downto 0) - from J3
-    ccb_cmd_s  : in  std_logic;         -- ccbcmnd(6) - from J3
-    ccb_data   : in  std_logic_vector (7 downto 0);  -- ccbdata(7 downto 0) - from J3
-    ccb_data_s : in  std_logic;         -- ccbdata(8) - from J3
-    ccb_cal    : in  std_logic_vector (2 downto 0);  -- ccbcal(2 downto 0) - from J3
-    ccb_crsv   : in  std_logic_vector (4 downto 0);  -- NEW [ccbrsv(6)], ccbrsv(3 downto 0) - from J3
-    ccb_drsv   : in  std_logic_vector (1 downto 0);  -- ccbrsv(5 downto 4) - from J3
-    ccb_rsvo   : in  std_logic_vector (4 downto 0);  -- NEW [ccbrsv(11)], ccbrsv(10 downto 7) - from J3
-    ccb_rsvi   : out std_logic_vector (2 downto 0);  -- ccbrsv(14 downto 12) - to J3
-    ccb_bx0_b    : in  std_logic;         -- bx0 - from J3
-    ccb_bxrst_b  : in  std_logic;         -- bxrst - from J3
-    raw_l1a  : in  std_logic;         -- l1acc - from J3
-    ccb_l1arst_b : in  std_logic;         -- l1rst - from J3
-    ccb_l1rls  : out std_logic;         -- l1rls - to J3
-    ccb_clken  : in  std_logic;         -- clken - from J3
+    ccb_cmd      : in  std_logic_vector (5 downto 0);  -- ccbcmnd(5 downto 0) - from J3
+    ccb_cmd_s    : in  std_logic;       -- ccbcmnd(6) - from J3
+    ccb_data     : in  std_logic_vector (7 downto 0);  -- ccbdata(7 downto 0) - from J3
+    ccb_data_s   : in  std_logic;       -- ccbdata(8) - from J3
+    ccb_cal      : in  std_logic_vector (2 downto 0);  -- ccbcal(2 downto 0) - from J3
+    ccb_crsv     : in  std_logic_vector (4 downto 0);  -- NEW [ccbrsv(6)], ccbrsv(3 downto 0) - from J3
+    ccb_drsv     : in  std_logic_vector (1 downto 0);  -- ccbrsv(5 downto 4) - from J3
+    ccb_rsvo     : in  std_logic_vector (4 downto 0);  -- NEW [ccbrsv(11)], ccbrsv(10 downto 7) - from J3
+    ccb_rsvi     : out std_logic_vector (2 downto 0);  -- ccbrsv(14 downto 12) - to J3
+    ccb_bx0_b    : in  std_logic;       -- bx0 - from J3
+    ccb_bxrst_b  : in  std_logic;       -- bxrst - from J3
+    raw_l1a      : in  std_logic;       -- l1acc - from J3
+    ccb_l1arst_b : in  std_logic;       -- l1rst - from J3
+    ccb_l1rls    : out std_logic;       -- l1rls - to J3
+    ccb_clken    : in  std_logic;       -- clken - from J3
 
     rawlct   : in std_logic_vector (NFEB downto 0);  -- rawlct(5 downto 0) - from J4
     otmb_dav : in std_logic;            -- previously lctdav1, from J4
@@ -56,9 +56,9 @@ entity ODMB_CTRL is
 
     ddu_data       : out std_logic_vector(15 downto 0);
     ddu_data_valid : out std_logic;
-    pc_data       : out std_logic_vector(15 downto 0);
-    pc_data_valid : out std_logic;
-    ddu_eof         : out std_logic;
+    pc_data        : out std_logic_vector(15 downto 0);
+    pc_data_valid  : out std_logic;
+    ddu_eof        : out std_logic;
 
 -- From/To Data FIFOs
 
@@ -81,7 +81,7 @@ entity ODMB_CTRL is
 
     cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
     cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
-      control_debug : out std_logic_vector(15 downto 0);
+    control_debug              : out std_logic_vector(15 downto 0);
     cafifo_debug               : out std_logic_vector(15 downto 0);
     cafifo_wr_addr             : out std_logic_vector(7 downto 0);
     cafifo_rd_addr             : out std_logic_vector(7 downto 0);
@@ -359,8 +359,8 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       EOF : out std_logic;
 
 -- DEBUG
-    control_debug : out std_logic_vector(143 downto 0);
-    
+      control_debug : out std_logic_vector(143 downto 0);
+
 -- FROM CAFIFO
       cafifo_l1a_dav   : in std_logic_vector(NFEB+2 downto 1);
       cafifo_l1a_match : in std_logic_vector(NFEB+2 downto 1);
@@ -373,20 +373,21 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
   component cafifo is
     generic (
-      NFEB        : integer range 1 to 7  := 7;  -- Number of DCFEBS, 7 in the final design
+      NFEB        : integer range 1 to 7   := 7;  -- Number of DCFEBS, 7 in the final design
       CAFIFO_SIZE : integer range 1 to 128 := 128  -- Number of CAFIFO words
       );  
     port(
 
       CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       clk                         : in    std_logic;
-      dduclk                    : in    std_logic;
+      dduclk                      : in    std_logic;
       l1acnt_rst                  : in    std_logic;
       bxcnt_rst                   : in    std_logic;
 
-      BC0   : in std_logic;
-      BXRST : in std_logic;
-      BX_DLY: in integer range 0 to 4095;
+      BC0     : in std_logic;
+      CCB_BX0 : in std_logic;
+      BXRST   : in std_logic;
+      BX_DLY  : in integer range 0 to 4095;
 
       l1a          : in std_logic;
       l1a_match_in : in std_logic_vector(NFEB+2 downto 1);
@@ -423,7 +424,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
       cafifo_prev_next_l1a_match : out std_logic_vector(15 downto 0);
       cafifo_prev_next_l1a       : out std_logic_vector(15 downto 0);
-      control_debug               : in std_logic_vector(143 downto 0);
+      control_debug              : in  std_logic_vector(143 downto 0);
       cafifo_debug               : out std_logic_vector(15 downto 0);
       cafifo_wr_addr             : out std_logic_vector(7 downto 0);
       cafifo_rd_addr             : out std_logic_vector(7 downto 0)
@@ -451,22 +452,22 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
   component CCBCODE is
     port (
-      CCB_CMD    : in  std_logic_vector(5 downto 0);
-      CCB_CMD_S  : in  std_logic;
-      CCB_DATA   : in  std_logic_vector(7 downto 0);
-      CCB_DATA_S : in  std_logic;
-      CMSCLK     : in  std_logic;
+      CCB_CMD      : in  std_logic_vector(5 downto 0);
+      CCB_CMD_S    : in  std_logic;
+      CCB_DATA     : in  std_logic_vector(7 downto 0);
+      CCB_DATA_S   : in  std_logic;
+      CMSCLK       : in  std_logic;
       CCB_BXRST_B  : in  std_logic;
       CCB_BX0_B    : in  std_logic;
       CCB_L1ARST_B : in  std_logic;
-      CCB_CLKEN  : in  std_logic;
-      BX0        : out std_logic;
-      BXRST      : out std_logic;
-      L1ARST     : out std_logic;
-      CLKEN      : out std_logic;
-      BC0        : out std_logic;
-      L1ASRST    : out std_logic;
-      TTCCAL     : out std_logic_vector(2 downto 0)
+      CCB_CLKEN    : in  std_logic;
+      BX0          : out std_logic;
+      BXRST        : out std_logic;
+      L1ARST       : out std_logic;
+      CLKEN        : out std_logic;
+      BC0          : out std_logic;
+      L1ASRST      : out std_logic;
+      TTCCAL       : out std_logic_vector(2 downto 0)
       );        
 
   end component;
@@ -543,10 +544,10 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
   signal cafifo_lone                : std_logic;
 
 -- CONTROL outputs
-  signal control_debug_full           : std_logic_vector(143 downto 0);
+  signal control_debug_full   : std_logic_vector(143 downto 0);
   signal cafifo_pop           : std_logic := '0';
   signal eof                  : std_logic := '0';
-  signal ddu_data_inner             : std_logic_vector(15 downto 0);
+  signal ddu_data_inner       : std_logic_vector(15 downto 0);
   signal ddu_data_valid_inner : std_logic := 'L';
 
 -- RANDOMTRG outputs
@@ -562,13 +563,13 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
 -- CCBCODE outputs
 
-  signal bx0                : std_logic;
-  signal bxrst, ccb_bxrst : std_logic;
-  signal l1arst             : std_logic;
-  signal clken              : std_logic;
-  signal bc0                : std_logic;
-  signal l1asrst            : std_logic;
-  signal ttccal             : std_logic_vector(2 downto 0);
+  signal bx0                       : std_logic;
+  signal bxrst, ccb_bxrst, ccb_bx0 : std_logic;
+  signal l1arst                    : std_logic;
+  signal clken                     : std_logic;
+  signal bc0                       : std_logic;
+  signal l1asrst                   : std_logic;
+  signal ttccal                    : std_logic_vector(2 downto 0);
 
 
 -- LOADFIFO outputs
@@ -665,13 +666,14 @@ begin
     port map(
       CSP_FREE_AGENT_PORT_LA_CTRL => CSP_FREE_AGENT_PORT_LA_CTRL,
       clk                         => clk40,
-      dduclk                    => dduclk,
+      dduclk                      => dduclk,
       l1acnt_rst                  => l1acnt_rst,
       bxcnt_rst                   => bxcnt_rst,
 
-      BC0   => bc0,
-      BXRST => ccb_bxrst,
-      BX_DLY => BX_DLY,
+      BC0     => bc0,
+      CCB_BX0 => ccb_bx0,
+      BXRST   => ccb_bxrst,
+      BX_DLY  => BX_DLY,
 
       pop          => cafifo_pop,
       l1a          => cafifo_push,
@@ -709,7 +711,7 @@ begin
 
       cafifo_prev_next_l1a_match => cafifo_prev_next_l1a_match,
       cafifo_prev_next_l1a       => cafifo_prev_next_l1a,
-      control_debug => control_debug_full,
+      control_debug              => control_debug_full,
       cafifo_debug               => cafifo_debug,
       cafifo_wr_addr             => cafifo_wr_addr,
       cafifo_rd_addr             => cafifo_rd_addr
@@ -719,7 +721,7 @@ begin
     generic map(NFEB => NFEB)
     port map(
       CSP_CONTROL_FSM_PORT_LA_CTRL => CSP_CONTROL_FSM_PORT_LA_CTRL,
-      CLK                          => dduclk, 
+      CLK                          => dduclk,
       CLKCMS                       => clk40,
       RST                          => l1acnt_rst,
       STATUS                       => status,
@@ -757,8 +759,8 @@ begin
       EOF => eof,
 
 -- DEBUG
-    control_debug => control_debug_full,
-      
+      control_debug => control_debug_full,
+
 -- FROM CAFIFO
       cafifo_l1a_dav   => cafifo_l1a_dav_out,
       cafifo_l1a_match => cafifo_l1a_match_out_inner,
@@ -853,22 +855,22 @@ begin
 
   CCBCODE_PM : CCBCODE
     port map(
-      CCB_CMD    => ccb_cmd,
-      CCB_CMD_S  => ccb_cmd_s,
-      CCB_DATA   => ccb_data,
-      CCB_DATA_S => ccb_data_s,
-      CMSCLK     => clk40,
+      CCB_CMD      => ccb_cmd,
+      CCB_CMD_S    => ccb_cmd_s,
+      CCB_DATA     => ccb_data,
+      CCB_DATA_S   => ccb_data_s,
+      CMSCLK       => clk40,
       CCB_BXRST_B  => ccb_bxrst_b,
       CCB_BX0_B    => ccb_bx0_b,
       CCB_L1ARST_B => ccb_l1arst_b,
-      CCB_CLKEN  => ccb_clken,
-      BX0        => bx0,
-      BXRST      => bxrst,
-      L1ARST     => l1arst,
-      CLKEN      => clken,
-      BC0        => bc0,
-      L1ASRST    => l1asrst,
-      TTCCAL     => ttccal);
+      CCB_CLKEN    => ccb_clken,
+      BX0          => bx0,
+      BXRST        => bxrst,
+      L1ARST       => l1arst,
+      CLKEN        => clken,
+      BC0          => bc0,
+      L1ASRST      => l1asrst,
+      TTCCAL       => ttccal);
 
 -- generate CCBPED
   ccbped <= '1' when (ccb_cal(2) = '0' or ttccal(2) = '1') else '0';
@@ -903,7 +905,8 @@ begin
 
 -- from ODMB_CTRL_EMPTY
 
-  ccb_rsvi    <= "000";
+  ccb_rsvi  <= "000";
   ccb_bxrst <= not ccb_bxrst_b;
+  ccb_bx0   <= not ccb_bx0_b;
 
 end ODMB_CTRL_arch;

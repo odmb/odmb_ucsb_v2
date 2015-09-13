@@ -47,6 +47,7 @@ module dmb_receiver #(
     output [15:0]     DCFEB7_DATA,
     output [7:1]      DCFEB_DATA_VALID,
     output [7:1]      CRC_VALID,
+    output [7:1]      BAD_RX,
     output 	      DCFEBCLK, 
     // Internal signals
     input 	      FIFO_VME_MODE,
@@ -98,6 +99,7 @@ module dmb_receiver #(
    wire [1:0] 	      rxcharisk_i_f[12:1];
    wire [1:0] 	      rxdisperr_i_f[12:1];
    wire [1:0] 	      rxnotintable_i_f[12:1];
+   wire [1:0] 	      rxlossofsync[12:1];
    reg [1:0] 	      rxcharisk_r_f[12:1];
    reg [15:0] 	      mgt_rx_data_r_f[12:1];
    reg [1:0] 	      rxdisperr_r_f[12:1];
@@ -281,6 +283,7 @@ module dmb_receiver #(
               .GTX0_RXCHARISK_OUT             (rxcharisk_i_f[5]),
               .GTX0_RXDISPERR_OUT             (rxdisperr_i_f[5]),
               .GTX0_RXNOTINTABLE_OUT          (rxnotintable_i_f[5]),
+	      .GTX0_RXLOSSOFSYNC_OUT          (rxlossofsync[5]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX0_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[5]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -313,6 +316,7 @@ module dmb_receiver #(
               .GTX1_RXCHARISK_OUT             (rxcharisk_i_f[1]),
               .GTX1_RXDISPERR_OUT             (rxdisperr_i_f[1]),
               .GTX1_RXNOTINTABLE_OUT          (rxnotintable_i_f[1]),
+	      .GTX1_RXLOSSOFSYNC_OUT          (rxlossofsync[1]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX1_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[1]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -347,6 +351,7 @@ module dmb_receiver #(
               .GTX2_RXCHARISK_OUT             (rxcharisk_i_f[4]),
               .GTX2_RXDISPERR_OUT             (rxdisperr_i_f[4]),
               .GTX2_RXNOTINTABLE_OUT          (rxnotintable_i_f[4]),
+	      .GTX2_RXLOSSOFSYNC_OUT          (rxlossofsync[4]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX2_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[4]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -380,6 +385,7 @@ module dmb_receiver #(
               .GTX3_RXCHARISK_OUT             (rxcharisk_i_f[2]),
               .GTX3_RXDISPERR_OUT             (rxdisperr_i_f[2]),
               .GTX3_RXNOTINTABLE_OUT          (rxnotintable_i_f[2]),
+	      .GTX3_RXLOSSOFSYNC_OUT          (rxlossofsync[2]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX3_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[2]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -413,6 +419,7 @@ module dmb_receiver #(
               .GTX4_RXCHARISK_OUT             (rxcharisk_i_f[3]),
               .GTX4_RXDISPERR_OUT             (rxdisperr_i_f[3]),
               .GTX4_RXNOTINTABLE_OUT          (rxnotintable_i_f[3]),
+	      .GTX4_RXLOSSOFSYNC_OUT          (rxlossofsync[3]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX4_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[3]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -446,6 +453,7 @@ module dmb_receiver #(
               .GTX5_RXCHARISK_OUT             (rxcharisk_i_f[11]),
               .GTX5_RXDISPERR_OUT             (rxdisperr_i_f[11]),
               .GTX5_RXNOTINTABLE_OUT          (rxnotintable_i_f[11]),
+	      .GTX5_RXLOSSOFSYNC_OUT          (rxlossofsync[11]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX5_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[11]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -479,6 +487,7 @@ module dmb_receiver #(
               .GTX6_RXCHARISK_OUT             (rxcharisk_i_f[10]),
               .GTX6_RXDISPERR_OUT             (rxdisperr_i_f[10]),
               .GTX6_RXNOTINTABLE_OUT          (rxnotintable_i_f[10]),
+	      .GTX6_RXLOSSOFSYNC_OUT          (rxlossofsync[10]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX6_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[10]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -512,6 +521,7 @@ module dmb_receiver #(
               .GTX7_RXCHARISK_OUT             (rxcharisk_i_f[12]),
               .GTX7_RXDISPERR_OUT             (rxdisperr_i_f[12]),
               .GTX7_RXNOTINTABLE_OUT          (rxnotintable_i_f[12]),
+	      .GTX7_RXLOSSOFSYNC_OUT          (rxlossofsync[12]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX7_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[12]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -545,6 +555,7 @@ module dmb_receiver #(
               .GTX8_RXCHARISK_OUT             (rxcharisk_i_f[7]),
               .GTX8_RXDISPERR_OUT             (rxdisperr_i_f[7]),
               .GTX8_RXNOTINTABLE_OUT          (rxnotintable_i_f[7]),
+	      .GTX8_RXLOSSOFSYNC_OUT          (rxlossofsync[7]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX8_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[7]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -578,6 +589,7 @@ module dmb_receiver #(
               .GTX9_RXCHARISK_OUT             (rxcharisk_i_f[8]),
               .GTX9_RXDISPERR_OUT             (rxdisperr_i_f[8]),
               .GTX9_RXNOTINTABLE_OUT          (rxnotintable_i_f[8]),
+	      .GTX9_RXLOSSOFSYNC_OUT          (rxlossofsync[8]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX9_RXCLKCORCNT_OUT           (rxclkcorcnt_i_f[8]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -611,6 +623,7 @@ module dmb_receiver #(
               .GTX10_RXCHARISK_OUT            (rxcharisk_i_f[9]),
               .GTX10_RXDISPERR_OUT            (rxdisperr_i_f[9]),
               .GTX10_RXNOTINTABLE_OUT         (rxnotintable_i_f[9]),
+	      .GTX10_RXLOSSOFSYNC_OUT          (rxlossofsync[9]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX10_RXCLKCORCNT_OUT          (rxclkcorcnt_i_f[9]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -644,6 +657,7 @@ module dmb_receiver #(
               .GTX11_RXCHARISK_OUT            (rxcharisk_i_f[6]),
               .GTX11_RXDISPERR_OUT            (rxdisperr_i_f[6]),
               .GTX11_RXNOTINTABLE_OUT         (rxnotintable_i_f[6]),
+	      .GTX11_RXLOSSOFSYNC_OUT          (rxlossofsync[6]),
               //----------------- Receive Ports - Clock Correction Ports -----------------
               .GTX11_RXCLKCORCNT_OUT          (rxclkcorcnt_i_f[6]),
               //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -1094,7 +1108,15 @@ module dmb_receiver #(
 	end
    endgenerate
 
+   // Monitoring of DCFEB RX
    assign CRC_VALID = crc_chk_vld_ff;
+   assign BAD_RX[1] = rxnotintable_i_f[1][0] || rxnotintable_i_f[1][1] || rxlossofsync[1][1];
+   assign BAD_RX[2] = rxnotintable_i_f[2][0] || rxnotintable_i_f[2][1] || rxlossofsync[2][1];
+   assign BAD_RX[3] = rxnotintable_i_f[3][0] || rxnotintable_i_f[3][1] || rxlossofsync[3][1];
+   assign BAD_RX[4] = rxnotintable_i_f[4][0] || rxnotintable_i_f[4][1] || rxlossofsync[4][1];
+   assign BAD_RX[5] = rxnotintable_i_f[5][0] || rxnotintable_i_f[5][1] || rxlossofsync[5][1];
+   assign BAD_RX[6] = rxnotintable_i_f[6][0] || rxnotintable_i_f[6][1] || rxlossofsync[6][1];
+   assign BAD_RX[7] = rxnotintable_i_f[7][0] || rxnotintable_i_f[7][1] || rxlossofsync[7][1];
    
    rx_frame_proc_la rx_frame_proc_1
      (

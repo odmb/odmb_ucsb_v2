@@ -39,7 +39,10 @@ entity GIGALINK_DDU is
     PRBS_TX_EN      : in  std_logic;
     PRBS_RX_EN      : in  std_logic;
     PRBS_EN_TST_CNT : in  std_logic_vector(15 downto 0);
-    PRBS_ERR_CNT    : out std_logic_vector(15 downto 0)
+    PRBS_ERR_CNT    : out std_logic_vector(15 downto 0);
+  
+    -- DDU monitoring
+    TXPLLLKDET    : out std_logic
     );
 end GIGALINK_DDU;
 
@@ -251,6 +254,9 @@ begin
       GTXTEST_BIT1 => gtx0_gtxtest_bit1
       );
 
+  -- Monitoring
+  TXPLLLKDET <= gtx0_txplllkdet_out;
+  
   prbs_rst_cnt   <= prbs_length+prbs_rst_cycles;
   prbs_en_cnt    <= prbs_length*to_integer(unsigned(prbs_en_tst_cnt))+prbs_rst_cnt;
   prbs_rd_en_cnt <= prbs_en_cnt-1;

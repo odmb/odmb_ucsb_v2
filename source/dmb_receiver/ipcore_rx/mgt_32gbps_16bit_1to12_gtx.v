@@ -83,6 +83,7 @@ module MGT_32GBPS_16BIT_1TO12_GTX #
     output [1:0]  RXCHARISK_OUT,
     output [1:0]  RXDISPERR_OUT,
     output [1:0]  RXNOTINTABLE_OUT,
+    output [1:0]  RXLOSSOFSYNC_OUT,
     //----------------- Receive Ports - Clock Correction Ports -----------------
     output [2:0]  RXCLKCORCNT_OUT,
     //------------- Receive Ports - Comma Detection and Alignment --------------
@@ -467,7 +468,7 @@ module MGT_32GBPS_16BIT_1TO12_GTX #
         .RXPMASETPHASE                  (tied_to_ground_i),
         .RXSTATUS                       (),
         //------------- Receive Ports - RX Loss-of-sync State Machine --------------
-        .RXLOSSOFSYNC                   (),
+        .RXLOSSOFSYNC                   (RXLOSSOFSYNC_OUT),
         //-------------------- Receive Ports - RX Oversampling ---------------------
         .RXENSAMPLEALIGN                (tied_to_ground_i),
         .RXOVERSAMPLEERR                (),
