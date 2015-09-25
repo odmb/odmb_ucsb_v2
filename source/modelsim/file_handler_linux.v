@@ -27,8 +27,8 @@ initial
 
 initial
   begin
-    infile=$fopen("commands/test_prbs.txt","r");
-    outfile=$fopen("commands/test_prbs_out.txt","w");
+    infile=$fopen("commands/test_control.txt","r");
+    outfile=$fopen("commands/test_control_out.txt","w");
     
     while (!$feof(infile))
       begin

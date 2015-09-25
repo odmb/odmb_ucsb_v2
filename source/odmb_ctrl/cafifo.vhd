@@ -635,7 +635,8 @@ begin
   begin
     if rising_edge(CLK) then
       if bx_cnt_clr = '1' then
-        bx_cnt_int <= bx_default;
+--        bx_cnt_int <= bx_default;
+        bx_cnt_int <= 0;
       elsif bx_cnt_int = nbx_lhc_orbit-1 then
         bx_cnt_int <= 0;
       else

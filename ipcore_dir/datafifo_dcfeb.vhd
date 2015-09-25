@@ -1241,7 +1241,7 @@ begin
       FIFO_MODE => "FIFO36",
       FIRST_WORD_FALL_THROUGH => TRUE,
       INIT => X"000000000000000000",
-      SIM_DEVICE => "VIRTEX6",
+      --SIM_DEVICE => "VIRTEX6",
       SRVAL => X"000000000000000000"
     )
     port map (
@@ -1659,7 +1659,7 @@ NLW_U0_xst_fifo_generator_gconvfifo_rf_gbiv5_bi_v6_fifo_fblk_gextw_2_gnll_fifo_i
       FIFO_MODE => "FIFO36",
       FIRST_WORD_FALL_THROUGH => TRUE,
       INIT => X"000000000000000000",
-      SIM_DEVICE => "VIRTEX6",
+      --SIM_DEVICE => "VIRTEX6",
       SRVAL => X"000000000000000000"
     )
     port map (
@@ -2077,7 +2077,7 @@ NLW_U0_xst_fifo_generator_gconvfifo_rf_gbiv5_bi_v6_fifo_fblk_gextw_1_gnll_fifo_i
       FIFO_MODE => "FIFO36",
       FIRST_WORD_FALL_THROUGH => TRUE,
       INIT => X"000000000000000000",
-      SIM_DEVICE => "VIRTEX6",
+      --SIM_DEVICE => "VIRTEX6",
       SRVAL => X"000000000000000000"
     )
     port map (
@@ -2489,7 +2489,7 @@ NLW_U0_xst_fifo_generator_gconvfifo_rf_gbiv5_bi_v6_fifo_fblk_gextw_2_gnll_fifo_i
       FIFO_MODE => "FIFO36",
       FIRST_WORD_FALL_THROUGH => TRUE,
       INIT => X"000000000000000000",
-      SIM_DEVICE => "VIRTEX6",
+      --SIM_DEVICE => "VIRTEX6",
       SRVAL => X"000000000000000000"
     )
     port map (
