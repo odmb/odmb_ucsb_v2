@@ -1766,7 +1766,7 @@ begin
       )
     port map (
       --External signals
-      RST => reset,
+      RST => opt_reset,
 
       --DAQ_RX_160REFCLK_115_0 => gl0_clk,  -- For the DDU TX simulation
 
