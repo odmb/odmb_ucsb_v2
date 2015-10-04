@@ -35,6 +35,7 @@ entity GIGALINK_PC is
     RXD_P   : in  std_logic;            -- GTX receive data in + signal
     RXD     : out std_logic_vector(15 downto 0);  -- Data received
     RXD_VLD : out std_logic;            -- Flag for valid data;
+    BAD_RX  : out std_logic;           -- Flag for fiber errors;
 
     TX_FIFO_WREN_OUT : out std_logic;
     TXD_FRAME_OUT    : out std_logic_vector(15 downto 0);
@@ -337,6 +338,7 @@ begin
                              and rxdisperr_pulse = '0' and gtx0_rxdisperr_i = "00") else '0';
   RXD     <= rxd_inner;
   RXD_VLD <= rxd_vld_inner;
+  BAD_RX <= gtx0_rxnotintable_i(0) or gtx0_rxnotintable_i(1) or (not gtx0_rxvalid_out);
 
 
 

@@ -33,6 +33,7 @@ entity GIGALINK_DDU is
     RX_DDU_P : in  std_logic;           -- GTX receive data in + signal
     RXD      : out std_logic_vector(15 downto 0);  -- Data received
     RXD_VLD  : out std_logic;           -- Flag for valid data;
+    BAD_RX  : out std_logic;           -- Flag for fiber errors;
 
     -- PRBS signals
     PRBS_TYPE       : in  std_logic_vector(2 downto 0);
@@ -149,6 +150,7 @@ architecture GIGALINK_DDU_ARCH of GIGALINK_DDU is
   signal gtx0_txplllkdet_out    : std_logic;
   signal gtx0_rxvalid_out       : std_logic;
   signal gtx0_rxcharisk_out     : std_logic_vector(3 downto 0);
+  signal gtx0_rxnotintable_i  : std_logic_vector(1 downto 0);
   signal gtx0_rxbyterealign_out : std_logic;
   signal rxbyterealign_pulse    : std_logic := '0';
 
@@ -176,6 +178,8 @@ begin
   PULSE_ALIGN : NPULSE2SAME port map(rxbyterealign_pulse, usr_clk, RST, 10000, gtx0_rxbyterealign_out);
   RXD_VLD <= '1' when (gtx0_rxvalid_out = '1' and gtx0_rxcharisk_out = x"0" and
                         rxbyterealign_pulse = '0') else '0';
+  BAD_RX <= gtx0_rxnotintable_i(0) or gtx0_rxnotintable_i(1) or (not gtx0_rxvalid_out);
+  
   tx_ddu_data <= TXD  when TXD_VLD = '1' else IDLE;
   tx_ddu_k    <= "00" when TXD_VLD = '1' else "01";
 
@@ -196,7 +200,7 @@ begin
       GTX0_LOOPBACK_IN       => LOOPBACK,
       ----------------------- Receive Ports - 8b10b Decoder ----------------------
       GTX0_RXDISPERR_OUT     => open,
-      GTX0_RXNOTINTABLE_OUT  => open,
+      GTX0_RXNOTINTABLE_OUT  => gtx0_rxnotintable_i,
       ------------------- Receive Ports - RX Data Path interface -----------------
       GTX0_RXDATA_OUT        => RXD,
       GTX0_RXVALID_OUT       => gtx0_rxvalid_out,
