@@ -388,6 +388,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
       CCB_BX0 : in std_logic;
       BXRST   : in std_logic;
       BX_DLY  : in integer range 0 to 4095;
+      PUSH_DLY  : in integer range 0 to 63;
 
       l1a          : in std_logic;
       l1a_match_in : in std_logic_vector(NFEB+2 downto 1);
@@ -674,6 +675,7 @@ begin
       CCB_BX0 => ccb_bx0,
       BXRST   => ccb_bxrst,
       BX_DLY  => BX_DLY,
+      PUSH_DLY      => push_dly,
 
       pop          => cafifo_pop,
       l1a          => cafifo_push,

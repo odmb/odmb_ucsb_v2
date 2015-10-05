@@ -34,6 +34,7 @@ entity cafifo is
     CCB_BX0 : in std_logic;
     BXRST   : in std_logic;
     BX_DLY  : in integer range 0 to 4095;
+    PUSH_DLY  : in integer range 0 to 63;
 
     l1a          : in std_logic;
     l1a_match_in : in std_logic_vector(NFEB+2 downto 1);
@@ -139,7 +140,8 @@ architecture cafifo_architecture of cafifo is
 
   -- BX counter
   constant nbx_lhc_orbit : integer := 3564;  -- Number of BX in one LHC orbit
-  constant nbx_dmb_odmb  : integer := 2772;  -- Offset between DMB and ODMB measured in some random RAW file 
+  constant nbx_dmb_odmb  : integer := 2772;  -- Offset between DMB and ODMB measured in some random RAW file
+  signal ccb_bx0_delayed : std_logic;
 
   signal bx_cnt_out             : std_logic_vector(11 downto 0);
   signal bx_cnt_clr             : std_logic;
@@ -627,7 +629,8 @@ begin
   dcfeb_dv <= dcfeb6_dv & dcfeb5_dv & dcfeb4_dv & dcfeb3_dv & dcfeb2_dv & dcfeb1_dv & dcfeb0_dv;
 
   -- Generate BX_CNT
-  bx_cnt_clr <= BC0 or BXRST or CCB_BX0;
+  DS_BX0_PUSH : DELAY_SIGNAL port map(ccb_bx0_delayed, CLK, PUSH_DLY, CCB_BX0);
+  bx_cnt_clr <= BC0 or BXRST or ccb_bx0_delayed;
   bx_default <= nbx_dmb_odmb + bx_dly when bx_dly < nbx_lhc_orbit-nbx_dmb_odmb else
                 nbx_dmb_odmb + bx_dly - nbx_lhc_orbit when bx_dly < nbx_lhc_orbit else
                 nbx_dmb_odmb;  -- bx_dly set to 0 if greater than nbx_lhc_orbit

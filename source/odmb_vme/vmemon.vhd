@@ -267,11 +267,12 @@ begin
                   else (others => 'Z');
 
 -- Write TXDIFFCTRL
-  GEN_TXDIFFCTRL : for I in 3 downto 0 generate
-  begin
-    FD_W_TXDIFFCTRL : FDCE port map(txdiffctrl_inner(I), STROBE, w_txdiffctrl,
-                                    RST, INDATA(I));
-  end generate GEN_TXDIFFCTRL;
+  --GEN_TXDIFFCTRL : for I in 3 downto 0 generate
+  --begin
+  --  FD_W_TXDIFFCTRL : FDCE port map(txdiffctrl_inner(I), STROBE, w_txdiffctrl,
+  --                                  RST, INDATA(I));
+  --end generate GEN_TXDIFFCTRL;
+  txdiffctrl_inner <= x"8";
   TXDIFFCTRL <= txdiffctrl_inner;
 
 -- Reads

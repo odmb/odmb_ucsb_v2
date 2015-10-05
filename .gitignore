@@ -1,6 +1,5 @@
 ### ModelSim ###
 work/
-!work/_info
 *.mti
 *.wlf
 *.bak
