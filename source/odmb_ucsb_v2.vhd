@@ -1237,6 +1237,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
+  signal pulse_optrst, pulse_optrst_1khz, dly_pulse_optrst : std_logic := '0';
+  constant opt_rst_dly   : integer := 300;  -- Number of ms the opt reset is delayed with respect to power-on
   constant push_dly    : integer := 63;  -- It needs to be > alct/otmb_push_dly
   constant push_dlyp4  : integer := push_dly+4;  -- push_dly+4
   signal alct_push_dly : integer range 0 to 63;
@@ -1270,6 +1272,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal vme_bpi_rst                       : std_logic;
   signal clk1mhz, clk10khz                 : std_logic                     := '0';
   signal counter_clk1mhz, counter_clk10khz : integer                       := 0;
+  signal clk1khz                : std_logic                     := '0';
+  signal counter_clk1khz : integer                       := 0;
   signal bpi_we                            : std_logic;
   signal bpi_re                            : std_logic;
   signal bpi_dsbl                          : std_logic;
@@ -2363,6 +2367,16 @@ begin
       else
         counter_clk1mhz <= counter_clk1mhz + 1;
       end if;
+      if counter_clk1khz = 20000 then
+        counter_clk1khz <= 1;
+        if clk1khz = '1' then
+          clk1khz <= '0';
+        else
+          clk1khz <= '1';
+        end if;
+      else
+        counter_clk1khz <= counter_clk1khz + 1;
+      end if;
       if counter_clk10khz = 2000 then
         counter_clk10khz <= 1;
         if clk10khz = '1' then
@@ -2641,11 +2655,18 @@ begin
   ddu_txplllkdet_b <= not ddu_txplllkdet;
   DDUTXPLLLKDET_CNT : COUNT_EDGES port map(ddu_txplllkdet_b_cnt, dduclk, reset, ddu_txplllkdet_b);
 
+  -- Reset of fiber errors is delayed so that we avoid the errors during the fw reload
+  PLS_OPTRST      : PULSE2SAME port map(pulse_optrst, clk40, '0', opt_reset);
+  PLS_OPTRST_1KHZ : PULSE2SLOW port map(pulse_optrst_1khz, clk1khz, clk40, '0', pulse_optrst);
+  DS_OPTRST : DELAY_SIGNAL generic map(opt_rst_dly) port map(dly_pulse_optrst, clk1khz,
+                                                           opt_rst_dly, pulse_optrst_1khz);
+
+
   NFEB_CNT : for dev in 1 to NFEB generate
   begin
     RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
     CRC_CNT    : COUNT_EDGES port map(goodcrc_cnt(dev), clk160, reset, crc_valid(dev));
-    BAD_RX_CNT : COUNT_EDGES port map(dcfeb_bad_rx_cnt(dev), clk160, reset, dcfeb_bad_rx(dev));
+    BAD_RX_CNT : COUNT_EDGES port map(dcfeb_bad_rx_cnt(dev), clk160, dly_pulse_optrst, dcfeb_bad_rx(dev));
     LCTL1AGAP  : GAP_COUNTER generic map (200) port map(lct_l1a_gap(dev), clk40, reset, raw_lct(dev), int_l1a);
     badcrc_cnt(dev) <= std_logic_vector(unsigned(eof_data_cnt(dev))-unsigned(goodcrc_cnt(dev)));
 --badcrc_cnt(dev) <= std_logic_vector(unsigned(eof_data_cnt(dev))-unsigned(l1a_match_cnt(dev)));
