@@ -1238,7 +1238,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
   signal pulse_optrst, pulse_optrst_1khz, dly_pulse_optrst : std_logic := '0';
-  constant opt_rst_dly   : integer := 300;  -- Number of ms the opt reset is delayed with respect to power-on
+  constant opt_rst_dly   : integer := 230;  -- Number of ms the opt reset is delayed with respect to power-on
   constant push_dly    : integer := 63;  -- It needs to be > alct/otmb_push_dly
   constant push_dlyp4  : integer := push_dly+4;  -- push_dly+4
   signal alct_push_dly : integer range 0 to 63;
