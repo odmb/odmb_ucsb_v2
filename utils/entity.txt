@@ -1,0 +1,150 @@
+-- CFEB
+cfeb0_rx	 : in std_logic_vector(23 downto 0);	
+cfeb1_rx	 : in std_logic_vector(23 downto 0);	
+cfeb2_rx	 : in std_logic_vector(23 downto 0);	
+cfeb3_rx	 : in std_logic_vector(23 downto 0);	
+cfeb4_rx	 : in std_logic_vector(23 downto 0);	
+cfeb_clock_en	 : out std_logic_vector(4 downto 0);	
+cfeb_oe	 : out std_logic;	
+
+-- ALCT
+alct_rx	 : in std_logic_vector(28 downto 1);	
+alct_txa	 : out std_logic_vector(17 downto 5);	-- alct_tx[18] no pin 
+alct_txb	 : out std_logic_vector(23 downto 19);	
+alct_clock_en	 : out std_logic;	
+alct_rxoe	 : out std_logic;	
+alct_txoe	 : out std_logic;	
+alct_loop	 : out std_logic;	
+
+-- DMB
+dmb_rx	 : in std_logic_vector(5 downto 0);	
+dmb_tx	 : out std_logic_vector(48 downto 0);	
+dmb_loop	 : out std_logic;	
+_dmb_oe	 : out std_logic;	
+
+-- MPC
+_mpc_tx	 : out std_logic_vector(31 downto 0);	
+
+-- RPC
+rpc_rx	 : in std_logic_vector(37 downto 0);	
+rpc_smbrx	 : in std_logic;	-- was rpc_rxalt[0] 
+rpc_dsn	 : in std_logic;	-- was rpc_rxalt[1] 
+rpc_loop	 : out std_logic;	
+rpc_tx	 : out std_logic_vector(3 downto 0);	
+
+-- CCB
+_ccb_rx	 : in std_logic_vector(50 downto 0);	
+_ccb_tx	 : out std_logic_vector(26 downto 0);	
+ccb_status_oe	 : out std_logic;	
+_hard_reset_alct_fpga	 : out std_logic;	
+_hard_reset_tmb_fpga	 : out std_logic;	
+gtl_loop	 : out std_logic;	
+
+-- VME
+vme_d	 : inout std_logic_vector(15 downto 0);	
+vme_a	 : in std_logic_vector(23 downto 1);	
+vme_am	 : in std_logic_vector(5 downto 0);	
+_vme_cmd	 : in std_logic_vector(10 downto 0);	
+_vme_geo	 : in std_logic_vector(6 downto 0);	
+vme_reply	 : out std_logic_vector(6 downto 0);	
+
+-- JTAG
+jtag_usr	 : inout std_logic_vector(3 downto 1);	
+jtag_usr0_tdo	 : in std_logic;	
+sel_usr	 : inout std_logic_vector(3 downto 0);	
+
+-- PROM
+prom_led	 : inout std_logic_vector(7 downto 0);	
+prom_ctrl	 : out std_logic_vector(5 downto 0);	
+
+-- Clock
+tmb_clock0	 : in std_logic;	
+tmb_clock1	 : in std_logic;	
+alct_rxclock	 : in std_logic;	
+alct_rxclockd	 : in std_logic;	
+mpc_clock	 : in std_logic;	
+dcc_clock	 : in std_logic;	
+step	 : out std_logic_vector(4 downto 0);	
+
+-- 3D3444
+ddd_clock	 : out std_logic;	
+ddd_adr_latch	 : out std_logic;	
+ddd_serial_in	 : out std_logic;	
+ddd_serial_out	 : in std_logic;	
+
+-- Status
+mez_done	 : in std_logic;	
+vstat	 : in std_logic_vector(3 downto 0);	
+_t_crit	 : in std_logic;	
+tmb_sn	 : inout std_logic;	
+smb_data	 : inout std_logic;	
+mez_sn	 : inout std_logic;	
+adc_io	 : out std_logic_vector(2 downto 0);	
+adc_io3_dout	 : in std_logic;	
+smb_clk	 : out std_logic;	
+mez_busy	 : out std_logic;	
+led_fp	 : out std_logic_vector(7 downto 0);	
+
+-- General Purpose I/Os
+gp_io0	 : inout std_logic;	-- jtag_fgpa0 tdo (out) shunted to gp_io1, usually 
+gp_io1	 : inout std_logic;	-- jtag_fpga1 tdi (in) 
+gp_io2	 : inout std_logic;	-- jtag_fpga2 tms 
+gp_io3	 : inout std_logic;	-- jtag_fpga3 tck 
+gp_io4	 : in std_logic;	-- rpc_done 
+gp_io5	 : out std_logic;	-- _init on mezzanine card, use only as an FPGA output 
+gp_io6	 : out std_logic;	-- _write on mezzanine card, use only as an FPGA output 
+gp_io7	 : out std_logic;	-- _cs on mezzanine card, use only as an FPGA output-- General Purpose I/Os 
+
+-- Mezzanine Test Points
+meztp20	 : out std_logic;	
+meztp21	 : out std_logic;	
+meztp22	 : out std_logic;	
+meztp23	 : out std_logic;	
+meztp24	 : out std_logic;	
+meztp25	 : out std_logic;	
+meztp26	 : out std_logic;	
+meztp27	 : out std_logic;	
+
+-- Switches & LEDS
+set_sw	 : in std_logic_vector(8 downto 7);	
+testled	 : in std_logic_vector(9 downto 1);	
+reset	 : in std_logic;	
+
+-- CERN QPLL
+clk40p	 : in std_logic;	-- 40 MHz from QPLL 
+clk40n	 : in std_logic;	-- 40 MHz from QPLL 
+
+clk160p	 : in std_logic;	-- 160 MHz from QPLL for GTX reference clock 
+clk160n	 : in std_logic;	-- 160 MHz from QPLL for GTX reference clock 
+
+qpll_lock	 : in std_logic;	-- QPLL locked 
+qpll_err	 : in std_logic;	-- QPLL error, replaces _gtl_oe 
+qpll_nrst	 : out std_logic;	-- QPLL reset, low=reset, drive high 
+
+-- CCLD-033 Crystal
+clk125p	 : in std_logic;	-- Transmitter clock, not in final design 
+clk125n	 : in std_logic;	
+
+-- SNAP12 transmitter serial interface, not in final design
+t12_sclk	 : out std_logic;	
+t12_sdat	 : in std_logic;	
+t12_nfault	 : in std_logic;	
+t12_rst	 : in std_logic;	
+
+-- SNAP12 receiver serial interface
+r12_sclk	 : out std_logic;	-- Serial interface clock, drive high 
+r12_sdat	 : in std_logic;	-- Serial interface data 
+r12_fok	 : in std_logic;	-- Serial interface status 
+
+-- SNAP12 receivers
+rxp	 : in std_logic_vector(6 downto 0);	-- SNAP12+ fiber comparator inputs for GTX 
+rxn	 : in std_logic_vector(6 downto 0);	-- SNAP12- fiber comparator inputs for GTX 
+
+-- Finisar
+f_sclk	 : in std_logic;	
+f_sdat	 : in std_logic;	
+f_fok	 : in std_logic;	
+
+-- PROM
+fcs	 : out std_logic;	
+

@@ -15,6 +15,7 @@ iseconfig/
 _xmsgs/
 _ngo/
 xst/
+*.xsl
 *.syr
 *.map
 *.mrp

@@ -1,0 +1,150 @@
+// CFEB
+input	[23:0]	cfeb0_rx;
+input	[23:0]	cfeb1_rx;
+input	[23:0]	cfeb2_rx;
+input	[23:0]	cfeb3_rx;
+input	[23:0]	cfeb4_rx;
+output	[4:0]	cfeb_clock_en;
+output	cfeb_oe;
+
+// ALCT
+input	[28:1]	alct_rx;
+output	[17:5]	alct_txa;	// alct_tx[18] no pin
+output	[23:19]	alct_txb;
+output	alct_clock_en;
+output	alct_rxoe;
+output	alct_txoe;
+output	alct_loop;
+
+// DMB
+input	[5:0]	dmb_rx;	
+output	[48:0]	dmb_tx;
+output	dmb_loop;
+output	_dmb_oe;
+
+// MPC
+output	[31:0]	_mpc_tx;
+
+// RPC
+input	[37:0]	rpc_rx;
+input	rpc_smbrx;	// was rpc_rxalt[0]
+input	rpc_dsn;	// was rpc_rxalt[1]
+output	rpc_loop;
+output	[3:0]	rpc_tx;
+
+// CCB
+input	[50:0]	_ccb_rx;
+output	[26:0]	_ccb_tx;
+output	ccb_status_oe;
+output	_hard_reset_alct_fpga;
+output	_hard_reset_tmb_fpga;
+output	gtl_loop;
+
+// VME
+inout	[15:0]	vme_d;
+input	[23:1]	vme_a;
+input	[5:0]	vme_am;
+input	[10:0]	_vme_cmd;
+input	[6:0]	_vme_geo;
+output	[6:0]	vme_reply;
+
+// JTAG
+inout	[3:1]	jtag_usr;
+input	jtag_usr0_tdo;
+inout	[3:0]	sel_usr;
+
+// PROM
+inout	[7:0]	prom_led;
+output	[5:0]	prom_ctrl;	
+
+// Clock
+input	tmb_clock0;
+input	tmb_clock1;
+input	alct_rxclock;
+input	alct_rxclockd;
+input	mpc_clock;
+input	dcc_clock;
+output	[4:0]	step;
+
+// 3D3444
+output	ddd_clock;
+output	ddd_adr_latch;
+output	ddd_serial_in;
+input	ddd_serial_out;
+
+// Status
+input	mez_done;
+input	[3:0]	vstat;
+input	_t_crit;
+inout	tmb_sn;
+inout	smb_data;
+inout	mez_sn;
+output	[2:0]	adc_io;
+input	adc_io3_dout;
+output	smb_clk;
+output	mez_busy;
+output	[7:0]	led_fp;
+
+// General Purpose I/Os
+inout	gp_io0;	// jtag_fgpa0 tdo (out) shunted to gp_io1, usually
+inout	gp_io1;	// jtag_fpga1 tdi (in)
+inout	gp_io2;	// jtag_fpga2 tms
+inout	gp_io3;	// jtag_fpga3 tck
+input	gp_io4;	// rpc_done
+output	gp_io5;	// _init on mezzanine card, use only as an FPGA output
+output	gp_io6;	// _write on mezzanine card, use only as an FPGA output
+output	gp_io7;	// _cs on mezzanine card, use only as an FPGA output// General Purpose I/Os
+
+// Mezzanine Test Points
+output	meztp20;
+output	meztp21;
+output	meztp22;
+output	meztp23;
+output	meztp24;
+output	meztp25;
+output	meztp26;
+output	meztp27;
+
+// Switches & LEDS
+input	[8:7]	set_sw;
+input	[9:1]	testled;
+input	reset;
+
+// CERN QPLL
+input	clk40p;	// 40 MHz from QPLL
+input	clk40n;	// 40 MHz from QPLL
+
+input	clk160p;	// 160 MHz from QPLL for GTX reference clock
+input	clk160n;	// 160 MHz from QPLL for GTX reference clock
+
+input	qpll_lock;	// QPLL locked
+input	qpll_err;	// QPLL error, replaces _gtl_oe
+output	qpll_nrst;	// QPLL reset, low=reset, drive high
+
+// CCLD-033 Crystal
+input	clk125p;	// Transmitter clock, not in final design
+input	clk125n;
+
+// SNAP12 transmitter serial interface, not in final design
+output	t12_sclk;
+input	t12_sdat;
+input	t12_nfault;
+input	t12_rst;
+
+// SNAP12 receiver serial interface
+output	r12_sclk;	// Serial interface clock, drive high
+input	r12_sdat;	// Serial interface data
+input	r12_fok;	// Serial interface status
+
+// SNAP12 receivers
+input	[6:0]	rxp;	// SNAP12+ fiber comparator inputs for GTX
+input	[6:0]	rxn;	// SNAP12- fiber comparator inputs for GTX
+
+// Finisar
+input	f_sclk;
+input	f_sdat;
+input	f_fok;
+
+// PROM
+output	fcs;
+
