@@ -786,7 +786,7 @@ begin
   DEV1_CFEBJTAG : CFEBJTAG
     port map (
       FASTCLK => clk,
-      SLOWCLK => clk_s2,
+      SLOWCLK => clk_s1,
       RST     => rst,
       DEVICE  => device(1),
       STROBE  => strobe,

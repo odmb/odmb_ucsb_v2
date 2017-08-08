@@ -2,6 +2,7 @@ library ieee;
 library work;
 use work.Latches_Flipflops.all;
 use ieee.std_logic_1164.all;
+use work.ucsb_types.all;
 
 
 entity CFEBJTAG is
@@ -84,6 +85,7 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG        : std_logic;
   signal Q3_RESETJTAG, CLR_RESETJTAG, RESETJTAG          : std_logic;
   signal OKRST, INITJTAGS_Q, INITJTAGS_QQ, INITJTAGS_QQQ : std_logic;
+  signal CLR_RESETJTAG_PULSE : std_logic := '0';
   signal rst_init : std_logic := '0';
 
   signal CLR_RESETDONE, CEO_RESETDONE, TC_RESETDONE : std_logic;
@@ -103,6 +105,8 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal Q_OUTDATA                                                            : std_logic_vector(15 downto 0);
   signal D_DTACK, CE_DTACK, CLR_DTACK, Q1_DTACK, Q2_DTACK, Q3_DTACK, Q4_DTACK : std_logic;
   signal DTACK_INNER                                                          : std_logic;
+
+  signal strobe_slow                                                         : std_logic;
 
 
 begin
@@ -128,6 +132,9 @@ begin
   FDPE(INDATA(4), STROBE, SELCFEB, rst_init, SELFEB(5));
   FDPE(INDATA(5), STROBE, SELCFEB, rst_init, SELFEB(6));
   FDPE(INDATA(6), STROBE, SELCFEB, rst_init, SELFEB(7));
+
+-- Syncing STROBE to SLOWCLK
+  STROBE_PULSE  : PULSE2SLOW port map(strobe_slow, SLOWCLK, FASTCLK, RST, STROBE);
 
 
 -- Generate DTACK when SELCFEB=1
@@ -282,14 +289,13 @@ begin
 
 
 -- Generate RESETJTAG and OKRST 
-
-
-  FDC(INITJTAGS, FASTCLK, RST, INITJTAGS_Q);
-  FDC(INITJTAGS_Q, FASTCLK, RST, INITJTAGS_QQ);
-  FDC(INITJTAGS_QQ, FASTCLK, RST, INITJTAGS_QQQ);
+  -- INITJTAGS comes from odmb_ucsb_v2 when the DCFEBs DONE bits go high
+  FDC(INITJTAGS, SLOWCLK, RST, INITJTAGS_Q);
+  FDC(INITJTAGS_Q, SLOWCLK, RST, INITJTAGS_QQ);
+  FDC(INITJTAGS_QQ, SLOWCLK, RST, INITJTAGS_QQQ);
   D1_RESETJTAG  <= '1' when ((STROBE = '1' and RSTJTAG = '1') or INITJTAGS = '1') else '0';
-  FDC(D1_RESETJTAG, FASTCLK, RST, Q1_RESETJTAG);
-  FDC(Q1_RESETJTAG, FASTCLK, RST, Q2_RESETJTAG);
+  FDC(D1_RESETJTAG, SLOWCLK, RST, Q1_RESETJTAG);
+  FDC(Q1_RESETJTAG, SLOWCLK, RST, Q2_RESETJTAG);
   OKRST         <= '1' when (Q1_RESETJTAG = '1' and Q2_RESETJTAG = '1')           else '0';
   CLR_RESETJTAG <= '1' when (RESETDONE = '1' or RST = '1')                        else '0';
   FDC(LOGICH, OKRST, CLR_RESETJTAG, Q3_RESETJTAG);
@@ -297,7 +303,9 @@ begin
 
 
 -- Generate RESETDONE 
-  CLR_RESETDONE <= not OKRST;
+  -- PULSE2SLOW only works if the signal is 1 CC long in the original clock domain
+  RESETJTAG_PULSE  : PULSE2FAST port map(CLR_RESETJTAG_PULSE, FASTCLK, '0', CLR_RESETJTAG);
+  RESETDONE_PULSE  : PULSE2SLOW port map(CLR_RESETDONE, SLOWCLK, FASTCLK, '0', CLR_RESETJTAG_PULSE);
   CB4CE(SLOWCLK, RESETJTAG, CLR_RESETDONE, QV_RESETDONE, QV_RESETDONE, CEO_RESETDONE, TC_RESETDONE);
   RESETDONE     <= '1' when (QV_RESETDONE(2) = '1' and QV_RESETDONE(3) = '1') else '0';
 
@@ -390,7 +398,7 @@ begin
 
 
 -- Generate LED.
-  LED <= INITJTAGS_QQQ;  
+  LED <= CE_SHIHEAD_TMS;  
 
 
 -- generate DIAGOUT
@@ -398,8 +406,8 @@ begin
   DIAGOUT(1)  <= ENABLE;
   DIAGOUT(2)  <= BUSY;
   DIAGOUT(3)  <= RDTDODK;
-  DIAGOUT(4)  <= RESETDONE;
-  DIAGOUT(5)  <= OKRST;
+  DIAGOUT(4)  <= QV_DONEIHEAD(3);
+  DIAGOUT(5)  <= Q1_SHIHEAD_TMS;
   DIAGOUT(6)  <= RESETJTAG;
   DIAGOUT(7)  <= SHDATAX;
   DIAGOUT(8)  <= SLOWCLK;
@@ -408,8 +416,8 @@ begin
   DIAGOUT(11) <= DHEADEN;
   DIAGOUT(12) <= IHEADEN;
   DIAGOUT(13) <= DONEDATA(1);
-  DIAGOUT(14) <= SHDHEAD;
-  DIAGOUT(15) <= DONEDHEAD;
+  DIAGOUT(14) <= SHIHEAD;
+  DIAGOUT(15) <= DONEIHEAD;
   DIAGOUT(16) <= SELCFEB;
   DIAGOUT(17) <= DEVICE;
 

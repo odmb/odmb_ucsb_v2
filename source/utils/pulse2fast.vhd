@@ -1,5 +1,6 @@
--- PULSE2FAST: Creates a one clock cycle long pulse if rising edge in a
--- faster or equal clock domain.
+-- PULSE2FAST: Creates a one clock cycle long pulse in a faster or equal
+-- clock domain when there is a rising edge in the original clock domain.
+-- Input must maintain level for at least 2 CCs in the new domain.
 -- Based on "Crossing the abyss: asynchonous signals in a synchronous world"
 
 library ieee;

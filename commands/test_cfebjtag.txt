@@ -1,0 +1,162 @@
+## Requires these repetitions to give time for the PROM upload
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+
+W  3300  1      Dummy data and dummy JTAG
+W  1020  FF   	Select all DCFEBs (one bit per DCFEB)
+W  1018  1      JTAG reset
+
+W  1020  4   	Select DCFEB 3 (one bit per DCFEB)
+
+## Requires these repetitions to give time for JTAG instruction to shift the bits
+W  191c  3C9   	Set instruction register to 3C9 (read IDCode = 0x0424A093)
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4200  0
+R  4300  0
+
+W  1F04  0   	Shift 16 lower bits
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4200  0
+R  4300  0
+
+R  1014  0   	Read last 16 shifted bits (DBDB)
+W  1F08  0   	Shift 16 upper bits
+R  4100  0
+R  4200  0
+R  4300  0
+R  4100  0
+R  4200  0
+R  4300  0
+R  4200  0
+R  4300  0
+
+R  1014  0   	Read last 16 shifted bits (XYZK)
+

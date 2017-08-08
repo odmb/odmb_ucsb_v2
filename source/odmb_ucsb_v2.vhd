@@ -1126,6 +1126,8 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal pll_clk5, clk5                   : std_logic;  -- Generates clk2p5 and clk1p25
   signal clk2p5, clk2p5_unbuf, clk2p5_inv : std_logic;  -- slowclk (2.5MHz)
   signal clk1p25, clk1p25_inv             : std_logic;  -- slowclk2 (1.25MHz)
+  signal clk0p625, clk0p625_unbuf, clk0p625_inv             : std_logic;  -- slowclk1 (0.625MHz)
+  signal clk_s1 : std_logic;  -- Slow clk for CFEB JTAG
 
 
 -- Other signals
@@ -1397,7 +1399,7 @@ begin
       clk160      => clk160,            -- for dcfeb prbs (160 MHz)
       clk80       => clk80,             -- for testctrl (80MHz)
       clk         => clk40,             -- fpgaclk (40MHz)
-      clk_s1      => clk10,             -- midclk (10MHz) 
+      clk_s1      => clk_s1,            -- midclk (0.625 MHz) 
       clk_s2      => clk2p5,            -- slowclk (2.5MHz)
       clk_s3      => clk1p25,           -- slowclk2 (1.25MHz)
       QPLL_LOCKED => qpll_locked,
@@ -2215,11 +2217,13 @@ begin
 
   -- Every time the DCFEBs are reprogrammed, all DCFEB JTAG are reset
   done_fsm_regs : process (done_next_state, pon_reset, clk10khz)
+  --done_fsm_regs : process (done_next_state, pon_reset, clk_s1)
   begin
     for dev in 1 to NFEB loop
       if (pon_reset = '1') then
-        done_current_state(dev) <= DONE_IDLE;
+        done_current_state(dev) <= DONE_LOW;
       elsif rising_edge(clk10khz) then
+      --elsif rising_edge(clk_s1) then
         done_current_state(dev) <= done_next_state(dev);
         if done_cnt_rst(dev) = '1' then
           done_cnt(dev) <= 0;
@@ -2236,12 +2240,13 @@ begin
       case done_current_state(dev) is
         when DONE_IDLE =>
           done_cnt_en(dev)      <= '0';
-          done_cnt_rst(dev)     <= '0';
           dcfeb_done_pulse(dev) <= '0';
           if (DCFEB_DONE(dev) = '0') then
             done_next_state(dev) <= DONE_LOW;
+            done_cnt_rst(dev)    <= '1';
           else
             done_next_state(dev) <= DONE_IDLE;
+            done_cnt_rst(dev)    <= '0';
           end if;
           
         when DONE_LOW =>
@@ -2255,24 +2260,30 @@ begin
           end if;
           
         when DONE_COUNTING =>
-          done_cnt_rst(dev) <= '0';
-          if (done_cnt(dev) = 3) then  -- DONE has to be high at least 1.2us to avoid spurious edges
+          if (DCFEB_DONE(dev) = '0') then
+            done_next_state(dev)  <= DONE_LOW;
+            done_cnt_en(dev)      <= '0';
+            dcfeb_done_pulse(dev) <= '0';
+            done_cnt_rst(dev)     <= '1';
+          elsif (done_cnt(dev) = 3) then  -- DONE has to be high at least 400 us to avoid spurious edges
             done_next_state(dev)  <= DONE_IDLE;
             done_cnt_en(dev)      <= '0';
             dcfeb_done_pulse(dev) <= '1';
+            done_cnt_rst(dev)     <= '0';
           else
             done_next_state(dev)  <= DONE_COUNTING;
             done_cnt_en(dev)      <= '1';
             dcfeb_done_pulse(dev) <= '0';
+            done_cnt_rst(dev)     <= '0';
           end if;
       end case;
     end loop;
   end process;
 
   dcfeb_initjtag_dd <= or_reduce(dcfeb_done_pulse);
-  --dcfeb_initjtag_dd <= reset or or_reduce(dcfeb_done_pulse);
   DS_DCFEB_INITJTAG    : DELAY_SIGNAL generic map(240) port map(dcfeb_initjtag_d, clk10khz, 240, dcfeb_initjtag_dd);
-  PULSE_DCFEB_INITJTAG : NPULSE2FAST port map(dcfeb_initjtag, clk40, '0', 300, dcfeb_initjtag_d);
+  --DS_DCFEB_INITJTAG    : DELAY_SIGNAL generic map(10) port map(dcfeb_initjtag_d, clk_s1, 10, dcfeb_initjtag_dd);
+  PULSE_DCFEB_INITJTAG : NPULSE2FAST port map(dcfeb_initjtag, clk_s1, '0', 5, dcfeb_initjtag_d);
 
   -- After each power on, ODMB JTAG is reset
   CROSS_PON           : CROSSCLOCK port map(odmb_initjtag_dd, clk2p5, clk40, '0', pon_rst_reg(31));
@@ -2503,12 +2514,18 @@ begin
   clk10_buf  : BUFG port map (I => pll_clk10, O => clk10);
   clk5_buf   : BUFG port map (I => pll_clk5, O => clk5);
   clk2p5_buf : BUFG port map (I => clk2p5_unbuf, O => clk2p5);
+  clk0p625_buf : BUFG port map (I => clk0p625_unbuf, O => clk0p625);
 
+  --clk_s1 <= clk0p625; -- Slow clock for CFEBJTAG
+  clk_s1 <= clk2p5; -- Slow clock for CFEBJTAG
+  
 -- Frequency dividers for the 2.5 and 1.25 MHz clocks which are too slow for the PLL 
   clk2p5_inv  <= not clk2p5_unbuf;
   clk1p25_inv <= not clk1p25;
+  clk0p625_inv <= not clk0p625;
   FD2p5  : FD port map (D => clk2p5_inv, C => clk5, Q => clk2p5_unbuf);
   FD1p25 : FD port map (D => clk1p25_inv, C => clk2p5, Q => clk1p25);
+  FD0p625 : FD port map (D => clk0p625_inv, C => clk1p25, Q => clk0p625_unbuf);
   FD20   : FDC port map(clk20, clk40, ccb_bx0_q, clk20_b);  -- Synced with BX0
   clk20_b     <= not clk20;
 

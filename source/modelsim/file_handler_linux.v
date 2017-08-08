@@ -27,8 +27,10 @@ initial
 
 initial
   begin
-    infile=$fopen("commands/test_control.txt","r");
-    outfile=$fopen("commands/test_control_out.txt","w");
+    infile=$fopen("commands/test_cfebjtag.txt","r");
+    outfile=$fopen("commands/test_cfebjtag_out.txt","w");
+    //infile=$fopen("commands/test_control.txt","r");
+    //outfile=$fopen("commands/test_control_out.txt","w");
     //infile=$fopen("commands/calpulse.txt","r");
     //outfile=$fopen("commands/test_calpulse_out.txt","w");
     

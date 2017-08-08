@@ -1,5 +1,6 @@
--- PULSE2SLOW: Creates a one clock cycle long pulse if rising edge in a
--- slower clock domain.
+-- PULSE2SLOW: Creates a one clock cycle long pulse in a slower clock domain
+-- when a one clock pulse in the original faster domain is received.
+-- It requires at least 2 CCs in the new domain between pulses.
 -- Based on "Crossing the abyss: asynchonous signals in a synchronous world"
 
 library ieee;
