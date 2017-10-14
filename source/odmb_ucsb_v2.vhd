@@ -2683,7 +2683,8 @@ begin
   begin
     RAWLCT_CNT : COUNT_EDGES port map(raw_lct_cnt(dev), clk40, reset, raw_lct(dev));
     CRC_CNT    : COUNT_EDGES port map(goodcrc_cnt(dev), clk160, reset, crc_valid(dev));
-    BAD_RX_CNT : COUNT_EDGES port map(dcfeb_bad_rx_cnt(dev), clk160, dly_pulse_optrst, dcfeb_bad_rx(dev));
+    --BAD_RX_CNT : COUNT_EDGES port map(dcfeb_bad_rx_cnt(dev), clk160, dly_pulse_optrst, dcfeb_bad_rx(dev));
+    BAD_RX_CNT : COUNT_WINDOW port map(dcfeb_bad_rx_cnt(dev), clk160, opt_reset, dcfeb_bad_rx(dev));
     LCTL1AGAP  : GAP_COUNTER generic map (200) port map(lct_l1a_gap(dev), clk40, reset, raw_lct(dev), int_l1a);
     badcrc_cnt(dev) <= std_logic_vector(unsigned(eof_data_cnt(dev))-unsigned(goodcrc_cnt(dev)));
 --badcrc_cnt(dev) <= std_logic_vector(unsigned(eof_data_cnt(dev))-unsigned(l1a_match_cnt(dev)));
