@@ -13,7 +13,7 @@ use unisim.vcomponents.all;
 entity TRGCNTRL is
   generic (
     NFEB : integer range 1 to 7 := 5  -- Number of DCFEBS, 7 in the final design
-    );  
+    );
   port (
     CLK           : in std_logic;
     RAW_L1A       : in std_logic;
@@ -58,15 +58,17 @@ architecture TRGCNTRL_Arch of TRGCNTRL is
   signal DLY_LCT, LCT, LCT_IN : std_logic_vector(NFEB downto 0);
   signal RAW_L1A_Q, L1A_IN    : std_logic;
   signal L1A                  : std_logic;
-  type   LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
+  type LCT_TYPE is array (NFEB downto 0) of std_logic_vector(4 downto 0);
   signal LCT_Q                : LCT_TYPE;
   signal LCT_ERR_D            : std_logic;
   signal L1A_MATCH            : std_logic_vector(NFEB downto 1);
   signal FIFO_L1A_MATCH_INNER : std_logic_vector(NFEB+2 downto 0);
 
-  signal otmb_dav_sync, alct_dav_sync   : std_logic;
-  signal fifo_push_inner                : std_logic;
-  signal push_otmb_diff, push_alct_diff : integer range 0 to 63;
+  signal otmb_dav_sync, alct_dav_sync       : std_logic;
+  signal otmb_dav_sync_q, alct_dav_sync_q   : std_logic;
+  signal otmb_dav_sync_qq, alct_dav_sync_qq : std_logic;
+  signal fifo_push_inner                    : std_logic;
+  signal push_otmb_diff, push_alct_diff     : integer range 0 to 63;
 
 begin  --Architecture
 
@@ -117,13 +119,19 @@ begin  --Architecture
     DS_L1AMATCH_PUSH : DELAY_SIGNAL port map(fifo_l1a_match_inner(K), clk, push_dly, l1a_match(K));
   end generate GEN_L1A_MATCH_PUSH_DLY;
 
-  push_otmb_diff               <= push_dly-otmb_push_dly when push_dly > otmb_push_dly else 0;
+  push_otmb_diff               <= push_dly-otmb_push_dly-1 when push_dly > otmb_push_dly+1 else 0;
   DS_OTMB_PUSH : DELAY_SIGNAL port map(otmb_dav_sync, clk, push_otmb_diff, otmb_dav);
-  fifo_l1a_match_inner(NFEB+1) <= (otmb_dav_sync or pedestal_otmb) and fifo_push_inner and not kill(NFEB+1);
+  FDOTMBDAV    : FD port map(otmb_dav_sync_q, CLK, otmb_dav_sync);
+  FDOTMBDAV2   : FD port map(otmb_dav_sync_qq, CLK, otmb_dav_sync_q);
+  fifo_l1a_match_inner(NFEB+1) <= (otmb_dav_sync or otmb_dav_sync_q or otmb_dav_sync_qq or pedestal_otmb)
+                                  and fifo_push_inner and not kill(NFEB+1);
 
-  push_alct_diff               <= push_dly-alct_push_dly when push_dly > alct_push_dly else 0;
+  push_alct_diff               <= push_dly-alct_push_dly-1 when push_dly > alct_push_dly+1 else 0;
   DS_ALCT_PUSH : DELAY_SIGNAL port map(alct_dav_sync, clk, push_alct_diff, alct_dav);
-  fifo_l1a_match_inner(NFEB+2) <= (alct_dav_sync or pedestal_otmb) and fifo_push_inner and not kill(NFEB+2);
+  FDALCTDAV    : FD port map(alct_dav_sync_q, CLK, alct_dav_sync);
+  FDALCTDAV2   : FD port map(alct_dav_sync_qq, CLK, alct_dav_sync_q);
+  fifo_l1a_match_inner(NFEB+2) <= (alct_dav_sync or alct_dav_sync_q or alct_dav_sync_qq or pedestal_otmb)
+                                  and fifo_push_inner and not kill(NFEB+2);
 
   fifo_l1a_match_inner(0) <= or_reduce(fifo_l1a_match_inner(NFEB+2 downto 1));
 
