@@ -586,6 +586,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       EXT_DLY       : in std_logic_vector(4 downto 0);
       CALLCT_DLY    : in std_logic_vector(3 downto 0);
       KILL          : in std_logic_vector(NFEB+2 downto 1);
+      AUTOKILLED_DCFEBS  : in std_logic_vector(NFEB downto 1);
       CRATEID       : in std_logic_vector(7 downto 0)
       ); 
   end component;  -- ODMB_CTRL
@@ -1278,7 +1279,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bad_dcfeb_cnt   : bad_dcfeb_array := (0, 0, 0, 0, 0, 0, 0);
   signal bad_dcfeb_cnt_en, bad_dcfeb_cnt_rst  : std_logic_vector(NFEB downto 1);
   signal bad_dcfeb_pulse, bad_dcfeb_pulse_long  : std_logic_vector(NFEB downto 1);
+  signal bad_dcfeb_pulse_q, bad_dcfeb_pulse_qq  : std_logic_vector(NFEB downto 1);
   signal bad_dcfeb_longpacket, bad_dcfeb_pulse160  : std_logic_vector(NFEB downto 1);
+  signal autokilled_dcfebs, kill_b  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_rst  : std_logic_vector(NFEB downto 1);
   
 
@@ -1729,6 +1732,7 @@ begin
       EXT_DLY       => EXT_DLY,
       CALLCT_DLY    => CALLCT_DLY,
       KILL          => KILL,
+      AUTOKILLED_DCFEBS => autokilled_dcfebs,
       CRATEID       => CRATEID
       );                                -- MBC : ODMB_CTRL
 
@@ -2030,15 +2034,18 @@ begin
     PULSE_BADDCFEB : PULSE2SLOW port map(bad_dcfeb_pulse(dev), clk40, clk160, reset, bad_dcfeb_pulse160(dev));
     PULSE_BADDCFEB_LONG : NPULSE2SAME port map(bad_dcfeb_pulse_long(dev), clk160, reset, 50, bad_dcfeb_pulse160(dev));
     dcfeb_fifo_rst(dev) <= l1acnt_fifo_rst or bad_dcfeb_pulse_long(dev);
-
+    kill_b(dev) <= not kill(dev);
+    FD_BADDCFEB : FDC port map(bad_dcfeb_pulse_q(dev), clk40, reset, bad_dcfeb_pulse(dev));
+    FD_BADDCFEB1 : FDC port map(bad_dcfeb_pulse_qq(dev), clk40, reset, bad_dcfeb_pulse_q(dev));
+    FD_AUTOKILL : FDC port map(autokilled_dcfebs(dev), bad_dcfeb_pulse_qq(dev), kill_b(dev), '1');
   end generate GEN_BAD_DCFEB;
 
   change_reg_data <= x"0" & "000" & kill(9) & kill(8) & (kill(7 downto 1) or bad_dcfeb_pulse(7 downto 1));
   change_reg_index <= 7 when or_reduce(bad_dcfeb_pulse(7 downto 1)) = '1' else NREGS;
   
 
-----------------------------  ALCT and OTMB data  ----------------------------
 -----------------------------------------------------------------------------
+----------------------------  ALCT and OTMB data  ----------------------------
 
   ALCT_OTMB_DATA_GEN_PM : alct_otmb_data_gen
     port map(
@@ -3488,6 +3495,7 @@ begin
       when x"B5" => odmb_data <= dcfeb_bad_rx_cnt(5);
       when x"B6" => odmb_data <= dcfeb_bad_rx_cnt(6);
       when x"B7" => odmb_data <= dcfeb_bad_rx_cnt(7);
+      when x"B8" => odmb_data <= x"00" & '0' & autokilled_dcfebs; -- DCFEBs auto-killed due to fiber errors or too long packets
 
       when others => odmb_data <= (others => '1');
     end case;

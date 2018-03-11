@@ -145,6 +145,7 @@ entity ODMB_CTRL is
     EXT_DLY       : in std_logic_vector(4 downto 0);
     CALLCT_DLY    : in std_logic_vector(3 downto 0);
     KILL          : in std_logic_vector(NFEB+2 downto 1);
+    AUTOKILLED_DCFEBS  : in std_logic_vector(NFEB downto 1);
     CRATEID       : in std_logic_vector(7 downto 0)
     );
 
@@ -328,6 +329,7 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 
 -- From DMB_VME
       RDFFNXT : in std_logic;
+      KILL    : in std_logic_vector(NFEB+2 downto 1);
 
 -- to GigaBit Link
       DOUT : out std_logic_vector(15 downto 0);
@@ -346,8 +348,9 @@ architecture ODMB_CTRL_arch of ODMB_CTRL is
 -- From LOADFIFO
       JOEF : in std_logic_vector(NFEB+2 downto 1);
 
--- to ???
+-- For headers/trailers
       DAQMBID : in std_logic_vector(11 downto 0);  -- From CRATEID in SETFEBDLY, and GA
+      AUTOKILLED_DCFEBS  : in std_logic_vector(NFEB downto 1);
 
 -- FROM SW1
       GIGAEN : in std_logic;
@@ -730,7 +733,8 @@ begin
 
 -- From DMB_VME
       RDFFNXT => rdffnxt,  -- from MBV (currently assigned as a signal to '0')
-
+      KILL => KILL,
+      
 -- to GigaBit Link
       DOUT => ddu_data_inner,
       DAV  => ddu_data_valid_inner,
@@ -750,6 +754,7 @@ begin
 
 -- From CONFREG and GA
       DAQMBID => daqmbid,
+      AUTOKILLED_DCFEBS => AUTOKILLED_DCFEBS,
 
 -- FROM SW1
       GIGAEN => LOGICH,

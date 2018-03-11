@@ -301,7 +301,7 @@ begin
         alct_l1a_cnt_fifo_rd_en <= '0';
         alct_data               <= x"D" & alct_l1a_cnt_l_fifo_out(7 downto 0) & alct_dw_cnt_out(3 downto 0);
         alct_dv                 <= '1';
-        if (alct_dw_cnt_out = nwords_dummy) then
+        if (alct_dw_cnt_out >= nwords_dummy) then
           alct_dw_cnt_en  <= '0';
           alct_dw_cnt_rst <= '1';
           alct_next_state <= IDLE;
@@ -350,7 +350,7 @@ begin
         otmb_l1a_cnt_fifo_rd_en <= '0';
         otmb_data               <= x"B" & otmb_l1a_cnt_l_fifo_out(7 downto 0) & otmb_dw_cnt_out(3 downto 0);
         otmb_dv                 <= '1';
-        if (otmb_dw_cnt_out = nwords_dummy) then
+        if (otmb_dw_cnt_out >= nwords_dummy) then
           otmb_dw_cnt_en  <= '0';
           otmb_dw_cnt_rst <= '1';
           otmb_next_state <= IDLE;

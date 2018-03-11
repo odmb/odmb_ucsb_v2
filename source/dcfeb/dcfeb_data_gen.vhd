@@ -221,7 +221,7 @@ begin
         l1a_cnt_fifo_rd_en <= '0';
         dcfeb_data         <= dcfeb_addr & l1a_cnt_l_fifo_out(7 downto 0) & dw_cnt_out(3 downto 0);
         dcfeb_dv           <= '1';
-        if (dw_cnt_out = nwords_dummy) then
+        if (dw_cnt_out >= nwords_dummy) then
           dw_cnt_en  <= '0';
           dw_cnt_rst <= '1';
           next_state <= IDLE;

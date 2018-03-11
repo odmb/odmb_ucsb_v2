@@ -31,6 +31,7 @@ entity CONTROL_FSM is
 
 -- From DMB_VME
     RDFFNXT : in std_logic;
+    KILL    : in std_logic_vector(NFEB+2 downto 1);
 
 -- to GigaBit Link
     DOUT : out std_logic_vector(15 downto 0);
@@ -49,8 +50,9 @@ entity CONTROL_FSM is
 -- From JTAGCOM
     JOEF : in std_logic_vector(NFEB+2 downto 1);
 
--- From CRATEID in SETFEBDLY, and GA
+-- For headers/trailers
     DAQMBID : in std_logic_vector(11 downto 0);
+    AUTOKILLED_DCFEBS  : in std_logic_vector(NFEB downto 1);
 
 -- FROM SW1
     GIGAEN : in std_logic;
@@ -99,10 +101,11 @@ architecture CONTROL_arch of CONTROL_FSM is
   constant sync             : std_logic_vector(3 downto 0)      := "0000";
   constant alct_to_end      : std_logic                         := '0';
   constant otmb_to_end      : std_logic                         := '0';
-  constant dcfeb_to_end     : std_logic_vector(NFEB downto 1)   := (others => '0');
   constant data_fifo_full   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   -- constant data_fifo_half   : std_logic_vector(NFEB+2 downto 1) := (others => '0');
   constant dmb_l1pipe       : std_logic_vector(7 downto 0)      := (others => '0');
+  constant wait_max         : integer := 16;
+  constant wait_dev_max         : integer := 5;
 
   type control_state is (IDLE, HEADER, WAIT_DEV, TX_DEV, TAIL, LONE, WAIT_IDLE);
   signal control_current_state, control_next_state, q_control_current_state : control_state := IDLE;
@@ -112,7 +115,9 @@ architecture CONTROL_arch of CONTROL_FSM is
   signal lone_cnt_en           : std_logic             := '0';
   signal lone_cnt              : integer range 1 to 4  := 1;
   signal wait_cnt_en           : std_logic             := '0';
-  signal wait_cnt              : integer range 1 to 16 := 1;
+  signal wait_cnt              : integer range 1 to wait_max := 1;
+  signal wait_dev_cnt_en           : std_logic             := '0';
+  signal wait_dev_cnt              : integer range 1 to wait_dev_max := 1;
   signal dev_cnt_en            : std_logic             := '0';
   signal dev_cnt               : integer range 1 to 9  := 9;
   signal tx_cnt_en, tx_cnt_rst : std_logic             := '0';
@@ -191,21 +196,29 @@ begin
   FDPOP : PULSE2SLOW port map(fifo_pop_inner, CLKCMS, CLK, RST, fifo_pop_80);
 
   control_fsm_regs : process (control_next_state, RST, CLK, dev_cnt, dev_cnt_en, tx_cnt,
-                              tx_cnt_en, tx_cnt_rst, hdr_tail_cnt_en, lone_cnt_en, wait_cnt_en)
+                              tx_cnt_en, tx_cnt_rst, hdr_tail_cnt_en, lone_cnt_en, wait_cnt_en, wait_dev_cnt_en)
   begin
     if (RST = '1') then
       control_current_state <= IDLE;
       hdr_tail_cnt          <= 1;
       lone_cnt              <= 1;
       wait_cnt              <= 1;
+      wait_dev_cnt          <= 1;
       dev_cnt               <= 9;
       tx_cnt                <= 1;
     elsif rising_edge(CLK) then
       if(wait_cnt_en = '1') then
-        if(wait_cnt = 16) then
+        if(wait_cnt = wait_max) then
           wait_cnt <= 1;
         else
           wait_cnt <= wait_cnt + 1;
+        end if;
+      end if;
+      if(wait_dev_cnt_en = '1') then
+        if(wait_dev_cnt = wait_dev_max) then
+          wait_dev_cnt <= 1;
+        else
+          wait_dev_cnt <= wait_dev_cnt + 1;
         end if;
       end if;
       if(hdr_tail_cnt_en = '1') then
@@ -264,7 +277,7 @@ begin
 
   control_fsm_logic : process (control_current_state, cafifo_l1a_match, cafifo_l1a_dav,
                                hdr_word, hdr_tail_cnt, lone_cnt, dev_cnt, tx_cnt, DATAIN,
-                               q_datain_last, tail_word, wait_cnt, cafifo_lone)
+                               q_datain_last, tail_word, wait_cnt, wait_dev_cnt, cafifo_lone)
   begin
     oefifo_b_inner  <= (others => '1');
     renfifo_b_inner <= (others => '1');
@@ -273,6 +286,7 @@ begin
     hdr_tail_cnt_en <= '0';
     lone_cnt_en     <= '0';
     wait_cnt_en     <= '0';
+    wait_dev_cnt_en <= '0';
     dev_cnt_en      <= '0';
     tx_cnt_rst      <= '0';
     tx_cnt_en       <= '0';
@@ -303,18 +317,21 @@ begin
         dout_d     <= (others => '0');
         dav_d      <= '0';
         tx_cnt_rst <= '1';
-        if(cafifo_l1a_match(dev_cnt) = '0' or cafifo_lost_pckt(dev_cnt) = '1') then
-          dev_cnt_en <= '1';
-          if (dev_cnt = 7) then
-            control_next_state <= TAIL;
+        wait_dev_cnt_en <= '1';
+        if (wait_dev_cnt = wait_dev_max) then
+          if(cafifo_l1a_match(dev_cnt) = '0' or cafifo_lost_pckt(dev_cnt) = '1' or KILL(dev_cnt) = '1') then
+            dev_cnt_en <= '1';
+            if (dev_cnt = 7) then
+              control_next_state <= TAIL;
+            else
+              control_next_state <= WAIT_DEV;
+            end if;
+          elsif(cafifo_l1a_dav(dev_cnt) = '1') then
+            control_next_state      <= TX_DEV;
+            oefifo_b_inner(dev_cnt) <= '0';
           else
             control_next_state <= WAIT_DEV;
           end if;
-        elsif(cafifo_l1a_dav(dev_cnt) = '1') then
-          control_next_state      <= TX_DEV;
-          oefifo_b_inner(dev_cnt) <= '0';
-        else
-          control_next_state <= WAIT_DEV;
         end if;
         
       when TX_DEV =>
@@ -327,7 +344,7 @@ begin
         else
           dav_d <= '0';
         end if;
-        if(q_datain_last = '1') then
+        if(q_datain_last = '1' or KILL(dev_cnt) = '1') then
           dev_cnt_en <= '1';
           if (dev_cnt = 7) then
             control_next_state <= TAIL;
@@ -376,7 +393,7 @@ begin
         dout_d      <= (others => '0');
         dav_d       <= '0';
         wait_cnt_en <= '1';
-        if (wait_cnt = 16) then
+        if (wait_cnt = wait_max) then
           control_next_state <= IDLE;
         else
           control_next_state <= WAIT_IDLE;
@@ -445,7 +462,7 @@ begin
   hdr_word(8) <= x"A" & sync & fmt_vers & l1a_dav_mismatch & cafifo_l1a_cnt(4 downto 0);
 
   tail_word(1) <= x"F" & alct_to_end & cafifo_bx_cnt(4 downto 0) & cafifo_l1a_cnt(5 downto 0);
-  tail_word(2) <= x"F" & ovlp & dcfeb_to_end;
+  tail_word(2) <= x"F" & ovlp & AUTOKILLED_DCFEBS;
   tail_word(3) <= x"F" & data_fifo_full(3 downto 1) & cafifo_lost_pckt(8) & dmb_l1pipe;
   tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1)
                   & data_fifo_full(7 downto 4);

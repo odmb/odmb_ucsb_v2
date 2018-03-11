@@ -11,9 +11,20 @@ W  4000  C	Set LCT_L1A_DLY
 W  4004  1	Set OTMB_PUSH_DLY
 W  400C  2	Set ALCT_PUSH_DLY
 W  401C  0	Do not Kill anything
-W  4028  4	Number of dummy words
+W  4028  20	Number of dummy words
 
 W  3200  4      Request packet
+
+W  4028  30	Number of dummy words
+W  3200  4      Request packet
+
+W  3024  10	Number of max DCFEB words
+W  4028  20	Number of dummy words
+W  4028  20	Number of dummy words
+W  4028  20	Number of dummy words
+W  4028  20	Number of dummy words
+W  401C  0	Do not Kill anything
+W  3024  100	Number of max DCFEB words
 
 W  20  	 1  	Select FIFO [Time stamp LSB]
 W  8	 10	Write Time stamp LSB
@@ -31,9 +42,9 @@ W  8	 A2	Write Time stamp LSB
 W  8	 A3	Write Time stamp LSB
 
 W  20  	 4  	Select FIFO [Triggers]
-W  8	 FF	LCTs on all DCFEBs
-W  8	 0	LCTs on DCFEB 2
-W  8	 25	LCTs on DCFEB 2
+W  8	 FF	LCTs on all DCFEBs (Bit 0 is an OR of the others)
+W  8	 0	LCTs on no DCFEBs
+W  8	 25	LCTs on DCFEBs 2,5
 
 W  8	 400	L1A
 W  8	 100	OTMBDAV
