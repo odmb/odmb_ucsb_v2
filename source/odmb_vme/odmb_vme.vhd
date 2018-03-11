@@ -121,6 +121,7 @@ entity ODMB_VME is
     MASK_L1A      : out std_logic_vector(NFEB downto 0);
     MASK_PLS      : out std_logic;
     tp_sel        : out std_logic_vector(15 downto 0);
+    max_words_dcfeb        : out std_logic_vector(15 downto 0);
     odmb_ctrl     : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
     odmb_data     : in  std_logic_vector(15 downto 0);
@@ -148,6 +149,10 @@ entity ODMB_VME is
     NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
     KILL          : out std_logic_vector(NFEB+2 downto 1);
     CRATEID       : out std_logic_vector(7 downto 0);
+
+    -- From ODMB_UCSB_V2 to VMECONFREGS to change registers
+    CHANGE_REG_DATA  : in std_logic_vector(15 downto 0);
+    CHANGE_REG_INDEX : in integer range 0 to NREGS;
 
     -- TESTFIFOS
     TFF_DOUT    : in  std_logic_vector(15 downto 0);
@@ -355,6 +360,7 @@ architecture ODMB_VME_architecture of ODMB_VME is
       MASK_L1A      : out std_logic_vector(NFEB downto 0);
       MASK_PLS      : out std_logic;
       TP_SEL        : out std_logic_vector(15 downto 0);
+      MAX_WORDS_DCFEB        : out std_logic_vector(15 downto 0);
       ODMB_CTRL     : out std_logic_vector(15 downto 0);
       ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
       ODMB_DATA     : in  std_logic_vector(15 downto 0);
@@ -406,6 +412,10 @@ architecture ODMB_VME_architecture of ODMB_VME is
       BPI_CFG_DL_PULSE   : in std_logic;
       BPI_CONST_UL_PULSE : in std_logic;
       BPI_CONST_DL_PULSE : in std_logic;
+
+-- From ODMB_UCSB_V2 to change registers
+    CHANGE_REG_DATA  : in std_logic_vector(15 downto 0);
+    CHANGE_REG_INDEX : in integer range 0 to NREGS;
 
 -- From BPI_CTRL
       CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
@@ -878,7 +888,8 @@ begin
 
       MASK_PLS      => mask_pls,
       MASK_L1A      => mask_l1a,
-      TP_SEL        => tp_sel,
+      TP_SEL        => TP_SEL,
+      MAX_WORDS_DCFEB => MAX_WORDS_DCFEB,
       ODMB_CTRL     => odmb_ctrl,
       ODMB_DATA_SEL => odmb_data_sel,
       ODMB_DATA     => odmb_data,
@@ -929,6 +940,10 @@ begin
         BPI_CONST_UL_PULSE => bpi_const_ul_pulse,
         BPI_CONST_DL_PULSE => bpi_const_dl_pulse,
 
+        -- From ODMB_UCSB_V2 to change registers
+        CHANGE_REG_DATA  => CHANGE_REG_DATA,
+        CHANGE_REG_INDEX => CHANGE_REG_INDEX,
+        
         -- From BPI_CTRL
         CC_CFG_REG_IN => BPI_CFG_REG_IN,
 

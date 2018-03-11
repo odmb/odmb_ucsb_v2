@@ -16,7 +16,7 @@ entity VMECONFREGS is
     NREGS  : integer := 16;             -- Number of Configuration registers
     NCONST : integer := 16;             -- Number of Protected registers
     NFEB   : integer := 7               -- Number of DCFEBs
-    );    
+    );
   port (
     SLOWCLK : in std_logic;
     CLK     : in std_logic;
@@ -54,6 +54,10 @@ entity VMECONFREGS is
     BPI_CONST_UL_PULSE : in std_logic;
     BPI_CONST_DL_PULSE : in std_logic;
 
+-- From ODMB_UCSB_V2 to change registers
+    CHANGE_REG_DATA  : in std_logic_vector(15 downto 0);
+    CHANGE_REG_INDEX : in integer range 0 to NREGS;
+
 -- From BPI_CTRL
     CC_CFG_REG_IN : in std_logic_vector(15 downto 0);
 
@@ -70,10 +74,10 @@ end VMECONFREGS;
 
 architecture VMECONFREGS_Arch of VMECONFREGS is
 
-  constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0311";
+  constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0312";
   constant FW_ID            : std_logic_vector(15 downto 0) := x"0000";
-  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"1119";
-  constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2017";
+  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0306";
+  constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2018";
   constant able_write_const : std_logic                     := '0';
 
   constant cfg_reg_mask_we   : std_logic_vector(15 downto 0) := x"FDFF";
@@ -93,8 +97,8 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal do_cfg_we, do_const_we, do_cfg_we_q, do_const_we_q : std_logic := '0';
   signal bit_const                                          : std_logic := '0';
 
-  type   rh_reg is array (2 downto 0) of std_logic_vector(15 downto 0);
-  type   rh_reg_array is array (0 to NREGS) of rh_reg;
+  type rh_reg is array (2 downto 0) of std_logic_vector(15 downto 0);
+  type rh_reg_array is array (0 to NREGS) of rh_reg;
   signal cfg_reg_triple : rh_reg_array;
   signal cfg_regs       : cfg_regs_array;
 
@@ -111,10 +115,10 @@ architecture VMECONFREGS_Arch of VMECONFREGS is
   signal cmddev                     : std_logic_vector (15 downto 0);
   signal dd_dtack, d_dtack, q_dtack : std_logic := '0';
 
-  signal   w_mask_vme, r_mask_vme     : std_logic;
-  constant mask_vme_def               : std_logic_vector(NCONST-1 downto 0) := (others => '0');
-  signal   mask_vme                   : std_logic_vector(NCONST downto 0)   := (others => '0');
-  signal   mask_vme_rst, mask_vme_pre : std_logic_vector(NCONST-1 downto 0);
+  signal w_mask_vme, r_mask_vme     : std_logic;
+  constant mask_vme_def             : std_logic_vector(NCONST-1 downto 0) := (others => '0');
+  signal mask_vme                   : std_logic_vector(NCONST downto 0)   := (others => '0');
+  signal mask_vme_rst, mask_vme_pre : std_logic_vector(NCONST-1 downto 0);
 
 begin
 
@@ -148,28 +152,33 @@ begin
   BPI_CFG_REGS   <= cfg_regs;
   BPI_CONST_REGS <= const_regs;
 
-  LCT_L1A_DLY   <= cfg_regs(0)(5 downto 0);                         -- 0x4000
-  OTMB_PUSH_DLY <= to_integer(unsigned(cfg_regs(1)(5 downto 0)));   -- 0x4004
-  CABLE_DLY     <= to_integer(unsigned'("" & cfg_regs(2)(0)));      -- 0x4008
-  ALCT_PUSH_DLY <= to_integer(unsigned(cfg_regs(3)(5 downto 0)));   -- 0x400C
-  INJ_DLY       <= cfg_regs(4)(4 downto 0);                         -- 0x4010
-  EXT_DLY       <= cfg_regs(5)(4 downto 0);                         -- 0x4014
-  CALLCT_DLY    <= cfg_regs(6)(3 downto 0);                         -- 0x4018
-  KILL          <= cfg_regs(7)(NFEB+1 downto 0);                    -- 0x401C
-  CRATEID       <= cfg_regs(8)(7 downto 0);                         -- 0x4020
+  LCT_L1A_DLY   <= cfg_regs(0)(5 downto 0);                          -- 0x4000
+  OTMB_PUSH_DLY <= to_integer(unsigned(cfg_regs(1)(5 downto 0)));    -- 0x4004
+  CABLE_DLY     <= to_integer(unsigned'("" & cfg_regs(2)(0)));       -- 0x4008
+  ALCT_PUSH_DLY <= to_integer(unsigned(cfg_regs(3)(5 downto 0)));    -- 0x400C
+  INJ_DLY       <= cfg_regs(4)(4 downto 0);                          -- 0x4010
+  EXT_DLY       <= cfg_regs(5)(4 downto 0);                          -- 0x4014
+  CALLCT_DLY    <= cfg_regs(6)(3 downto 0);                          -- 0x4018
+  KILL          <= cfg_regs(7)(NFEB+1 downto 0);                     -- 0x401C
+  CRATEID       <= cfg_regs(8)(7 downto 0);                          -- 0x4020
   -- 0x4024 reserved for FW version
-  NWORDS_DUMMY  <= cfg_regs(10)(15 downto 0);                       -- 0x4028
+  NWORDS_DUMMY  <= cfg_regs(10)(15 downto 0);                        -- 0x4028
   BX_DLY        <= to_integer(unsigned(cfg_regs(11)(11 downto 0)));  -- 0x402C
 
   ODMB_ID <= const_regs(0)(15 downto 0);  -- 0x4100
 
-  -- Writing configuration registers
+  -- Writing configuration registers when vme_cfg_reg_we or CC_CFG_REG_WE are
+  -- not NREGS
   do_cfg_we      <= do_cfg and not WRITER and not VME_AS_B and not BPI_CFG_BUSY;
   PULSE_CFGWE : PULSE2FAST port map(do_cfg_we_q, CLK, RST, do_cfg_we);
   vme_cfg_reg_we <= cfg_reg_index when do_cfg_we_q = '1' else NREGS;
 
-  cfg_reg_we <= vme_cfg_reg_we when (BPI_CFG_UL_PULSE = '0') else cc_cfg_reg_we;
-  cfg_reg_in <= INDATA         when (BPI_CFG_UL_PULSE = '0') else cc_cfg_reg_in;
+  cfg_reg_we <= CHANGE_REG_INDEX when CHANGE_REG_INDEX < NREGS else
+                CC_CFG_REG_WE when BPI_CFG_UL_PULSE = '1' else
+                vme_cfg_reg_we;
+  cfg_reg_in <= CHANGE_REG_DATA when CHANGE_REG_INDEX < NREGS else
+                CC_CFG_REG_IN when BPI_CFG_UL_PULSE = '1' else
+                INDATA;
 
   cfg_reg_proc : process (RST, CLK, cfg_reg_we, cfg_reg_in, cfg_regs)
   begin

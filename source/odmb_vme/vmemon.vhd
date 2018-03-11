@@ -45,6 +45,7 @@ entity VMEMON is
 
     MASK_L1A      : out std_logic_vector(NFEB downto 0);
     MASK_PLS      : out std_logic;
+    MAX_WORDS_DCFEB : out std_logic_vector(15 downto 0);
     TP_SEL        : out std_logic_vector(15 downto 0);
     ODMB_CTRL     : out std_logic_vector(15 downto 0);
     ODMB_DATA_SEL : out std_logic_vector(7 downto 0);
@@ -69,6 +70,10 @@ architecture VMEMON_Arch of VMEMON is
   signal out_tp_sel, tp_sel_inner : std_logic_vector(15 downto 0) := (others => '0');
   signal w_tp_sel                 : std_logic                     := '0';
   signal r_tp_sel                 : std_logic                     := '0';
+
+  signal out_max_words_dcfeb, max_words_dcfeb_inner : std_logic_vector(15 downto 0) := (others => '0');
+  signal w_max_words_dcfeb                 : std_logic                     := '0';
+  signal r_max_words_dcfeb                 : std_logic                     := '0';
 
   signal odmb_rst               : std_logic_vector(15 downto 0) := (others => '0');
   signal resync_rst, reprog_rst : std_logic                     := '0';
@@ -145,6 +150,8 @@ begin
 
   w_tp_sel <= '1' when (CMDDEV = x"1020" and WRITER = '0') else '0';
   r_tp_sel <= '1' when (CMDDEV = x"1020" and WRITER = '1') else '0';
+  w_max_words_dcfeb <= '1' when (CMDDEV = x"1024" and WRITER = '0') else '0';
+  r_max_words_dcfeb <= '1' when (CMDDEV = x"1024" and WRITER = '1') else '0';
 
   w_loopback    <= '1' when (CMDDEV = x"1100" and WRITER = '0') else '0';
   r_loopback    <= '1' when (CMDDEV = x"1100" and WRITER = '1') else '0';
@@ -254,6 +261,25 @@ begin
   OUT_TP_SEL(15 downto 0) <= TP_SEL_INNER when R_TP_SEL = '1'
                              else (others => 'Z');
 
+-- Write MAX_WORDS_DCFEB. At reset it goes to 2^10 = 1024
+  GEN_MAX_WORDS_DCFEB : for I in 9 downto 0 generate
+  begin
+    FD_W_MAX_WORDS_DCFEB0 : FDCE port map(MAX_WORDS_DCFEB_INNER(I), STROBE, W_MAX_WORDS_DCFEB, RST, INDATA(I));
+  end generate GEN_MAX_WORDS_DCFEB;
+  
+  GEN_MAX_WORDS_DCFEB11 : for I in 15 downto 11 generate
+  begin
+    FD_W_MAX_WORDS_DCFEB11 : FDCE port map(MAX_WORDS_DCFEB_INNER(I), STROBE, W_MAX_WORDS_DCFEB, RST, INDATA(I));
+  end generate GEN_MAX_WORDS_DCFEB11;
+  
+  FD_W_MAX_WORDS_DCFEB10 : FDPE port map(Q => MAX_WORDS_DCFEB_INNER(10), C => STROBE, CE => W_MAX_WORDS_DCFEB,
+                                         PRE => RST, D => INDATA(10));
+  MAX_WORDS_DCFEB <= MAX_WORDS_DCFEB_INNER;
+
+-- Read MAX_WORDS_DCFEB
+  OUT_MAX_WORDS_DCFEB(15 downto 0) <= MAX_WORDS_DCFEB_INNER when R_MAX_WORDS_DCFEB = '1'
+                             else (others => 'Z');
+
 -- Write LOOPBACK
   GEN_LOOPBACK : for I in 2 downto 0 generate
   begin
@@ -295,6 +321,7 @@ begin
              out_odmb_ped      when (r_odmb_ped = '1') else
              out_cal_ped       when (r_cal_ped = '1') else
              out_tp_sel        when (r_tp_sel = '1') else
+             out_max_words_dcfeb        when (r_max_words_dcfeb = '1') else
              out_loopback      when (r_loopback = '1') else
              out_txdiffctrl    when (r_txdiffctrl = '1') else
              out_dcfeb_done    when (r_dcfeb_done = '1') else

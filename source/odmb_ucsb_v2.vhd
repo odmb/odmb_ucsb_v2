@@ -28,6 +28,7 @@ use hdlmacro.hdlmacro.all;
 entity ODMB_UCSB_V2 is
   generic (
     IS_SIMULATION : integer range 0 to 1 := 0;  -- Set to 1 by test bench in simulation 
+    NREGS         : integer := 16;             -- Number of Configuration registers
     NFEB          : integer range 1 to 7 := 7  -- Number of DCFEBS, 7 in the final design
     );  
   port (
@@ -234,6 +235,11 @@ end ODMB_UCSB_V2;
 architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
   component ODMB_VME is
+  generic (
+    NREGS  : integer := 16;             -- Number of Configuration registers
+    NCONST : integer := 16;             -- Number of Protected registers
+    NFEB   : integer := 7               -- Number of DCFEBS
+    );  
     port (
       CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       CSP_BPI_PORT_LA_CTRL        : inout std_logic_vector(35 downto 0);
@@ -330,6 +336,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       MASK_L1A      : out std_logic_vector(NFEB downto 0);
       MASK_PLS      : out std_logic;
       tp_sel        : out std_logic_vector(15 downto 0);
+      max_words_dcfeb        : out std_logic_vector(15 downto 0);
       odmb_ctrl     : out std_logic_vector(15 downto 0);
       odmb_data_sel : out std_logic_vector(7 downto 0);
       odmb_data     : in  std_logic_vector(15 downto 0);
@@ -356,6 +363,10 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
       NWORDS_DUMMY  : out std_logic_vector(15 downto 0);
       KILL          : out std_logic_vector(NFEB+2 downto 1);
       CRATEID       : out std_logic_vector(7 downto 0);
+
+      -- From ODMB_UCSB_V2 to VMECONFREGS to change registers
+      CHANGE_REG_DATA  : in std_logic_vector(15 downto 0);
+      CHANGE_REG_INDEX : in integer range 0 to NREGS;
 
       -- TESTFIFOS
       TFF_DOUT    : in  std_logic_vector(15 downto 0);
@@ -954,7 +965,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal v6_tck_inner, v6_tms_inner, v6_tdi_inner : std_logic := '0';
   signal int_vme_dtack_v6_b                       : std_logic;
 
-  signal eof_data : std_logic_vector (NFEB+2 downto 1);
+  signal eof_data : std_logic_vector (NFEB+2 downto 1) := (others => '0');
 
 -- ALCT ----------------------
   signal gen_alct_data_valid : std_logic;
@@ -1042,6 +1053,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal mask_pls      : std_logic;
   signal mask_l1a      : std_logic_vector(NFEB downto 0);
   signal tp_sel_reg    : std_logic_vector(15 downto 0) := (others => '0');
+  signal max_words_dcfeb_reg    : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_ctrl_reg : std_logic_vector(15 downto 0) := (others => '0');
   signal odmb_data_sel : std_logic_vector(7 downto 0);
   signal odmb_data     : std_logic_vector(15 downto 0);
@@ -1202,7 +1214,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal eofgen_dcfeb_fifo_in    : ext_dcfeb_fifo_data_type;
   signal eofgen_dcfeb_data_valid : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_out          : ext_dcfeb_fifo_data_type;
-  signal pulse_eof40             : std_logic_vector(NFEB downto 1);
+  signal pulse_eof40, pulse_eof160  : std_logic_vector(NFEB downto 1);
 
 
   signal dcfeb_fifo_empty  : std_logic_vector(NFEB downto 1);
@@ -1210,7 +1222,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal dcfeb_fifo_afull  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_full   : std_logic_vector(NFEB downto 1);
 
-  signal eof_data_80 : std_logic_vector(NFEB+2 downto 1);
+  signal eof_data_80 : std_logic_vector(NFEB+2 downto 1) := (others => '0');
 
   signal data_fifo_empty_b                : std_logic_vector(NFEB+2 downto 1);
   signal data_fifo_half_full              : std_logic_vector(NFEB+2 downto 1);
@@ -1256,6 +1268,21 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal kill          : std_logic_vector(nfeb+2 downto 1);
   signal crateid       : std_logic_vector(7 downto 0);
 
+      -- From ODMB_UCSB_V2 to VMECONFREGS to change registers
+  signal change_reg_data  : std_logic_vector(15 downto 0);
+  signal change_reg_index : integer range 0 to NREGS := NREGS;
+  type bad_dcfeb_state is (IDLE, COUNT);
+  type bad_dcfeb_state_vec is array (NFEB downto 1) of bad_dcfeb_state;
+  signal bad_dcfeb_current_state, bad_dcfeb_next_state : bad_dcfeb_state_vec;
+  type bad_dcfeb_array is array (NFEB downto 1) of integer range 0 to 5000;
+  signal bad_dcfeb_cnt   : bad_dcfeb_array := (0, 0, 0, 0, 0, 0, 0);
+  signal bad_dcfeb_cnt_en, bad_dcfeb_cnt_rst  : std_logic_vector(NFEB downto 1);
+  signal bad_dcfeb_pulse, bad_dcfeb_pulse_long  : std_logic_vector(NFEB downto 1);
+  signal bad_dcfeb_longpacket, bad_dcfeb_pulse160  : std_logic_vector(NFEB downto 1);
+  signal dcfeb_fifo_rst  : std_logic_vector(NFEB downto 1);
+  
+
+  
   -- From/to TESTFIFOS to test FIFOs
   signal TFF_DOUT    : std_logic_vector(15 downto 0);
   signal TFF_WRD_CNT : std_logic_vector(11 downto 0);
@@ -1364,6 +1391,7 @@ begin
       );
 
   MBV : ODMB_VME
+    generic map(NREGS => NREGS)
     port map (
 
       CSP_FREE_AGENT_PORT_LA_CTRL => csp_free_agent_port_la_ctrl,
@@ -1460,6 +1488,7 @@ begin
       MASK_PLS      => mask_pls,
       MASK_L1A      => mask_l1a,
       tp_sel        => tp_sel_reg,
+      max_words_dcfeb        => max_words_dcfeb_reg,
       odmb_ctrl     => odmb_ctrl_reg,
       odmb_data_sel => odmb_data_sel,
       odmb_data     => odmb_data,
@@ -1488,6 +1517,10 @@ begin
       KILL          => KILL,
       CRATEID       => CRATEID,
 
+      -- From ODMB_UCSB_V2 to change registers
+      CHANGE_REG_DATA  => change_reg_data,
+      CHANGE_REG_INDEX => change_reg_index,
+        
       -- TESTFIFOS
       TFF_DOUT    => TFF_DOUT,
       TFF_WRD_CNT => TFF_WRD_CNT,
@@ -1915,10 +1948,10 @@ begin
         data_out => eofgen_dcfeb_fifo_in(I)
         );
 
-    data_fifo_we(I) <= eofgen_dcfeb_data_valid(I) and datafifo_mask;
+    data_fifo_we(I) <= eofgen_dcfeb_data_valid(I) and datafifo_mask and not dcfeb_fifo_rst(I);
     datafifo_dcfeb_pm : datafifo_dcfeb
       port map(
-        rst       => l1acnt_fifo_rst,
+        rst       => dcfeb_fifo_rst(I),
         wr_clk    => clk160,
         rd_clk    => dduclk,
         din       => eofgen_dcfeb_fifo_in(I),
@@ -1930,10 +1963,79 @@ begin
         prog_full => data_fifo_half_full(I)
         );
 
-    PULSEEOFDCFEB : PULSE2SLOW port map(pulse_eof40(i), clk40, clk160, reset, eofgen_dcfeb_fifo_in(I)(17));
+    pulse_eof160(i) <= eofgen_dcfeb_fifo_in(I)(17) and not kill(i) and not bad_dcfeb_pulse_long(i);
+    PULSEEOFDCFEB : PULSE2SLOW port map(pulse_eof40(i), clk40, clk160, reset, pulse_eof160(i));
     DS_EOF_PUSH   : DELAY_SIGNAL generic map(push_dlyp4) port map(eof_data(I), clk40, push_dlyp4, pulse_eof40(I));
 
   end generate GEN_DCFEB;
+
+----------------------------  Counters for DCFEB corruption  ----------------------------
+----------------------------------------------------------------------------------------
+  -- This FSM counts the length of each DCFEB and if it is too long it
+  -- automatically kills that DCFEB
+  bad_dcfeb_fsm_regs : process (bad_dcfeb_next_state, reset, clk160, bad_dcfeb_cnt_en,
+                                bad_dcfeb_cnt_rst)
+  begin
+    for dev in 1 to NFEB loop
+      if (reset = '1') then
+        bad_dcfeb_cnt(dev)           <= 0;
+        bad_dcfeb_current_state(dev) <= IDLE;
+      elsif rising_edge(clk160) then
+        bad_dcfeb_current_state(dev) <= bad_dcfeb_next_state(dev);
+        if (bad_dcfeb_cnt_rst(dev) = '1') then
+          bad_dcfeb_cnt(dev) <= 0;
+        elsif(bad_dcfeb_cnt_en(dev) = '1') then
+          bad_dcfeb_cnt(dev) <= bad_dcfeb_cnt(dev) + 1;
+        end if;
+      end if;
+    end loop;
+  end process;
+
+  bad_dcfeb_fsm_logic : process (bad_dcfeb_current_state, bad_dcfeb_cnt,eofgen_dcfeb_fifo_in,
+                                 dcfeb_data_valid, dcfeb_data_valid_d)
+  begin
+    for dev in 1 to NFEB loop
+      bad_dcfeb_cnt_en(dev)        <= '0';
+      bad_dcfeb_cnt_rst(dev)       <= '0';
+      bad_dcfeb_longpacket(dev)      <= '0';
+
+      case bad_dcfeb_current_state(dev) is
+        when IDLE =>
+          bad_dcfeb_cnt_rst(dev)       <= '1';
+          if (dcfeb_data_valid(dev) = '0' and dcfeb_data_valid_d(dev) = '1') then
+            bad_dcfeb_next_state(dev) <= COUNT;
+          else
+            bad_dcfeb_next_state(dev) <= IDLE;
+          end if;
+        when COUNT =>
+          bad_dcfeb_cnt_en(dev) <= '1';
+          if (eofgen_dcfeb_fifo_in(dev)(17) = '1') then
+            bad_dcfeb_next_state(dev) <= IDLE;
+          elsif(bad_dcfeb_cnt(dev) >= to_integer(unsigned(max_words_dcfeb_reg))) then
+            bad_dcfeb_next_state(dev) <= IDLE;
+            bad_dcfeb_longpacket(dev)   <= '1';
+          end if;
+      end case;
+    end loop;
+  end process;
+
+  GEN_BAD_DCFEB : for dev in NFEB downto 1 generate
+  begin
+    -- Bad signal for DCFEB if packet too long (bad_dcfeb_longpacket) or fiber has
+    -- more than 16 errors (dcfeb_bad_rx_cnt(dev)(3)). Only send pulses if DCFEB is not already
+    -- killed
+    bad_dcfeb_pulse160(dev) <= (bad_dcfeb_longpacket(dev)) and not kill(dev) when IS_SIMULATION = 1 else  
+                               (bad_dcfeb_longpacket(dev) or or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 3)))
+                               and not kill(dev);  
+    PULSE_BADDCFEB : PULSE2SLOW port map(bad_dcfeb_pulse(dev), clk40, clk160, reset, bad_dcfeb_pulse160(dev));
+    PULSE_BADDCFEB_LONG : NPULSE2SAME port map(bad_dcfeb_pulse_long(dev), clk160, reset, 50, bad_dcfeb_pulse160(dev));
+    dcfeb_fifo_rst(dev) <= l1acnt_fifo_rst or bad_dcfeb_pulse_long(dev);
+
+  end generate GEN_BAD_DCFEB;
+
+  change_reg_data <= x"0" & "000" & kill(9) & kill(8) & (kill(7 downto 1) or bad_dcfeb_pulse(7 downto 1));
+  change_reg_index <= 7 when or_reduce(bad_dcfeb_pulse(7 downto 1)) = '1' else NREGS;
+  
 
 ----------------------------  ALCT and OTMB data  ----------------------------
 -----------------------------------------------------------------------------
