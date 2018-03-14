@@ -1980,7 +1980,7 @@ begin
   bad_dcfeb_fsm_regs : process (bad_dcfeb_next_state, reset, clk160, bad_dcfeb_cnt_en,
                                 bad_dcfeb_cnt_rst)
   begin
-    for dev in 1 to NFEB loop
+    for dev in NFEB downto 1 loop
       if (reset = '1') then
         bad_dcfeb_cnt(dev)           <= 0;
         bad_dcfeb_current_state(dev) <= IDLE;
@@ -1998,14 +1998,14 @@ begin
   bad_dcfeb_fsm_logic : process (bad_dcfeb_current_state, bad_dcfeb_cnt,eofgen_dcfeb_fifo_in,
                                  dcfeb_data_valid, dcfeb_data_valid_d)
   begin
-    for dev in 1 to NFEB loop
-      bad_dcfeb_cnt_en(dev)        <= '0';
-      bad_dcfeb_cnt_rst(dev)       <= '0';
-      bad_dcfeb_longpacket(dev)      <= '0';
+    for dev in NFEB downto 1 loop
+      bad_dcfeb_cnt_en(dev)      <= '0';
+      bad_dcfeb_cnt_rst(dev)     <= '0';
+      bad_dcfeb_longpacket(dev)  <= '0';
 
       case bad_dcfeb_current_state(dev) is
         when IDLE =>
-          bad_dcfeb_cnt_rst(dev)       <= '1';
+          bad_dcfeb_cnt_rst(dev)      <= '1';
           if (dcfeb_data_valid(dev) = '0' and dcfeb_data_valid_d(dev) = '1') then
             bad_dcfeb_next_state(dev) <= COUNT;
           else
@@ -2017,7 +2017,9 @@ begin
             bad_dcfeb_next_state(dev) <= IDLE;
           elsif(bad_dcfeb_cnt(dev) >= to_integer(unsigned(max_words_dcfeb_reg))) then
             bad_dcfeb_next_state(dev) <= IDLE;
-            bad_dcfeb_longpacket(dev)   <= '1';
+            bad_dcfeb_longpacket(dev) <= '1';
+          else
+            bad_dcfeb_next_state(dev) <= COUNT;
           end if;
       end case;
     end loop;
@@ -2042,6 +2044,36 @@ begin
 
   change_reg_data <= x"0" & "000" & kill(9) & kill(8) & (kill(7 downto 1) or bad_dcfeb_pulse(7 downto 1));
   change_reg_index <= 7 when or_reduce(bad_dcfeb_pulse(7 downto 1)) = '1' else NREGS;
+
+  --csp_bpi_la_pm : csp_bpi_la
+  --  port map (
+  --    CONTROL => csp_bpi_la_ctrl,
+  --    CLK     => clk80,
+  --    DATA    => csp_bpi_la_data,
+  --    TRIG0   => csp_bpi_la_trig
+  --    );
+
+  --csp_bpi_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
+
+  --csp_bpi_la_data <= "00" & x"0"
+  --                   & bpi_cfg_ul_pulse & bpi_cfg_dl_pulse &clk40 & clk2p5  -- [293:290]
+  --                   & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
+  --                   & cmd_adrs         -- [284:269]
+  --                   & vme_data_in      -- [268:253]
+  --                   & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
+  --                   & bpi_cfg_reg_we & bpi_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
+  --                   & bpi_op & bpi_cfg_reg_in                -- [240:223]
+  --                   & bpi_status & bpi_timer                 -- [222:175]
+  --                   & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]
+  --                   & bpi_cmd_fifo_data & bpi_rbk_fifo_data  -- [140:109]
+  --                   & bpi_data_from & bpi_data_to            -- [108:77]
+  --                   & dual_data_leds   -- [76:61]
+  --                   & x"0000"          -- [60:45]
+  --                   & prom_control     -- [44:39]
+  --                   & prom_a_out       -- [38:16]
+  --                   & prom_d_out;      -- [15:0]
+
+
   
 
 -----------------------------------------------------------------------------
