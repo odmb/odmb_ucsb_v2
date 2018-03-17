@@ -9,7 +9,7 @@
 -- Tool versions:   ISE 12.3
 -- Description:     Official firmware for the ODMB.V2
 ----------------------------------------------------------------------------------
-
+ 
 library work;
 library ieee;
 library work;
@@ -243,7 +243,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
     port (
       CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector(35 downto 0);
       CSP_BPI_PORT_LA_CTRL        : inout std_logic_vector(35 downto 0);
-      CSP_BPI_LA_CTRL             : inout std_logic_vector(35 downto 0);
+      --CSP_BPI_LA_CTRL             : inout std_logic_vector(35 downto 0);
       CSP_LVMB_LA_CTRL            : inout std_logic_vector(35 downto 0);
 -- VME signals
 
@@ -1283,6 +1283,11 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal bad_dcfeb_longpacket, bad_dcfeb_pulse160  : std_logic_vector(NFEB downto 1);
   signal autokilled_dcfebs, kill_b  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_rst  : std_logic_vector(NFEB downto 1);
+
+  signal bad_dcfeb_fiber, bad_dcfeb_fiber_q  : std_logic_vector(NFEB downto 1);
+  signal good_dcfeb_fiber, good_dcfeb_fiber_q  : std_logic_vector(NFEB downto 1);
+  signal good_dcfeb_pulse, good_dcfeb_pulse160  : std_logic_vector(NFEB downto 1);
+  
   
 
   
@@ -1399,7 +1404,7 @@ begin
 
       CSP_FREE_AGENT_PORT_LA_CTRL => csp_free_agent_port_la_ctrl,
       CSP_BPI_PORT_LA_CTRL        => csp_bpi_port_la_ctrl,
-      CSP_BPI_LA_CTRL             => csp_bpi_la_ctrl,
+      --CSP_BPI_LA_CTRL             => csp_bpi_la_ctrl,
       CSP_LVMB_LA_CTRL            => csp_lvmb_la_ctrl,
 
       cmd_adrs        => cmd_adrs,            -- output
@@ -2027,11 +2032,15 @@ begin
 
   GEN_BAD_DCFEB : for dev in NFEB downto 1 generate
   begin
+    -- Generating pulse if 32 fiber errors in time window to auto-kill DCFEB
+    bad_dcfeb_fiber(dev) <= or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 5)) and not autokilled_dcfebs(dev);    
+    FD_BADFIBER : FDC port map(bad_dcfeb_fiber_q(dev), clk160, reset, bad_dcfeb_fiber(dev));
+    
     -- Bad signal for DCFEB if packet too long (bad_dcfeb_longpacket) or fiber has
-    -- more than 16 errors (dcfeb_bad_rx_cnt(dev)(3)). Only send pulses if DCFEB is not already
+    -- more than 32 errors (dcfeb_bad_rx_cnt(dev)(5)). Only send pulses if DCFEB is not already
     -- killed
     bad_dcfeb_pulse160(dev) <= (bad_dcfeb_longpacket(dev)) and not kill(dev) when IS_SIMULATION = 1 else  
-                               (bad_dcfeb_longpacket(dev) or or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 3)))
+                               (bad_dcfeb_longpacket(dev) or (bad_dcfeb_fiber(dev) and not bad_dcfeb_fiber_q(dev)))
                                and not kill(dev);  
     PULSE_BADDCFEB : PULSE2SLOW port map(bad_dcfeb_pulse(dev), clk40, clk160, reset, bad_dcfeb_pulse160(dev));
     PULSE_BADDCFEB_LONG : NPULSE2SAME port map(bad_dcfeb_pulse_long(dev), clk160, reset, 50, bad_dcfeb_pulse160(dev));
@@ -2040,38 +2049,63 @@ begin
     FD_BADDCFEB : FDC port map(bad_dcfeb_pulse_q(dev), clk40, reset, bad_dcfeb_pulse(dev));
     FD_BADDCFEB1 : FDC port map(bad_dcfeb_pulse_qq(dev), clk40, reset, bad_dcfeb_pulse_q(dev));
     FD_AUTOKILL : FDC port map(autokilled_dcfebs(dev), bad_dcfeb_pulse_qq(dev), kill_b(dev), '1');
+
+     -- Generating pulse if no fiber errors in time window and no auto-killed DCFEB
+    good_dcfeb_fiber(dev) <= not or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 0)) and autokilled_dcfebs(dev);    
+    FD_GOODFIBER : FDC port map(good_dcfeb_fiber_q(dev), clk160, reset, good_dcfeb_fiber(dev));
+    good_dcfeb_pulse160(dev) <= '1' when good_dcfeb_fiber(dev) = '1' and good_dcfeb_fiber_q(dev) = '0' else '0';
+
+    -- Generation of good_dcfeb_pulse on clk40 to change KILL
+    PULSE_GOODDCFEB : PULSE2SLOW port map(good_dcfeb_pulse(dev), clk40, clk160, reset, good_dcfeb_pulse160(dev));
+    
   end generate GEN_BAD_DCFEB;
 
-  change_reg_data <= x"0" & "000" & kill(9) & kill(8) & (kill(7 downto 1) or bad_dcfeb_pulse(7 downto 1));
-  change_reg_index <= 7 when or_reduce(bad_dcfeb_pulse(7 downto 1)) = '1' else NREGS;
+  change_reg_data <= x"0" & "000" & kill(9) & kill(8) & ((kill(7 downto 1) or bad_dcfeb_pulse(7 downto 1))
+                                                         and not good_dcfeb_pulse(7 downto 1));
+  change_reg_index <= 7 when or_reduce(bad_dcfeb_pulse(7 downto 1)) = '1' or or_reduce(good_dcfeb_pulse(7 downto 1))='1' else
+                      NREGS;
 
-  --csp_bpi_la_pm : csp_bpi_la
-  --  port map (
-  --    CONTROL => csp_bpi_la_ctrl,
-  --    CLK     => clk80,
-  --    DATA    => csp_bpi_la_data,
-  --    TRIG0   => csp_bpi_la_trig
-  --    );
+  csp_bpi_la_pm : csp_bpi_la
+    port map (
+      CONTROL => csp_bpi_la_ctrl,
+      CLK     => clk160,
+      DATA    => csp_bpi_la_data,
+      TRIG0   => csp_bpi_la_trig
+      );
 
-  --csp_bpi_la_trig <= bpi_enbl & bpi_dsbl & cmd_adrs(13 downto 0);
+  csp_bpi_la_trig <= dcfeb_data_valid(3 downto 1) & eofgen_dcfeb_fifo_in(3)(17) & eofgen_dcfeb_fifo_in(2)(17) &
+                     eofgen_dcfeb_fifo_in(1)(17) & good_dcfeb_fiber(3 downto 1) &
+                     bad_dcfeb_pulse160(3 downto 1) & dcfeb_bad_rx_cnt(1)(5) & dcfeb_bad_rx_cnt(3)(5) & dcfeb_bad_rx_cnt(7)(5) &
+                     bad_dcfeb_longpacket(1);
 
-  --csp_bpi_la_data <= "00" & x"0"
-  --                   & bpi_cfg_ul_pulse & bpi_cfg_dl_pulse &clk40 & clk2p5  -- [293:290]
-  --                   & vme_ds_b & vme_as_b & vme_write_b & vme_dtack_v6_b  -- [289:285]
-  --                   & cmd_adrs         -- [284:269]
-  --                   & vme_data_in      -- [268:253]
-  --                   & bpi_busy & bpi_enbl & bpi_dsbl & bpi_re & bpi_we & vme_bpi_rst & bpi_rst  -- [252:246]
-  --                   & bpi_cfg_reg_we & bpi_done & bpi_execute & bpi_active & bpi_load_data  -- [245:241]
-  --                   & bpi_op & bpi_cfg_reg_in                -- [240:223]
-  --                   & bpi_status & bpi_timer                 -- [222:175]
-  --                   & bpi_rbk_wrd_cnt & bpi_addr             -- [174:141]
-  --                   & bpi_cmd_fifo_data & bpi_rbk_fifo_data  -- [140:109]
-  --                   & bpi_data_from & bpi_data_to            -- [108:77]
-  --                   & dual_data_leds   -- [76:61]
-  --                   & x"0000"          -- [60:45]
-  --                   & prom_control     -- [44:39]
-  --                   & prom_a_out       -- [38:16]
-  --                   & prom_d_out;      -- [15:0]
+  csp_bpi_la_data <= x"000" & x"0000" & x"0000"  -- [299:256]
+                     & dcfeb_bad_rx_cnt(4)(6 downto 0)        -- [255:249]
+                     & std_logic_vector(to_unsigned(bad_dcfeb_cnt(4), 10)) -- [248:239]
+                     & max_words_dcfeb_reg & reset            -- [238:222]
+                     & pulse_eof40 & pulse_eof160             -- [221:208]
+                     & good_dcfeb_pulse160 & good_dcfeb_pulse -- [207:194]
+                     & good_dcfeb_fiber & good_dcfeb_fiber_q  -- [193:180]
+                     & dcfeb_bad_rx_cnt(7)(6 downto 0)        -- [179:173]
+                     & dcfeb_bad_rx_cnt(3)(6 downto 0)        -- [172:166]
+                     & dcfeb_bad_rx_cnt(1)(6 downto 0) & bad_dcfeb_pulse_qq -- [165:152]
+                     & std_logic_vector(to_unsigned(bad_dcfeb_cnt(7), 10))  -- [151:142]
+                     & std_logic_vector(to_unsigned(bad_dcfeb_cnt(3), 10))  -- [141:132]
+                     & std_logic_vector(to_unsigned(bad_dcfeb_cnt(1), 10))  -- [131:122]
+                     & std_logic_vector(to_unsigned(change_reg_index, 5))   -- [121:117]
+                     & change_reg_data & autokilled_dcfebs      -- [116:94]
+                     & clk40 & kill & dcfeb_fifo_rst            -- [93:77]
+                     & bad_dcfeb_pulse_long & bad_dcfeb_pulse   -- [76:63]
+                     & bad_dcfeb_pulse160 & bad_dcfeb_fiber_q   -- [62:49]
+                     & bad_dcfeb_fiber & bad_dcfeb_longpacket   -- [48:35]
+                     & eofgen_dcfeb_fifo_in(7)(17)     -- [34:28]
+                     & eofgen_dcfeb_fifo_in(6)(17)     -- [34:28]
+                     & eofgen_dcfeb_fifo_in(5)(17)     -- [34:28]
+                     & eofgen_dcfeb_fifo_in(4)(17)     -- [34:28]
+                     & eofgen_dcfeb_fifo_in(3)(17)     -- [34:28]
+                     & eofgen_dcfeb_fifo_in(2)(17)     -- [34:28]
+                     & eofgen_dcfeb_fifo_in(1)(17)     -- [34:28]
+                     & dcfeb_data_valid & dcfeb_data_valid_d    -- [27:14]
+                     & bad_dcfeb_cnt_en & bad_dcfeb_cnt_rst;    -- [13:0]
 
 
   

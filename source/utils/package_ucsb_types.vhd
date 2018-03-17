@@ -186,7 +186,7 @@ package ucsb_types is
   component COUNT_WINDOW is
     generic (
       WIDTH : integer := 16;
-      WINDOW : integer := 20 -- In CC
+      WINDOW : integer := 63 -- In CC
       );
     port (
       COUNT : out std_logic_vector(WIDTH-1 downto 0);

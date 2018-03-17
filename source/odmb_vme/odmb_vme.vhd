@@ -28,7 +28,7 @@ entity ODMB_VME is
   port (
     CSP_FREE_AGENT_PORT_LA_CTRL : inout std_logic_vector (35 downto 0);
     CSP_BPI_PORT_LA_CTRL        : inout std_logic_vector(35 downto 0);
-    CSP_BPI_LA_CTRL             : inout std_logic_vector(35 downto 0);
+    --CSP_BPI_LA_CTRL             : inout std_logic_vector(35 downto 0);
     CSP_LVMB_LA_CTRL            : inout std_logic_vector(35 downto 0);
 -- VME signals
 
@@ -1278,50 +1278,51 @@ begin
 
   -- This a Chip Scope Pro for VMECONFREGS, CFEBJTAG, ODMBJTAG, and VME
   -- protocol, so I clock it at 40 MHz (not optimal for VME and JTAG)
-  csp_bpi_la_pm : csp_bpi_la
-    port map (
-      CONTROL => csp_bpi_la_ctrl,
-      CLK     => clk,  -- clk40, which is a bit fast for VME and JTAG...
-      DATA    => csp_bpi_la_data,
-      TRIG0   => csp_bpi_la_trig
-      );
 
-  csp_bpi_la_trig <= odmb_initjtag & odmb_jtag_tck_inner & led_odmbjtag &
-                     dcfeb_initjtag & dl_jtag_tck_inner(1) & or_reduce(dtack_dev) &
-                     or_reduce(device) & bpi_const_busy & bpi_cfg_busy & bpi_const_ul_pulse &
-                     bpi_const_dl_pulse & bpi_cfg_ul_pulse_inner & bpi_cfg_dl_pulse_inner & strobe &
-                     do_cfg_reg_we & do_const_reg_we;
+  -- csp_bpi_la_pm : csp_bpi_la
+  --   port map (
+  --     CONTROL => csp_bpi_la_ctrl,
+  --     CLK     => clk,  -- clk40, which is a bit fast for VME and JTAG...
+  --     DATA    => csp_bpi_la_data,
+  --     TRIG0   => csp_bpi_la_trig
+  --     );
 
-  csp_bpi_la_data <= x"0000000000" & x"000" & "0"
-                     & bpi_we_inner & bpi_dsbl_inner & bpi_enbl_inner --[246:244]
-                     & bpi_re_inner & BPI_DONE & bpi_rst_inner --[243:241]
-                     & CC_CONST_BPI_CMD_FIFO_DATA --[240:225]
-                     & CC_CFG_BPI_CMD_FIFO_DATA --[224:209]
-                     & BPI_CONST_DL & BPI_CONST_UL & CC_CONST_BPI_DSBL & CC_CONST_BPI_ENBL --[208:205]
-                     & BPI_CFG_DL & BPI_CFG_UL & CC_CFG_BPI_DSBL & CC_CFG_BPI_ENBL --[204:201]
-                     & bpi_const_pulse & bpi_cfg_pulse --[200:199]
-                     & BPI_CFG_REG_IN --[198:183]
-                     & diagout_command(19 downto 11) --[182:174]
-                     & bpi_cfg_regs(0) --[173:158]
-                     & bpi_const_regs(0) --[157:142]
-                     & odmb_jtag_tdo & led_odmbjtag & odmb_initjtag --[141:139]
-                     & odmb_jtag_tck_inner & odmb_jtag_tdi_inner & odmb_jtag_tms_inner --[138:136]
-                     & doe_b & tovme_b & vme_berr_b & vme_sysfail_b & vme_write_b --[135:131]
-                     & diagout_command(11 downto 6) & ext_vme_ga   --[130:119]
-                     & diagout_command(5 downto 0) & cmd_adrs_inner & "00"        --[118:95]
-                     & dtack_dev             --[94:85]
-                     & strobe & device       --[84:74]
-                     & led_cfebjtag & diagout_cfebjtag --[73:55]
-                     & dl_jtag_tck_inner      --[54:48]
-                     & dl_jtag_tdo --[47:41]
-                     & dl_jtag_tms_inner & dl_jtag_tdi_inner --[40:39]
-                     & lct_l1a_dly_inner                        --[38:33]
-                     & odmb_id_inner                            --[32:17]
-                     & bpi_const_busy & bpi_cfg_busy & RST      --[16:14]
-                     & bpi_cfg_ul_pulse_inner & bpi_cfg_dl_pulse_inner  --[13:12]
-                     & bpi_const_ul_pulse & bpi_const_dl_pulse  --[11:10]
-                     & std_logic_vector(to_unsigned(cc_bpi_const_reg_we, 5))  -- [9:5]
-                     & std_logic_vector(to_unsigned(cc_bpi_cfg_reg_we, 5));  -- [4:0]
+  -- csp_bpi_la_trig <= odmb_initjtag & odmb_jtag_tck_inner & led_odmbjtag &
+  --                    dcfeb_initjtag & dl_jtag_tck_inner(1) & or_reduce(dtack_dev) &
+  --                    or_reduce(device) & bpi_const_busy & bpi_cfg_busy & bpi_const_ul_pulse &
+  --                    bpi_const_dl_pulse & bpi_cfg_ul_pulse_inner & bpi_cfg_dl_pulse_inner & strobe &
+  --                    do_cfg_reg_we & do_const_reg_we;
+
+  -- csp_bpi_la_data <= x"0000000000" & x"000" & "0"
+  --                    & bpi_we_inner & bpi_dsbl_inner & bpi_enbl_inner --[246:244]
+  --                    & bpi_re_inner & BPI_DONE & bpi_rst_inner --[243:241]
+  --                    & CC_CONST_BPI_CMD_FIFO_DATA --[240:225]
+  --                    & CC_CFG_BPI_CMD_FIFO_DATA --[224:209]
+  --                    & BPI_CONST_DL & BPI_CONST_UL & CC_CONST_BPI_DSBL & CC_CONST_BPI_ENBL --[208:205]
+  --                    & BPI_CFG_DL & BPI_CFG_UL & CC_CFG_BPI_DSBL & CC_CFG_BPI_ENBL --[204:201]
+  --                    & bpi_const_pulse & bpi_cfg_pulse --[200:199]
+  --                    & BPI_CFG_REG_IN --[198:183]
+  --                    & diagout_command(19 downto 11) --[182:174]
+  --                    & bpi_cfg_regs(0) --[173:158]
+  --                    & bpi_const_regs(0) --[157:142]
+  --                    & odmb_jtag_tdo & led_odmbjtag & odmb_initjtag --[141:139]
+  --                    & odmb_jtag_tck_inner & odmb_jtag_tdi_inner & odmb_jtag_tms_inner --[138:136]
+  --                    & doe_b & tovme_b & vme_berr_b & vme_sysfail_b & vme_write_b --[135:131]
+  --                    & diagout_command(11 downto 6) & ext_vme_ga   --[130:119]
+  --                    & diagout_command(5 downto 0) & cmd_adrs_inner & "00"        --[118:95]
+  --                    & dtack_dev             --[94:85]
+  --                    & strobe & device       --[84:74]
+  --                    & led_cfebjtag & diagout_cfebjtag --[73:55]
+  --                    & dl_jtag_tck_inner      --[54:48]
+  --                    & dl_jtag_tdo --[47:41]
+  --                    & dl_jtag_tms_inner & dl_jtag_tdi_inner --[40:39]
+  --                    & lct_l1a_dly_inner                        --[38:33]
+  --                    & odmb_id_inner                            --[32:17]
+  --                    & bpi_const_busy & bpi_cfg_busy & RST      --[16:14]
+  --                    & bpi_cfg_ul_pulse_inner & bpi_cfg_dl_pulse_inner  --[13:12]
+  --                    & bpi_const_ul_pulse & bpi_const_dl_pulse  --[11:10]
+  --                    & std_logic_vector(to_unsigned(cc_bpi_const_reg_we, 5))  -- [9:5]
+  --                    & std_logic_vector(to_unsigned(cc_bpi_cfg_reg_we, 5));  -- [4:0]
 
 
 end ODMB_VME_architecture;
