@@ -173,7 +173,8 @@ begin
   FDBADL1A : PULSE2SLOW port map(bad_l1a_change40, CLKCMS, CLK, RST, bad_l1a_change);
 -- trigger assignments (8 bits)
   control_fsm_la_trig <= expect_pckt & q_datain_last & bad_l1a_lone  & cafifo_lone & CAFIFO_L1A_CNT(3 downto 0);
-  control_fsm_la_data <= x"000" & bad_l1a_change --[115]
+  control_fsm_la_data <= x"00" & std_logic_vector(to_unsigned(wait_dev_cnt, 4)) --[119:116]
+                         & bad_l1a_change --[115]
                          & bad_l1a_lone & lone_cnt_svl & cafifo_lone & RST          -- [114:107]
                          & std_logic_vector(to_unsigned(wait_cnt, 5))  -- [106:102]
                          & CAFIFO_L1A_CNT(4 downto 0)          -- [101:97]
@@ -332,6 +333,8 @@ begin
           else
             control_next_state <= WAIT_DEV;
           end if;
+        else
+          control_next_state <= WAIT_DEV;
         end if;
         
       when TX_DEV =>
