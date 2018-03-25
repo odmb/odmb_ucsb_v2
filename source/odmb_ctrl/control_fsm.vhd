@@ -465,9 +465,12 @@ begin
   hdr_word(8) <= x"A" & sync & fmt_vers & l1a_dav_mismatch & cafifo_l1a_cnt(4 downto 0);
 
   tail_word(1) <= x"F" & alct_to_end & cafifo_bx_cnt(4 downto 0) & cafifo_l1a_cnt(5 downto 0);
-  tail_word(2) <= x"F" & ovlp & AUTOKILLED_DCFEBS;
+  --tail_word(2) <= x"F" & ovlp & AUTOKILLED_DCFEBS;
+  tail_word(2) <= x"F" & ovlp & "000" & x"0"; -- Set timeout to 0 to avoid DDU errors
   tail_word(3) <= x"F" & data_fifo_full(3 downto 1) & cafifo_lost_pckt(8) & dmb_l1pipe;
-  tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1)
+  -- tail_word(4) <= x"F" & cafifo_lost_pckt(9) & cafifo_lost_pckt(7 downto 1)
+  --                 & data_fifo_full(7 downto 4);
+  tail_word(4) <= x"F" & cafifo_lost_pckt(9) & "000" & x"0" -- Set timeout to 0 to avoid DDU errors
                   & data_fifo_full(7 downto 4);
   tail_word(5) <= x"E" & data_fifo_full(NFEB+2 downto NFEB+1) & not FIFO_HALF_FULL(NFEB+2 downto NFEB+1)
                   & otmb_to_end & not FIFO_HALF_FULL(NFEB downto 1);

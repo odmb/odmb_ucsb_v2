@@ -21,6 +21,9 @@ W  3200  4      Request packet
 W  3024  10	Number of max DCFEB words
 W  4028  20	Number of dummy words
 W  4028  20	Number of dummy words
+W  3200  4      Request packet
+W  4028  20	Number of dummy words
+W  4028  20	Number of dummy words
 W  4028  20	Number of dummy words
 W  4028  20	Number of dummy words
 W  401C  0	Do not Kill anything
