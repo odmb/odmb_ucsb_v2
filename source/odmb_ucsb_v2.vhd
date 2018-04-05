@@ -1287,7 +1287,7 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
   signal autokilled_dcfebs_fiber, autokilled_dcfebs, kill_b  : std_logic_vector(NFEB downto 1);
   signal dcfeb_fifo_rst  : std_logic_vector(NFEB downto 1);
 
-  signal bad_dcfeb_fiber, bad_dcfeb_fiber_q  : std_logic_vector(NFEB downto 1);
+  signal bad_dcfeb_fiber, bad_dcfeb_fiber_q, bad_dcfeb_fiber_qq  : std_logic_vector(NFEB downto 1);
   signal good_dcfeb_fiber, good_dcfeb_fiber_q  : std_logic_vector(NFEB downto 1);
   signal good_dcfeb_pulse, good_dcfeb_pulse160  : std_logic_vector(NFEB downto 1);
   
@@ -2036,21 +2036,25 @@ begin
   GEN_BAD_DCFEB : for dev in NFEB downto 1 generate
   begin
     -- Generating pulse if 32 fiber errors in time window to auto-kill DCFEB
-    bad_dcfeb_fiber(dev) <= or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 5)) and not autokilled_dcfebs_fiber(dev);    
+    bad_dcfeb_fiber(dev) <= or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 5)) and not autokilled_dcfebs_fiber(dev)
+                            and not kill(dev) and not bpi_cfg_ul_pulse;
     FD_BADFIBER : FDC port map(bad_dcfeb_fiber_q(dev), clk160, reset, bad_dcfeb_fiber(dev));
+    FD_BADFIBERQ : FDC port map(bad_dcfeb_fiber_qq(dev), clk160, reset, bad_dcfeb_fiber_q(dev));
     
     -- Bad signal for DCFEB if packet too long (bad_dcfeb_longpacket) or fiber has
     -- more than 32 errors (dcfeb_bad_rx_cnt(dev)(5)). Only send pulses if DCFEB is not already
     -- killed
     bad_dcfeb_pulse160_longpacket(dev) <= bad_dcfeb_longpacket(dev) and not kill(dev);  
-    bad_dcfeb_pulse160_fiber(dev) <= (bad_dcfeb_fiber(dev) and not bad_dcfeb_fiber_q(dev))  and not kill(dev);  
+    bad_dcfeb_pulse160_fiber(dev) <= (bad_dcfeb_fiber_q(dev) and not bad_dcfeb_fiber_qq (dev))  and not kill(dev);  
     bad_dcfeb_pulse160(dev) <= bad_dcfeb_pulse160_longpacket(dev) when IS_SIMULATION = 1 else  
                                bad_dcfeb_pulse160_longpacket(dev) or bad_dcfeb_pulse160_fiber(dev);
     -- Creating 40 MHz pulse, and long pulse to reset the FIFOs
     PULSE_BADDCFEB : PULSE2SLOW port map(bad_dcfeb_pulse(dev), clk40, clk160, reset, bad_dcfeb_pulse160(dev));
     PULSE_BADDCFEB_LONG : NPULSE2SAME port map(bad_dcfeb_pulse_long(dev), clk160, reset, 50, bad_dcfeb_pulse160(dev));
     dcfeb_fifo_rst(dev) <= l1acnt_fifo_rst or bad_dcfeb_pulse_long(dev);
-    -- Creating the autokilled signal, which is reset when kill goes back to 0
+    -- Creating the autokilled signal, which is reset when kill goes back to 0.
+    -- Reset the autokill register with bpi_cfg_ul_pulse so that what happens
+    -- before KILL is read from the PROM does not affect it
     kill_b(dev) <= not kill(dev);
     FD_BADDCFEB : FDC port map(bad_dcfeb_pulse_q(dev), clk40, reset, bad_dcfeb_pulse(dev));
     FD_BADDCFEB1 : FDC port map(bad_dcfeb_pulse_qq(dev), clk40, reset, bad_dcfeb_pulse_q(dev));
