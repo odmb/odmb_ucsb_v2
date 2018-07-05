@@ -116,7 +116,7 @@ begin
   CMDHIGH  <= '1' when (DEVICE = '1' and COMMAND(5) = '0' and COMMAND(4) = '0') else '0';
   CMDDEV   <= CMDHIGH & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
   DATASHFT <= '1' when (CMDDEV(4 downto 2) = "100")                             else '0';
-  INSTSHFT <= '1' when (CMDDEV = "10111")                                       else '0';
+  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111")         else '0';
   READTDO  <= '1' when (CMDDEV = "10101")                                       else '0';
   SELCFEB  <= '1' when (CMDDEV = "11000")                                       else '0';
   READCFEB <= '1' when (CMDDEV = "11001")                                       else '0';
