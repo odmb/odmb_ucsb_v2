@@ -37,7 +37,9 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
 
   signal CMDHIGH                                                 : std_logic;
   signal CMDDEV                                                  : std_logic_vector(4 downto 0);
+  signal INSTSHFTSP                                              : std_logic_vector(4 downto 0);
   signal DATASHFT, INSTSHFT, READTDO, SELCFEB, READCFEB, RSTJTAG : std_logic;
+  signal TAILSP                                                 : std_logic;
 
   signal SELFEB                                   : std_logic_vector(7 downto 1);
   signal D_DTACK_SELCFEB, Q_DTACK_SELCFEB         : std_logic;
@@ -55,10 +57,12 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
 
   signal C_DHEADEN, CLR_DHEADEN, DHEADEN                                  : std_logic;
   signal SHDHEAD                                                          : std_logic;
+  signal CE_DONEDHEAD                                                     : std_logic;
   signal R_DONEDHEAD, Q_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD, DONEDHEAD : std_logic;
   signal QV_DONEDHEAD                                                     : std_logic_vector(3 downto 0);
   signal Q3_SHDHEAD_TMS, Q4_SHDHEAD_TMS, Q5_SHDHEAD_TMS                   : std_logic;
   signal CE_SHDHEAD_TMS, Q1_SHDHEAD_TMS, Q2_SHDHEAD_TMS                   : std_logic;
+  signal C_DONEDHEAD                                                      : std_logic;
 
 
   signal SHDATA, SHDATAX, CE_SHIFT1 : std_logic;
@@ -114,9 +118,11 @@ begin
 
 -- COMMAND DECODER
   CMDHIGH  <= '1' when (DEVICE = '1' and COMMAND(5) = '0' and COMMAND(4) = '0') else '0';
+  INSTSHFTSP <= COMMAND(4) & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
   CMDDEV   <= CMDHIGH & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
   DATASHFT <= '1' when (CMDDEV(4 downto 2) = "100")                             else '0';
-  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111")         else '0';
+--  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111")         else '0';
+  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111" or INSTSHFTSP(4 downto 1) = "1001" )   else '0';
   READTDO  <= '1' when (CMDDEV = "10101")                                       else '0';
   SELCFEB  <= '1' when (CMDDEV = "11000")                                       else '0';
   READCFEB <= '1' when (CMDDEV = "11001")                                       else '0';
@@ -210,23 +216,28 @@ begin
 
 -- Generate SHDHEAD
   SHDHEAD <= '1' when (BUSY = '1' and DHEADEN = '1') else '0';
+  CE_DONEDHEAD  <= '1' when (SHDHEAD = '1' and ENABLE = '1') else '0';
 
 
 -- Generate DONEDHEAD
   R_DONEDHEAD <= '1' when (LOAD = '1' or RST = '1' or Q_DONEDHEAD = '1')       else '0';
-  CB4RE(SLOWCLK, SHDHEAD, R_DONEDHEAD, QV_DONEDHEAD, QV_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD);
-  DONEDHEAD   <= '1' when ((QV_DONEDHEAD(1) = '1')and (QV_DONEDHEAD(3) = '1')) else '0';
-  FD(DONEDHEAD, SLOWCLK, Q_DONEDHEAD);
+  CB4RE(SLOWCLK, CE_DONEDHEAD, R_DONEDHEAD, QV_DONEDHEAD, QV_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD);
+  DONEDHEAD   <= '1' when ((QV_DONEDHEAD(0) = '1')and (QV_DONEDHEAD(1) = '1')) else '0';
+--  CB4RE(SLOWCLK, SHDHEAD, R_DONEDHEAD, QV_DONEDHEAD, QV_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD);
+--  DONEDHEAD   <= '1' when ((QV_DONEDHEAD(1) = '1')and (QV_DONEDHEAD(3) = '1')) else '0';
+--  FD(DONEDHEAD, SLOWCLK, Q_DONEDHEAD);
+  C_DONEDHEAD <= SLOWCLK;
+  FD(DONEDHEAD, C_DONEDHEAD, Q_DONEDHEAD);
 
 
 -- Generate TMS when SHDHEAD=1
   CE_SHDHEAD_TMS <= '1'            when ((SHDHEAD = '1') and (ENABLE = '1')) else '0';
-  FDCE(Q5_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q1_SHDHEAD_TMS);
+  FDCE(Q3_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q1_SHDHEAD_TMS);
   FDCE(Q1_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q2_SHDHEAD_TMS);
   FDPE(Q2_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q3_SHDHEAD_TMS);
-  FDCE(Q3_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q4_SHDHEAD_TMS);  -- Bug in FG Version (FDCE replaces FDPE)
-  FDCE(Q4_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q5_SHDHEAD_TMS);  -- Bug in FG Version (FDCE replaces FDPE)
-  TMS            <= Q5_SHDHEAD_TMS when (SHDHEAD = '1')                      else 'Z';  -- Bug in FG Version (Q5_SHDHEAD_TMS replaces '1')
+--  FDCE(Q3_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q4_SHDHEAD_TMS);  -- Bug in FG Version (FDCE replaces FDPE)
+--  FDCE(Q4_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q5_SHDHEAD_TMS);  -- Bug in FG Version (FDCE replaces FDPE)
+  TMS            <= Q3_SHDHEAD_TMS when (SHDHEAD = '1')                      else 'Z';  -- Bug in FG Version (Q5_SHDHEAD_TMS replaces '1')
 
 -- Generate SHDATA and SHDATAX
   SHDATA  <= '1' when (BUSY = '1' and DHEADEN = '0' and IHEADEN = '0' and DONEDATA(1) = '0') else '0';
@@ -256,6 +267,7 @@ begin
 
 -- Generate SHTAIL
   SHTAIL <= '1' when (BUSY = '1' and DONEDATA(1) = '1' and TAILEN = '1') else '0';
+  FDCE(INSTSHFTSP(4), LOAD, CE_TAILEN, CLR_TAILEN, TAILSP);
 
 
 -- Generate DONETAIL
@@ -264,7 +276,7 @@ begin
   CE_DONETAIL  <= '1' when (SHTAIL = '1' and ENABLE = '1') else '0';
   CLR_DONETAIL <= '1' when (RST = '1' or Q_DONETAIL = '1') else '0';
   CB4CE(SLOWCLK, CE_DONETAIL, CLR_DONETAIL, QV_DONETAIL, QV_DONETAIL, CEO_DONETAIL, TC_DONETAIL);
-  DONETAIL     <= QV_DONETAIL(1);
+  DONETAIL     <= QV_DONETAIL(0) when (TAILSP = '1') else QV_DONETAIL(1);
 -- This is old code.
   C_DONETAIL   <= SLOWCLK;              -- Bug in FG Version (old code was ok)
 -- This is new code;
