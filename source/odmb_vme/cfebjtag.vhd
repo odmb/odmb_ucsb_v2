@@ -36,10 +36,14 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal LOGICH : std_logic := '1';
 
   signal CMDHIGH                                                 : std_logic;
-  signal CMDDEV                                                  : std_logic_vector(4 downto 0);
-  signal INSTSHFTSP                                              : std_logic_vector(4 downto 0);
+--  signal CMDDEV                                                  : std_logic_vector(4 downto 0);
+  signal CMDDEV                                                  : std_logic_vector(15 downto 0);
+  signal INSTSHFT_ARB, INSTSHFT_SP                               : std_logic;
   signal DATASHFT, INSTSHFT, READTDO, SELCFEB, READCFEB, RSTJTAG : std_logic;
-  signal TAILSP                                                 : std_logic;
+  signal TAILSP                                                  : std_logic;
+  signal TAILSP_NOT                                              : std_logic;
+  signal RST_TAIL                                                : std_logic;
+  signal RST_SP                                                  : std_logic;
 
   signal SELFEB                                   : std_logic_vector(7 downto 1);
   signal D_DTACK_SELCFEB, Q_DTACK_SELCFEB         : std_logic;
@@ -83,8 +87,8 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal CE_SHTAIL_TMS, Q1_SHTAIL_TMS, Q2_SHTAIL_TMS : std_logic;
 
 
-  signal CE_ENABLE, D_ENABLE, ENABLE : std_logic;
-
+--  signal CE_ENABLE, D_ENABLE, ENABLE : std_logic;
+  signal CE_TCK_GLOBAL, D_TCK_GLOBAL, TCK_GLOBAL: std_logic;
 
   signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG        : std_logic;
   signal Q3_RESETJTAG, CLR_RESETJTAG, RESETJTAG          : std_logic;
@@ -117,17 +121,27 @@ begin
 
 
 -- COMMAND DECODER
-  CMDHIGH  <= '1' when (DEVICE = '1' and COMMAND(5) = '0' and COMMAND(4) = '0') else '0';
-  INSTSHFTSP <= COMMAND(4) & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
-  CMDDEV   <= CMDHIGH & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
-  DATASHFT <= '1' when (CMDDEV(4 downto 2) = "100")                             else '0';
---  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111")         else '0';
-  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111" or INSTSHFTSP(4 downto 1) = "1001" )   else '0';
-  READTDO  <= '1' when (CMDDEV = "10101")                                       else '0';
-  SELCFEB  <= '1' when (CMDDEV = "11000")                                       else '0';
-  READCFEB <= '1' when (CMDDEV = "11001")                                       else '0';
-  RSTJTAG  <= '1' when (CMDDEV = "10110")                                       else '0';
+--  CMDHIGH  <= '1' when (DEVICE = '1' and COMMAND(5) = '0' and COMMAND(4) = '0') else '0';
+--  INSTSHFTSP <= COMMAND(4) & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
+--  CMDDEV   <= CMDHIGH & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
 
+--  DATASHFT <= '1' when (CMDDEV(4 downto 2) = "100")                             else '0';
+--  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111")         else '0';
+--  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111" or INSTSHFTSP(4 downto 1) = "1001" )   else '0';
+--  READTDO  <= '1' when (CMDDEV = "10101")                                       else '0';
+--  SELCFEB  <= '1' when (CMDDEV = "11000")                                       else '0';
+--  READCFEB <= '1' when (CMDDEV = "11001")                                       else '0';
+--  RSTJTAG  <= '1' when (CMDDEV = "10110")                                       else '0';
+
+  CMDDEV <= "000" & DEVICE & COMMAND & "00";
+  DATASHFT <= '1' when (DEVICE = '1' and CMDDEV(7 downto 4) = x"0")  else '0';
+  INSTSHFT_ARB <= '1' when (DEVICE = '1' and CMDDEV(7 downto 4) = x"3") else '0';
+  INSTSHFT_SP <= '1' when (DEVICE = '1' and CMDDEV(7 downto 4) = x"4") else '0';
+  INSTSHFT <= '1' when (DEVICE = '1' and (CMDDEV(7 downto 0) = x"1C" or INSTSHFT_ARB = '1' or INSTSHFT_SP = '1') ) else '0';
+  READTDO  <= '1' when CMDDEV = x"1014" else '0';
+  SELCFEB  <= '1' when CMDDEV = x"1020" else '0';
+  READCFEB <= '1' when CMDDEV = x"1024" else '0';
+  RSTJTAG  <= '1' when CMDDEV = x"1018" else '0';
 
 -- Write SELFEB when SELCFEB=1 (The JTAG initialization should be broadcast)
   rst_init <= RST or initjtags;
@@ -195,7 +209,8 @@ begin
 
 
 -- Generate TMS when SHIHEAD=1
-  CE_SHIHEAD_TMS <= '1'            when ((SHIHEAD = '1') and (ENABLE = '1')) else '0';
+--  CE_SHIHEAD_TMS <= '1'            when ((SHIHEAD = '1') and (ENABLE = '1')) else '0';
+  CE_SHIHEAD_TMS <= '1'            when ((SHIHEAD = '1') and (TCK_GLOBAL = '1')) else '0';
   FDCE(Q5_SHIHEAD_TMS, SLOWCLK, CE_SHIHEAD_TMS, RST, Q1_SHIHEAD_TMS);
   FDCE(Q1_SHIHEAD_TMS, SLOWCLK, CE_SHIHEAD_TMS, RST, Q2_SHIHEAD_TMS);
   FDPE(Q2_SHIHEAD_TMS, SLOWCLK, CE_SHIHEAD_TMS, RST, Q3_SHIHEAD_TMS);
@@ -216,7 +231,8 @@ begin
 
 -- Generate SHDHEAD
   SHDHEAD <= '1' when (BUSY = '1' and DHEADEN = '1') else '0';
-  CE_DONEDHEAD  <= '1' when (SHDHEAD = '1' and ENABLE = '1') else '0';
+--  CE_DONEDHEAD  <= '1' when (SHDHEAD = '1' and ENABLE = '1') else '0';
+  CE_DONEDHEAD  <= '1' when (SHDHEAD = '1' and TCK_GLOBAL = '1') else '0';
 
 
 -- Generate DONEDHEAD
@@ -231,7 +247,8 @@ begin
 
 
 -- Generate TMS when SHDHEAD=1
-  CE_SHDHEAD_TMS <= '1'            when ((SHDHEAD = '1') and (ENABLE = '1')) else '0';
+--  CE_SHDHEAD_TMS <= '1'            when ((SHDHEAD = '1') and (ENABLE = '1')) else '0';
+  CE_SHDHEAD_TMS <= '1'            when ((SHDHEAD = '1') and (TCK_GLOBAL = '1')) else '0';
   FDCE(Q3_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q1_SHDHEAD_TMS);
   FDCE(Q1_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q2_SHDHEAD_TMS);
   FDPE(Q2_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q3_SHDHEAD_TMS);
@@ -246,7 +263,8 @@ begin
 
 -- Generate DONEDATA
   DV_DONEDATA  <= COMMAND(9 downto 6);
-  CE_DONEDATA  <= '1' when (SHDATA = '1' and ENABLE = '1')                       else '0';
+--  CE_DONEDATA  <= '1' when (SHDATA = '1' and ENABLE = '1')                       else '0';
+  CE_DONEDATA  <= '1' when (SHDATA = '1' and TCK_GLOBAL = '1')                       else '0';
 --    CLR_DONEDATA <= '1' when (RST='1' and DONEDATA(1)='1' and DONEDATA(0)='1') else '0'; -- BGB should be an or
   CLR_DONEDATA <= '1' when (RST = '1' or DONEDATA(1) = '1' or DONEDATA(0) = '1') else '0';  -- BGB should be an or
   UP_DONEDATA  <= '0';                  -- connected to GND
@@ -267,13 +285,15 @@ begin
 
 -- Generate SHTAIL
   SHTAIL <= '1' when (BUSY = '1' and DONEDATA(1) = '1' and TAILEN = '1') else '0';
-  FDCE(INSTSHFTSP(4), LOAD, CE_TAILEN, CLR_TAILEN, TAILSP);
-
+  FDCE(INSTSHFT_SP, LOAD, CE_TAILEN, CLR_TAILEN, TAILSP);
+  TAILSP_NOT <= '0' when (TAILSP = '1') else '1';
+  SET_SP_RST : PULSE2SAME port map(RST_SP, SLOWCLK, CLR_TAILEN, TAILSP_NOT);
 
 -- Generate DONETAIL
 -- NOTE: I think there was a bug in the old FW.  SLOWCLK was passed to FD_1, it
 -- should be not SLOWCLK based on the OLD DMB FW schematics
-  CE_DONETAIL  <= '1' when (SHTAIL = '1' and ENABLE = '1') else '0';
+--  CE_DONETAIL  <= '1' when (SHTAIL = '1' and ENABLE = '1') else '0';
+  CE_DONETAIL  <= '1' when (SHTAIL = '1' and TCK_GLOBAL = '1') else '0';
   CLR_DONETAIL <= '1' when (RST = '1' or Q_DONETAIL = '1') else '0';
   CB4CE(SLOWCLK, CE_DONETAIL, CLR_DONETAIL, QV_DONETAIL, QV_DONETAIL, CEO_DONETAIL, TC_DONETAIL);
   DONETAIL     <= QV_DONETAIL(0) when (TAILSP = '1') else QV_DONETAIL(1);
@@ -285,9 +305,11 @@ begin
 
 
 -- Generate TMS when SHTAIL=1
-  CE_SHTAIL_TMS <= '1'           when ((SHTAIL = '1') and (ENABLE = '1')) else '0';
-  FDCE(Q2_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST, Q1_SHTAIL_TMS);
-  FDPE(Q1_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST, Q2_SHTAIL_TMS);
+--  CE_SHTAIL_TMS <= '1'           when ((SHTAIL = '1') and (ENABLE = '1')) else '0';
+  CE_SHTAIL_TMS <= '1'           when ((SHTAIL = '1') and (TCK_GLOBAL = '1')) else '0';
+  RST_TAIL <=  '1'               when (RST = '1' or RST_SP = '1') else '0';
+  FDCE(Q2_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST_TAIL, Q1_SHTAIL_TMS);
+  FDPE(Q1_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST_TAIL, Q2_SHTAIL_TMS);
 -- This code from Frank.
 --  TMS <= '1' when (SHTAIL = '1') else 'Z';
 -- This code from Guido.
@@ -295,9 +317,12 @@ begin
 
 
 -- Generate ENABLE
-  CE_ENABLE <= '1' when (RESETJTAG = '1' or BUSY = '1') else '0';
-  D_ENABLE  <= not ENABLE;
-  FDCE(D_ENABLE, SLOWCLK, CE_ENABLE, RST, ENABLE);
+--  CE_ENABLE <= '1' when (RESETJTAG = '1' or BUSY = '1') else '0';
+  CE_TCK_GLOBAL <= '1' when (RESETJTAG = '1' or BUSY = '1') else '0';
+--  D_ENABLE  <= not ENABLE;
+  D_TCK_GLOBAL  <= not TCK_GLOBAL;
+--  FDCE(D_ENABLE, SLOWCLK, CE_ENABLE, RST, ENABLE);
+  FDCE(D_TCK_GLOBAL, SLOWCLK, CE_TCK_GLOBAL, RST, TCK_GLOBAL);
 
 
 -- Generate RESETJTAG and OKRST 
@@ -326,7 +351,8 @@ begin
 --    DTACK_INNER <= '0' when (RESETDONE='1' and INITJTAGS='0') else 'Z'; -- bgb commented out
 
 -- Generate TMS when RESETJTAG=1
-  CE_RESETJTAG_TMS <= (RESETJTAG and ENABLE);
+--  CE_RESETJTAG_TMS <= (RESETJTAG and ENABLE);
+  CE_RESETJTAG_TMS <= (RESETJTAG and TCK_GLOBAL);
   FDCE(Q6_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, RST, Q1_RESETJTAG_TMS);
   FDPE(Q1_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, RST, Q2_RESETJTAG_TMS);
   FDPE(Q2_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, RST, Q3_RESETJTAG_TMS);
@@ -336,17 +362,18 @@ begin
   TMS              <= Q6_RESETJTAG_TMS when (RESETJTAG = '1') else 'Z';  -- BGB
 
 -- Generate TCK
-  TCK(1) <= SELFEB(1) and ENABLE;
-  TCK(2) <= SELFEB(2) and ENABLE;
-  TCK(3) <= SELFEB(3) and ENABLE;
-  TCK(4) <= SELFEB(4) and ENABLE;
-  TCK(5) <= SELFEB(5) and ENABLE;
-  TCK(6) <= SELFEB(6) and ENABLE;
-  TCK(7) <= SELFEB(7) and ENABLE;
+  TCK(1) <= SELFEB(1) and TCK_GLOBAL;
+  TCK(2) <= SELFEB(2) and TCK_GLOBAL;
+  TCK(3) <= SELFEB(3) and TCK_GLOBAL;
+  TCK(4) <= SELFEB(4) and TCK_GLOBAL;
+  TCK(5) <= SELFEB(5) and TCK_GLOBAL;
+  TCK(6) <= SELFEB(6) and TCK_GLOBAL;
+  TCK(7) <= SELFEB(7) and TCK_GLOBAL;
 
 
 -- Generate TDI
-  CE_TDI <= (SHDATA and ENABLE);
+--  CE_TDI <= (SHDATA and ENABLE);
+  CE_TDI <= (SHDATA and TCK_GLOBAL);
   SR16CLRE(SLOWCLK, CE_TDI, RST, LOAD, QV_TDI(0), INDATA, QV_TDI, QV_TDI);
   TDI    <= QV_TDI(0);
 
@@ -373,7 +400,8 @@ begin
 --    DTACK_INNER <= '0' when (RDTDODK='1') else 'Z'; -- BGB commented out
 
 -- Generate OUTDATA
-  CE_SHIFT1            <= SHDATAX and not ENABLE;               -- BGB
+--  CE_SHIFT1            <= SHDATAX and not ENABLE;               -- BGB
+  CE_SHIFT1            <= SHDATAX and not TCK_GLOBAL;               -- BGB
   SR16LCE(SLOWCLK, CE_SHIFT1, RST, TDO, Q_OUTDATA, Q_OUTDATA);  -- BGB
   OUTDATA(15 downto 0) <= Q_OUTDATA(15 downto 0) when (RDTDODK = '1') else "ZZZZZZZZZZZZZZZZ";
 
@@ -415,7 +443,8 @@ begin
 
 -- generate DIAGOUT
   DIAGOUT(0)  <= LOAD;
-  DIAGOUT(1)  <= ENABLE;
+--  DIAGOUT(1)  <= ENABLE;
+  DIAGOUT(1)  <= TCK_GLOBAL;
   DIAGOUT(2)  <= BUSY;
   DIAGOUT(3)  <= RDTDODK;
   DIAGOUT(4)  <= QV_DONEIHEAD(3);
