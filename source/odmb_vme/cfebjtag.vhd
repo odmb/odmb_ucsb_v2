@@ -41,7 +41,7 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal INSTSHFT_ARB, INSTSHFT_SP                               : std_logic;
   signal DATASHFT, INSTSHFT, READTDO, SELCFEB, READCFEB, RSTJTAG : std_logic;
   signal TAILSP                                                  : std_logic;
-  signal TAILSP_NOT                                              : std_logic;
+  signal TAILSP_B                                              : std_logic;
   signal RST_TAIL                                                : std_logic;
   signal RST_SP                                                  : std_logic;
 
@@ -78,7 +78,7 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal DONEDATA                                                          : std_logic_vector(1 downto 0) := (others => '0');
 
 
-  signal CE_TAILEN, CLR_TAILEN, TAILEN               : std_logic;
+  signal CE_TAILEN, CLR_TAILEN, CLR_TAILEN_Q, TAILEN               : std_logic;
   signal SHTAIL                                      : std_logic;
   signal CE_DONETAIL, CLR_DONETAIL, Q_DONETAIL       : std_logic;
   signal CEO_DONETAIL, TC_DONETAIL, C_DONETAIL       : std_logic;
@@ -281,13 +281,15 @@ begin
 -- Generate TAILEN
   CE_TAILEN  <= '1' when (INSTSHFT = '1' or DATASHFT = '1') else '0';
   CLR_TAILEN <= '1' when (RST = '1' or DONETAIL = '1')      else '0';
+  FD(CLR_TAILEN, SLOWCLK, CLR_TAILEN_Q);
   FDCE(COMMAND(1), LOAD, CE_TAILEN, CLR_TAILEN, TAILEN);
 
 -- Generate SHTAIL
   SHTAIL <= '1' when (BUSY = '1' and DONEDATA(1) = '1' and TAILEN = '1') else '0';
-  FDCE(INSTSHFT_SP, LOAD, CE_TAILEN, CLR_TAILEN, TAILSP);
-  TAILSP_NOT <= '0' when (TAILSP = '1') else '1';
-  SET_SP_RST : PULSE2SAME port map(RST_SP, SLOWCLK, CLR_TAILEN, TAILSP_NOT);
+  FDCE(INSTSHFT_SP, LOAD, CE_TAILEN, RST_SP, TAILSP);
+  TAILSP_B <= not TAILSP; --'0' when (TAILSP = '1') else '1';
+--  SET_SP_RST : PULSE2SAME port map(RST_SP, SLOWCLK, CLR_TAILEN, TAILSP_NOT);
+  SET_SP_RST : PULSE2SAME port map(RST_SP, SLOWCLK, RST, TAILSP_B);
 
 -- Generate DONETAIL
 -- NOTE: I think there was a bug in the old FW.  SLOWCLK was passed to FD_1, it
@@ -307,7 +309,7 @@ begin
 -- Generate TMS when SHTAIL=1
 --  CE_SHTAIL_TMS <= '1'           when ((SHTAIL = '1') and (ENABLE = '1')) else '0';
   CE_SHTAIL_TMS <= '1'           when ((SHTAIL = '1') and (TCK_GLOBAL = '1')) else '0';
-  RST_TAIL <=  '1'               when (RST = '1' or RST_SP = '1') else '0';
+  RST_TAIL <=  RST or RST_SP; --'1'               when (RST = '1' or RST_SP = '1') else '0';
   FDCE(Q2_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST_TAIL, Q1_SHTAIL_TMS);
   FDPE(Q1_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST_TAIL, Q2_SHTAIL_TMS);
 -- This code from Frank.
