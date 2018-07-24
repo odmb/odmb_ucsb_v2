@@ -269,6 +269,8 @@ architecture ODMB_VME_architecture of ODMB_VME is
 
   component CFEBJTAG is
     port (
+      CSP_LVMB_LA_CTRL : inout std_logic_vector(35 downto 0);
+
       FASTCLK : in std_logic;
       SLOWCLK : in std_logic;
       RST     : in std_logic;
@@ -795,6 +797,8 @@ begin
 
   DEV1_CFEBJTAG : CFEBJTAG
     port map (
+      CSP_LVMB_LA_CTRL => CSP_LVMB_LA_CTRL,
+
       FASTCLK => clk,
       SLOWCLK => clk_s1,
       RST     => rst,
