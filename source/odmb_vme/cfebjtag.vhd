@@ -37,18 +37,18 @@ end CFEBJTAG;
 architecture CFEBJTAG_Arch of CFEBJTAG is
   signal LOGICH : std_logic := '1';
 
-  signal CMDHIGH                                                 : std_logic;
---  signal CMDDEV                                                  : std_logic_vector(4 downto 0);
   signal CMDDEV                                                  : std_logic_vector(15 downto 0);
   signal INSTSHFT_ARB, INSTSHFT_SP                               : std_logic;
   signal DATASHFT, INSTSHFT, READTDO, SELCFEB, READCFEB, RSTJTAG : std_logic;
   signal TAILSP                                                  : std_logic;
-  signal TAILSP_B                                              : std_logic;
+  signal TAILSP_B                                                : std_logic;
   signal RST_TAIL                                                : std_logic;
-  signal RST_SP                                                  : std_logic;
+  signal RST_ITAIL                                               : std_logic;
+  signal RST_HEAD                                                : std_logic;
+  signal RST_DHEAD                                               : std_logic;
 
-  signal tdi_inner                                                  : std_logic;
-  signal tms_inner                                                  : std_logic;
+  signal tdi_inner                                               : std_logic;
+  signal tms_inner                                               : std_logic;
 
   signal SELFEB                                   : std_logic_vector(7 downto 1);
   signal D_DTACK_SELCFEB, Q_DTACK_SELCFEB         : std_logic;
@@ -83,7 +83,7 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal DONEDATA                                                          : std_logic_vector(1 downto 0) := (others => '0');
 
 
-  signal CE_TAILEN, CLR_TAILEN, CLR_TAILEN_Q, TAILEN               : std_logic;
+  signal CE_TAILEN, CLR_TAILEN, CLR_TAILEN_Q, TAILEN : std_logic;
   signal SHTAIL                                      : std_logic;
   signal CE_DONETAIL, CLR_DONETAIL, Q_DONETAIL       : std_logic;
   signal CEO_DONETAIL, TC_DONETAIL, C_DONETAIL       : std_logic;
@@ -92,7 +92,6 @@ architecture CFEBJTAG_Arch of CFEBJTAG is
   signal CE_SHTAIL_TMS, Q1_SHTAIL_TMS, Q2_SHTAIL_TMS : std_logic;
 
 
---  signal CE_ENABLE, D_ENABLE, ENABLE : std_logic;
   signal CE_TCK_GLOBAL, D_TCK_GLOBAL, TCK_GLOBAL: std_logic;
 
   signal D1_RESETJTAG, Q1_RESETJTAG, Q2_RESETJTAG        : std_logic;
@@ -138,18 +137,6 @@ begin
 
 
 -- COMMAND DECODER
---  CMDHIGH  <= '1' when (DEVICE = '1' and COMMAND(5) = '0' and COMMAND(4) = '0') else '0';
---  INSTSHFTSP <= COMMAND(4) & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
---  CMDDEV   <= CMDHIGH & COMMAND(3) & COMMAND(2) & COMMAND(1) & COMMAND(0);
-
---  DATASHFT <= '1' when (CMDDEV(4 downto 2) = "100")                             else '0';
---  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111")         else '0';
---  INSTSHFT <= '1' when (CMDDEV(4 downto 2) = "111" or CMDDEV = "10111" or INSTSHFTSP(4 downto 1) = "1001" )   else '0';
---  READTDO  <= '1' when (CMDDEV = "10101")                                       else '0';
---  SELCFEB  <= '1' when (CMDDEV = "11000")                                       else '0';
---  READCFEB <= '1' when (CMDDEV = "11001")                                       else '0';
---  RSTJTAG  <= '1' when (CMDDEV = "10110")                                       else '0';
-
   CMDDEV <= "000" & DEVICE & COMMAND & "00";
   DATASHFT <= '1' when (DEVICE = '1' and CMDDEV(7 downto 4) = x"0")  else '0';
   INSTSHFT_ARB <= '1' when (DEVICE = '1' and CMDDEV(7 downto 4) = x"3") else '0';
@@ -227,7 +214,6 @@ begin
 
 -- Generate TMS when SHIHEAD=1
   TMS <= tms_inner;
---  CE_SHIHEAD_TMS <= '1'            when ((SHIHEAD = '1') and (ENABLE = '1')) else '0';
   CE_SHIHEAD_TMS <= '1'            when ((SHIHEAD = '1') and (TCK_GLOBAL = '1')) else '0';
   FDCE(Q5_SHIHEAD_TMS, SLOWCLK, CE_SHIHEAD_TMS, RST, Q1_SHIHEAD_TMS);
   FDCE(Q1_SHIHEAD_TMS, SLOWCLK, CE_SHIHEAD_TMS, RST, Q2_SHIHEAD_TMS);
@@ -249,29 +235,25 @@ begin
 
 -- Generate SHDHEAD
   SHDHEAD <= '1' when (BUSY = '1' and DHEADEN = '1') else '0';
---  CE_DONEDHEAD  <= '1' when (SHDHEAD = '1' and ENABLE = '1') else '0';
   CE_DONEDHEAD  <= '1' when (SHDHEAD = '1' and TCK_GLOBAL = '1') else '0';
 
 
 -- Generate DONEDHEAD
   R_DONEDHEAD <= '1' when (LOAD = '1' or RST = '1' or Q_DONEDHEAD = '1')       else '0';
   CB4RE(SLOWCLK, CE_DONEDHEAD, R_DONEDHEAD, QV_DONEDHEAD, QV_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD);
-  DONEDHEAD   <= '1' when ((QV_DONEDHEAD(0) = '1')and (QV_DONEDHEAD(1) = '1')) else '0';
---  CB4RE(SLOWCLK, SHDHEAD, R_DONEDHEAD, QV_DONEDHEAD, QV_DONEDHEAD, CEO_DONEDHEAD, TC_DONEDHEAD);
---  DONEDHEAD   <= '1' when ((QV_DONEDHEAD(1) = '1')and (QV_DONEDHEAD(3) = '1')) else '0';
---  FD(DONEDHEAD, SLOWCLK, Q_DONEDHEAD);
+  DONEDHEAD   <= '1' when ((QV_DONEDHEAD(0) = '1') and (QV_DONEDHEAD(1) = '1')) else '0';
   C_DONEDHEAD <= SLOWCLK;
   FD(DONEDHEAD, C_DONEDHEAD, Q_DONEDHEAD);
 
 
 -- Generate TMS when SHDHEAD=1
---  CE_SHDHEAD_TMS <= '1'            when ((SHDHEAD = '1') and (ENABLE = '1')) else '0';
-  CE_SHDHEAD_TMS <= '1'            when ((SHDHEAD = '1') and (TCK_GLOBAL = '1')) else '0';
-  FDCE(Q3_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q1_SHDHEAD_TMS);
-  FDCE(Q1_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q2_SHDHEAD_TMS);
-  FDPE(Q2_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q3_SHDHEAD_TMS);
---  FDCE(Q3_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q4_SHDHEAD_TMS);  -- Bug in FG Version (FDCE replaces FDPE)
---  FDCE(Q4_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST, Q5_SHDHEAD_TMS);  -- Bug in FG Version (FDCE replaces FDPE)
+  CE_SHDHEAD_TMS <= '1' when ((SHDHEAD = '1') and (TCK_GLOBAL = '1')) else '0';
+  SET_DHEAD_RST : PULSE2SAME port map(RST_DHEAD, SLOWCLK, RST, DONEDHEAD);
+  RST_HEAD <= RST or RST_DHEAD;
+  FDCE(Q4_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST_HEAD, Q1_SHDHEAD_TMS);
+  FDCE(Q1_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST_HEAD, Q2_SHDHEAD_TMS);
+  FDPE(Q2_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST_HEAD, Q3_SHDHEAD_TMS);
+  FDCE(Q3_SHDHEAD_TMS, SLOWCLK, CE_SHDHEAD_TMS, RST_HEAD, Q4_SHDHEAD_TMS);
   tms_inner            <= Q3_SHDHEAD_TMS when (SHDHEAD = '1')                      else 'Z';  -- Bug in FG Version (Q5_SHDHEAD_TMS replaces '1')
 
 -- Generate SHDATA and SHDATAX
@@ -281,10 +263,8 @@ begin
 
 -- Generate DONEDATA
   DV_DONEDATA  <= COMMAND(9 downto 6);
---  CE_DONEDATA  <= '1' when (SHDATA = '1' and ENABLE = '1')                       else '0';
   CE_DONEDATA  <= '1' when (SHDATA = '1' and TCK_GLOBAL = '1')                       else '0';
---    CLR_DONEDATA <= '1' when (RST='1' and DONEDATA(1)='1' and DONEDATA(0)='1') else '0'; -- BGB should be an or
-  CLR_DONEDATA <= '1' when (RST = '1' or DONEDATA(1) = '1' or DONEDATA(0) = '1') else '0';  -- BGB should be an or
+  CLR_DONEDATA <= '1' when (RST = '1' or DONEDATA(1) = '1' or DONEDATA(0) = '1') else '0';
   UP_DONEDATA  <= '0';                  -- connected to GND
   CB4CLED(SLOWCLK, CE_DONEDATA, CLR_DONEDATA, LOAD, UP_DONEDATA, DV_DONEDATA, QV_DONEDATA, QV_DONEDATA, CEO_DONEDATA, TC_DONEDATA);  -- Bug in FG Version (DV_DONEDATA vs D_DONEDATA)
   D_DONEDATA   <= '1' when (QV_DONEDATA = "0000" and LOAD = '0')                 else '0';  -- Bug in FG Version (D_DONEDATA vs (DONEDATA(1))
@@ -304,15 +284,13 @@ begin
 
 -- Generate SHTAIL
   SHTAIL <= '1' when (BUSY = '1' and DONEDATA(1) = '1' and TAILEN = '1') else '0';
-  FDCE(INSTSHFT_SP, LOAD, CE_TAILEN, RST_SP, TAILSP);
-  TAILSP_B <= not TAILSP; --'0' when (TAILSP = '1') else '1';
---  SET_SP_RST : PULSE2SAME port map(RST_SP, SLOWCLK, CLR_TAILEN, TAILSP_NOT);
-  SET_SP_RST : PULSE2SAME port map(RST_SP, SLOWCLK, RST, TAILSP_B);
+  FDCE(INSTSHFT_SP, LOAD, CE_TAILEN, RST_ITAIL, TAILSP);
+  TAILSP_B <= not TAILSP;
+  SET_ITAIL_RST : PULSE2SAME port map(RST_ITAIL, SLOWCLK, RST, TAILSP_B);
 
 -- Generate DONETAIL
 -- NOTE: I think there was a bug in the old FW.  SLOWCLK was passed to FD_1, it
 -- should be not SLOWCLK based on the OLD DMB FW schematics
---  CE_DONETAIL  <= '1' when (SHTAIL = '1' and ENABLE = '1') else '0';
   CE_DONETAIL  <= '1' when (SHTAIL = '1' and TCK_GLOBAL = '1') else '0';
   CLR_DONETAIL <= '1' when (RST = '1' or Q_DONETAIL = '1') else '0';
   CB4CE(SLOWCLK, CE_DONETAIL, CLR_DONETAIL, QV_DONETAIL, QV_DONETAIL, CEO_DONETAIL, TC_DONETAIL);
@@ -325,9 +303,8 @@ begin
 
 
 -- Generate TMS when SHTAIL=1
---  CE_SHTAIL_TMS <= '1'           when ((SHTAIL = '1') and (ENABLE = '1')) else '0';
   CE_SHTAIL_TMS <= '1'           when ((SHTAIL = '1') and (TCK_GLOBAL = '1')) else '0';
-  RST_TAIL <=  RST or RST_SP; --'1'               when (RST = '1' or RST_SP = '1') else '0';
+  RST_TAIL <=  RST or RST_ITAIL; --'1'               when (RST = '1' or RST_ITAIL = '1') else '0';
   FDCE(Q2_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST_TAIL, Q1_SHTAIL_TMS);
   FDPE(Q1_SHTAIL_TMS, SLOWCLK, CE_SHTAIL_TMS, RST_TAIL, Q2_SHTAIL_TMS);
 -- This code from Frank.
@@ -337,11 +314,8 @@ begin
 
 
 -- Generate ENABLE
---  CE_ENABLE <= '1' when (RESETJTAG = '1' or BUSY = '1') else '0';
   CE_TCK_GLOBAL <= '1' when (RESETJTAG = '1' or BUSY = '1') else '0';
---  D_ENABLE  <= not ENABLE;
   D_TCK_GLOBAL  <= not TCK_GLOBAL;
---  FDCE(D_ENABLE, SLOWCLK, CE_ENABLE, RST, ENABLE);
   FDCE(D_TCK_GLOBAL, SLOWCLK, CE_TCK_GLOBAL, RST, TCK_GLOBAL);
 
 
@@ -371,7 +345,6 @@ begin
 --    DTACK_INNER <= '0' when (RESETDONE='1' and INITJTAGS='0') else 'Z'; -- bgb commented out
 
 -- Generate tms_inner when RESETJTAG=1
---  CE_RESETJTAG_TMS <= (RESETJTAG and ENABLE);
   CE_RESETJTAG_TMS <= (RESETJTAG and TCK_GLOBAL);
   FDCE(Q6_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, RST, Q1_RESETJTAG_TMS);
   FDPE(Q1_RESETJTAG_TMS, SLOWCLK, CE_RESETJTAG_TMS, RST, Q2_RESETJTAG_TMS);
@@ -393,7 +366,6 @@ begin
 
 -- Generate TDI
   TDI <= tdi_inner;
---  CE_TDI <= (SHDATA and ENABLE);
   CE_TDI <= (SHDATA and TCK_GLOBAL);
   SR16CLRE(SLOWCLK, CE_TDI, RST, LOAD, QV_TDI(0), INDATA, QV_TDI, QV_TDI);
   tdi_inner    <= QV_TDI(0);
@@ -421,7 +393,6 @@ begin
 --    DTACK_INNER <= '0' when (RDTDODK='1') else 'Z'; -- BGB commented out
 
 -- Generate OUTDATA
---  CE_SHIFT1            <= SHDATAX and not ENABLE;               -- BGB
   CE_SHIFT1            <= SHDATAX and not TCK_GLOBAL;               -- BGB
   SR16LCE(SLOWCLK, CE_SHIFT1, RST, TDO, Q_OUTDATA, Q_OUTDATA);  -- BGB
   OUTDATA(15 downto 0) <= Q_OUTDATA(15 downto 0) when (RDTDODK = '1') else "ZZZZZZZZZZZZZZZZ";
@@ -464,7 +435,6 @@ begin
 
 -- generate DIAGOUT
   DIAGOUT(0)  <= LOAD;
---  DIAGOUT(1)  <= ENABLE;
   DIAGOUT(1)  <= TCK_GLOBAL;
   DIAGOUT(2)  <= BUSY;
   DIAGOUT(3)  <= RDTDODK;
@@ -492,11 +462,11 @@ csp_lvmb_la_pm : csp_lvmb_la
        );
 
   csp_lvmb_la_trig <= "0000000" & DEVICE;
-  csp_lvmb_la_data <= FEBTDO				                                              -- [7]    (99:93)
-					& LOAD & TCK_GLOBAL & tdi_inner & tms_inner                           -- [1]    (92:89)
-					& RST & RST_SP & READTDO  & RDTDODK                    			      -- [1]    (88:85)
-					& SHDHEAD & DONEDHEAD & SHIHEAD & DONEIHEAD & DHEADEN  & IHEADEN      -- [1]    (84:79)
-					& SHTAIL  & DONETAIL  & TAILSP  & TAILEN    & CE_TAILEN & CLR_TAILEN  -- [1]    (78:73)
+  csp_lvmb_la_data <= FEBTDO	                                                          -- [7]    (99:93)
+                    & LOAD & TCK_GLOBAL & tdi_inner & tms_inner                           -- [1]    (92:89)
+                    & RST & RST_ITAIL & READTDO  & RDTDODK         	                  -- [1]    (88:85)
+                    & SHDHEAD & DONEDHEAD & SHIHEAD & DONEIHEAD & DHEADEN  & IHEADEN      -- [1]    (84:79)
+                    & SHTAIL  & DONETAIL  & TAILSP  & TAILEN    & CE_TAILEN & CLR_TAILEN  -- [1]    (78:73)
                     & Q1_DTACK & Q2_DTACK & Q3_DTACK & Q4_DTACK                           -- [1]    (72:69)
                     & Q1_SHIHEAD_TMS & Q2_SHIHEAD_TMS & Q3_SHIHEAD_TMS                    -- [1]    (68:64)
                     & Q4_SHIHEAD_TMS & Q5_SHIHEAD_TMS
@@ -511,6 +481,6 @@ csp_lvmb_la_pm : csp_lvmb_la
                     & READTDO & SELCFEB & READCFEB & RSTJTAG                              -- [1]    (31:28)
                     & DATASHFT & INSTSHFT_ARB & INSTSHFT_SP & INSTSHFT                    -- [1]    (27:24)
                     & BUSY & SELFEB                                                       -- [1/7]  (23:16)
-                    & CMDDEV;                                                              -- [16]   (15:0)
+                    & CMDDEV;                                                             -- [16]   (15:0)
 
 end CFEBJTAG_Arch;
