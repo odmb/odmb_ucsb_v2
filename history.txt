@@ -7,6 +7,63 @@
 =                                                                    =
 ======================================================================
 
+v3.17, build 0: 09 August 2018, Sicheng
+------------------------------------------
+Fix small glitch in after CFEBJTAG data shift header, which may be the cause
+of the unstable behavior in some ODMBs in communicating with DCFEBs.
+
+v3.16, build 3: 24 July 2018, Alex
+------------------------------------------
+Trim leading two zeros in datashift in order to alow going directly from
+instruction shifts to data shift without passing through idle, to avoid the
+problem of forgetting instructions in some XCF32P/XCF08P PROMs used in xDCFEBs.
+Add special commands 1Y48, 1Y4C with special TMS tailer to go directly
+to data.
+
+v3.15, build 1: 05 July 2018, Hualin
+------------------------------------------
+Enable support of xDCFEB by enabling the possibility of sending longer 
+JTAG instructions in cfebjtag, by adding commands 1Y30, 1Y34, 1Y38 and 1Y3C.
+
+v3.14, build 1: 05 April 2018, Manuel
+------------------------------------------
+Fixed reporting of auto-killed DCFEBs at reset
+
+v3.13, build 0: 25 March 2018, Manuel
+------------------------------------------
+Auto-killing of DCFEBs fixing timeout bits in ODMB trailer to 0 to
+avoid DDU errors
+
+v3.12, build 8: 18 March 2018, Manuel
+------------------------------------------
+Auto-killing of DCFEBs when bad optical link or packets longer than
+1024 words
+
+v3.11, build 0: 19 November 2017, Manuel
+------------------------------------------
+Increased matching windown for OTMB and ALCT to 3 BX
+
+v3.10, build 0: 10 October 2017, Manuel
+------------------------------------------
+3BxC to only count fiber errors in last 20 BX and better CFEB JTAG reset
+
+v3.0F, build 2: 07 August 2017, Manuel
+------------------------------------------
+Fixed the state machine that produces INITJTAG, tested with 
+CFEBJTAG 4x slower
+
+v3.0E, build 0: 07 November 2016, Manuel
+------------------------------------------
+Increased OTMB timeout from 680 BX to 1500 BX to allow recording of GEM data
+
+v3.0D, build 1: 11 July 2016, Manuel
+------------------------------------------
+Added 230 ms delay to reset the fiber error counters
+
+v3.0B, build 1: 26 April 2015, Manuel
+------------------------------------------
+Added INJPLS/EXTPLS mask, temperature power down at 85C
+
 v3.0A, build 2: 17 October 2014, Manuel
 ------------------------------------------
 Shifted the BX by 2772 to match the DMB and added BX_DLY to

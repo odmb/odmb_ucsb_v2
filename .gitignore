@@ -61,7 +61,6 @@ ipcore_dir/*
 !ipcore_dir/*.xise
 
 ### Chip Scope Pro ###
-*.cpj
 *.cgc
 *.cgp
 
