@@ -1253,7 +1253,9 @@ architecture ODMB_UCSB_V2_ARCH of ODMB_UCSB_V2 is
 
 -- From VMECONFREGS to odmb_ctrl and odmb_ctrl
   signal pulse_optrst, pulse_optrst_1khz, dly_pulse_optrst : std_logic := '0';
+  signal dly_pulse_optrst_1khz : std_logic := '0';
   constant opt_rst_dly   : integer := 230;  -- Number of ms the opt reset is delayed with respect to power-on
+  --constant opt_rst_dly   : integer := 30;  -- Number of ms the opt reset is delayed with respect to power-on
   constant push_dly    : integer := 63;  -- It needs to be > alct/otmb_push_dly
   constant push_dlyp4  : integer := push_dly+4;  -- push_dly+4
   signal alct_push_dly : integer range 0 to 63;
@@ -2065,8 +2067,10 @@ begin
     FD_BADDCFEB1_FIBER : FDC port map(bad_dcfeb_pulse_fiber_qq(dev), clk40, reset, bad_dcfeb_pulse_fiber_q(dev));
     FD_AUTOKILL_FIBER : FDC port map(autokilled_dcfebs_fiber(dev), bad_dcfeb_pulse_fiber_qq(dev), kill_b(dev), '1');
 
-     -- Generating pulse if no fiber errors in time window and no auto-killed DCFEB
-    good_dcfeb_fiber(dev) <= not or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 0)) and autokilled_dcfebs_fiber(dev);    
+    -- Generating pulse if no fiber errors in time window and no auto-killed DCFEB
+    --good_dcfeb_fiber(dev) <= not or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 0)) and autokilled_dcfebs_fiber(dev);    
+    -- Resets auto kill logc if opt_reset is asserted.
+    good_dcfeb_fiber(dev) <= (not or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 0)) and autokilled_dcfebs_fiber(dev)) or (dly_pulse_optrst and (not or_reduce(dcfeb_bad_rx_cnt(dev)(15 downto 0))) and autokilled_dcfebs(dev));
     FD_GOODFIBER : FDC port map(good_dcfeb_fiber_q(dev), clk160, reset, good_dcfeb_fiber(dev));
     good_dcfeb_pulse160(dev) <= '1' when good_dcfeb_fiber(dev) = '1' and good_dcfeb_fiber_q(dev) = '0' else '0';
 
@@ -2863,10 +2867,21 @@ begin
   DDUTXPLLLKDET_CNT : COUNT_EDGES port map(ddu_txplllkdet_b_cnt, dduclk, reset, ddu_txplllkdet_b);
 
   -- Reset of fiber errors is delayed so that we avoid the errors during the fw reload
-  PLS_OPTRST      : PULSE2SAME port map(pulse_optrst, clk40, '0', opt_reset);
-  PLS_OPTRST_1KHZ : PULSE2SLOW port map(pulse_optrst_1khz, clk1khz, clk40, '0', pulse_optrst);
-  DS_OPTRST : DELAY_SIGNAL generic map(opt_rst_dly) port map(dly_pulse_optrst, clk1khz,
-                                                           opt_rst_dly, pulse_optrst_1khz);
+  -- 1khz can't catch 40 mhz in simulation
+  --PLS_OPTRST      : PULSE2SAME port map(pulse_optrst, clk40, '0', opt_reset);
+  --PLS_OPTRST_1KHZ : PULSE2SLOW port map(pulse_optrst_1khz, clk1khz, clk40, '0', pulse_optrst);
+  --DS_OPTRST : DELAY_SIGNAL generic map(opt_rst_dly) port map(dly_pulse_optrst_1khz, clk1mhz,
+  --                                                         opt_rst_dly, pulse_optrst_1khz);
+  ---- Test with 1MHz.
+  --PLS_OPTRST      : NPULSE2SAME port map(pulse_optrst, clk40, '0', 100, opt_reset);
+  --DS_OPTRST : DELAY_SIGNAL generic map(opt_rst_dly) port map(dly_pulse_optrst_1khz, clk1mhz,
+  --                                                         opt_rst_dly, pulse_optrst);
+  -- Extending the pulse optrst to 30ms = 1200000, 2.5 ms = 100000, 1000ns = 40
+  PLS_OPTRST      : NPULSE2SAME port map(pulse_optrst, clk40, '0', 1200000, opt_reset);
+  DS_OPTRST : DELAY_SIGNAL generic map(opt_rst_dly) port map(dly_pulse_optrst_1khz, clk1khz,
+                                                           opt_rst_dly, pulse_optrst);
+
+  PLS_OPTRST_160MHz : PULSE2FAST port map(dly_pulse_optrst, clk160, '0', dly_pulse_optrst_1khz);
 
 
   NFEB_CNT : for dev in 1 to NFEB generate

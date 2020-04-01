@@ -74,10 +74,10 @@ end VMECONFREGS;
 
 architecture VMECONFREGS_Arch of VMECONFREGS is
 
-  constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0318";
-  constant FW_ID            : std_logic_vector(15 downto 0) := x"0004";
-  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0823";
-  constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2018";
+  constant FW_VERSION       : std_logic_vector(15 downto 0) := x"0320";
+  constant FW_ID            : std_logic_vector(15 downto 0) := x"0001";
+  constant FW_MONTH_DAY     : std_logic_vector(15 downto 0) := x"0829";
+  constant FW_YEAR          : std_logic_vector(15 downto 0) := x"2019";
   constant able_write_const : std_logic                     := '0';
 
   constant cfg_reg_mask_we   : std_logic_vector(15 downto 0) := x"FDFF";
